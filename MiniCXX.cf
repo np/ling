@@ -1,0 +1,51 @@
+comment "//" ;
+comment "/*" "*/" ;
+
+PPrg. Prg ::= [Def] ;
+
+DDec. Dec ::= QTyp Ident ;
+
+separator Dec "," ;
+
+DDef. Def ::= Dec "(" [Dec] ")" "{" [Stm] "}" ;
+DSig. Def ::= Dec "(" [Dec] ")" ";" ;
+
+separator Def "" ;
+
+TInt.  Typ ::= "int" ;
+TTup.  Typ ::= "tuple<" [Typ] ">" ;
+TUni.  Typ ::= "union_t<" [Typ] ">" ;
+TArr.  Typ ::= Typ "[" Exp "]" ;
+_.     Typ ::= "(" Typ ")" ;
+
+separator Typ "," ;
+
+QTyp.  QTyp ::= Qual Typ ;
+QVoid. QTyp ::= "void" ;
+
+NoQual. Qual ::= ;
+QConst. Qual ::= "const" ;
+
+SDec. Stm ::= Dec Init ;
+SPut. Stm ::= LVal "=" Exp ;
+
+NoInit. Init ::= ;
+SoInit. Init ::= "=" Exp ;
+
+terminator Stm ";" ;
+
+Plus. Op  ::= "+" ;
+
+EVar. Exp ::= Ident ;
+EFld. Exp ::= Exp "." Ident ;
+EArr. Exp ::= Exp "[" Exp "]" ;
+EApp. Exp ::= Ident "(" [Exp] ")" ;
+EInf. Exp ::= Exp Op Exp ;
+ELit. Exp ::= Integer ;
+_.    Exp ::= "(" Exp ")" ;
+
+separator Exp "," ;
+
+LVar. LVal ::= Ident ;
+LFld. LVal ::= LVal "." Ident ;
+LArr. LVal ::= LVal "[" Exp "]"

@@ -1,0 +1,164 @@
+
+[Transformed tree]
+
+void cutEmptyParTensor () {
+  }
+void cutSendRecv () {
+  int c ;
+  c = 1 ;
+  const int x = c ;
+  }
+void double (const int i, int r){
+  const int xi = i ;
+  int c ;
+  c = xi ;
+  const int x = c ;
+  c = xi ;
+  const int y = c ;
+  c = x + y ;
+  const int z = c ;
+  r = z ;
+  }
+void idproc (const int c, int d){
+  const int y = c ;
+  d = id (0, y);
+  }
+void par0 (void c){
+  }
+void par1 (int c){
+  c = 42 ;
+  }
+void par2 (tuple< int, int > c){
+  const int x = c . proj1 ;
+  c . proj0 = x ;
+  }
+void par2mix (tuple< int, int > c){
+  c . proj0 = 42 ;
+  const int x = c . proj1 ;
+  }
+void parallel_assoc_2tensor2_left (tuple< tuple< int, int >, int > cde){
+  cde . proj0 . proj0 = 1 ;
+  cde . proj0 . proj1 = 2 ;
+  cde . proj1 = 3 ;
+  }
+void parallel_assoc_2tensor2_right (tuple< tuple< int, int >, int > cde){
+  cde . proj1 = 3 ;
+  cde . proj0 . proj0 = 1 ;
+  cde . proj0 . proj1 = 2 ;
+  }
+void parallel_assoc_flat (int c, int d, int e){
+  c = 1 ;
+  d = 2 ;
+  e = 3 ;
+  }
+void parallel_assoc_left (int c, int d, int e){
+  c = 1 ;
+  d = 2 ;
+  e = 3 ;
+  }
+void parallel_assoc_right (int c, int d, int e){
+  c = 1 ;
+  d = 2 ;
+  e = 3 ;
+  }
+void parallel_assoc_tensor3_flat (tuple< int, int, int > cde){
+  cde . proj0 = 1 ;
+  cde . proj1 = 2 ;
+  cde . proj2 = 3 ;
+  }
+void parallel_assoc_tensor3_left (tuple< int, int, int > cde){
+  cde . proj0 = 1 ;
+  cde . proj1 = 2 ;
+  cde . proj2 = 3 ;
+  }
+void parallel_assoc_tensor3_right (tuple< int, int, int > cde){
+  cde . proj0 = 1 ;
+  cde . proj1 = 2 ;
+  cde . proj2 = 3 ;
+  }
+void parallel_tensor4_flat (tuple< int, int > cd, tuple< int, int > ef){
+  cd . proj0 = 1 ;
+  ef . proj0 = 2 ;
+  cd . proj1 = 3 ;
+  ef . proj1 = 4 ;
+  }
+void parallel_tensor4_v0 (tuple< int, int > cd, tuple< int, int > ef){
+  cd . proj0 = 1 ;
+  ef . proj0 = 2 ;
+  cd . proj1 = 3 ;
+  ef . proj1 = 4 ;
+  }
+void par_ten1_ten1 (tuple< int, int > c){
+  const int x = c . proj0 ;
+  c . proj1 = x ;
+  }
+void par_ten_ten_v0 (tuple< tuple< int, int >, tuple< int, int > > c){
+  c . proj1 . proj0 = 1 ;
+  c . proj0 . proj1 = 2 ;
+  }
+void par_ten_ten_v1 (tuple< tuple< int, int >, tuple< int, int > > c){
+  c . proj1 . proj0 = 1 ;
+  c . proj0 . proj1 = 2 ;
+  }
+void par_ten_ten_v2 (tuple< tuple< int, int >, tuple< int, int > > c){
+  c . proj1 . proj0 = 1 ;
+  c . proj0 . proj1 = 2 ;
+  }
+void singleRecv (const int c){
+  const int x = c ;
+  }
+void singleSend (int c){
+  c = 42 ;
+  }
+void tensor0 (void c){
+  }
+void tensor1 (int c){
+  c = 42 ;
+  }
+void tensor2 (tuple< int, int > c){
+  c . proj0 = 42 ;
+  const int x = c . proj1 ;
+  }
+void tensor2_tensor0_tensor0_parallel (const tuple< > cd){
+  }
+void tensor2_tensor0_tensor0_sequence (const tuple< > cd){
+  }
+void tensor2_using_dual (tuple< int, int > c){
+  c . proj0 = 42 ;
+  const int x = c . proj1 ;
+  }
+void test2 () {
+  tuple< int, int > c ;
+  c . proj0 = 1 ;
+  const int x0 = c . proj0 ;
+  c . proj1 = x0 + 1 ;
+  const int z0 = c . proj1 ;
+  c . proj1 = z0 + 5 ;
+  const int x1 = c . proj1 ;
+  c . proj0 = x1 + x0 + 2 ;
+  const int y0 = c . proj0 ;
+  c . proj0 = y0 + 4 ;
+  const int x2 = c . proj0 ;
+  c . proj1 = x2 + x1 + x0 + 3 ;
+  const int z1 = c . proj1 ;
+  }
+void test3 () {
+  union_t< int, tuple< int, int > > c ;
+  c = 1 ;
+  const int x0 = c ;
+  c . proj0 = x0 ;
+  c . proj1 = x0 ;
+  const int y0 = c . proj0 ;
+  const int z0 = c . proj1 ;
+  }
+void test4 (int r){
+  const int c ;
+  c = 1 ;
+  const int x0 = c ;
+  c = 2 ;
+  const int x1 = c ;
+  c = 3 ;
+  const int x2 = c ;
+  r = x0 + x1 + x2 ;
+  }
+

@@ -1,0 +1,6 @@
+Sessions are not dual.
+Given session (expanded):
+  ? Int
+Inferred dual session:
+  ? Int
+

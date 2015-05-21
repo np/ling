@@ -1,0 +1,1 @@
+../../tests/success/par_ten1_ten1.t/par_ten1_ten1.ll

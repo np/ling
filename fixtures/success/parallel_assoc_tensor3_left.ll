@@ -1,0 +1,1 @@
+../../tests/success/parallel_assoc_tensor3_left.t/parallel_assoc_tensor3_left.ll

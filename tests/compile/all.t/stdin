@@ -1,0 +1,160 @@
+cutEmptyParTensor = new (c : {}, d : []) (c{} | d[]).
+cutSendRecv = new (c : !Int, d : ?Int) ( send c 1 | recv d (x : Int) ).
+double (i : ?Int, r : !Int) =
+  recv i(xi : Int)
+  new (c : ?Int. ?Int. !Int, d)
+  (
+    recv c(x : Int) recv c(y : Int) send c (x + y)
+  |
+    send d xi send d xi recv d(z : Int) send r z
+  ).
+id : (A : Type)(x : A) -> A.
+
+idproc (c : ?Int, d : !Int) =
+  recv c (y : Int)
+  send d (id Int y).
+par0 (c : {}) = c{}.
+par1 (c : {!Int}) = c{d} send d 42.
+par2 (c : {!Int,?Int}) = c{d,e} recv e (x : Int) send d x.
+par2mix (c : {!Int,?Int}) = c{d,e}(recv e (x : Int) | send d 42).
+parallel_assoc_2tensor2_left (cde : [[!Int, !Int], !Int]) =
+  cde[cd,e]
+  cd[c,d]
+  ( send c 1
+  | send d 2
+  | send e 3
+  ).
+parallel_assoc_2tensor2_right (cde : [[!Int, !Int], !Int]) =
+  cde[cd,e]
+  ( cd[c,d] ( send c 1 | send d 2 )
+  | send e 3
+  ).
+parallel_assoc_flat (c : !Int, d : !Int, e : !Int) =
+  ( send c 1
+  | send d 2
+  | send e 3
+  ).
+parallel_assoc_left (c : !Int, d : !Int, e : !Int) =
+  ( ( send c 1 | send d 2 )
+  | send e 3
+  ).
+parallel_assoc_right (c : !Int, d : !Int, e : !Int) =
+  ( send c 1
+  | ( send d 2 | send e 3 )
+  ).
+parallel_assoc_tensor3_flat (cde : [!Int, !Int, !Int]) =
+  cde[c,d,e]
+  ( send c 1
+  | send d 2
+  | send e 3
+  ).
+parallel_assoc_tensor3_left (cde : [!Int, !Int, !Int]) =
+  cde[c,d,e]
+  ( send c 1
+  | ( send d 2 | send e 3 )
+  ).
+parallel_assoc_tensor3_right (cde : [!Int, !Int, !Int]) =
+  cde[c,d,e]
+  ( ( send c 1 | send d 2 )
+  | send e 3
+  ).
+parallel_tensor4_flat (cd : [!Int,!Int], ef : [!Int,!Int]) =
+  cd[c,d]
+  ef[e,f]
+  ( send c 1
+  | send e 2
+  | send d 3
+  | send f 4
+  ).
+-- Needs mix
+-- [c,d],[e,f] <mix> [c,d,e,f] <split> [c,e],[d,f] <split/split> [c],[e] and [d],[f]
+parallel_tensor4_v0 (cd : [!Int,!Int], ef : [!Int,!Int]) =
+  cd[c,d]
+  ef[e,f]
+  ( ( send c 1 | send e 2 )
+  | ( send d 3 | send f 4 )
+  ).
+par_ten1_ten1 (c : {[?Int], [!Int]}) =
+  c{e,d} d[l] e[h]
+  recv h (x : Int) send l x.
+-- Accepted by the checker, makes the compiler loop
+par_ten_ten_v0 (c : {[?Int, !Int], [!Int, ?Int]}) =
+  c{e,d} d[k,l] e[h,g]
+  ( ( recv h (x : Int)
+    | ( send k 1 | recv l (y : Int) )
+    )
+  | send g 2
+  ).
+par_ten_ten_v1 (c : {[?Int, !Int], [!Int, ?Int]}) =
+  c{e,d} d[k,l] e[h,g]
+  ( recv h (x : Int)
+  | send k 1
+  | recv l (y : Int)
+  | send g 2
+  ).
+par_ten_ten_v2 (c : {[?Int, !Int], [!Int, ?Int]}) =
+  c{e,d} d[k,l] e[h,g]
+  ( ( send k 1
+    | ( recv h (x : Int) | recv l (y : Int) )
+    )
+  | send g 2
+  ).
+singleRecv (c : ?Int) = recv c (x : Int).
+singleSend (c : !Int) = send c 42.
+tensor0 (c : []) = c[].
+tensor1 (c : [!Int]) = c[d] send d 42.
+tensor2 (c : [!Int,?Int]) = c[d,e](recv e (x : Int) | send d 42).
+tensor2_tensor0_tensor0_parallel (cd : [[], []]) =
+  cd[c,d] ( c[] | d[] ).
+{-
+          d[] : [d : []]
+       c[]d[] : [c : [], d : []]
+cd[c,d]c[]d[] : [cd : [[], []]]
+-}
+tensor2_tensor0_tensor0_sequence (cd : [[], []]) =
+  cd[c,d] c[] d[].
+tensor2_using_dual (c : [!Int,~!Int]) = c[d,e](recv e (x : Int) | send d 42).
+test2 =
+  new (c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d)
+  (
+    c{c0,c1}
+    recv c0 (x0 : Int)
+    send c1 (x0 + 1)
+    recv c1 (x1 : Int)
+    send c0 (x1 + x0 + 2)
+    recv c0 (x2 : Int)
+    send c1 (x2 + x1 + x0 + 3)
+  | d[d0,d1]
+    (
+      send d0 1
+      recv d0 (y0 : Int)
+      send d0 (y0 + 4)
+    |
+      recv d1 (z0 : Int)
+      send d1 (z0 + 5)
+      recv d1 (z1 : Int)
+    )
+  ).
+test3 =
+  new (c : ?Int. [!Int, !Int], d)
+  (
+    recv c (x0 : Int)
+    c[c0,c1]
+    ( send c0 x0 | send c1 x0 )
+  |
+    send d 1
+    d{d0,d1}
+    ( recv d0 (y0 : Int) | recv d1 (z0 : Int) )
+  ).
+test4 (r : !Int) =
+  new (c : ?Int. ?Int. ?Int, d)
+  (
+    recv c (x0 : Int)
+    recv c (x1 : Int)
+    recv c (x2 : Int)
+    send r (x0 + x1 + x2)
+  |
+    send d 1
+    send d 2
+    send d 3
+  ).

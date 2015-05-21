@@ -1,0 +1,1 @@
+../../tests/success/parallel_tensor4_flat.t/parallel_tensor4_flat.ll

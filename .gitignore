@@ -1,3 +1,6 @@
+*.bak
+tests/*/*.my
+issues/*/*.my
 dist
 cabal-dev
 *.o
