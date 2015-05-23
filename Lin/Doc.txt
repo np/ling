@@ -84,8 +84,8 @@ All other symbols are terminals.
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
   | //Procs// | -> | **eps**
-  |  |  **|**  | ``fwd`` //Session// //Name// //Name// //[Snk]// 
-  |  |  **|**  | ``unpack`` //Term// ``@`` ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``fwd`` //Session// //Name// //Name// //[Snk]//
+  |  |  **|**  | ``unpack`` //Term// ``@`` ``(`` //[Name]// ``)``
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
   | //Snk// | -> | //Name// 
   | //[Snk]// | -> | **eps**

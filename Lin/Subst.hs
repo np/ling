@@ -25,7 +25,7 @@ instance Subst Term where
        (Nothing, _)           -> Def x  (subst f es)
        (Just (Def x' es'), _) -> Def x' (es' ++ subst f es)
        (Just e', [])          -> e'
-       (Just e', _)           -> error $ "subst/Def " -- ++ pretty e' ++ " " ++ pretty es
+       (Just _e', _)          -> error $ "subst/Def " -- ++ pretty e' ++ " " ++ pretty es
 
     TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hideArg arg f) t)
@@ -68,13 +68,10 @@ instance Subst Pref where
     NewSlice t x  -> NewSlice (subst f t) x
 
 instance Subst Proc where
-  subst f (Act prefs procs) = Act (subst f prefs) (subst (hidePrefs prefs f) procs)
-
-instance Subst Procs where
-  subst f ps = case ps of
-    Procs procs -> Procs (subst f procs)
-    Ax{}        -> ps
-    At t cs     -> At (subst f t) cs
+  subst f p = case p of
+    Act prefs procs -> Act (subst f prefs) (subst f procs)
+    Ax{}            -> p
+    At t cs         -> At (subst f t) cs
 
 instance Subst Session where
   subst f s0 = case s0 of

@@ -79,7 +79,9 @@ reifyRSessions = reify
 
 instance Norm Proc where
   type Normalized Proc = N.Proc
-  reify (N.Act prefs procs) =   Act (reify prefs) (reify procs)
+  reify (N.Act prefs procs) = Act (reify prefs) (reify procs)
+  reify (N.Ax s c d es)     = Act [] (Ax (reify s) c d (reify es))
+  reify (N.At t cs)         = Act [] (At (reify t) cs)
   norm  (Act   prefs procs) = N.Act (norm  prefs) (norm  procs)
 
 reifyProc :: N.Proc -> Proc
@@ -87,14 +89,13 @@ reifyProc = reify
 
 instance Norm Procs where
   type Normalized Procs = N.Procs
-  reify (N.Procs procs) = Procs (reify procs)
-  reify (N.Ax s c d es) = Ax (reify s) c d (reify es)
-  reify (N.At t cs)     = At (reify t) cs
-  norm ZeroP            = N.Procs []
-  norm (Procs procs)    = N.Procs (norm procs)
---norm (Ax s c d es)    = N.Ax (norm s) c d (norm es)
-  norm (Ax s c d es)    = N.Procs [fwdP (norm s) c d (norm es)]
-  norm (At t cs)        = N.At (norm t) cs
+  reify []              = ZeroP
+  reify procs           = Procs (reify procs)
+  norm ZeroP            = []
+  norm (Procs procs)    = norm procs
+--norm (Ax s c d es)    = [N.Ax (norm s) c d (norm es)]
+  norm (Ax s c d es)    = [fwdP (norm s) c d (norm es)]
+  norm (At t cs)        = [N.At (norm t) cs]
 
 instance Norm Snk where
   type Normalized Snk = Channel

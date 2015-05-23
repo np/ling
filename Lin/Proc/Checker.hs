@@ -80,23 +80,8 @@ mergeConstraints (Constraints c0) (Constraints c1) = do
 
 checkProc :: Proc -> TC Proto
 checkProc (Act acts procs) = checkAct acts procs
-
-checkProcs' :: [Proc] -> TC Proto
-checkProcs' [] = return emptyProto
-checkProcs' (proc : procs) = do
-  proto0 <- checkProc   proc
-  proto1 <- checkProcs' procs
-  let ks0 = proto0 ^. constraints
-      ks1 = proto1 ^. constraints
-  ks <- mergeConstraints ks0 ks1
-  let mchans = Map.mergeWithKey (error "mergeSession") id id
-                                (proto0 ^. chans) (proto1 ^. chans)
-  return $ MkProto mchans ks
-
-checkProcs :: Procs -> TC Proto
-checkProcs (Procs procs) = checkProcs' procs
-checkProcs (Ax s c d es) = return $ protoAx s c d es
-checkProcs (At e cs)     =
+checkProc (Ax s c d es)    = return $ protoAx s c d es
+checkProc (At e cs)        =
   do t <- inferTerm e
      case t of
        TProto ss' -> do
@@ -106,6 +91,18 @@ checkProcs (At e cs)     =
          return . mkProto $ zip cs ss
        _ ->
          throwError . unlines $ ["Expected a protocol type, not:", pretty t]
+
+checkProcs :: [Proc] -> TC Proto
+checkProcs [] = return emptyProto
+checkProcs (proc : procs) = do
+  proto0 <- checkProc  proc
+  proto1 <- checkProcs procs
+  let ks0 = proto0 ^. constraints
+      ks1 = proto1 ^. constraints
+  ks <- mergeConstraints ks0 ks1
+  let mchans = Map.mergeWithKey (error "mergeSession") id id
+                                (proto0 ^. chans) (proto1 ^. chans)
+  return $ MkProto mchans ks
 
 checkProgram :: Program -> TC ()
 checkProgram (Program decs) = checkDecs decs
@@ -140,7 +137,7 @@ actLabel NewSlice{} = "slice"
 
 debugCheckAct :: Proto -> Act -> [Act] -> Procs -> TC Proto -> TC Proto
 debugCheckAct proto act acts procs m = do
-  unless (null acts && isZeroProcs procs) $
+  unless (null acts && null procs) $
     debug $ [ "Checking " ++ actLabel act ++ proc
             , "Inferred protocol for `" ++ proc' ++ "`:"
             ] ++ prettyProto proto

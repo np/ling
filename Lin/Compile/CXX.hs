@@ -219,7 +219,7 @@ transProcs tries env ps =
             transProcs (tries + 1) env (map unview (procs1 ++ [p0])) --- <-- Uhoh termination
           else trace "Prevented non termination" []
         Just (readyPis,restPis) ->
-          transAct env readyPis (map unview procs1 ++ [restPis `actP` N.Procs procs0])
+          transAct env readyPis (map unview procs1 ++ [restPis `actP` procs0])
 
     (AtV{} : _) ->
       error "transProcs: AtV"

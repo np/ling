@@ -13,14 +13,14 @@ import Lin.Session
 
 freeChans :: Proc -> Set Channel
 freeChans (Act acts procs) = fcAct acts procs
+freeChans (Ax _ c d es)    = l2s (c:d:es)
+freeChans (At _ cs)        = l2s cs
 
 bndChans :: [ChanDec] -> Set Channel
 bndChans = l2s . map _argName
 
 fcProcs :: Procs -> Set Channel
-fcProcs (Procs procs) = Set.unions $ map freeChans procs
-fcProcs (Ax _ c d es) = l2s (c:d:es)
-fcProcs (At _ cs)     = l2s cs
+fcProcs = Set.unions . map freeChans
 
 fcAct :: [Act] -> Procs -> Set Channel
 fcAct []         procs = fcProcs procs
@@ -35,27 +35,27 @@ fcAct (act:acts) procs =
   where cs = fcAct acts procs
 
 zeroP :: Proc
-zeroP = Act [] (Procs [])
+zeroP = Act [] []
 
 actP :: [Pref] -> Procs -> Proc
-actP pis (Procs [Act pis' procs]) = Act (pis ++ pis') procs
-actP pis procs                    = Act pis           procs
-
-isZeroProcs :: Procs -> Bool
-isZeroProcs (Procs procs) = null procs
-isZeroProcs Ax{}          = False
-isZeroProcs At{}          = False
+actP pis [Act pis' procs] = Act (pis ++ pis') procs
+actP pis procs            = Act pis           procs
 
 filter0s :: Procs -> Procs
-filter0s (Procs procs) = Procs $ mapMaybe filter0 procs
-filter0s p@At{}        = p
-filter0s p@Ax{}        = p
+filter0s = mapMaybe filter0
+
+filter0Act :: [Pref] -> Procs -> Maybe Proc
+filter0Act prefs procs
+  | null prefs && null procs' = Nothing
+  | otherwise                 = Just (prefs `actP` procs')
+  where procs' = filter0s procs
 
 filter0 :: Proc -> Maybe Proc
-filter0 (Act pis procs)
-    | null pis && isZeroProcs procs' = Nothing
-    | otherwise                      = Just (pis `actP` procs')
-  where procs' = filter0s procs
+filter0 p =
+  case p of
+    Act prefs procs -> filter0Act prefs procs
+    Ax{}            -> Just p
+    At{}            -> Just p
 
 suffChan :: Channel -> Int -> Channel
 suffChan (Name c) i = Name (c ++ show i ++ "#")
@@ -78,7 +78,7 @@ unRSession _                = error "unRSession"
 
 -- One could generate the session annotations on the splits
 fwdParTen :: [RSession] -> Channel -> Channel -> [Channel] -> Proc
-fwdParTen rss c d es = pref `actP` Procs ps
+fwdParTen rss c d es = pref `actP` ps
   where
     ss   = map unRSession rss
     n    = length ss - 1
@@ -89,7 +89,7 @@ fwdParTen rss c d es = pref `actP` Procs ps
     pref = tenSplit' c cs : parSplit' d ds : zipWith parSplit' es (transpose ess)
 
 fwdRcvSnd :: Typ -> Session -> Name -> Channel -> [Name] -> Proc
-fwdRcvSnd t s c d es = pref `actP` Procs [fwdP s c d es]
+fwdRcvSnd t s c d es = pref `actP` [fwdP s c d es]
   where x    = Name "x"
         vx   = Def x []
         pref = Recv c (Arg x t) : Send d vx : map (`Send` vx) es
@@ -104,15 +104,8 @@ fwdP s0 c d es =
     End     -> zeroP
     Seq _ss -> error "fwdP/Seq TODO"
 
-replProcs :: Int -> Name -> Procs -> [Proc]
-replProcs n x ps0 =
-  case ps0 of
-    Procs procs -> replProc n x =<< procs
-    Ax{}        -> error "replProcs/Ax"
-                   -- If Ax are expanded before, nothing to do here
-                   -- Otherwise this should do the same as the
-                   -- replication of the expansion.
-    At{}        -> error "replProcs/At"
+replProcs :: Int -> Name -> Procs -> Procs
+replProcs n = concatMap . replProc n
 
 substi :: Subst a => Name -> Int -> a -> a
 substi x i = subst1 (x,Lit(fromIntegral i))
@@ -121,15 +114,15 @@ replArg :: Int -> Name -> ChanDec -> [ChanDec]
 replArg n x (Arg d s) = map go [0..n-1] where
   go i = Arg (suffChan d i) (substi x i s)
 
-replProc' :: Int -> Name -> Proc -> [Proc]
+replProc' :: Int -> Name -> Proc -> Procs
 replProc' n x p = map go [0..n-1] where
   go i = substi x i p
 
 replPref :: Int -> Name -> Pref -> Proc -> Proc
 replPref n x pref p =
   case pref of
-    TenSplit c [a] -> [TenSplit c (replArg n x a)] `actP` Procs (replProc' n x p)
-    ParSplit c [a] -> [ParSplit c (replArg n x a)] `actP` Procs (replProc  n x p)
+    TenSplit c [a] -> [TenSplit c (replArg n x a)] `actP` replProc' n x p
+    ParSplit c [a] -> [ParSplit c (replArg n x a)] `actP` replProc  n x p
     TenSplit{}     -> error "replPref/Ten"
     ParSplit{}     -> error "replPref/Par"
     Send _c _e     -> error "replPref/Send"
@@ -137,8 +130,15 @@ replPref n x pref p =
     Nu _c _d       -> error "replPref/Nu"
     NewSlice _t _x -> error "replPref/NewSlice"
 
-replProc :: Int -> Name -> Proc -> [Proc]
-replProc n x (Act prefs0 procs) =
-  case prefs0 of
-    []           -> replProcs n x procs
-    pref : prefs -> [replPref n x pref (Act prefs procs)]
+replProc :: Int -> Name -> Proc -> Procs
+replProc n x p0 =
+  case p0 of
+    Act prefs0 procs ->
+      case prefs0 of
+        []           -> replProcs n x procs
+        pref : prefs -> [replPref n x pref (Act prefs procs)]
+    -- If Ax are expanded before, nothing to do here
+    -- Otherwise this should do the same as the
+    -- replication of the expansion.
+    Ax{} -> error "replProcs/Ax"
+    At{} -> error "replProcs/At"

@@ -14,22 +14,21 @@ data Dec
   | Sig Name Term
   deriving (Eq,Ord,Show,Read)
 
-data Proc = Act [Pref] Procs
-  deriving (Eq,Ord,Show,Read)
-
-data Procs
-  = Procs [Proc]
+data Proc
+  = Act [Pref] Procs
   | Ax Session Channel Channel [Channel]
   | At Term [Channel]
   deriving (Eq,Ord,Show,Read)
 
+type Procs = [Proc]
+
 type Act = Pref
 data Pref
   = Nu ChanDec ChanDec
-  | ParSplit Name [ChanDec]
-  | TenSplit Name [ChanDec]
-  | Send     Name Term
-  | Recv     Name VarDec
+  | ParSplit Channel [ChanDec]
+  | TenSplit Channel [ChanDec]
+  | Send     Channel Term
+  | Recv     Channel VarDec
   | NewSlice Term Name
   deriving (Eq,Ord,Show,Read)
 
