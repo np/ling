@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
-import System.IO ( stdin, stderr, hPutStrLn, hGetContents )
+import System.IO ( stderr, hPutStrLn )
 import System.Environment ( getArgs )
 import System.Exit ( exitFailure )
 import Control.Lens
@@ -39,7 +39,7 @@ defaultOpts :: Opts
 defaultOpts = Opts False False False False False False defaultCheckOpts
 
 putStrV :: Verbosity -> String -> IO ()
-putStrV v s = if v > 1 then putStrLn s else return ()
+putStrV v = when (v > 1) . putStrLn
 
 prims :: String
 prims = unlines
@@ -64,7 +64,7 @@ run :: (Print a, Show a) => Opts -> ParseFun a -> String -> IO a
 run opts p s = do
    when (opts ^. tokens) $ do
      putStrLn "Tokens:"
-     putStrLn $ show ts
+     print ts
    case p ts of
      Bad e    -> do putStrLn "\nParse              Failed...\n"
                     putStrLn e
@@ -85,7 +85,7 @@ transP opts prg = do
   when (opts ^. check) $ do
     runErr . runTC (opts ^. checkOpts) . checkProgram $ nprg
     putStrLn "Checking Sucessful!"
-  when (opts ^. compile) $ do
+  when (opts ^. compile) $
     putStrLn $ "\n[Transformed tree]\n\n" ++ C.printTree tree
 
   where nprg = norm prg
@@ -100,7 +100,7 @@ showTree opts tree
 
 mainArgs :: Opts -> [String] -> IO ()
 mainArgs opts args0 = case args0 of
-  [] -> hGetContents stdin >>= run opts pProgram >>= transP opts
+  [] -> getContents >>= run opts pProgram >>= transP opts
   "--tokens":args -> mainArgs (opts & tokens .~ True) args
   "--abstree":args -> mainArgs (opts & abstree .~ True) args
   "--lintree":args -> mainArgs (opts & lintree .~ True) args
