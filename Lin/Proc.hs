@@ -3,7 +3,6 @@ module Lin.Proc where
 import Lin.Abs (Name(Name))
 import qualified Data.Set as Set
 import Data.Set (Set)
-import Data.Maybe
 import Data.List
 
 import Lin.Utils
@@ -12,9 +11,9 @@ import Lin.Subst
 import Lin.Session
 
 freeChans :: Proc -> Set Channel
-freeChans (Act acts procs) = fcAct acts procs
-freeChans (Ax _ c d es)    = l2s (c:d:es)
-freeChans (At _ cs)        = l2s cs
+freeChans (prefs `Act` procs) = fcAct prefs procs
+freeChans (Ax _ c d es)       = l2s (c:d:es)
+freeChans (At _ cs)           = l2s cs
 
 bndChans :: [ChanDec] -> Set Channel
 bndChans = l2s . map _argName
@@ -22,40 +21,40 @@ bndChans = l2s . map _argName
 fcProcs :: Procs -> Set Channel
 fcProcs = Set.unions . map freeChans
 
-fcAct :: [Act] -> Procs -> Set Channel
-fcAct []         procs = fcProcs procs
-fcAct (act:acts) procs =
-  case act of
+fcAct :: [Pref] -> Procs -> Set Channel
+fcAct []           procs = fcProcs procs
+fcAct (pref:prefs) procs =
+  case pref of
     Nu c d         -> cs `Set.difference` bndChans [c,d]
-    TenSplit c ds  -> c `Set.insert` (cs `Set.difference` bndChans ds)
-    ParSplit c ds  -> c `Set.insert` (cs `Set.difference` bndChans ds)
-    Send c _e      -> c `Set.insert` cs
-    Recv c _xt     -> c `Set.insert` cs
+    TenSplit c ds  -> c  `Set.insert` (cs `Set.difference` bndChans ds)
+    ParSplit c ds  -> c  `Set.insert` (cs `Set.difference` bndChans ds)
+    Send c _e      -> c  `Set.insert` cs
+    Recv c _xt     -> c  `Set.insert` cs
     NewSlice _t _x -> error "fcAct/NewSlice undefined" -- cs ?
-  where cs = fcAct acts procs
+  where cs = fcAct prefs procs
 
 zeroP :: Proc
-zeroP = Act [] []
+zeroP = [] `Act` []
 
 actP :: [Pref] -> Procs -> Proc
-actP pis [Act pis' procs] = Act (pis ++ pis') procs
-actP pis procs            = Act pis           procs
+prefs `actP` [prefs' `Act` procs] = (prefs ++ prefs') `Act` procs
+prefs `actP` procs                = prefs             `Act` procs
+
+actPs :: [Pref] -> Procs -> Procs
+[]    `actPs` procs = procs
+prefs `actPs` procs = [prefs `actP` procs]
 
 filter0s :: Procs -> Procs
-filter0s = mapMaybe filter0
+filter0s = concatMap filter0
 
-filter0Act :: [Pref] -> Procs -> Maybe Proc
-filter0Act prefs procs
-  | null prefs && null procs' = Nothing
-  | otherwise                 = Just (prefs `actP` procs')
-  where procs' = filter0s procs
+actP0s :: [Pref] -> Procs -> Procs
+actP0s prefs procs = prefs `actPs` filter0s procs
 
-filter0 :: Proc -> Maybe Proc
-filter0 p =
-  case p of
-    Act prefs procs -> filter0Act prefs procs
-    Ax{}            -> Just p
-    At{}            -> Just p
+filter0 :: Proc -> Procs
+filter0 p = case p of
+  prefs `Act` procs -> prefs `actP0s` procs
+  Ax{}              -> [p]
+  At{}              -> [p]
 
 suffChan :: Channel -> Int -> Channel
 suffChan (Name c) i = Name (c ++ show i ++ "#")
@@ -88,9 +87,9 @@ fwdParTen rss c d es = pref `actP` ps
     ps   = zipWith4 fwdP ss cs ds ess
     pref = tenSplit' c cs : parSplit' d ds : zipWith parSplit' es (transpose ess)
 
-fwdRcvSnd :: Typ -> Session -> Name -> Channel -> [Name] -> Proc
+fwdRcvSnd :: Typ -> Session -> Channel -> Channel -> [Name] -> Proc
 fwdRcvSnd t s c d es = pref `actP` [fwdP s c d es]
-  where x    = Name "x"
+  where x    = Name $ "x#" ++ unName c -- ++ "#" ++ unName d
         vx   = Def x []
         pref = Recv c (Arg x t) : Send d vx : map (`Send` vx) es
 
@@ -107,16 +106,16 @@ fwdP s0 c d es =
 replProcs :: Int -> Name -> Procs -> Procs
 replProcs n = concatMap . replProc n
 
-substi :: Subst a => Name -> Int -> a -> a
-substi x i = subst1 (x,Lit(fromIntegral i))
+substi :: Subst a => (Name, Int) -> a -> a
+substi (x, i) = subst1 (x, Lit(fromIntegral i))
 
 replArg :: Int -> Name -> ChanDec -> [ChanDec]
 replArg n x (Arg d s) = map go [0..n-1] where
-  go i = Arg (suffChan d i) (substi x i s)
+  go i = Arg (suffChan d i) (substi (x, i) s)
 
 replProc' :: Int -> Name -> Proc -> Procs
 replProc' n x p = map go [0..n-1] where
-  go i = substi x i p
+  go i = substi (x, i) p
 
 replPref :: Int -> Name -> Pref -> Proc -> Proc
 replPref n x pref p =
@@ -133,10 +132,10 @@ replPref n x pref p =
 replProc :: Int -> Name -> Proc -> Procs
 replProc n x p0 =
   case p0 of
-    Act prefs0 procs ->
+    prefs0 `Act` procs ->
       case prefs0 of
         []           -> replProcs n x procs
-        pref : prefs -> [replPref n x pref (Act prefs procs)]
+        pref : prefs -> [replPref n x pref (prefs `Act` procs)]
     -- If Ax are expanded before, nothing to do here
     -- Otherwise this should do the same as the
     -- replication of the expansion.
