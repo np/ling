@@ -18,6 +18,7 @@ import Lin.Reify
 import Lin.Utils
 import Lin.Print.Instances ()
 import Lin.Compile.CXX
+import qualified Lin.Norm as N
 import Lin.Proc.Checker (checkProgram)
 import Lin.Term.Checker (runTC, debugChecker, CheckOpts, defaultCheckOpts)
 
@@ -54,8 +55,14 @@ prims = unlines
   ,"-- end prims"
   ]
 
+primsN :: [N.Dec]
+primsN =
+   case pListDec (myLLexer prims) of
+     Bad e -> error $ "Bad prims\n" ++ e
+     Ok  t -> norm t
+
 runFile :: (Print a, Show a) => Opts -> ParseFun a -> FilePath -> IO a
-runFile v p f = readFile f >>= run v p . (prims ++)
+runFile v p f = readFile f >>= run v p
 
 runProgram :: Opts -> FilePath -> IO ()
 runProgram opts f = runFile opts pProgram f >>= transP opts
@@ -73,6 +80,9 @@ run opts p s = do
                     return tree
   where ts = myLLexer s
 
+addPrims :: N.Program -> N.Program
+addPrims (N.Program ds) = N.Program (primsN ++ ds)
+
 runErr :: Err a -> IO a
 runErr (Ok a)  = return a
 runErr (Bad s) = do hPutStrLn stderr s
@@ -83,7 +93,7 @@ transP opts prg = do
   when (opts ^. normtree) $
     putStrLn (pretty nprg)
   when (opts ^. check) $ do
-    runErr . runTC (opts ^. checkOpts) . checkProgram $ nprg
+    runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims $ nprg
     putStrLn "Checking Sucessful!"
   when (opts ^. compile) $
     putStrLn $ "\n[Transformed tree]\n\n" ++ C.printTree tree
