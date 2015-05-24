@@ -80,6 +80,13 @@ extractSession l =
     s:_ -> s
     _   -> error "Missing type signature in `new`"
 
+flatRSession :: RSession -> [Session]
+flatRSession (Repl s (Lit n)) = replicate (fromInteger n) s
+flatRSession _ = error "flatRSession"
+
+flatSessions :: Sessions -> [Session]
+flatSessions = concatMap flatRSession
+
 projRSessions :: Integer -> Sessions -> Session
 projRSessions _ []
   = error "projRSessions: out of bound"
