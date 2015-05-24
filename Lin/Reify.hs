@@ -123,10 +123,22 @@ instance Norm Pref where
 reifyPref :: N.Pref -> Pref
 reifyPref = reify
 
+{-
+-- isInfix xs = match "_[^_]*_" xs
+isInfix (Name('_':xs@(_:_))) = last xs == '_' && '_' `notElem` init xs
+isInfix _                    = False
+-}
+isInfix :: Name -> Maybe Op
+isInfix (Name "_+_") = Just Plus
+isInfix _            = Nothing
+
 instance Norm Term where
   type Normalized Term = N.Term
 
   reify e0 = case e0 of
+    N.Def x []         -> Var x
+    N.Def x [e1,e2]     | Just op <- isInfix x
+                       -> Infix (reify e1) op (reify e2)
     N.Def x es         -> Def x (reify es)
     N.Lit n            -> Lit n
     N.Proc cs p        -> Proc (reify cs) (reify p)
