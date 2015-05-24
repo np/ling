@@ -19,6 +19,7 @@ import Lin.Utils
 import Lin.Print.Instances ()
 import Lin.Compile.CXX
 import qualified Lin.Norm as N
+import qualified Lin.Sequential as S
 import Lin.Proc.Checker (checkProgram)
 import Lin.Term.Checker (runTC, debugChecker, CheckOpts, defaultCheckOpts)
 
@@ -31,13 +32,13 @@ myLLexer = myLexer
 
 type Verbosity = Int
 
-data Opts = Opts { _tokens, _abstree, _lintree, _normtree, _check, _compile :: Bool
+data Opts = Opts { _tokens, _abstree, _lintree, _normtree, _check, _sequential, _compile :: Bool
                  , _checkOpts :: CheckOpts }
 
 $(makeLenses ''Opts)
 
 defaultOpts :: Opts
-defaultOpts = Opts False False False False False False defaultCheckOpts
+defaultOpts = Opts False False False False False False False defaultCheckOpts
 
 putStrV :: Verbosity -> String -> IO ()
 putStrV v = when (v > 1) . putStrLn
@@ -95,11 +96,14 @@ transP opts prg = do
   when (opts ^. check) $ do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims $ nprg
     putStrLn "Checking Sucessful!"
+  when (opts ^. sequential) $
+    putStrLn $ "\n[Sequential process]\n\n" ++ printTree stree
   when (opts ^. compile) $
     putStrLn $ "\n[Transformed tree]\n\n" ++ C.printTree tree
 
-  where nprg = norm prg
-        tree = transProgram nprg
+  where nprg  = norm prg
+        tree  = transProgram nprg
+        stree = S.transProgram nprg
 
 showTree :: (Show a, Print a) => Opts -> a -> IO ()
 showTree opts tree
@@ -118,6 +122,7 @@ mainArgs opts args0 = case args0 of
   "--check":args -> mainArgs (opts & check .~ True) args
   "--debug-check":args -> mainArgs (opts & check .~ True & checkOpts . debugChecker .~ True) args
   "--compile":args -> mainArgs (opts & compile .~ True) args
+  "--seq":args -> mainArgs (opts & sequential .~ True) args
   [f] -> runProgram opts f
   fs  -> mapM_ (\f -> putStrLn f >> runProgram opts f) fs
 
