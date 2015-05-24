@@ -19,19 +19,22 @@ doc = (:)
 render :: Doc -> String
 render d = rend 0 (map ($ "") $ d []) "" where
   rend i ss = case ss of
-    "["      :ts -> showChar '[' . rend i ts
-    "("      :ts -> showChar '(' . rend i ts
+    "\n"     :ts -> new i . rend i ts
+    [c]      :ts | c `elem` "{[(.?!" -> showChar c . rend i ts
+    "="      :ts -> showString " =" . new (i+1) . rend (i+1) ts
+    ".\n"    :ts -> new (i-1) . showChar '.' . new (i-1) . rend (i-1) ts
+{-
     "{"      :ts -> showChar '{' . new (i+1) . rend (i+1) ts
     "}" : ";":ts -> new (i-1) . space "}" . showChar ';' . new (i-1) . rend (i-1) ts
     "}"      :ts -> new (i-1) . showChar '}' . new (i-1) . rend (i-1) ts
     ";"      :ts -> showChar ';' . new i . rend i ts
+-}
     t  : "," :ts -> showString t . space "," . rend i ts
-    t  : ")" :ts -> showString t . showChar ')' . rend i ts
-    t  : "]" :ts -> showString t . showChar ']' . rend i ts
+    t  : [c] :ts | c `elem` "}])" -> showString t . showChar c . rend i ts
     t        :ts -> space t . rend i ts
     _            -> id
   new i   = showChar '\n' . replicateS (2*i) (showChar ' ') . dropWhile isSpace
-  space t = showString t . (\s -> if null s then "" else (' ':s))
+  space t = showString t . (\s -> if null s then "" else ' ':s)
 
 parenth :: Doc -> Doc
 parenth ss = doc (showChar '(') . ss . doc (showChar ')')
@@ -57,6 +60,9 @@ instance Print a => Print [a] where
 instance Print Char where
   prt _ s = doc (showChar '\'' . mkEsc '\'' s . showChar '\'')
   prtList s = doc (showChar '"' . concatS (map (mkEsc '"') s) . showChar '"')
+
+nl :: Doc
+nl = doc $ showChar '\n'
 
 mkEsc :: Char -> Char -> ShowS
 mkEsc q s = case s of
@@ -95,12 +101,12 @@ instance Print Program where
 
 instance Print Dec where
   prt i e = case e of
-   Dec name optchandecs proc -> prPrec i 0 (concatD [prt 0 name , prt 0 optchandecs , doc (showString "=") , prt 0 proc , doc (showString ".")])
+   Dec name optchandecs proc -> prPrec i 0 (concatD [prt 0 name , prt 0 optchandecs , doc (showString "=") , nl , prt 0 proc , doc (showString ".\n")])
    Sig name term -> prPrec i 0 (concatD [prt 0 name , doc (showString ":") , prt 0 term , doc (showString ".")])
 
   prtList es = case es of
    [] -> (concatD [])
-   x:xs -> (concatD [prt 0 x , prt 0 xs])
+   x:xs -> (concatD [prt 0 x , nl , prt 0 xs])
 
 instance Print VarDec where
   prt i e = case e of
@@ -183,7 +189,7 @@ instance Print Pref where
 
   prtList es = case es of
    [] -> (concatD [])
-   x:xs -> (concatD [prt 0 x , prt 0 xs])
+   x:xs -> (concatD [prt 0 x , nl , prt 0 xs])
 
 instance Print OptSession where
   prt i e = case e of
@@ -225,6 +231,3 @@ instance Print CSession where
   prt i e = case e of
    Cont session -> prPrec i 0 (concatD [doc (showString ".") , prt 0 session])
    Done  -> prPrec i 0 (concatD [])
-
-
-
