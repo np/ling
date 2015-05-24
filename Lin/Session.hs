@@ -65,7 +65,13 @@ defaultEnd (Just s) = s
 sessionStep :: Session -> Session
 sessionStep (Snd _ s) = s
 sessionStep (Rcv _ s) = s
-sessionStep _         = error "sessionStep: no steps"
+sessionStep s         = error $ "sessionStep: no steps " ++ show s
+
+extractDuals :: Dual a => (Maybe a , Maybe a) -> Maybe (a , a)
+extractDuals (Nothing , Nothing) = Nothing
+extractDuals (Just s0 , Nothing) = Just (s0, dual s0)
+extractDuals (Nothing , Just s1) = Just (dual s1, s1)
+extractDuals (Just s0 , Just s1) = Just (s0, s1)
 
 -- TODO: would it be nicer with the First monoid
 extractSession :: [Maybe Session] -> Session
