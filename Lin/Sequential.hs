@@ -97,17 +97,18 @@ statusAt c env = env ^. locs . at l . to f
 -- TODO generalize by looking deeper at what is ready now
 isReady :: Env -> [Pref] -> Maybe ([Pref], [Pref])
 isReady _ [] = error "isReady: impossible"
-isReady env (act : acts) =
-  case act of
-    Split{} -> Just ([act], acts) -- error "TODO: float out?"
-    NewSlice{} -> Just ([act], acts)
-    Nu{} -> Just ([act], acts)
-    Send c _ ->
-      if statusAt c env == Empty then Just ([act], acts)
-      else Nothing
-    Recv c _ ->
-      if statusAt c env == Full  then Just ([act], acts)
-      else Nothing
+isReady env (pref : prefs)
+  | isReadyPref env pref = Just ([pref], prefs)
+  | otherwise            = Nothing
+
+isReadyPref :: Env -> Pref -> Bool
+isReadyPref env pref =
+  case pref of
+    Split{}    -> True
+    NewSlice{} -> True
+    Nu{}       -> True
+    Send c _   -> statusAt c env == Empty
+    Recv c _   -> statusAt c env == Full
 
 transPi :: Channel -> [ChanDec] -> Env -> Env
 transPi c dOSs env =
