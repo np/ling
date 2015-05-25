@@ -8,4 +8,5 @@ cmdr() {
     git add fixtures/"$dir/$i".ll tests/"$dir/$i".t
   done
 }
+alias cmdrseq='cmdrecord tests/sequence/all.t --env empty -- Lin --seq < fixtures/sequence/*.ll'
 export PATH=`pwd`/dist/build/Lin:$PATH
