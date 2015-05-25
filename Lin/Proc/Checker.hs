@@ -32,6 +32,11 @@ checkConflictingChans proto cs =
     check cc = assert (Set.size cc < 2)
       ["These channels should be used independently:", pretty (s2l cc)]
 
+checkOrderedChans :: Proto -> [Channel] -> TC ()
+checkOrderedChans proto cs =
+  assert (or [ cs `subList` os | os <- proto ^. orders ])
+    ["These channels should be used in-order:", pretty cs]
+
 checkSession :: Name -> Session -> Maybe Session -> TC ()
 checkSession c s0 Nothing   = assertEqual s0 End ["Unused channel: " ++ pretty c]
 checkSession c s0 (Just s1) =
@@ -102,7 +107,7 @@ checkProcs (proc : procs) = do
   ks <- mergeConstraints ks0 ks1
   let mchans = Map.mergeWithKey (error "mergeSession") id id
                                 (proto0 ^. chans) (proto1 ^. chans)
-  return $ MkProto mchans ks
+  return $ MkProto mchans ks (proto0 ^. orders ++ proto1 ^. orders)
 
 checkProgram :: Program -> TC ()
 checkProgram (Program decs) = checkDecs decs
@@ -127,13 +132,17 @@ checkChanDec proto (Arg c s) = checkOptSession c s $ chanSession c proto
 checkChanDecs :: Proto -> [ChanDec] -> TC ()
 checkChanDecs = mapM_ . checkChanDec
 
+kindLabel :: TraverseKind -> String
+kindLabel ParK = "par/⅋"
+kindLabel TenK = "tensor/⊗"
+kindLabel SeqK = "sequence/»"
+
 actLabel :: Act -> String
-actLabel Nu{}       = "restriction/ν"
-actLabel ParSplit{} = "par/⅋"
-actLabel TenSplit{} = "tensor/⊗"
-actLabel Send{}     = "send"
-actLabel Recv{}     = "recv"
-actLabel NewSlice{} = "slice"
+actLabel Nu{}          = "restriction/ν"
+actLabel (Split k _ _) = "split:" ++ kindLabel k
+actLabel Send{}        = "send"
+actLabel Recv{}        = "recv"
+actLabel NewSlice{}    = "slice"
 
 debugCheckAct :: Proto -> Act -> [Act] -> Procs -> TC Proto -> TC Proto
 debugCheckAct proto act acts procs m = do
@@ -215,13 +224,21 @@ checkAct (act : acts) procs = do
         checkDual cNSession dNSession
         proto' <- checkConflictingChans proto ds
         return $ proto' `rmChans` ds
-      TenSplit c dOSs -> do
-        (ds,s) <- helpCheckParTen proto c dOSs Ten
-        proto' <- checkConflictingChans proto ds
-        return $ proto' `rmChans` ds `addChanOnly` (c,s)
-      ParSplit c dOSs -> do
-        (ds,s) <- helpCheckParTen proto c dOSs Par
-        return $ proto `rmChans` ds `addChan` (c,s)
+      Split k c dOSs -> do
+        assertAbsent c proto
+        let ds = map _argName dOSs
+            dsSessions = map defaultEnd $ chanSessions ds proto
+            s = array k (list dsSessions)
+        mapM_ (checkChanDec proto) dOSs
+        case k of
+          TenK -> do
+            proto' <- checkConflictingChans proto ds
+            return $ proto' `rmChans` ds `addChanOnly` (c,s)
+          ParK ->
+            return $ proto `rmChans` ds `addChan` (c,s)
+          SeqK -> do
+            checkOrderedChans proto ds
+            return $ proto `rmChans` ds `addChanOnly` (c,s)
       Send c e -> do
         let cSession = defaultEnd $ chanSession c proto
         typ <- inferTerm e
@@ -231,10 +248,3 @@ checkAct (act : acts) procs = do
         return $ proto `addChan` (c, Rcv typ cSession)
       NewSlice t _ ->
         return $ replProto t proto
-  where
-    helpCheckParTen proto c dOSs mk = do
-      assertAbsent c proto
-      let ds = map _argName dOSs
-          dsSessions = map defaultEnd $ chanSessions ds proto
-      mapM_ (checkChanDec proto) dOSs
-      return (ds, mk (list dsSessions))

@@ -54,30 +54,30 @@ import Lin.ErrM
   '-o' { PT _ (TS _ 8) }
   '.' { PT _ (TS _ 9) }
   ':' { PT _ (TS _ 10) }
-  '<' { PT _ (TS _ 11) }
-  '=' { PT _ (TS _ 12) }
-  '>' { PT _ (TS _ 13) }
-  '?' { PT _ (TS _ 14) }
-  '@' { PT _ (TS _ 15) }
-  'Fwd' { PT _ (TS _ 16) }
-  'Log' { PT _ (TS _ 17) }
-  'Sort' { PT _ (TS _ 18) }
-  'Type' { PT _ (TS _ 19) }
-  '[' { PT _ (TS _ 20) }
-  '[|' { PT _ (TS _ 21) }
-  ']' { PT _ (TS _ 22) }
-  '^' { PT _ (TS _ 23) }
-  'as' { PT _ (TS _ 24) }
-  'end' { PT _ (TS _ 25) }
-  'fwd' { PT _ (TS _ 26) }
-  'new' { PT _ (TS _ 27) }
-  'recv' { PT _ (TS _ 28) }
-  'send' { PT _ (TS _ 29) }
-  'slice' { PT _ (TS _ 30) }
-  'unpack' { PT _ (TS _ 31) }
-  '{' { PT _ (TS _ 32) }
-  '|' { PT _ (TS _ 33) }
-  '|]' { PT _ (TS _ 34) }
+  ':]' { PT _ (TS _ 11) }
+  '<' { PT _ (TS _ 12) }
+  '=' { PT _ (TS _ 13) }
+  '>' { PT _ (TS _ 14) }
+  '?' { PT _ (TS _ 15) }
+  '@' { PT _ (TS _ 16) }
+  'Fwd' { PT _ (TS _ 17) }
+  'Log' { PT _ (TS _ 18) }
+  'Sort' { PT _ (TS _ 19) }
+  'Type' { PT _ (TS _ 20) }
+  '[' { PT _ (TS _ 21) }
+  '[:' { PT _ (TS _ 22) }
+  ']' { PT _ (TS _ 23) }
+  '^' { PT _ (TS _ 24) }
+  'as' { PT _ (TS _ 25) }
+  'end' { PT _ (TS _ 26) }
+  'fwd' { PT _ (TS _ 27) }
+  'new' { PT _ (TS _ 28) }
+  'recv' { PT _ (TS _ 29) }
+  'send' { PT _ (TS _ 30) }
+  'slice' { PT _ (TS _ 31) }
+  'unpack' { PT _ (TS _ 32) }
+  '{' { PT _ (TS _ 33) }
+  '|' { PT _ (TS _ 34) }
   '}' { PT _ (TS _ 35) }
   '~' { PT _ (TS _ 36) }
 
@@ -195,6 +195,7 @@ Pref :: { Pref }
 Pref : 'new' '(' ChanDec ',' ChanDec ')' { Nu $3 $5 } 
   | Name '{' ListChanDec '}' { ParSplit $1 $3 }
   | Name '[' ListChanDec ']' { TenSplit $1 $3 }
+  | Name '[:' ListChanDec ':]' { SeqSplit $1 $3 }
   | 'slice' Term3 'as' Name { NewSlice $2 $4 }
   | 'send' Name Term3 { Send $2 $3 }
   | 'recv' Name VarDec { Recv $2 $3 }
@@ -214,7 +215,7 @@ Session4 :: { Session }
 Session4 : 'end' { End } 
   | '{' ListRSession '}' { Par $2 }
   | '[' ListRSession ']' { Ten $2 }
-  | '[|' ListRSession '|]' { Seq $2 }
+  | '[:' ListRSession ':]' { Seq $2 }
   | '(' Session ')' { $2 }
 
 

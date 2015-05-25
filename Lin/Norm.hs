@@ -22,11 +22,16 @@ data Proc
 
 type Procs = [Proc]
 
+data TraverseKind
+  = ParK
+  | TenK
+  | SeqK
+  deriving (Eq,Ord,Show,Read)
+
 type Act = Pref
 data Pref
-  = Nu ChanDec ChanDec
-  | ParSplit Channel [ChanDec]
-  | TenSplit Channel [ChanDec]
+  = Nu       ChanDec ChanDec
+  | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term
   | Recv     Channel VarDec
   | NewSlice Term Name

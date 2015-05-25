@@ -15,8 +15,9 @@ import Data.Map (Map)
 import Control.Lens
 
 -- These constraints are solved!
-data Proto = MkProto { _chans :: Map Channel Session
+data Proto = MkProto { _chans       :: Map Channel Session
                      , _constraints :: Constraints
+                     , _orders      :: [[Channel]]
                      }
 
 $(makeLenses ''Proto)
@@ -28,6 +29,10 @@ prettyProto p =
   if p ^. constraints . to noConstraints then [] else
   " constraints:"
   : map ("  " ++) (prettyConstraints (p ^. constraints))
+  ++
+  if p ^. orders . to null then [] else
+  " orders:"
+  : map ("  " ++) (map show (p ^. orders))
 
 chanDecs :: Proto -> [Arg Session]
 chanDecs p = p ^.. chans . to m2l . each . to (uncurry Arg)
@@ -36,10 +41,12 @@ prettyChanDecs :: Proto -> [String]
 prettyChanDecs = prettyList . chanDecs
 
 emptyProto :: Proto
-emptyProto = MkProto Map.empty emptyConstraints
+emptyProto = MkProto Map.empty emptyConstraints []
 
 addChanOnly :: Proto -> (Channel,Session) -> Proto
-addChanOnly p (c,s) = p & chans %~ at c .~ Just s
+addChanOnly p (c,s) = p & chans  %~ at c .~ Just s
+                        & orders %~ ([]:)
+                        & orders . mapped %~ (c:)
 
 addChan :: Proto -> (Channel,Session) -> Proto
 addChan p (c,s) = addChanOnly p (c,s)
@@ -54,6 +61,7 @@ isEmptyProto p = p ^. chans . to Map.null
 rmChan :: Channel -> Proto -> Proto
 rmChan c p = p & chans . at c .~ Nothing
                & constraints %~ mapConstraints (c `Set.delete`)
+               & orders . mapped %~ filter (/= c)
 
 rmChans :: Proto -> [Channel] -> Proto
 rmChans = foldr rmChan
@@ -65,7 +73,9 @@ chanSessions :: [Channel] -> Proto -> [Maybe Session]
 chanSessions cs p = map (`chanSession` p) cs
 
 mkProto :: [(Channel,Session)] -> Proto
-mkProto cs = MkProto (l2m cs) (Constraints (l2s [l2s (map fst cs)]))
+mkProto css = MkProto (l2m css) (Constraints (l2s [l2s cs]))
+                      (map return cs)
+  where cs = map fst css
 
 protoAx :: Session -> Channel -> Channel -> [Channel] -> Proto
 protoAx s c d es = mkProto ((c,s):(d,dual s):map (\e -> (e, log s)) es)

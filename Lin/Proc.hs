@@ -26,8 +26,7 @@ fcAct []           procs = fcProcs procs
 fcAct (pref:prefs) procs =
   case pref of
     Nu c d         -> cs `Set.difference` bndChans [c,d]
-    TenSplit c ds  -> c  `Set.insert` (cs `Set.difference` bndChans ds)
-    ParSplit c ds  -> c  `Set.insert` (cs `Set.difference` bndChans ds)
+    Split _ c ds   -> c  `Set.insert` (cs `Set.difference` bndChans ds)
     Send c _e      -> c  `Set.insert` cs
     Recv c _xt     -> c  `Set.insert` cs
     NewSlice _t _x -> error "fcAct/NewSlice undefined" -- cs ?
@@ -65,11 +64,8 @@ suffChans c n = map (suffChan c) [0..n]
 noSession :: Channel -> ChanDec
 noSession c = Arg c Nothing
 
-parSplit' :: Channel -> [Channel] -> Pref
-parSplit' c = ParSplit c . map noSession
-
-tenSplit' :: Channel -> [Channel] -> Pref
-tenSplit' c = TenSplit c . map noSession
+split' :: TraverseKind -> Channel -> [Channel] -> Pref
+split' k c = Split k c . map noSession
 
 unRSession :: RSession -> Session
 unRSession (Repl s (Lit 1)) = s
@@ -85,7 +81,7 @@ fwdParTen rss c d es = pref `actP` ps
     ds   = suffChans d n
     ess  = map (\i -> map (`suffChan` i) es) [0..n]
     ps   = zipWith4 fwdP ss cs ds ess
-    pref = tenSplit' c cs : parSplit' d ds : zipWith parSplit' es (transpose ess)
+    pref = split' TenK c cs : split' ParK d ds : zipWith (split' ParK) es (transpose ess)
 
 fwdRcvSnd :: Typ -> Session -> Channel -> Channel -> [Name] -> Proc
 fwdRcvSnd t s c d es = pref `actP` [fwdP s c d es]
@@ -120,10 +116,8 @@ replProc' n x p = map go [0..n-1] where
 replPref :: Int -> Name -> Pref -> Proc -> Proc
 replPref n x pref p =
   case pref of
-    TenSplit c [a] -> [TenSplit c (replArg n x a)] `actP` replProc' n x p
-    ParSplit c [a] -> [ParSplit c (replArg n x a)] `actP` replProc  n x p
-    TenSplit{}     -> error "replPref/Ten"
-    ParSplit{}     -> error "replPref/Par"
+    Split k c [a]  -> [Split k c (replArg n x a)] `actP` replProc' n x p
+    Split{}        -> error "replPref/Split"
     Send _c _e     -> error "replPref/Send"
     Recv _c _xt    -> error "replPref/Recv"
     Nu _c _d       -> error "replPref/Nu"

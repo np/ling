@@ -60,8 +60,7 @@ hidePrefs = flip (foldr hidePref)
 
 instance Subst Pref where
   subst f pref = case pref of
-    TenSplit c ds -> TenSplit c (subst f ds)
-    ParSplit c ds -> ParSplit c (subst f ds)
+    Split k c ds  -> Split k c (subst f ds)
     Send c e      -> Send c (subst f e)
     Recv c arg    -> Recv c (subst f arg)
     Nu c d        -> Nu (subst f c) (subst f d)

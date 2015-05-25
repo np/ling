@@ -62,6 +62,7 @@ separator Snk "" ;
 Nu.       Pref ::= "new" "(" ChanDec "," ChanDec ")" ;
 ParSplit. Pref ::= Name "{" [ChanDec] "}" ;
 TenSplit. Pref ::= Name "[" [ChanDec] "]" ;
+SeqSplit. Pref ::= Name "[:" [ChanDec] ":]" ;
 NewSlice. Pref ::= "slice" Term3 "as" Name ;
 Send.     Pref ::= "send" Name Term3 ;
 Recv.     Pref ::= "recv" Name VarDec ;
@@ -75,7 +76,7 @@ SoSession. OptSession ::= ":" Session ;
 End.  Session4 ::= "end" ;
 Par.  Session4 ::= "{" [RSession] "}" ;
 Ten.  Session4 ::= "[" [RSession] "]" ;
-Seq.  Session4 ::= "[|" [RSession] "|]" ;
+Seq.  Session4 ::= "[:" [RSession] ":]" ;
 _.    Session4 ::= "(" Session ")" ;
 
 -- Applicative sessions

@@ -66,6 +66,7 @@ data Pref =
    Nu ChanDec ChanDec
  | ParSplit Name [ChanDec]
  | TenSplit Name [ChanDec]
+ | SeqSplit Name [ChanDec]
  | NewSlice Term Name
  | Send Name Term
  | Recv Name VarDec

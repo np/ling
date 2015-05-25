@@ -4,6 +4,11 @@ import Prelude hiding (log)
 import Data.Maybe
 import Lin.Norm
 
+array :: TraverseKind -> Sessions -> Session
+array ParK = Par
+array TenK = Ten
+array SeqK = Seq
+
 one :: Session -> RSession
 one s = Repl s (Lit 1)
 

@@ -108,3 +108,10 @@ infixr 3 <&&>
 mx <&&> my = do x <- mx
                 if x then my
                      else return False
+
+subList :: Eq a => [a] -> [a] -> Bool
+subList []    _  = True
+subList (_:_) [] = False
+subList (x:xs) (y:ys)
+  | x == y    = xs     `subList` ys
+  | otherwise = (x:xs) `subList` ys

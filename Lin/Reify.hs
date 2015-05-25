@@ -105,20 +105,22 @@ instance Norm Snk where
 instance Norm Pref where
   type Normalized Pref = N.Pref
   reify e = case e of
-    N.Nu c d        -> Nu (reify c) (reify d)
-    N.ParSplit c ds -> ParSplit c (reify ds)
-    N.TenSplit c ds -> TenSplit c (reify ds)
-    N.Send     c t  -> Send     c (reify t)
-    N.Recv     c a  -> Recv     c (reify a)
-    N.NewSlice t x  -> NewSlice (reify t) x
+    N.Nu c d            -> Nu (reify c) (reify d)
+    N.Split N.ParK c ds -> ParSplit c (reify ds)
+    N.Split N.TenK c ds -> TenSplit c (reify ds)
+    N.Split N.SeqK c ds -> SeqSplit c (reify ds)
+    N.Send     c t      -> Send     c (reify t)
+    N.Recv     c a      -> Recv     c (reify a)
+    N.NewSlice t x      -> NewSlice (reify t) x
 
   norm  e = case e of
     Nu c d        -> N.Nu (norm c) (norm d)
-    ParSplit c ds -> N.ParSplit c (norm ds)
-    TenSplit c ds -> N.TenSplit c (norm ds)
-    Send     c t  -> N.Send     c (norm t)
-    Recv     c a  -> N.Recv     c (norm a)
-    NewSlice t x  -> N.NewSlice (norm t) x
+    ParSplit c ds -> N.Split N.ParK c (norm ds)
+    TenSplit c ds -> N.Split N.TenK c (norm ds)
+    SeqSplit c ds -> N.Split N.SeqK c (norm ds)
+    Send     c t  -> N.Send         c (norm t)
+    Recv     c a  -> N.Recv         c (norm a)
+    NewSlice t x  -> N.NewSlice     (norm t) x
 
 reifyPref :: N.Pref -> Pref
 reifyPref = reify

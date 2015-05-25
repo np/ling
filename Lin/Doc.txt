@@ -34,7 +34,7 @@ The symbols used in Lin are the following:
   | ( | ) | + | <
   | > | -> | * | |
   | @ | { | } | [
-  | ] | [| | |] | !
+  | ] | [: | :] | !
   | ? | ~ | -o | ^
 
 ===Comments===
@@ -93,6 +93,7 @@ All other symbols are terminals.
   | //Pref// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
   |  |  **|**  | //Name// ``{`` //[ChanDec]// ``}`` 
   |  |  **|**  | //Name// ``[`` //[ChanDec]// ``]`` 
+  |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]``
   |  |  **|**  | ``slice`` //Term3// ``as`` //Name// 
   |  |  **|**  | ``send`` //Name// //Term3// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
@@ -103,7 +104,7 @@ All other symbols are terminals.
   | //Session4// | -> | ``end`` 
   |  |  **|**  | ``{`` //[RSession]// ``}`` 
   |  |  **|**  | ``[`` //[RSession]// ``]`` 
-  |  |  **|**  | ``[|`` //[RSession]// ``|]`` 
+  |  |  **|**  | ``[:`` //[RSession]// ``:]``
   |  |  **|**  | ``(`` //Session// ``)`` 
   | //Session3// | -> | ``Sort`` //Term3// //Term3// 
   |  |  **|**  | ``Log`` //Session4// 

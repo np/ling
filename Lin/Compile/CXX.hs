@@ -190,9 +190,7 @@ transAct env (pref:prefs) procs =
           -- TODO use addChans'
       in
       decNoInit typ cid ++ transAct env' prefs procs
-    N.ParSplit c ds ->
-      transAct (transPi c ds env) prefs procs
-    N.TenSplit c ds ->
+    N.Split _ c ds ->
       transAct (transPi c ds env) prefs procs
     N.Send c expr ->
       let (l, env') = actEnv c Read env in
@@ -246,8 +244,7 @@ isReady :: Env -> [N.Pref] -> Maybe ([N.Pref], [N.Pref])
 isReady _ [] = error "isReady: impossible"
 isReady env (act : acts) =
   case act of
-    N.ParSplit{} -> Just ([act], acts) -- error "TODO: float out?"
-    N.TenSplit{} -> Just ([act], acts) -- error "TODO: float out?"
+    N.Split{} -> Just ([act], acts) -- error "TODO: float out?"
     N.Nu{} -> error "TODO: Nu: float out?"
     N.Send c _ ->
       let l = (env ! c) ^. chanLVal in

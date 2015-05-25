@@ -83,6 +83,7 @@ transPref x = case x of
   Nu chandec1 chandec2  -> failure x
   ParSplit name chandecs  -> failure x
   TenSplit name chandecs  -> failure x
+  SeqSplit name chandecs  -> failure x
   NewSlice term name  -> failure x
   Send name term  -> failure x
   Recv name vardec  -> failure x

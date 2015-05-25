@@ -232,6 +232,21 @@ par_ten_ten_v2 (c : {[?Int, !Int], [!Int, ?Int]}) =
   recv l (y : Int)
   send g 2 
   .
+seq3 (c : [: !Int, !Int, !Int :]) =
+  c [: c0, c1, c2 :] 
+  send c0 0 
+  send c1 1 
+  send c2 2 
+  .
+seq3_seq2 (c : [: !Int, !Int, !Int :], d : [: !Int, !Int :]) =
+  c [: c0, c1, c2 :] 
+  d [: d0, d1 :] 
+  send c0 0 
+  send c1 1 
+  send d0 0 
+  send c2 2 
+  send d1 1 
+  .
 singleRecv (c : ?Int) =
   recv c (x : Int)
   .

@@ -99,8 +99,7 @@ isReady :: Env -> [Pref] -> Maybe ([Pref], [Pref])
 isReady _ [] = error "isReady: impossible"
 isReady env (act : acts) =
   case act of
-    ParSplit{} -> Just ([act], acts) -- error "TODO: float out?"
-    TenSplit{} -> Just ([act], acts) -- error "TODO: float out?"
+    Split{} -> Just ([act], acts) -- error "TODO: float out?"
     Nu{} -> error "TODO: Nu: float out?"
     Send c _ ->
       if statusAt c env == Empty then Just ([act], acts)
@@ -141,9 +140,7 @@ transAct env (pref:prefs) procs =
       in
       -- Nu (Arg c0 (Just c0S)) (Arg c1 (Just c1S)) :
       transAct env' prefs procs
-    ParSplit c ds ->
-      transAct (transPi c ds env) prefs procs
-    TenSplit c ds ->
+    Split _ c ds ->
       transAct (transPi c ds env) prefs procs
     Send c _ ->
       transAct (env & actEnv c) prefs procs
