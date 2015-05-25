@@ -60,7 +60,7 @@ primsN :: [N.Dec]
 primsN =
    case pListDec (myLLexer prims) of
      Bad e -> error $ "Bad prims\n" ++ e
-     Ok  t -> norm t
+     Ok  t -> norm . reverse $ t
 
 runFile :: (Print a, Show a) => Opts -> ParseFun a -> FilePath -> IO a
 runFile v p f = readFile f >>= run v p
