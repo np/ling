@@ -100,6 +100,7 @@ isReady _ [] = error "isReady: impossible"
 isReady env (act : acts) =
   case act of
     Split{} -> Just ([act], acts) -- error "TODO: float out?"
+    NewSlice{} -> Just ([act], acts)
     Nu{} -> error "TODO: Nu: float out?"
     Send c _ ->
       if statusAt c env == Empty then Just ([act], acts)
@@ -107,7 +108,6 @@ isReady env (act : acts) =
     Recv c _ ->
       if statusAt c env == Full  then Just ([act], acts)
       else Nothing
-    NewSlice{} -> error "TODO: isReady NewSlice"
 
 transPi :: Channel -> [ChanDec] -> Env -> Env
 transPi c dOSs env =
@@ -128,25 +128,28 @@ transProc env x = case x of
 
 -- prefixes about different channels can be reordered
 transAct :: Env -> [Pref] -> [Proc] -> [Pref]
-transAct env [] procs = transProcs 0 env procs
-transAct env (pref:prefs) procs =
-  pref :
+transAct env prefs0 procs =
+  case prefs0 of
+    []         -> transProcs 0 env procs
+    pref:prefs -> pref : transAct (transPref pref env) prefs procs
+
+transPref :: Pref -> Env -> Env
+transPref pref =
   case pref of
     Nu (Arg c0 c0OS) (Arg c1 c1OS) ->
       let Just (c0S , c1S) = extractDuals (c0OS, c1OS)
           l = Root c0
-          env' = addLocs  (sessionStatus (const Empty) l c0S) $
-                 addChans [(c0,(l,c0S)),(c1,(l,c1S))] env
       in
-      -- Nu (Arg c0 (Just c0S)) (Arg c1 (Just c1S)) :
-      transAct env' prefs procs
+      addLocs  (sessionStatus (const Empty) l c0S) .
+      addChans [(c0,(l,c0S)),(c1,(l,c1S))]
     Split _ c ds ->
-      transAct (transPi c ds env) prefs procs
+      transPi c ds
     Send c _ ->
-      transAct (env & actEnv c) prefs procs
+      actEnv c
     Recv c _ ->
-      transAct (env & actEnv c) prefs procs
-    NewSlice _t _x -> error "Sequential.transAct/Slice"
+      actEnv c
+    NewSlice{} ->
+      id
 
 transProcs :: Int -> Env -> [Proc] -> [Pref]
 transProcs tries env ps =
