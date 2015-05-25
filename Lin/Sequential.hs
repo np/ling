@@ -101,7 +101,7 @@ isReady env (act : acts) =
   case act of
     Split{} -> Just ([act], acts) -- error "TODO: float out?"
     NewSlice{} -> Just ([act], acts)
-    Nu{} -> error "TODO: Nu: float out?"
+    Nu{} -> Just ([act], acts)
     Send c _ ->
       if statusAt c env == Empty then Just ([act], acts)
       else Nothing
