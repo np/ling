@@ -23,6 +23,7 @@ import Data.Map (Map)
 import qualified Data.Set as Set
 import Data.Set (Set)
 import Lin.Utils
+import Lin.Print.Instances ()
 import Lin.Session
 import Lin.Proc
 import Lin.Norm
@@ -131,7 +132,7 @@ transProc env x = case x of
 transAct :: Env -> [Pref] -> [Proc] -> [Pref]
 transAct env prefs0 procs =
   case prefs0 of
-    []         -> transProcs 0 env procs
+    []         -> transProcs env (filter0s procs) []
     pref:prefs -> pref : transAct (transPref pref env) prefs procs
 
 transPref :: Pref -> Env -> Env
@@ -152,29 +153,29 @@ transPref pref =
     NewSlice{} ->
       id
 
-transProcs :: Int -> Env -> [Proc] -> [Pref]
-transProcs tries env ps =
-  case filter0s ps of
-    []  -> []
-    [p] -> transProc env p
-    (p0@(Act acts@(_:_) procs0) : procs1) ->
+-- Assumption input processes should not have zeros (filter0s)
+transProcs :: Env -> [Proc] -> [Proc] -> [Pref]
+transProcs _   []       []      = []
+transProcs _   []       waiting = error $ "transProcs: impossible all the processes are stuck: " ++ pretty waiting
+transProcs env [p]      []      = transProc env p
+transProcs env (p0:p0s) waiting =
+  case p0 of
+    Act acts@(_:_) procs0 ->
       case isReady env acts of
         Nothing ->
-          if tries < 10 then
-            transProcs (tries + 1) env (procs1 ++ [p0]) --- <-- Uhoh termination
-          else error "transProc: Prevented non termination"
+          transProcs env p0s (p0 : waiting)
         Just (readyPis,restPis) ->
-          transAct env readyPis (procs1 ++ [restPis `actP` procs0])
+          transAct env readyPis (p0s ++ reverse waiting ++ [restPis `actP` procs0])
 
-    (At{} : _) ->
+    At{} ->
       error "transProcs: At"
 
     -- One should expand the forwarders
-    (Ax{} : _) ->
+    Ax{} ->
       error "transProcs: Ax"
 
-    (Act [] _procs0 : _procs1) ->
-      error "transProcs: impossible"
+    Act [] _procs0 ->
+      error "transProcs: impossible" -- filter0s prevents that
 
 transDec :: Dec -> Dec
 transDec x = case x of
