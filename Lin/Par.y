@@ -212,7 +212,8 @@ OptSession : {- empty -} { NoSession }
 
 
 Session4 :: { Session }
-Session4 : 'end' { End } 
+Session4 : Name { Atm $1 } 
+  | 'end' { End }
   | '{' ListRSession '}' { Par $2 }
   | '[' ListRSession ']' { Ten $2 }
   | '[:' ListRSession ':]' { Seq $2 }

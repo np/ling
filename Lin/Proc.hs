@@ -97,6 +97,7 @@ fwdP s0 c d es =
     Rcv t s -> fwdRcvSnd t s        c d es
     Snd t s -> fwdRcvSnd t (dual s) d c es
     End     -> zeroP
+    Atm{}   -> Ax s0 c d es
     Seq _ss -> error "fwdP/Seq TODO"
 
 replProcs :: Int -> Name -> Procs -> Procs
@@ -133,5 +134,6 @@ replProc n x p0 =
     -- If Ax are expanded before, nothing to do here
     -- Otherwise this should do the same as the
     -- replication of the expansion.
+    -- This might be needed because of abstract sessions.
     Ax{} -> error "replProcs/Ax"
     At{} -> error "replProcs/At"

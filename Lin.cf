@@ -73,6 +73,7 @@ NoSession. OptSession ::= ;
 SoSession. OptSession ::= ":" Session ;
 
 -- Atomic sessions
+Atm.  Session4 ::= Name ;
 End.  Session4 ::= "end" ;
 Par.  Session4 ::= "{" [RSession] "}" ;
 Ten.  Session4 ::= "[" [RSession] "]" ;

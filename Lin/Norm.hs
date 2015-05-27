@@ -49,8 +49,13 @@ data Term
   | Ann Term Typ
   deriving (Eq,Ord,Show,Read)
 
+-- Polarity with a read/write (recv/send) flavor
+data RW = Read | Write
+  deriving (Eq,Ord,Show,Read)
+
 data Session
-  = End
+  = Atm RW Name
+  | End
   | Snd Typ Session
   | Rcv Typ Session
   | Par Sessions

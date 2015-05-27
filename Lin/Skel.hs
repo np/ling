@@ -97,6 +97,7 @@ transOptSession x = case x of
 
 transSession :: Session -> Result
 transSession x = case x of
+  Atm name  -> failure x
   End  -> failure x
   Par rsessions  -> failure x
   Ten rsessions  -> failure x

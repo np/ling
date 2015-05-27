@@ -78,6 +78,7 @@ instance Rename Session where
     Seq ss  -> Seq (rename f ss)
     Snd t s -> Snd (rename f t) (rename f s)
     Rcv t s -> Rcv (rename f t) (rename f s)
+    Atm p n -> Atm p (rename f n)
     End     -> End
 
 instance Rename RSession where

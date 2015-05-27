@@ -78,7 +78,8 @@ data OptSession =
   deriving (Eq,Ord,Show,Read)
 
 data Session =
-   End
+   Atm Name
+ | End
  | Par [RSession]
  | Ten [RSession]
  | Seq [RSession]

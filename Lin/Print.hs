@@ -200,6 +200,7 @@ instance Print OptSession where
 
 instance Print Session where
   prt i e = case e of
+   Atm name -> prPrec i 4 (concatD [prt 0 name])
    End  -> prPrec i 4 (concatD [doc (showString "end")])
    Par rsessions -> prPrec i 4 (concatD [doc (showString "{") , prt 0 rsessions , doc (showString "}")])
    Ten rsessions -> prPrec i 4 (concatD [doc (showString "[") , prt 0 rsessions , doc (showString "]")])

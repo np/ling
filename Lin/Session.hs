@@ -33,12 +33,17 @@ mapSessions = map . mapR
 class Dual a where
   dual :: a -> a
 
+instance Dual RW where
+  dual Read  = Write
+  dual Write = Read
+
 instance Dual Session where
   dual (Par s)    = Ten   (dual s)
   dual (Ten s)    = Par   (dual s)
   dual (Seq s)    = Seq   (dual s)
   dual (Snd a s)  = Rcv a (dual s)
   dual (Rcv a s)  = Snd a (dual s)
+  dual (Atm p n)  = Atm (dual p) n
   dual End        = End
 
 instance Dual RSession where
@@ -53,6 +58,7 @@ log (Ten s)    = Par (mapSessions log s)
 log (Seq s)    = Par (mapSessions log s)
 log (Snd a s)  = Snd a (log s)
 log (Rcv a s)  = Snd a (log s)
+log (Atm _ n)  = Atm Write n
 log End        = End
 
 isEnd :: Session -> Bool

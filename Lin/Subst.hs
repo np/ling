@@ -79,6 +79,7 @@ instance Subst Session where
     Seq ss  -> Seq (subst f ss)
     Snd t s -> Snd (subst f t) (subst f s)
     Rcv t s -> Rcv (subst f t) (subst f s)
+    Atm{}   -> s0
     End     -> End
 
 instance Subst RSession where

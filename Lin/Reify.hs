@@ -28,6 +28,10 @@ instance Norm a => Norm [a] where
   reify = map reify
   norm  = map norm
 
+dualIfWrite :: N.RW -> Session -> Session
+dualIfWrite N.Read  = id
+dualIfWrite N.Write = Dual
+
 instance Norm Session where
   type Normalized Session = N.Session
   reify (N.Par s)   = Par (reify s)
@@ -35,6 +39,7 @@ instance Norm Session where
   reify (N.Seq s)   = Seq (reify s)
   reify (N.Snd a s) = Snd (reify a) (reify s)
   reify (N.Rcv a s) = Rcv (reify a) (reify s)
+  reify (N.Atm p n) = dualIfWrite p (Atm n)
   reify N.End       = End
 
   norm (Par s)    = N.Par (norm s)
@@ -49,6 +54,7 @@ instance Norm Session where
     | n >= 0 && n < 10000 = fwd (fromInteger n) (norm s)
     | otherwise           = error "Do you really want to blow the stack?"
   norm End        = N.End
+  norm (Atm n)    = N.Atm N.Read n -- Read is abitrary here
   norm (Sort a e) = sort (norm a) (norm e)
 
 instance Norm CSession where

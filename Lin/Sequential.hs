@@ -81,12 +81,10 @@ sessionsStatus dflt l ss = [ ls
 
 sessionStatus :: (Session -> Status) -> Location -> Session -> [(Location,Status)]
 sessionStatus dflt l x = case x of
-  Snd{}  -> [(l, dflt x)]
   Ten ss -> sessionsStatus dflt l ss
   Par ss -> sessionsStatus dflt l ss
   Seq ss -> sessionsStatus dflt l ss
-  Rcv{}  -> [(l, dflt x)]
-  End    -> [(l, dflt x)]
+  _      -> [(l, dflt x)]
 
 statusAt :: Channel -> Env -> Status
 statusAt c env = env ^. locs . at l . to f
