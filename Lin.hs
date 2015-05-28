@@ -46,6 +46,13 @@ prims = unlines
   ,"drop  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A n."
   ,"merge : (m : Int)(n : Int)(v0 : Vec Int m)(v1 : Vec Int n) -> Vec Int (m + n)."
   ,"sort  : (n : Int)(v : Vec Int n) -> Vec Int n."
+  ,"Session : Type."
+  ,"Double : Type."
+  ,"Int2Double : (n : Int) -> Double."
+  ,"_+D_ : (m : Double)(n : Double) -> Double."
+  ,"_-D_ : (m : Double)(n : Double) -> Double."
+  ,"_*D_ : (m : Double)(n : Double) -> Double."
+  ,"_/D_ : (m : Double)(n : Double) -> Double."
   ,"-- end prims"
   ]
 
