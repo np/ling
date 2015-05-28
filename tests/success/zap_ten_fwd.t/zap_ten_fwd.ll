@@ -4,7 +4,7 @@ zap_ten_fwd (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
   cn{cni}
   co[coi]
   cfi{cfii,cfio}
-  ( fwd (?Int) cni cfii
-  | fwd (?Int) cfio coi
+  ( fwd (?Int)(cni, cfii)
+  | fwd (?Int)(cfio, coi)
   )
 .

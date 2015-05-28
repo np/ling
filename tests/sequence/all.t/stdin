@@ -13,21 +13,21 @@ double (i : ?Int, r : !Int) =
   |
     send d xi send d xi recv d(z : Int) send r z
   ).
-fwd_par0_ten0 (i : {}, o : []) = fwd {} i o.
-fwd_par2_ten2 (i : {?Int,!Int.?Int}, o : [!Int,?Int.!Int]) = fwd {?Int,!Int.?Int} i o.
+fwd_par0_ten0 (i : {}, o : []) = fwd {}(i,o).
+fwd_par2_ten2 (i : {?Int,!Int.?Int}, o : [!Int,?Int.!Int]) = fwd {?Int,!Int.?Int}(i,o).
 fwd_par2_ten2_ten2 ( i : {?Int,!Int.?Int}
                    , o : [!Int,?Int.!Int]
                    , l : {!Int,!Int.!Int}
                    ) =
-  fwd {?Int,!Int.?Int} i o l.
+  fwd {?Int,!Int.?Int}(i,o,l).
 fwd_par2_ten2_ten2 ( i : {?Int,!Int.?Int}
                    , o : [!Int,?Int.!Int]
                    , l : {!Int,!Int.!Int}
                    , m : {!Int,!Int.!Int}
                    ) =
-  fwd {?Int,!Int.?Int} i o l m.
-fwd_send_recv (i : ?Int, o : !Int) = fwd (?Int) i o.
-fwd_send_recv (i : ?Int. !Int, o : !Int. ?Int) = fwd (?Int.!Int) i o.
+  fwd {?Int,!Int.?Int}(i,o,l,m).
+fwd_send_recv (i : ?Int, o : !Int) = fwd (?Int)(i,o).
+fwd_send_recv (i : ?Int. !Int, o : !Int. ?Int) = fwd (?Int.!Int)(i,o).
 id : (A : Type)(x : A) -> A.
 
 idproc (c : ?Int, d : !Int) =
@@ -201,8 +201,8 @@ ten_loli_par (c : [!Int,!Int] -o {!Int,!Int}) =
   c{i,o}
   i{i0,i1}
   o{o0,o1}
-  ( fwd (?Int) i0 o0
-  | fwd (?Int) i1 o1
+  ( fwd (?Int)(i0,o0)
+  | fwd (?Int)(i1,o1)
   ).
 ten_par_par_split (c : [{},{}]) = c[d,e] (d{} | e{}).
 tensor0 (c : []) = c[].
@@ -268,8 +268,8 @@ zap_ten_fwd (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
   cn{cni}
   co[coi]
   cfi{cfii,cfio}
-  ( fwd (?Int) cni cfii
-  | fwd (?Int) cfio coi
+  ( fwd (?Int)(cni,cfii)
+  | fwd (?Int)(cfio,coi)
   )
 .
 zap_ten_par (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =

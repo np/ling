@@ -17,16 +17,13 @@ import Lin.ErrM
 %name pOptChanDecs OptChanDecs
 %name pChanDec ChanDec
 %name pListChanDec ListChanDec
-%name pOp Op
-%name pTerm3 Term3
-%name pTerm2 Term2
+%name pATerm ATerm
+%name pListATerm ListATerm
+%name pDTerm DTerm
 %name pTerm Term
-%name pListTerm3 ListTerm3
 %name pProc Proc
 %name pListProc ListProc
 %name pProcs Procs
-%name pSnk Snk
-%name pListSnk ListSnk
 %name pPref Pref
 %name pListPref ListPref
 %name pOptSession OptSession
@@ -48,38 +45,37 @@ import Lin.ErrM
   '(' { PT _ (TS _ 2) }
   ')' { PT _ (TS _ 3) }
   '**' { PT _ (TS _ 4) }
-  '+' { PT _ (TS _ 5) }
-  ',' { PT _ (TS _ 6) }
-  '->' { PT _ (TS _ 7) }
-  '-o' { PT _ (TS _ 8) }
-  '.' { PT _ (TS _ 9) }
-  ':' { PT _ (TS _ 10) }
-  ':]' { PT _ (TS _ 11) }
-  '<' { PT _ (TS _ 12) }
-  '=' { PT _ (TS _ 13) }
-  '>' { PT _ (TS _ 14) }
-  '?' { PT _ (TS _ 15) }
-  '@' { PT _ (TS _ 16) }
-  'Fwd' { PT _ (TS _ 17) }
-  'Log' { PT _ (TS _ 18) }
-  'Sort' { PT _ (TS _ 19) }
-  'Type' { PT _ (TS _ 20) }
-  '[' { PT _ (TS _ 21) }
-  '[:' { PT _ (TS _ 22) }
-  ']' { PT _ (TS _ 23) }
-  '^' { PT _ (TS _ 24) }
-  'as' { PT _ (TS _ 25) }
-  'end' { PT _ (TS _ 26) }
-  'fwd' { PT _ (TS _ 27) }
-  'new' { PT _ (TS _ 28) }
-  'proc' { PT _ (TS _ 29) }
-  'recv' { PT _ (TS _ 30) }
-  'send' { PT _ (TS _ 31) }
-  'slice' { PT _ (TS _ 32) }
-  '{' { PT _ (TS _ 33) }
-  '|' { PT _ (TS _ 34) }
-  '}' { PT _ (TS _ 35) }
-  '~' { PT _ (TS _ 36) }
+  ',' { PT _ (TS _ 5) }
+  '->' { PT _ (TS _ 6) }
+  '-o' { PT _ (TS _ 7) }
+  '.' { PT _ (TS _ 8) }
+  ':' { PT _ (TS _ 9) }
+  ':]' { PT _ (TS _ 10) }
+  '<' { PT _ (TS _ 11) }
+  '=' { PT _ (TS _ 12) }
+  '>' { PT _ (TS _ 13) }
+  '?' { PT _ (TS _ 14) }
+  '@' { PT _ (TS _ 15) }
+  'Fwd' { PT _ (TS _ 16) }
+  'Log' { PT _ (TS _ 17) }
+  'Sort' { PT _ (TS _ 18) }
+  'Type' { PT _ (TS _ 19) }
+  '[' { PT _ (TS _ 20) }
+  '[:' { PT _ (TS _ 21) }
+  ']' { PT _ (TS _ 22) }
+  '^' { PT _ (TS _ 23) }
+  'as' { PT _ (TS _ 24) }
+  'end' { PT _ (TS _ 25) }
+  'fwd' { PT _ (TS _ 26) }
+  'new' { PT _ (TS _ 27) }
+  'proc' { PT _ (TS _ 28) }
+  'recv' { PT _ (TS _ 29) }
+  'send' { PT _ (TS _ 30) }
+  'slice' { PT _ (TS _ 31) }
+  '{' { PT _ (TS _ 32) }
+  '|' { PT _ (TS _ 33) }
+  '}' { PT _ (TS _ 34) }
+  '~' { PT _ (TS _ 35) }
 
 L_integ  { PT _ (TI $$) }
 L_Name { PT _ (T_Name $$) }
@@ -134,34 +130,28 @@ ListChanDec : {- empty -} { [] }
   | ChanDec ',' ListChanDec { (:) $1 $3 }
 
 
-Op :: { Op }
-Op : '+' { Plus } 
-
-
-Term3 :: { Term }
-Term3 : Name { Var $1 } 
+ATerm :: { ATerm }
+ATerm : Name { Var $1 } 
   | Integer { Lit $1 }
   | 'Type' { TTyp }
   | '<' ListRSession '>' { TProto $2 }
-  | '(' Term ')' { $2 }
+  | '(' Term ')' { Paren $2 }
 
 
-Term2 :: { Term }
-Term2 : Name ListTerm3 { Def $1 (reverse $2) } 
-  | Term2 Op Term3 { Infix $1 $2 $3 }
-  | Term3 { $1 }
+ListATerm :: { [ATerm] }
+ListATerm : {- empty -} { [] } 
+  | ListATerm ATerm { flip (:) $1 $2 }
+
+
+DTerm :: { DTerm }
+DTerm : Name ListATerm { DTerm $1 (reverse $2) } 
 
 
 Term :: { Term }
-Term : VarDec ListVarDec '->' Term { TFun $1 (reverse $2) $4 } 
+Term : ATerm ListATerm { RawApp $1 (reverse $2) } 
+  | VarDec ListVarDec '->' Term { TFun $1 (reverse $2) $4 }
   | VarDec ListVarDec '**' Term { TSig $1 (reverse $2) $4 }
   | 'proc' '(' ListChanDec ')' Proc { Proc $3 $5 }
-  | Term2 { $1 }
-
-
-ListTerm3 :: { [Term] }
-ListTerm3 : {- empty -} { [] } 
-  | ListTerm3 Term3 { flip (:) $1 $2 }
 
 
 Proc :: { Proc }
@@ -176,18 +166,9 @@ ListProc : {- empty -} { [] }
 
 Procs :: { Procs }
 Procs : {- empty -} { ZeroP } 
-  | 'fwd' Session Name Name ListSnk { Ax $2 $3 $4 (reverse $5) }
-  | '@' Term3 '(' ListName ')' { At $2 $4 }
+  | 'fwd' Session '(' ListName ')' { Ax $2 $4 }
+  | '@' ATerm '(' ListName ')' { At $2 $4 }
   | '(' ListProc ')' { Procs $2 }
-
-
-Snk :: { Snk }
-Snk : Name { Snk $1 } 
-
-
-ListSnk :: { [Snk] }
-ListSnk : {- empty -} { [] } 
-  | ListSnk Snk { flip (:) $1 $2 }
 
 
 Pref :: { Pref }
@@ -195,8 +176,8 @@ Pref : 'new' '(' ChanDec ',' ChanDec ')' { Nu $3 $5 }
   | Name '{' ListChanDec '}' { ParSplit $1 $3 }
   | Name '[' ListChanDec ']' { TenSplit $1 $3 }
   | Name '[:' ListChanDec ':]' { SeqSplit $1 $3 }
-  | 'slice' Term3 'as' Name { NewSlice $2 $4 }
-  | 'send' Name Term3 { Send $2 $3 }
+  | 'slice' ATerm 'as' Name { NewSlice $2 $4 }
+  | 'send' Name ATerm { Send $2 $3 }
   | 'recv' Name VarDec { Recv $2 $3 }
 
 
@@ -220,15 +201,15 @@ Session4 : Name { Atm $1 }
 
 
 Session3 :: { Session }
-Session3 : 'Sort' Term3 Term3 { Sort $2 $3 } 
+Session3 : 'Sort' ATerm ATerm { Sort $2 $3 } 
   | 'Log' Session4 { Log $2 }
   | 'Fwd' Integer Session4 { Fwd $2 $3 }
   | Session4 { $1 }
 
 
 Session2 :: { Session }
-Session2 : '!' Term2 CSession { Snd $2 $3 } 
-  | '?' Term2 CSession { Rcv $2 $3 }
+Session2 : '!' DTerm CSession { Snd $2 $3 } 
+  | '?' DTerm CSession { Rcv $2 $3 }
   | '~' Session2 { Dual $2 }
   | Session3 { $1 }
 
@@ -250,7 +231,7 @@ ListRSession : {- empty -} { [] }
 
 OptRepl :: { OptRepl }
 OptRepl : {- empty -} { One } 
-  | '^' Term3 { Some $2 }
+  | '^' ATerm { Some $2 }
 
 
 CSession :: { CSession }

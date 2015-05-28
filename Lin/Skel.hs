@@ -41,19 +41,23 @@ transChanDec x = case x of
   ChanDec name optsession  -> failure x
 
 
-transOp :: Op -> Result
-transOp x = case x of
-  Plus  -> failure x
-
-
-transTerm :: Term -> Result
-transTerm x = case x of
+transATerm :: ATerm -> Result
+transATerm x = case x of
   Var name  -> failure x
   Lit n  -> failure x
   TTyp  -> failure x
   TProto rsessions  -> failure x
-  Def name terms  -> failure x
-  Infix term1 op2 term3  -> failure x
+  Paren term  -> failure x
+
+
+transDTerm :: DTerm -> Result
+transDTerm x = case x of
+  DTerm name aterms  -> failure x
+
+
+transTerm :: Term -> Result
+transTerm x = case x of
+  RawApp aterm aterms  -> failure x
   TFun vardec vardecs term  -> failure x
   TSig vardec vardecs term  -> failure x
   Proc chandecs proc  -> failure x
@@ -67,14 +71,9 @@ transProc x = case x of
 transProcs :: Procs -> Result
 transProcs x = case x of
   ZeroP  -> failure x
-  Ax session name1 name2 snks3  -> failure x
-  At term names  -> failure x
+  Ax session names  -> failure x
+  At aterm names  -> failure x
   Procs procs  -> failure x
-
-
-transSnk :: Snk -> Result
-transSnk x = case x of
-  Snk name  -> failure x
 
 
 transPref :: Pref -> Result
@@ -83,8 +82,8 @@ transPref x = case x of
   ParSplit name chandecs  -> failure x
   TenSplit name chandecs  -> failure x
   SeqSplit name chandecs  -> failure x
-  NewSlice term name  -> failure x
-  Send name term  -> failure x
+  NewSlice aterm name  -> failure x
+  Send name aterm  -> failure x
   Recv name vardec  -> failure x
 
 
@@ -101,11 +100,11 @@ transSession x = case x of
   Par rsessions  -> failure x
   Ten rsessions  -> failure x
   Seq rsessions  -> failure x
-  Sort term1 term2  -> failure x
+  Sort aterm1 aterm2  -> failure x
   Log session  -> failure x
   Fwd n session  -> failure x
-  Snd term csession  -> failure x
-  Rcv term csession  -> failure x
+  Snd dterm csession  -> failure x
+  Rcv dterm csession  -> failure x
   Dual session  -> failure x
   Loli session1 session2  -> failure x
 
@@ -118,7 +117,7 @@ transRSession x = case x of
 transOptRepl :: OptRepl -> Result
 transOptRepl x = case x of
   One  -> failure x
-  Some term  -> failure x
+  Some aterm  -> failure x
 
 
 transCSession :: CSession -> Result

@@ -31,11 +31,11 @@ The reserved words used in Lin are the following:
 
 The symbols used in Lin are the following:
   | , | = | . | :
-  | ( | ) | + | <
-  | > | -> | ** | |
-  | @ | { | } | [
-  | ] | [: | :] | !
-  | ? | ~ | -o | ^
+  | ( | ) | < | >
+  | -> | ** | | | @
+  | { | } | [ | ]
+  | [: | :] | ! | ?
+  | ~ | -o | ^ | 
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {- and -}.
@@ -63,38 +63,32 @@ All other symbols are terminals.
   | //[ChanDec]// | -> | **eps**
   |  |  **|**  | //ChanDec// 
   |  |  **|**  | //ChanDec// ``,`` //[ChanDec]// 
-  | //Op// | -> | ``+`` 
-  | //Term3// | -> | //Name// 
+  | //ATerm// | -> | //Name// 
   |  |  **|**  | //Integer// 
   |  |  **|**  | ``Type`` 
   |  |  **|**  | ``<`` //[RSession]// ``>`` 
   |  |  **|**  | ``(`` //Term// ``)`` 
-  | //Term2// | -> | //Name// //[Term3]// 
-  |  |  **|**  | //Term2// //Op// //Term3// 
-  |  |  **|**  | //Term3// 
-  | //Term// | -> | //VarDec// //[VarDec]// ``->`` //Term// 
+  | //[ATerm]// | -> | **eps**
+  |  |  **|**  | //ATerm// //[ATerm]// 
+  | //DTerm// | -> | //Name// //[ATerm]// 
+  | //Term// | -> | //ATerm// //[ATerm]// 
+  |  |  **|**  | //VarDec// //[VarDec]// ``->`` //Term// 
   |  |  **|**  | //VarDec// //[VarDec]// ``**`` //Term// 
   |  |  **|**  | ``proc`` ``(`` //[ChanDec]// ``)`` //Proc// 
-  |  |  **|**  | //Term2// 
-  | //[Term3]// | -> | **eps**
-  |  |  **|**  | //Term3// //[Term3]// 
   | //Proc// | -> | //[Pref]// //Procs// 
   | //[Proc]// | -> | **eps**
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
   | //Procs// | -> | **eps**
-  |  |  **|**  | ``fwd`` //Session// //Name// //Name// //[Snk]// 
-  |  |  **|**  | ``@`` //Term3// ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``fwd`` //Session// ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
-  | //Snk// | -> | //Name// 
-  | //[Snk]// | -> | **eps**
-  |  |  **|**  | //Snk// //[Snk]// 
   | //Pref// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
   |  |  **|**  | //Name// ``{`` //[ChanDec]// ``}`` 
   |  |  **|**  | //Name// ``[`` //[ChanDec]// ``]`` 
   |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 
-  |  |  **|**  | ``slice`` //Term3// ``as`` //Name// 
-  |  |  **|**  | ``send`` //Name// //Term3// 
+  |  |  **|**  | ``slice`` //ATerm// ``as`` //Name// 
+  |  |  **|**  | ``send`` //Name// //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
   | //[Pref]// | -> | **eps**
   |  |  **|**  | //Pref// //[Pref]// 
@@ -106,12 +100,12 @@ All other symbols are terminals.
   |  |  **|**  | ``[`` //[RSession]// ``]`` 
   |  |  **|**  | ``[:`` //[RSession]// ``:]`` 
   |  |  **|**  | ``(`` //Session// ``)`` 
-  | //Session3// | -> | ``Sort`` //Term3// //Term3// 
+  | //Session3// | -> | ``Sort`` //ATerm// //ATerm// 
   |  |  **|**  | ``Log`` //Session4// 
   |  |  **|**  | ``Fwd`` //Integer// //Session4// 
   |  |  **|**  | //Session4// 
-  | //Session2// | -> | ``!`` //Term2// //CSession// 
-  |  |  **|**  | ``?`` //Term2// //CSession// 
+  | //Session2// | -> | ``!`` //DTerm// //CSession// 
+  |  |  **|**  | ``?`` //DTerm// //CSession// 
   |  |  **|**  | ``~`` //Session2// 
   |  |  **|**  | //Session3// 
   | //Session// | -> | //Session2// ``-o`` //Session// 
@@ -121,7 +115,7 @@ All other symbols are terminals.
   |  |  **|**  | //RSession// 
   |  |  **|**  | //RSession// ``,`` //[RSession]// 
   | //OptRepl// | -> | **eps**
-  |  |  **|**  | ``^`` //Term3// 
+  |  |  **|**  | ``^`` //ATerm// 
   | //CSession// | -> | ``.`` //Session2// 
   |  |  **|**  | **eps**
 

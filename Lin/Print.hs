@@ -131,26 +131,30 @@ instance Print ChanDec where
    [x] -> (concatD [prt 0 x])
    x:xs -> (concatD [prt 0 x , doc (showString ",") , prt 0 xs])
 
-instance Print Op where
+instance Print ATerm where
   prt i e = case e of
-   Plus  -> prPrec i 0 (concatD [doc (showString "+")])
+   Var name -> prPrec i 0 (concatD [prt 0 name])
+   Lit n -> prPrec i 0 (concatD [prt 0 n])
+   TTyp  -> prPrec i 0 (concatD [doc (showString "Type")])
+   TProto rsessions -> prPrec i 0 (concatD [doc (showString "<") , prt 0 rsessions , doc (showString ">")])
+   Paren term -> prPrec i 0 (concatD [doc (showString "(") , prt 0 term , doc (showString ")")])
+
+  prtList es = case es of
+   [] -> (concatD [])
+   x:xs -> (concatD [prt 0 x , prt 0 xs])
+
+instance Print DTerm where
+  prt i e = case e of
+   DTerm name aterms -> prPrec i 0 (concatD [prt 0 name , prt 0 aterms])
 
 
 instance Print Term where
   prt i e = case e of
-   Var name -> prPrec i 3 (concatD [prt 0 name])
-   Lit n -> prPrec i 3 (concatD [prt 0 n])
-   TTyp  -> prPrec i 3 (concatD [doc (showString "Type")])
-   TProto rsessions -> prPrec i 3 (concatD [doc (showString "<") , prt 0 rsessions , doc (showString ">")])
-   Def name terms -> prPrec i 2 (concatD [prt 0 name , prt 0 terms])
-   Infix term0 op term -> prPrec i 2 (concatD [prt 2 term0 , prt 0 op , prt 3 term])
+   RawApp aterm aterms -> prPrec i 0 (concatD [prt 0 aterm , prt 0 aterms])
    TFun vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec , prt 0 vardecs , doc (showString "->") , prt 0 term])
    TSig vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec , prt 0 vardecs , doc (showString "**") , prt 0 term])
    Proc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc") , doc (showString "(") , prt 0 chandecs , doc (showString ")") , prt 0 proc])
 
-  prtList es = case es of
-   [] -> (concatD [])
-   x:xs -> (concatD [prt 3 x , prt 0 xs])
 
 instance Print Proc where
   prt i e = case e of
@@ -164,18 +168,10 @@ instance Print Proc where
 instance Print Procs where
   prt i e = case e of
    ZeroP  -> prPrec i 0 (concatD [])
-   Ax session name0 name snks -> prPrec i 0 (concatD [doc (showString "fwd") , prt 0 session , prt 0 name0 , prt 0 name , prt 0 snks])
-   At term names -> prPrec i 0 (concatD [doc (showString "@") , prt 3 term , doc (showString "(") , prt 0 names , doc (showString ")")])
+   Ax session names -> prPrec i 0 (concatD [doc (showString "fwd") , prt 0 session , doc (showString "(") , prt 0 names , doc (showString ")")])
+   At aterm names -> prPrec i 0 (concatD [doc (showString "@") , prt 0 aterm , doc (showString "(") , prt 0 names , doc (showString ")")])
    Procs procs -> prPrec i 0 (concatD [doc (showString "(") , prt 0 procs , doc (showString ")")])
 
-
-instance Print Snk where
-  prt i e = case e of
-   Snk name -> prPrec i 0 (concatD [prt 0 name])
-
-  prtList es = case es of
-   [] -> (concatD [])
-   x:xs -> (concatD [prt 0 x , prt 0 xs])
 
 instance Print Pref where
   prt i e = case e of
@@ -183,8 +179,8 @@ instance Print Pref where
    ParSplit name chandecs -> prPrec i 0 (concatD [prt 0 name , doc (showString "{") , prt 0 chandecs , doc (showString "}")])
    TenSplit name chandecs -> prPrec i 0 (concatD [prt 0 name , doc (showString "[") , prt 0 chandecs , doc (showString "]")])
    SeqSplit name chandecs -> prPrec i 0 (concatD [prt 0 name , doc (showString "[:") , prt 0 chandecs , doc (showString ":]")])
-   NewSlice term name -> prPrec i 0 (concatD [doc (showString "slice") , prt 3 term , doc (showString "as") , prt 0 name])
-   Send name term -> prPrec i 0 (concatD [doc (showString "send") , prt 0 name , prt 3 term])
+   NewSlice aterm name -> prPrec i 0 (concatD [doc (showString "slice") , prt 0 aterm , doc (showString "as") , prt 0 name])
+   Send name aterm -> prPrec i 0 (concatD [doc (showString "send") , prt 0 name , prt 0 aterm])
    Recv name vardec -> prPrec i 0 (concatD [doc (showString "recv") , prt 0 name , prt 0 vardec])
 
   prtList es = case es of
@@ -204,11 +200,11 @@ instance Print Session where
    Par rsessions -> prPrec i 4 (concatD [doc (showString "{") , prt 0 rsessions , doc (showString "}")])
    Ten rsessions -> prPrec i 4 (concatD [doc (showString "[") , prt 0 rsessions , doc (showString "]")])
    Seq rsessions -> prPrec i 4 (concatD [doc (showString "[:") , prt 0 rsessions , doc (showString ":]")])
-   Sort term0 term -> prPrec i 3 (concatD [doc (showString "Sort") , prt 3 term0 , prt 3 term])
+   Sort aterm0 aterm -> prPrec i 3 (concatD [doc (showString "Sort") , prt 0 aterm0 , prt 0 aterm])
    Log session -> prPrec i 3 (concatD [doc (showString "Log") , prt 4 session])
    Fwd n session -> prPrec i 3 (concatD [doc (showString "Fwd") , prt 0 n , prt 4 session])
-   Snd term csession -> prPrec i 2 (concatD [doc (showString "!") , prt 2 term , prt 0 csession])
-   Rcv term csession -> prPrec i 2 (concatD [doc (showString "?") , prt 2 term , prt 0 csession])
+   Snd dterm csession -> prPrec i 2 (concatD [doc (showString "!") , prt 0 dterm , prt 0 csession])
+   Rcv dterm csession -> prPrec i 2 (concatD [doc (showString "?") , prt 0 dterm , prt 0 csession])
    Dual session -> prPrec i 2 (concatD [doc (showString "~") , prt 2 session])
    Loli session0 session -> prPrec i 0 (concatD [prt 2 session0 , doc (showString "-o") , prt 0 session])
 
@@ -225,7 +221,7 @@ instance Print RSession where
 instance Print OptRepl where
   prt i e = case e of
    One  -> prPrec i 0 (concatD [])
-   Some term -> prPrec i 0 (concatD [doc (showString "^") , prt 3 term])
+   Some aterm -> prPrec i 0 (concatD [doc (showString "^") , prt 0 aterm])
 
 
 instance Print CSession where

@@ -30,17 +30,20 @@ data ChanDec =
    ChanDec Name OptSession
   deriving (Eq,Ord,Show,Read)
 
-data Op =
-   Plus
-  deriving (Eq,Ord,Show,Read)
-
-data Term =
+data ATerm =
    Var Name
  | Lit Integer
  | TTyp
  | TProto [RSession]
- | Def Name [Term]
- | Infix Term Op Term
+ | Paren Term
+  deriving (Eq,Ord,Show,Read)
+
+data DTerm =
+   DTerm Name [ATerm]
+  deriving (Eq,Ord,Show,Read)
+
+data Term =
+   RawApp ATerm [ATerm]
  | TFun VarDec [VarDec] Term
  | TSig VarDec [VarDec] Term
  | Proc [ChanDec] Proc
@@ -52,13 +55,9 @@ data Proc =
 
 data Procs =
    ZeroP
- | Ax Session Name Name [Snk]
- | At Term [Name]
+ | Ax Session [Name]
+ | At ATerm [Name]
  | Procs [Proc]
-  deriving (Eq,Ord,Show,Read)
-
-data Snk =
-   Snk Name
   deriving (Eq,Ord,Show,Read)
 
 data Pref =
@@ -66,8 +65,8 @@ data Pref =
  | ParSplit Name [ChanDec]
  | TenSplit Name [ChanDec]
  | SeqSplit Name [ChanDec]
- | NewSlice Term Name
- | Send Name Term
+ | NewSlice ATerm Name
+ | Send Name ATerm
  | Recv Name VarDec
   deriving (Eq,Ord,Show,Read)
 
@@ -82,11 +81,11 @@ data Session =
  | Par [RSession]
  | Ten [RSession]
  | Seq [RSession]
- | Sort Term Term
+ | Sort ATerm ATerm
  | Log Session
  | Fwd Integer Session
- | Snd Term CSession
- | Rcv Term CSession
+ | Snd DTerm CSession
+ | Rcv DTerm CSession
  | Dual Session
  | Loli Session Session
   deriving (Eq,Ord,Show,Read)
@@ -97,7 +96,7 @@ data RSession =
 
 data OptRepl =
    One
- | Some Term
+ | Some ATerm
   deriving (Eq,Ord,Show,Read)
 
 data CSession =

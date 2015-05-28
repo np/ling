@@ -8,9 +8,6 @@ import Lin.Session
 import Lin.Proc
 import qualified Lin.Norm as N
 
-normOp :: Op -> Name
-normOp Plus = Name "_+_"
-
 class Norm a where
   type Normalized a
   norm  :: a -> Normalized a
@@ -86,7 +83,7 @@ reifyRSessions = reify
 instance Norm Proc where
   type Normalized Proc = N.Proc
   reify (N.Act prefs procs) = Act (reify prefs) (reify procs)
-  reify (N.Ax s c d es)     = Act [] (Ax (reify s) c d (reify es))
+  reify (N.Ax s c d es)     = Act [] (Ax (reify s) (c : d : es))
   reify (N.At t cs)         = Act [] (At (reify t) cs)
   norm  (Act   prefs procs) = N.Act (norm  prefs) (norm  procs)
 
@@ -99,14 +96,12 @@ instance Norm Procs where
   reify procs           = Procs (reify procs)
   norm ZeroP            = []
   norm (Procs procs)    = norm procs
---norm (Ax s c d es)    = [N.Ax (norm s) c d (norm es)]
-  norm (Ax s c d es)    = [fwdP (norm s) c d (norm es)]
   norm (At t cs)        = [N.At (norm t) cs]
-
-instance Norm Snk where
-  type Normalized Snk = Channel
-  reify               = Snk
-  norm (Snk c)        = c
+  norm (Ax s es0)       =
+    case es0 of
+      c : d : es -> [fwdP (norm s) c d es]
+                --  [N.Ax (norm s) c d es]
+      _ -> error "Forwarders must be given at least two channels"
 
 instance Norm Pref where
   type Normalized Pref = N.Pref
@@ -131,39 +126,75 @@ instance Norm Pref where
 reifyPref :: N.Pref -> Pref
 reifyPref = reify
 
-{-
 -- isInfix xs = match "_[^_]*_" xs
-isInfix (Name('_':xs@(_:_))) = last xs == '_' && '_' `notElem` init xs
-isInfix _                    = False
--}
-isInfix :: Name -> Maybe Op
-isInfix (Name "_+_") = Just Plus
-isInfix _            = Nothing
+isInfix :: Name -> Maybe Name
+isInfix (Name('_':xs@(_:_:_)))
+  | last xs == '_' && '_' `notElem` s
+  = Just (Name s)
+  where s = init xs
+isInfix _ = Nothing
+
+-- Really naive rawApp parsing
+-- Next step is to carry an environment with
+-- the operators and their fixity.
+normRawApp :: [ATerm] -> N.Term
+normRawApp [e] = norm e
+normRawApp (e0 : Var (Name op) : es)
+  | op `elem` ["-","+","*","/","-D","+D","*D","/D"]
+  = N.Def (Name ("_" ++ op ++ "_")) [norm e0, normRawApp es]
+normRawApp (Var x : es) = N.Def x (norm es)
+normRawApp [] = error "normRawApp: IMPOSSIBLE"
+normRawApp _ = error "normRawApp: unexpected application"
+
+reifyRawApp :: N.Term -> [ATerm]
+reifyRawApp e0 =
+  case reify e0 of
+    Paren (RawApp e1 es) -> e1 : es
+    e0'                  -> [e0']
+
+instance Norm DTerm where
+  type Normalized DTerm = N.Term
+
+  reify e0 = case e0 of
+    N.Def x es -> DTerm x (reify es)
+    _          -> error "DTerm.reify"
+
+  norm (DTerm x es) = N.Def x (norm es)
+
+instance Norm ATerm where
+  type Normalized ATerm = N.Term
+
+  reify e0 = case e0 of
+    N.Def x []         -> Var x
+    N.Lit n            -> Lit n
+    N.TTyp             -> TTyp
+    N.TProto ss        -> TProto (reify ss)
+    _                  -> Paren (reify e0)
+
+  norm (Var x)          = N.Def x []
+  norm (Lit n)          = N.Lit n
+  norm TTyp             = N.TTyp
+  norm (TProto ss)      = N.TProto (norm ss)
+  norm (Paren t)        = norm t
 
 instance Norm Term where
   type Normalized Term = N.Term
 
   reify e0 = case e0 of
-    N.Def x []         -> Var x
     N.Def x [e1,e2]     | Just op <- isInfix x
-                       -> Infix (reify e1) op (reify e2)
-    N.Def x es         -> Def x (reify es)
-    N.Lit n            -> Lit n
+                       -> RawApp (reify e1) (Var op : reifyRawApp e2)
+    N.Def x es         -> RawApp (Var x) (reify es)
+    N.Lit n            -> RawApp (Lit n) []
+    N.TTyp             -> RawApp  TTyp   []
+    N.TProto ss        -> RawApp (TProto (reify ss)) []
     N.Proc cs p        -> Proc (reify cs) (reify p)
-    N.TTyp             -> TTyp
     N.TFun (Arg a t) s -> TFun (VarDec a (reify t)) [] (reify s)
     N.TSig (Arg a t) s -> TSig (VarDec a (reify t)) [] (reify s)
-    N.TProto ss        -> TProto (reify ss)
 
-  norm (Var x)          = N.Def x []
-  norm (Infix e0 op e1) = N.Def (normOp op) [norm e0, norm e1]
-  norm (Def x es)       = N.Def x (norm es)
-  norm (Lit n)          = N.Lit n
+  norm (RawApp e es)    = normRawApp (e:es)
   norm (Proc cs p)      = N.Proc (norm cs) (norm p)
-  norm TTyp             = N.TTyp
-  norm (TFun xs xss t)  = normTele N.TFun (xs:xss) (normType t)
-  norm (TSig xs xss t)  = normTele N.TSig (xs:xss) (normType t)
-  norm (TProto ss)      = N.TProto (norm ss)
+  norm (TFun xs xss t)  = normTele N.TFun (xs:xss) (norm t)
+  norm (TSig xs xss t)  = normTele N.TSig (xs:xss) (norm t)
 
 reifyTerm :: N.Term -> Term
 reifyTerm = reify
@@ -187,12 +218,6 @@ instance Norm OptSession where
 
 normTele :: (Arg N.Typ -> N.Typ -> N.Typ) -> [VarDec] -> N.Typ -> N.Typ
 normTele f xs z = foldr (f . norm) z xs
-
-normType :: Term -> N.Typ
-normType t = case t of
-  Lit{}  -> error "normType: a literal cannot be a type"
-  Proc{} -> error "normType: a process cannot be a type"
-  _      -> norm t
 
 instance Norm OptChanDecs where
   type Normalized OptChanDecs = [N.ChanDec]
