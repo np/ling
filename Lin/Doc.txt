@@ -67,7 +67,6 @@ All other symbols are terminals.
   | //Op// | -> | ``+`` 
   | //Term3// | -> | //Name// 
   |  |  **|**  | //Integer// 
-  |  |  **|**  | ``(`` //Term// ``:`` //Term// ``)`` 
   |  |  **|**  | ``Type`` 
   |  |  **|**  | ``<`` //[RSession]// ``>`` 
   |  |  **|**  | ``(`` //Term// ``)`` 

@@ -140,7 +140,6 @@ instance Print Term where
   prt i e = case e of
    Var name -> prPrec i 3 (concatD [prt 0 name])
    Lit n -> prPrec i 3 (concatD [prt 0 n])
-   EAnn term0 term -> prPrec i 3 (concatD [doc (showString "(") , prt 0 term0 , doc (showString ":") , prt 0 term , doc (showString ")")])
    TTyp  -> prPrec i 3 (concatD [doc (showString "Type")])
    TProto rsessions -> prPrec i 3 (concatD [doc (showString "<") , prt 0 rsessions , doc (showString ">")])
    Def name terms -> prPrec i 2 (concatD [prt 0 name , prt 0 terms])

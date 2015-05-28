@@ -50,7 +50,6 @@ transTerm :: Term -> Result
 transTerm x = case x of
   Var name  -> failure x
   Lit n  -> failure x
-  EAnn term1 term2  -> failure x
   TTyp  -> failure x
   TProto rsessions  -> failure x
   Def name terms  -> failure x

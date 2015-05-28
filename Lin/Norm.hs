@@ -46,7 +46,6 @@ data Term
   | TFun VarDec Typ
   | TSig VarDec Typ
   | TProto [RSession]
-  | Ann Term Typ
   deriving (Eq,Ord,Show,Read)
 
 -- Polarity with a read/write (recv/send) flavor

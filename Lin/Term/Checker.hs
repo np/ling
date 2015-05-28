@@ -65,7 +65,6 @@ inferTerm e0 = case e0 of
   Lit _           -> return int
   TTyp            -> return TTyp -- type-in-type
   Def x es        -> inferDef x es
-  Ann e typ       -> checkTerm typ e >> return typ
   Proc{}          -> throwError "inferTerm: NProc"
   TFun arg s      -> checkVarDec arg (checkTyp s) >> return TTyp
   TSig arg s      -> checkVarDec arg (checkTyp s) >> return TTyp

@@ -142,7 +142,6 @@ Op : '+' { Plus }
 Term3 :: { Term }
 Term3 : Name { Var $1 } 
   | Integer { Lit $1 }
-  | '(' Term ':' Term ')' { EAnn $2 $4 }
   | 'Type' { TTyp }
   | '<' ListRSession '>' { TProto $2 }
   | '(' Term ')' { $2 }

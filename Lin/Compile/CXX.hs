@@ -158,7 +158,6 @@ transTerm env x = case x of
        es                             -> C.EApp (transName f) es
   N.Lit n          -> C.ELit n
   N.Proc ids proc  -> error "transTerm/Proc" ids proc
-  N.Ann e _typ     -> transTerm env e
   N.TFun{}         -> C.ELit 0 -- <- types are erased to 0
   N.TSig{}         -> C.ELit 0 -- <- types are erased to 0
   N.TProto{}       -> C.ELit 0 -- <- types are erased to 0
@@ -306,7 +305,6 @@ transTyp e0 = case e0 of
       ("Int", [])    -> C.TInt
       ("Vec", [a,e]) -> C.TArr (transTyp a) (transTerm emptyEnv e)
       _              -> error $ "transTyp: " ++ show e0
-  N.Ann e _  -> transTyp e
   N.TTyp{}   -> C.TInt -- <- types are erased to 0
   N.TProto{} -> error "transTyp: N.TProto"
   N.Lit{}    -> error "transTyp: N.Lit"

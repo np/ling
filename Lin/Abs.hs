@@ -37,7 +37,6 @@ data Op =
 data Term =
    Var Name
  | Lit Integer
- | EAnn Term Term
  | TTyp
  | TProto [RSession]
  | Def Name [Term]

@@ -32,7 +32,6 @@ instance Subst Term where
     TTyp       -> e0
     Lit{}      -> e0
 
-    Ann{}      -> error "subst/Ann: impossible"
     Proc{}     -> error "subst/Proc: TODO"
     TProto{}   -> error "subst/TProto: TODO"
 

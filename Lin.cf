@@ -30,7 +30,6 @@ Plus.    Op ::= "+" ;
 -- Atomic terms
 Var.     Term3 ::= Name ;
 Lit.     Term3 ::= Integer ;
-EAnn.    Term3 ::= "(" Term ":" Term ")" ;
 TTyp.    Term3 ::= "Type" ;
 TProto.  Term3 ::= "<" [RSession] ">" ;
 _.       Term3 ::= "(" Term ")" ;

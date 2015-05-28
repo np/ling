@@ -150,7 +150,6 @@ instance Norm Term where
     N.Def x es         -> Def x (reify es)
     N.Lit n            -> Lit n
     N.Proc cs p        -> Proc (reify cs) (reify p)
-    N.Ann e typ        -> EAnn (reify e) (reify typ)
     N.TTyp             -> TTyp
     N.TFun (Arg a t) s -> TFun (VarDec a (reify t)) [] (reify s)
     N.TSig (Arg a t) s -> TSig (VarDec a (reify t)) [] (reify s)
@@ -161,7 +160,6 @@ instance Norm Term where
   norm (Def x es)       = N.Def x (norm es)
   norm (Lit n)          = N.Lit n
   norm (Proc cs p)      = N.Proc (norm cs) (norm p)
-  norm (EAnn e typ)     = N.Ann (norm e) (normType typ)
   norm TTyp             = N.TTyp
   norm (TFun xs xss t)  = normTele N.TFun (xs:xss) (normType t)
   norm (TSig xs xss t)  = normTele N.TSig (xs:xss) (normType t)
