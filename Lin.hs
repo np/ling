@@ -27,21 +27,14 @@ import Lin.ErrM
 
 type ParseFun a = [Token] -> Err a
 
-myLLexer :: String -> [Token]
-myLLexer = myLexer
-
-type Verbosity = Int
-
-data Opts = Opts { _tokens, _abstree, _lintree, _normtree, _check, _sequential, _compile :: Bool
+data Opts = Opts { _tokens, _abstree, _lintree, _normtree, _check, _sequential
+                 , _compile, _noPrims :: Bool
                  , _checkOpts :: CheckOpts }
 
 $(makeLenses ''Opts)
 
 defaultOpts :: Opts
-defaultOpts = Opts False False False False False False False defaultCheckOpts
-
-putStrV :: Verbosity -> String -> IO ()
-putStrV v = when (v > 1) . putStrLn
+defaultOpts = Opts False False False False False False False False defaultCheckOpts
 
 prims :: String
 prims = unlines
@@ -58,7 +51,7 @@ prims = unlines
 
 primsN :: [N.Dec]
 primsN =
-   case pListDec (myLLexer prims) of
+   case pListDec (myLexer prims) of
      Bad e -> error $ "Bad prims\n" ++ e
      Ok  t -> norm . reverse $ t
 
@@ -79,10 +72,12 @@ run opts p s = do
                     exitFailure
      Ok  tree -> do showTree opts tree
                     return tree
-  where ts = myLLexer s
+  where ts = myLexer s
 
-addPrims :: N.Program -> N.Program
-addPrims (N.Program ds) = N.Program (primsN ++ ds)
+addPrims :: Opts -> N.Program -> N.Program
+addPrims opts prg@(N.Program ds)
+  | opts ^. noPrims = prg
+  | otherwise       = N.Program (primsN ++ ds)
 
 runErr :: Err a -> IO a
 runErr (Ok a)  = return a
@@ -94,7 +89,7 @@ transP opts prg = do
   when (opts ^. normtree) $
     putStrLn (pretty nprg)
   when (opts ^. check) $ do
-    runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims $ nprg
+    runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims opts $ nprg
     putStrLn "Checking Sucessful!"
   when (opts ^. sequential) $
     putStrLn $ "\n[Sequential process]\n\n" ++ printTree stree
@@ -123,6 +118,7 @@ mainArgs opts args0 = case args0 of
   "--debug-check":args -> mainArgs (opts & check .~ True & checkOpts . debugChecker .~ True) args
   "--compile":args -> mainArgs (opts & compile .~ True) args
   "--seq":args -> mainArgs (opts & sequential .~ True) args
+  "--no-prims":args -> mainArgs (opts & noPrims .~ True) args
   [f] -> runProgram opts f
   fs  -> mapM_ (\f -> putStrLn f >> runProgram opts f) fs
 
