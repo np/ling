@@ -18,7 +18,7 @@ Integer literals //Integer// are nonempty sequences of digits.
 
 
 Name literals are recognized by the regular expression
-`````(letter | ["_-+'"] | digit)* (letter | ["_-+'"]) (letter | ["_-+'"] | digit)*`````
+`````(letter | ["_-+*/'"] | digit)* (letter | ["_-+*/'"]) (letter | ["_-+*/'"] | digit)*`````
 
 
 ===Reserved words and symbols===
@@ -28,12 +28,11 @@ The reserved words used in Lin are the following:
   | ``Fwd`` | ``Log`` | ``Sort`` | ``Type``
   | ``as`` | ``end`` | ``fwd`` | ``new``
   | ``proc`` | ``recv`` | ``send`` | ``slice``
-  | ``unpack`` |  |  | 
 
 The symbols used in Lin are the following:
   | , | = | . | :
   | ( | ) | + | <
-  | > | -> | * | |
+  | > | -> | ** | |
   | @ | { | } | [
   | ] | [: | :] | !
   | ? | ~ | -o | ^
@@ -74,7 +73,7 @@ All other symbols are terminals.
   |  |  **|**  | //Term2// //Op// //Term3// 
   |  |  **|**  | //Term3// 
   | //Term// | -> | //VarDec// //[VarDec]// ``->`` //Term// 
-  |  |  **|**  | //VarDec// //[VarDec]// ``*`` //Term// 
+  |  |  **|**  | //VarDec// //[VarDec]// ``**`` //Term// 
   |  |  **|**  | ``proc`` ``(`` //[ChanDec]// ``)`` //Proc// 
   |  |  **|**  | //Term2// 
   | //[Term3]// | -> | **eps**
@@ -85,7 +84,7 @@ All other symbols are terminals.
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
   | //Procs// | -> | **eps**
   |  |  **|**  | ``fwd`` //Session// //Name// //Name// //[Snk]// 
-  |  |  **|**  | ``unpack`` //Term// ``@`` ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``@`` //Term3// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
   | //Snk// | -> | //Name// 
   | //[Snk]// | -> | **eps**

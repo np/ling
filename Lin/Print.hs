@@ -145,7 +145,7 @@ instance Print Term where
    Def name terms -> prPrec i 2 (concatD [prt 0 name , prt 0 terms])
    Infix term0 op term -> prPrec i 2 (concatD [prt 2 term0 , prt 0 op , prt 3 term])
    TFun vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec , prt 0 vardecs , doc (showString "->") , prt 0 term])
-   TSig vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec , prt 0 vardecs , doc (showString "*") , prt 0 term])
+   TSig vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec , prt 0 vardecs , doc (showString "**") , prt 0 term])
    Proc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc") , doc (showString "(") , prt 0 chandecs , doc (showString ")") , prt 0 proc])
 
   prtList es = case es of
@@ -165,7 +165,7 @@ instance Print Procs where
   prt i e = case e of
    ZeroP  -> prPrec i 0 (concatD [])
    Ax session name0 name snks -> prPrec i 0 (concatD [doc (showString "fwd") , prt 0 session , prt 0 name0 , prt 0 name , prt 0 snks])
-   At term names -> prPrec i 0 (concatD [doc (showString "unpack") , prt 0 term , doc (showString "@") , doc (showString "(") , prt 0 names , doc (showString ")")])
+   At term names -> prPrec i 0 (concatD [doc (showString "@") , prt 3 term , doc (showString "(") , prt 0 names , doc (showString ")")])
    Procs procs -> prPrec i 0 (concatD [doc (showString "(") , prt 0 procs , doc (showString ")")])
 
 

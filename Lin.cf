@@ -1,9 +1,9 @@
 comment "--" ;
 comment "{-" "-}" ;
 
-token Name ((letter | ["_-+'"] | digit)*
-            (letter | ["_-+'"])
-            (letter | ["_-+'"] | digit)*) ;
+token Name ((letter | ["_-+*/'"] | digit)*
+            (letter | ["_-+*/'"])
+            (letter | ["_-+*/'"] | digit)*) ;
 
 separator Name "," ;
 
@@ -40,7 +40,7 @@ Infix.   Term2 ::= Term2 Op Term3 ;
 _.       Term2 ::= Term3 ;
 
 TFun.    Term  ::= VarDec [VarDec] "->" Term ;
-TSig.    Term  ::= VarDec [VarDec] "*"  Term ;
+TSig.    Term  ::= VarDec [VarDec] "**" Term ;
 Proc.    Term  ::= "proc" "(" [ChanDec] ")" Proc ;
 _.       Term  ::= Term2 ;
 
@@ -52,7 +52,7 @@ separator Proc "|" ;
 
 ZeroP. Procs ::= ;
 Ax.    Procs ::= "fwd" Session Name Name [Snk] ;
-At.    Procs ::= "unpack" Term "@" "(" [Name] ")" ;
+At.    Procs ::= "@" Term3 "(" [Name] ")" ;
 Procs. Procs ::= "(" [Proc] ")" ;
 
 Snk.   Snk   ::= Name ;

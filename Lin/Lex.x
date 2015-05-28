@@ -20,7 +20,7 @@ $i = [$l $d _ ']          -- identifier character
 $u = [\0-\255]          -- universal: any character
 
 @rsyms =    -- symbols and non-identifier-like reserved words
-   \, | \= | \. | \: | \( | \) | \+ | \< | \> | \- \> | \* | \| | \@ | \{ | \} | \[ | \] | \[ \: | \: \] | \! | \? | \~ | \- "o" | \^
+   \, | \= | \. | \: | \( | \) | \+ | \< | \> | \- \> | \* \* | \| | \@ | \{ | \} | \[ | \] | \[ \: | \: \] | \! | \? | \~ | \- "o" | \^
 
 :-
 "--" [.]* ; -- Toss single line comments
@@ -28,7 +28,7 @@ $u = [\0-\255]          -- universal: any character
 
 $white+ ;
 @rsyms { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
-($l | [\_ \- \+ \']| $d)* ($l | [\_ \- \+ \']) ($l | [\_ \- \+ \']| $d)* { tok (\p s -> PT p (eitherResIdent (T_Name . share) s)) }
+($l | [\_ \- \+ \* \/ \']| $d)* ($l | [\_ \- \+ \* \/ \']) ($l | [\_ \- \+ \* \/ \']| $d)* { tok (\p s -> PT p (eitherResIdent (T_Name . share) s)) }
 
 $l $i*   { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
 
@@ -100,7 +100,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b "Sort" 19 (b ":" 10 (b "+" 5 (b ")" 3 (b "(" 2 (b "!" 1 N N) N) (b "*" 4 N N)) (b "-o" 8 (b "->" 7 (b "," 6 N N) N) (b "." 9 N N))) (b "?" 15 (b "=" 13 (b "<" 12 (b ":]" 11 N N) N) (b ">" 14 N N)) (b "Fwd" 17 (b "@" 16 N N) (b "Log" 18 N N)))) (b "proc" 29 (b "^" 24 (b "[:" 22 (b "[" 21 (b "Type" 20 N N) N) (b "]" 23 N N)) (b "fwd" 27 (b "end" 26 (b "as" 25 N N) N) (b "new" 28 N N))) (b "{" 34 (b "slice" 32 (b "send" 31 (b "recv" 30 N N) N) (b "unpack" 33 N N)) (b "}" 36 (b "|" 35 N N) (b "~" 37 N N))))
+resWords = b "Sort" 19 (b ":" 10 (b "+" 5 (b ")" 3 (b "(" 2 (b "!" 1 N N) N) (b "**" 4 N N)) (b "-o" 8 (b "->" 7 (b "," 6 N N) N) (b "." 9 N N))) (b "?" 15 (b "=" 13 (b "<" 12 (b ":]" 11 N N) N) (b ">" 14 N N)) (b "Fwd" 17 (b "@" 16 N N) (b "Log" 18 N N)))) (b "new" 28 (b "^" 24 (b "[:" 22 (b "[" 21 (b "Type" 20 N N) N) (b "]" 23 N N)) (b "end" 26 (b "as" 25 N N) (b "fwd" 27 N N))) (b "{" 33 (b "send" 31 (b "recv" 30 (b "proc" 29 N N) N) (b "slice" 32 N N)) (b "}" 35 (b "|" 34 N N) (b "~" 36 N N))))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 

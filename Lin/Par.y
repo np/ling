@@ -47,7 +47,7 @@ import Lin.ErrM
   '!' { PT _ (TS _ 1) }
   '(' { PT _ (TS _ 2) }
   ')' { PT _ (TS _ 3) }
-  '*' { PT _ (TS _ 4) }
+  '**' { PT _ (TS _ 4) }
   '+' { PT _ (TS _ 5) }
   ',' { PT _ (TS _ 6) }
   '->' { PT _ (TS _ 7) }
@@ -76,11 +76,10 @@ import Lin.ErrM
   'recv' { PT _ (TS _ 30) }
   'send' { PT _ (TS _ 31) }
   'slice' { PT _ (TS _ 32) }
-  'unpack' { PT _ (TS _ 33) }
-  '{' { PT _ (TS _ 34) }
-  '|' { PT _ (TS _ 35) }
-  '}' { PT _ (TS _ 36) }
-  '~' { PT _ (TS _ 37) }
+  '{' { PT _ (TS _ 33) }
+  '|' { PT _ (TS _ 34) }
+  '}' { PT _ (TS _ 35) }
+  '~' { PT _ (TS _ 36) }
 
 L_integ  { PT _ (TI $$) }
 L_Name { PT _ (T_Name $$) }
@@ -155,7 +154,7 @@ Term2 : Name ListTerm3 { Def $1 (reverse $2) }
 
 Term :: { Term }
 Term : VarDec ListVarDec '->' Term { TFun $1 (reverse $2) $4 } 
-  | VarDec ListVarDec '*' Term { TSig $1 (reverse $2) $4 }
+  | VarDec ListVarDec '**' Term { TSig $1 (reverse $2) $4 }
   | 'proc' '(' ListChanDec ')' Proc { Proc $3 $5 }
   | Term2 { $1 }
 
@@ -178,7 +177,7 @@ ListProc : {- empty -} { [] }
 Procs :: { Procs }
 Procs : {- empty -} { ZeroP } 
   | 'fwd' Session Name Name ListSnk { Ax $2 $3 $4 (reverse $5) }
-  | 'unpack' Term '@' '(' ListName ')' { At $2 $5 }
+  | '@' Term3 '(' ListName ')' { At $2 $4 }
   | '(' ListProc ')' { Procs $2 }
 
 
