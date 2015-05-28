@@ -1,4 +1,4 @@
-fwd_par2_ten2 (i : {?Int, !Int. ?Int}, o : [!Int, ?Int.!Int])
+fwd_par2_ten2_expanded (i : {?Int, !Int. ?Int}, o : [!Int, ?Int.!Int])
   = o[o0,o1]
     i{i0,i1}
     ( recv i0 (x : Int) send o0 x

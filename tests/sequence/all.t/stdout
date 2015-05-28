@@ -58,7 +58,7 @@ fwd_par2_ten2_ten2 (i : {?Int, !Int .?Int}, o : [!Int, ?Int .!Int], l : {!Int, !
   send o1# x#i1# 
   send l1# x#i1# 
   .
-fwd_par2_ten2_ten2 (i : {?Int, !Int .?Int}, o : [!Int, ?Int .!Int], l : {!Int, !Int .!Int}, m : {!Int, !Int .!Int})  =
+fwd_par2_ten2_ten2_ten2 (i : {?Int, !Int .?Int}, o : [!Int, ?Int .!Int], l : {!Int, !Int .!Int}, m : {!Int, !Int .!Int})  =
   o [o0#, o1#]
   i {i0#, i1#}
   l {l0#, l1#}
@@ -80,7 +80,7 @@ fwd_send_recv (i : ?Int, o : !Int) =
   recv i (x#i : Int)
   send o x#i 
   .
-fwd_send_recv (i : ?Int .!Int, o : !Int .?Int) =
+fwd_send_recv_recv_send (i : ?Int .!Int, o : !Int .?Int) =
   recv i (x#i : Int)
   send o x#i 
   recv o (x#o : Int)
@@ -125,7 +125,7 @@ merger_seq (c0 : !Vec Int m .?Vec Int m, c1 : !Vec Int n .?Vec Int n, ci : ?Vec 
   .
 m : Int .
 n : Int .
-merger_seq (c : {{!Vec Int m .?Vec Int m, !Vec Int n .?Vec Int n}, ?Vec Int (m + n).!Vec Int (m + n)}) =
+merger_seq_Sort (c : {{!Vec Int m .?Vec Int m, !Vec Int n .?Vec Int n}, ?Vec Int (m + n).!Vec Int (m + n)}) =
   c {d, io}
   d {d0, d1}
   recv io (vi : Vec Int (m + n)) 

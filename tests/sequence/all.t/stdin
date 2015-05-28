@@ -20,14 +20,15 @@ fwd_par2_ten2_ten2 ( i : {?Int,!Int.?Int}
                    , l : {!Int,!Int.!Int}
                    ) =
   fwd {?Int,!Int.?Int}(i,o,l).
-fwd_par2_ten2_ten2 ( i : {?Int,!Int.?Int}
-                   , o : [!Int,?Int.!Int]
-                   , l : {!Int,!Int.!Int}
-                   , m : {!Int,!Int.!Int}
-                   ) =
+fwd_par2_ten2_ten2_ten2
+  ( i : {?Int,!Int.?Int}
+  , o : [!Int,?Int.!Int]
+  , l : {!Int,!Int.!Int}
+  , m : {!Int,!Int.!Int}
+  ) =
   fwd {?Int,!Int.?Int}(i,o,l,m).
 fwd_send_recv (i : ?Int, o : !Int) = fwd (?Int)(i,o).
-fwd_send_recv (i : ?Int. !Int, o : !Int. ?Int) = fwd (?Int.!Int)(i,o).
+fwd_send_recv_recv_send (i : ?Int. !Int, o : !Int. ?Int) = fwd (?Int.!Int)(i,o).
 id : (A : Type)(x : A) -> A.
 
 idproc (c : ?Int, d : !Int) =
@@ -79,7 +80,7 @@ merger_seq ( c0 : ! Vec Int m. ? Vec Int m
 m : Int.
 n : Int.
 
-merger_seq (c : [Sort Int m, Sort Int n] -o Sort Int (m + n)) =
+merger_seq_Sort (c : [Sort Int m, Sort Int n] -o Sort Int (m + n)) =
   c{d,io} d{d0,d1}
   recv io (vi : Vec Int (m + n))
   send d0 (take Int m n vi) -- Since these two sends are on different channels
