@@ -1,3 +1,6 @@
-stderr -whitespace
-stdout -whitespace
-stdin  -whitespace
+stderr  -whitespace
+stdout  -whitespace
+stdin   -whitespace
+Doc.txt -whitespace
+Lex.x   -whitespace
+Par.y   -whitespace
