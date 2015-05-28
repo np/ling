@@ -147,7 +147,7 @@ instance Print Term where
    Infix term0 op term -> prPrec i 2 (concatD [prt 2 term0 , prt 0 op , prt 3 term])
    TFun vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec , prt 0 vardecs , doc (showString "->") , prt 0 term])
    TSig vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec , prt 0 vardecs , doc (showString "*") , prt 0 term])
-   Proc chandecs proc -> prPrec i 0 (concatD [doc (showString "(") , prt 0 chandecs , doc (showString ")") , doc (showString ".") , prt 0 proc])
+   Proc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc") , doc (showString "(") , prt 0 chandecs , doc (showString ")") , prt 0 proc])
 
   prtList es = case es of
    [] -> (concatD [])

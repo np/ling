@@ -72,14 +72,15 @@ import Lin.ErrM
   'end' { PT _ (TS _ 26) }
   'fwd' { PT _ (TS _ 27) }
   'new' { PT _ (TS _ 28) }
-  'recv' { PT _ (TS _ 29) }
-  'send' { PT _ (TS _ 30) }
-  'slice' { PT _ (TS _ 31) }
-  'unpack' { PT _ (TS _ 32) }
-  '{' { PT _ (TS _ 33) }
-  '|' { PT _ (TS _ 34) }
-  '}' { PT _ (TS _ 35) }
-  '~' { PT _ (TS _ 36) }
+  'proc' { PT _ (TS _ 29) }
+  'recv' { PT _ (TS _ 30) }
+  'send' { PT _ (TS _ 31) }
+  'slice' { PT _ (TS _ 32) }
+  'unpack' { PT _ (TS _ 33) }
+  '{' { PT _ (TS _ 34) }
+  '|' { PT _ (TS _ 35) }
+  '}' { PT _ (TS _ 36) }
+  '~' { PT _ (TS _ 37) }
 
 L_integ  { PT _ (TI $$) }
 L_Name { PT _ (T_Name $$) }
@@ -156,7 +157,7 @@ Term2 : Name ListTerm3 { Def $1 (reverse $2) }
 Term :: { Term }
 Term : VarDec ListVarDec '->' Term { TFun $1 (reverse $2) $4 } 
   | VarDec ListVarDec '*' Term { TSig $1 (reverse $2) $4 }
-  | '(' ListChanDec ')' '.' Proc { Proc $2 $5 }
+  | 'proc' '(' ListChanDec ')' Proc { Proc $3 $5 }
   | Term2 { $1 }
 
 

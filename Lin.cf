@@ -42,7 +42,7 @@ _.       Term2 ::= Term3 ;
 
 TFun.    Term  ::= VarDec [VarDec] "->" Term ;
 TSig.    Term  ::= VarDec [VarDec] "*"  Term ;
-Proc.    Term  ::= "(" [ChanDec] ")" "." Proc ;
+Proc.    Term  ::= "proc" "(" [ChanDec] ")" Proc ;
 _.       Term  ::= Term2 ;
 
 separator Term3 "" ;
