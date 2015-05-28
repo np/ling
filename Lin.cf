@@ -92,7 +92,7 @@ Rcv.  Session2 ::= "?" Term2 CSession ;
 Dual. Session2 ::= "~" Session2 ;
 _.    Session2 ::= Session3 ;
 
-Loli. Session  ::= Session "-o" Session2 ;
+Loli. Session  ::= Session2 "-o" Session ;
 _.    Session  ::= Session2 ;
 
 Repl. RSession ::= Session OptRepl ;
@@ -101,5 +101,5 @@ separator RSession "," ;
 One.  OptRepl  ::= ;
 Some. OptRepl  ::= "^" Term3 ;
 
-Cont. CSession ::= "." Session ;
+Cont. CSession ::= "." Session2 ;
 Done. CSession ::= ;

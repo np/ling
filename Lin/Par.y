@@ -235,7 +235,7 @@ Session2 : '!' Term2 CSession { Snd $2 $3 }
 
 
 Session :: { Session }
-Session : Session '-o' Session2 { Loli $1 $3 } 
+Session : Session2 '-o' Session { Loli $1 $3 } 
   | Session2 { $1 }
 
 
@@ -255,7 +255,7 @@ OptRepl : {- empty -} { One }
 
 
 CSession :: { CSession }
-CSession : '.' Session { Cont $2 } 
+CSession : '.' Session2 { Cont $2 } 
   | {- empty -} { Done }
 
 

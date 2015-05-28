@@ -115,7 +115,7 @@ All other symbols are terminals.
   |  |  **|**  | ``?`` //Term2// //CSession// 
   |  |  **|**  | ``~`` //Session2// 
   |  |  **|**  | //Session3// 
-  | //Session// | -> | //Session// ``-o`` //Session2// 
+  | //Session// | -> | //Session2// ``-o`` //Session// 
   |  |  **|**  | //Session2// 
   | //RSession// | -> | //Session// //OptRepl// 
   | //[RSession]// | -> | **eps**
@@ -123,7 +123,7 @@ All other symbols are terminals.
   |  |  **|**  | //RSession// ``,`` //[RSession]// 
   | //OptRepl// | -> | **eps**
   |  |  **|**  | ``^`` //Term3// 
-  | //CSession// | -> | ``.`` //Session// 
+  | //CSession// | -> | ``.`` //Session2// 
   |  |  **|**  | **eps**
 
 

@@ -211,7 +211,7 @@ instance Print Session where
    Snd term csession -> prPrec i 2 (concatD [doc (showString "!") , prt 2 term , prt 0 csession])
    Rcv term csession -> prPrec i 2 (concatD [doc (showString "?") , prt 2 term , prt 0 csession])
    Dual session -> prPrec i 2 (concatD [doc (showString "~") , prt 2 session])
-   Loli session0 session -> prPrec i 0 (concatD [prt 0 session0 , doc (showString "-o") , prt 2 session])
+   Loli session0 session -> prPrec i 0 (concatD [prt 2 session0 , doc (showString "-o") , prt 0 session])
 
 
 instance Print RSession where
@@ -231,5 +231,5 @@ instance Print OptRepl where
 
 instance Print CSession where
   prt i e = case e of
-   Cont session -> prPrec i 0 (concatD [doc (showString ".") , prt 0 session])
+   Cont session -> prPrec i 0 (concatD [doc (showString ".") , prt 2 session])
    Done  -> prPrec i 0 (concatD [])
