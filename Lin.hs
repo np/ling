@@ -17,9 +17,9 @@ import qualified MiniC.Print as C
 import Lin.Reify
 import Lin.Utils
 import Lin.Print.Instances ()
-import Lin.Compile.C
+import qualified Lin.Compile.C as Compile
 import qualified Lin.Norm as N
-import qualified Lin.Sequential as S
+import qualified Lin.Sequential as Sequential
 import Lin.Proc.Checker (checkProgram)
 import Lin.Term.Checker (runTC, debugChecker, CheckOpts, defaultCheckOpts)
 
@@ -28,18 +28,17 @@ import Lin.ErrM
 type ParseFun a = [Token] -> Err a
 
 data Opts = Opts { _tokens, _abstree, _lintree, _normtree, _check, _sequential
-                 , _compile, _noPrims :: Bool
+                 , _compile, _compilePrims, _noPrims :: Bool
                  , _checkOpts :: CheckOpts }
 
 $(makeLenses ''Opts)
 
 defaultOpts :: Opts
-defaultOpts = Opts False False False False False False False False defaultCheckOpts
+defaultOpts = Opts False False False False False False False False False defaultCheckOpts
 
 prims :: String
 prims = unlines
-  ["-- begin prims"
-  ,"Int   : Type."
+  ["Int   : Type."
   ,"_+_   : (m : Int)(n : Int) -> Int."
   ,"Vec   : (A : Type)(n : Int) -> Type."
   ,"take  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A m."
@@ -53,7 +52,6 @@ prims = unlines
   ,"_-D_ : (m : Double)(n : Double) -> Double."
   ,"_*D_ : (m : Double)(n : Double) -> Double."
   ,"_/D_ : (m : Double)(n : Double) -> Double."
-  ,"-- end prims"
   ]
 
 primsN :: [N.Dec]
@@ -81,10 +79,10 @@ run opts p s = do
                     return tree
   where ts = myLexer s
 
-addPrims :: Opts -> N.Program -> N.Program
-addPrims opts prg@(N.Program ds)
-  | opts ^. noPrims = prg
-  | otherwise       = N.Program (primsN ++ ds)
+addPrims :: Bool -> N.Program -> N.Program
+addPrims doAddPrims prg@(N.Program ds)
+  | doAddPrims = N.Program (primsN ++ ds)
+  | otherwise  = prg
 
 runErr :: Err a -> IO a
 runErr (Ok a)  = return a
@@ -96,16 +94,16 @@ transP opts prg = do
   when (opts ^. normtree) $
     putStrLn (pretty nprg)
   when (opts ^. check) $ do
-    runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims opts $ nprg
+    runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not(opts^.noPrims)) $ nprg
     putStrLn "Checking Sucessful!"
   when (opts ^. sequential) $
     putStrLn $ "\n{- Sequential process -}\n\n" ++ printTree sprg
   when (opts ^. compile) $
     putStrLn $ "\n/* Transformed tree */\n\n" ++ C.printTree cprg
 
-  where nprg  = norm prg
-        stree = S.transProgram nprg
-        tree  = transProgram stree
+  where nprg = norm prg
+        sprg = Sequential.transProgram nprg
+        cprg = Compile.transProgram (addPrims (opts^.compilePrims) sprg)
 
 showTree :: (Show a, Print a) => Opts -> a -> IO ()
 showTree opts tree
@@ -124,6 +122,7 @@ mainArgs opts args0 = case args0 of
   "--check":args -> mainArgs (opts & check .~ True) args
   "--debug-check":args -> mainArgs (opts & check .~ True & checkOpts . debugChecker .~ True) args
   "--compile":args -> mainArgs (opts & compile .~ True) args
+  "--compile-prims":args -> mainArgs (opts & compilePrims .~ True) args
   "--seq":args -> mainArgs (opts & sequential .~ True) args
   "--no-prims":args -> mainArgs (opts & noPrims .~ True) args
   [f] -> runProgram opts f
