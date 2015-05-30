@@ -2,11 +2,11 @@
 
 testname=all.t
 command=Lin
-args=( --compile )
+args=( --compile-prims --compile )
 exit_code=0
 stdin_file=stdin
 stdout_file=stdout
-stderr_file=stderr
+stderr_file=/dev/null
 sources=( )
 products=( )
 

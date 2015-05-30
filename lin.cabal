@@ -19,7 +19,7 @@ executable Lin
   build-tools: alex, happy
   main-is: Lin.hs
   ghc-options:       -Wall
-  other-modules:     Lin.Lex, Lin.Par, MiniCXX.Lex, MiniCXX.Par
+  other-modules:     Lin.Lex, Lin.Par, MiniC.Lex, MiniC.Par
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8, array, containers,
                        lens, mtl

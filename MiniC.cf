@@ -1,0 +1,76 @@
+comment "//" ;
+comment "/*" "*/" ;
+
+PPrg. Prg ::= [Def] ;
+
+Dec. Dec ::= QTyp Ident [Arr] ;
+
+separator Dec "," ;
+
+DDef. Def ::= Dec "(" [Dec] ")" "{" [Stm] "}" ;
+DSig. Def ::= Dec "(" [Dec] ")" ";" ;
+DDec. Def ::= Dec ";" ;
+
+separator Def "" ;
+
+TInt.    Typ ::= "int" ;
+TDouble. Typ ::= "double" ;
+TStr.    Typ ::= "struct" "{" [Fld] "}" ;
+TUni.    Typ ::= "union"  "{" [Fld] "}" ;
+TVoid.   Typ ::= "void" ;
+TPtr.    Typ ::= Typ "*" ;
+
+separator Typ "," ;
+
+FFld. Fld ::= Typ Ident [Arr] ;
+
+terminator Fld ";" ;
+
+AArr. Arr ::= "[" Exp "]" ;
+
+separator Arr "" ;
+
+QTyp.  QTyp ::= Qual Typ ;
+
+NoQual. Qual ::= ;
+QConst. Qual ::= "const" ;
+
+SDec. Stm ::= Dec Init ;
+SPut. Stm ::= LVal "=" Exp ;
+SFor. Stm ::= "for" "(" Stm ";" Exp ";" Stm ")" "{" [Stm] "}" ;
+
+NoInit. Init ::= ;
+SoInit. Init ::= "=" Exp ;
+
+terminator Stm ";" ;
+
+Plus. Op  ::= "+" ;
+Lt.   Op  ::= "<" ;
+
+EVar. Exp4 ::= Ident ;
+ELit. Exp4 ::= Integer ;
+_.    Exp4 ::= "(" Exp ")" ;
+
+EArw. Exp3 ::= Exp3 "->" Ident ;
+EFld. Exp3 ::= Exp3 "." Ident ;
+EArr. Exp3 ::= Exp3 "[" Exp "]" ;
+_.    Exp3 ::= Exp4 ;
+
+EInf. Exp2 ::= Exp2 Op Exp3 ;
+_.    Exp2 ::= Exp3 ;
+
+EPtr. Exp ::= "*" Exp3 ;
+EApp. Exp ::= Ident "(" [Exp] ")" ;
+
+separator Exp "," ;
+
+LVar. LVal3 ::= Ident ;
+_.    LVal3 ::= "(" LVal ")" ;
+
+LArw. LVal2 ::= LVal2 "->" Ident ;
+LFld. LVal2 ::= LVal2 "." Ident ;
+LArr. LVal2 ::= LVal2 "[" Exp "]" ;
+_.    LVal2 ::= LVal3 ;
+
+LPtr. LVal  ::= "*" LVal2 ;
+_.    LVal  ::= LVal2 ;

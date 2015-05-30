@@ -61,14 +61,6 @@ log (Rcv a s)  = Snd a (log s)
 log (Atm _ n)  = Atm Write n
 log End        = End
 
-isEnd :: Session -> Bool
-isEnd End = True
-isEnd _   = False
-
-isSndEnd :: Session -> Bool
-isSndEnd (Snd _ End) = True
-isSndEnd _           = False
-
 defaultEnd :: Maybe Session -> Session
 defaultEnd Nothing  = End
 defaultEnd (Just s) = s

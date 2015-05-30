@@ -1,164 +1,574 @@
 
-[Transformed tree]
+/* Transformed tree */
 
-void cutEmptyParTensor () {
+int Int_lin ;
+int __plus___lin (const int m_lin, const int n_lin);
+int Vec_lin (const int A_lin, const int n_lin);
+void * * take_lin (const int A_lin, const int m_lin, const int n_lin, const void * * v_lin);
+void * * drop_lin (const int A_lin, const int m_lin, const int n_lin, const void * * v_lin);
+int * merge_lin (const int m_lin, const int n_lin, const int * v0_lin, const int * v1_lin);
+int * sort_lin (const int n_lin, const int * v_lin);
+int Session_lin ;
+int Double_lin ;
+double Int2Double_lin (const int n_lin);
+double __plus_D__lin (const double m_lin, const double n_lin);
+double __sub_D__lin (const double m_lin, const double n_lin);
+double __times_D__lin (const double m_lin, const double n_lin);
+double __div_D__lin (const double m_lin, const double n_lin);
+void cutEmptyParTensor_lin () {
   }
-void cutSendRecv () {
-  int c ;
-  c = 1 ;
-  const int x = c ;
+void cut_par_cut_lin () {
+  int c_lin ;
+  int c___lin ;
+  c_lin = 1 ;
+  const int x_lin = c_lin ;
+  c___lin = 1 ;
+  const int x___lin = c___lin ;
   }
-void double (const int i, int r){
-  const int xi = i ;
-  int c ;
-  c = xi ;
-  const int x = c ;
-  c = xi ;
-  const int y = c ;
-  c = x + y ;
-  const int z = c ;
-  r = z ;
+void cutSendRecv_lin () {
+  int c_lin ;
+  c_lin = 1 ;
+  const int x_lin = c_lin ;
   }
-void idproc (const int c, int d){
-  const int y = c ;
-  d = id (0, y);
+void double_lin (const int * i_lin, int * r_lin){
+  const int xi_lin = * i_lin ;
+  int c_lin ;
+  c_lin = xi_lin ;
+  const int x_lin = c_lin ;
+  c_lin = xi_lin ;
+  const int y_lin = c_lin ;
+  c_lin = x_lin + y_lin ;
+  const int z_lin = c_lin ;
+  * r_lin = z_lin ;
   }
-void par0 (void c){
+void fwd0_par2_ten2_lin (struct {
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f1 ;
   }
-void par1 (int c){
-  c = 42 ;
+* c_lin){
+  const int x__i0___lin = c_lin -> f0 . f0 ;
+  const int x__o1___lin = c_lin -> f1 . f1 ;
+  c_lin -> f1 . f0 = x__i0___lin ;
+  c_lin -> f0 . f1 = x__o1___lin ;
+  const int x__i1___lin = c_lin -> f0 . f1 ;
+  c_lin -> f1 . f1 = x__i1___lin ;
   }
-void par2 (tuple< int, int > c){
-  const int x = c . proj1 ;
-  c . proj0 = x ;
+void fwd1_par2_ten2_ten2_lin (struct {
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f1 ;
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f2 ;
   }
-void par2mix (tuple< int, int > c){
-  c . proj0 = 42 ;
-  const int x = c . proj1 ;
+* c_lin){
+  const int x__i0___lin = c_lin -> f0 . f0 ;
+  const int x__o1___lin = c_lin -> f1 . f1 ;
+  c_lin -> f1 . f0 = x__i0___lin ;
+  c_lin -> f0 . f1 = x__o1___lin ;
+  c_lin -> f2 . f0 = x__i0___lin ;
+  c_lin -> f2 . f1 = x__o1___lin ;
+  const int x__i1___lin = c_lin -> f0 . f1 ;
+  c_lin -> f1 . f1 = x__i1___lin ;
+  c_lin -> f2 . f1 = x__i1___lin ;
   }
-void parallel_assoc_2tensor2_left (tuple< tuple< int, int >, int > cde){
-  cde . proj0 . proj0 = 1 ;
-  cde . proj0 . proj1 = 2 ;
-  cde . proj1 = 3 ;
+void fwd_par0_ten0_lin (const struct {
   }
-void parallel_assoc_2tensor2_right (tuple< tuple< int, int >, int > cde){
-  cde . proj1 = 3 ;
-  cde . proj0 . proj0 = 1 ;
-  cde . proj0 . proj1 = 2 ;
+* i_lin, const struct {
   }
-void parallel_assoc_flat (int c, int d, int e){
-  c = 1 ;
-  d = 2 ;
-  e = 3 ;
+* o_lin){
   }
-void parallel_assoc_left (int c, int d, int e){
-  c = 1 ;
-  d = 2 ;
-  e = 3 ;
+void fwd_par2_ten2_lin (struct {
+  int f0 ;
+  int f1 ;
   }
-void parallel_assoc_right (int c, int d, int e){
-  c = 1 ;
-  d = 2 ;
-  e = 3 ;
+* i_lin, struct {
+  int f0 ;
+  int f1 ;
   }
-void parallel_assoc_tensor3_flat (tuple< int, int, int > cde){
-  cde . proj0 = 1 ;
-  cde . proj1 = 2 ;
-  cde . proj2 = 3 ;
+* o_lin){
+  const int x__i0___lin = i_lin -> f0 ;
+  const int x__o1___lin = o_lin -> f1 ;
+  o_lin -> f0 = x__i0___lin ;
+  i_lin -> f1 = x__o1___lin ;
+  const int x__i1___lin = i_lin -> f1 ;
+  o_lin -> f1 = x__i1___lin ;
   }
-void parallel_assoc_tensor3_left (tuple< int, int, int > cde){
-  cde . proj0 = 1 ;
-  cde . proj1 = 2 ;
-  cde . proj2 = 3 ;
+void fwd_par2_ten2_ten2_lin (struct {
+  int f0 ;
+  int f1 ;
   }
-void parallel_assoc_tensor3_right (tuple< int, int, int > cde){
-  cde . proj0 = 1 ;
-  cde . proj1 = 2 ;
-  cde . proj2 = 3 ;
+* i_lin, struct {
+  int f0 ;
+  int f1 ;
   }
-void parallel_tensor4_flat (tuple< int, int > cd, tuple< int, int > ef){
-  cd . proj0 = 1 ;
-  ef . proj0 = 2 ;
-  cd . proj1 = 3 ;
-  ef . proj1 = 4 ;
+* o_lin, struct {
+  int f0 ;
+  int f1 ;
   }
-void parallel_tensor4_v0 (tuple< int, int > cd, tuple< int, int > ef){
-  cd . proj0 = 1 ;
-  ef . proj0 = 2 ;
-  cd . proj1 = 3 ;
-  ef . proj1 = 4 ;
+* l_lin){
+  const int x__i0___lin = i_lin -> f0 ;
+  const int x__o1___lin = o_lin -> f1 ;
+  o_lin -> f0 = x__i0___lin ;
+  i_lin -> f1 = x__o1___lin ;
+  l_lin -> f0 = x__i0___lin ;
+  l_lin -> f1 = x__o1___lin ;
+  const int x__i1___lin = i_lin -> f1 ;
+  o_lin -> f1 = x__i1___lin ;
+  l_lin -> f1 = x__i1___lin ;
   }
-void par_ten1_ten1 (tuple< int, int > c){
-  const int x = c . proj0 ;
-  c . proj1 = x ;
+void fwd_par2_ten2_ten2_ten2_lin (struct {
+  int f0 ;
+  int f1 ;
   }
-void par_ten_ten_v0 (tuple< tuple< int, int >, tuple< int, int > > c){
-  c . proj1 . proj0 = 1 ;
-  c . proj0 . proj1 = 2 ;
+* i_lin, struct {
+  int f0 ;
+  int f1 ;
   }
-void par_ten_ten_v1 (tuple< tuple< int, int >, tuple< int, int > > c){
-  c . proj1 . proj0 = 1 ;
-  c . proj0 . proj1 = 2 ;
+* o_lin, struct {
+  int f0 ;
+  int f1 ;
   }
-void par_ten_ten_v2 (tuple< tuple< int, int >, tuple< int, int > > c){
-  c . proj1 . proj0 = 1 ;
-  c . proj0 . proj1 = 2 ;
+* l_lin, struct {
+  int f0 ;
+  int f1 ;
   }
-void singleRecv (const int c){
-  const int x = c ;
+* m_lin){
+  const int x__i0___lin = i_lin -> f0 ;
+  const int x__o1___lin = o_lin -> f1 ;
+  o_lin -> f0 = x__i0___lin ;
+  i_lin -> f1 = x__o1___lin ;
+  l_lin -> f0 = x__i0___lin ;
+  l_lin -> f1 = x__o1___lin ;
+  m_lin -> f0 = x__i0___lin ;
+  m_lin -> f1 = x__o1___lin ;
+  const int x__i1___lin = i_lin -> f1 ;
+  o_lin -> f1 = x__i1___lin ;
+  l_lin -> f1 = x__i1___lin ;
+  m_lin -> f1 = x__i1___lin ;
   }
-void singleSend (int c){
-  c = 42 ;
+void fwd_send_recv_lin (const int * i_lin, int * o_lin){
+  const int x__i_lin = * i_lin ;
+  * o_lin = x__i_lin ;
   }
-void tensor0 (void c){
+void fwd_send_recv_recv_send_lin (int * i_lin, int * o_lin){
+  const int x__i_lin = * i_lin ;
+  * o_lin = x__i_lin ;
+  const int x__o_lin = * o_lin ;
+  * i_lin = x__o_lin ;
   }
-void tensor1 (int c){
-  c = 42 ;
+void fwd_ten2_par2_lin (struct {
+  int f0 ;
+  int f1 ;
   }
-void tensor2 (tuple< int, int > c){
-  c . proj0 = 42 ;
-  const int x = c . proj1 ;
+* i_lin, struct {
+  int f0 ;
+  int f1 ;
   }
-void tensor2_tensor0_tensor0_parallel (const tuple< > cd){
+* o_lin){
+  const int x__i0___lin = i_lin -> f0 ;
+  const int x__o1___lin = o_lin -> f1 ;
+  o_lin -> f0 = x__i0___lin ;
+  i_lin -> f1 = x__o1___lin ;
+  const int x__i1___lin = i_lin -> f1 ;
+  o_lin -> f1 = x__i1___lin ;
   }
-void tensor2_tensor0_tensor0_sequence (const tuple< > cd){
+void par0_lin (const struct {
   }
-void tensor2_using_dual (tuple< int, int > c){
-  c . proj0 = 42 ;
-  const int x = c . proj1 ;
+* c_lin){
   }
-void test2 () {
-  tuple< int, int > c ;
-  c . proj0 = 1 ;
-  const int x0 = c . proj0 ;
-  c . proj1 = x0 + 1 ;
-  const int z0 = c . proj1 ;
-  c . proj1 = z0 + 5 ;
-  const int x1 = c . proj1 ;
-  c . proj0 = x1 + x0 + 2 ;
-  const int y0 = c . proj0 ;
-  c . proj0 = y0 + 4 ;
-  const int x2 = c . proj0 ;
-  c . proj1 = x2 + x1 + x0 + 3 ;
-  const int z1 = c . proj1 ;
+void par1_lin (int * c_lin){
+  * c_lin = 42 ;
   }
-void test3 () {
-  union_t< int, tuple< int, int > > c ;
-  c = 1 ;
-  const int x0 = c ;
-  c . proj0 = x0 ;
-  c . proj1 = x0 ;
-  const int y0 = c . proj0 ;
-  const int z0 = c . proj1 ;
+void par2_lin (struct {
+  int f0 ;
+  int f1 ;
   }
-void test4 (int r){
-  const int c ;
-  c = 1 ;
-  const int x0 = c ;
-  c = 2 ;
-  const int x1 = c ;
-  c = 3 ;
-  const int x2 = c ;
-  r = x0 + x1 + x2 ;
+* c_lin){
+  const int x_lin = c_lin -> f1 ;
+  c_lin -> f0 = x_lin ;
+  }
+void par2mix_lin (struct {
+  int f0 ;
+  int f1 ;
+  }
+* c_lin){
+  const int x_lin = c_lin -> f1 ;
+  c_lin -> f0 = 42 ;
+  }
+void parallel_assoc_2tensor2_left_lin (struct {
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f0 ;
+  int f1 ;
+  }
+* cde_lin){
+  cde_lin -> f0 . f0 = 1 ;
+  cde_lin -> f0 . f1 = 2 ;
+  cde_lin -> f1 = 3 ;
+  }
+void parallel_assoc_2tensor2_right_lin (struct {
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f0 ;
+  int f1 ;
+  }
+* cde_lin){
+  cde_lin -> f1 = 3 ;
+  cde_lin -> f0 . f0 = 1 ;
+  cde_lin -> f0 . f1 = 2 ;
+  }
+void parallel_assoc_flat_lin (int * c_lin, int * d_lin, int * e_lin){
+  * c_lin = 1 ;
+  * d_lin = 2 ;
+  * e_lin = 3 ;
+  }
+void parallel_assoc_left_lin (int * c_lin, int * d_lin, int * e_lin){
+  * c_lin = 1 ;
+  * d_lin = 2 ;
+  * e_lin = 3 ;
+  }
+void parallel_assoc_right_lin (int * c_lin, int * d_lin, int * e_lin){
+  * c_lin = 1 ;
+  * d_lin = 2 ;
+  * e_lin = 3 ;
+  }
+void parallel_assoc_tensor3_flat_lin (struct {
+  int f0 ;
+  int f1 ;
+  int f2 ;
+  }
+* cde_lin){
+  cde_lin -> f0 = 1 ;
+  cde_lin -> f1 = 2 ;
+  cde_lin -> f2 = 3 ;
+  }
+void parallel_assoc_tensor3_left_lin (struct {
+  int f0 ;
+  int f1 ;
+  int f2 ;
+  }
+* cde_lin){
+  cde_lin -> f0 = 1 ;
+  cde_lin -> f1 = 2 ;
+  cde_lin -> f2 = 3 ;
+  }
+void parallel_assoc_tensor3_right_lin (struct {
+  int f0 ;
+  int f1 ;
+  int f2 ;
+  }
+* cde_lin){
+  cde_lin -> f0 = 1 ;
+  cde_lin -> f1 = 2 ;
+  cde_lin -> f2 = 3 ;
+  }
+void parallel_tensor4_flat_lin (struct {
+  int f0 ;
+  int f1 ;
+  }
+* cd_lin, struct {
+  int f0 ;
+  int f1 ;
+  }
+* ef_lin){
+  cd_lin -> f0 = 1 ;
+  ef_lin -> f0 = 2 ;
+  cd_lin -> f1 = 3 ;
+  ef_lin -> f1 = 4 ;
+  }
+void parallel_tensor4_v0_lin (struct {
+  int f0 ;
+  int f1 ;
+  }
+* cd_lin, struct {
+  int f0 ;
+  int f1 ;
+  }
+* ef_lin){
+  cd_lin -> f0 = 1 ;
+  ef_lin -> f0 = 2 ;
+  cd_lin -> f1 = 3 ;
+  ef_lin -> f1 = 4 ;
+  }
+void par_ten1_ten1_lin (struct {
+  int f0 ;
+  int f1 ;
+  }
+* c_lin){
+  const int x_lin = c_lin -> f0 ;
+  c_lin -> f1 = x_lin ;
+  }
+void par_ten_ten_v0_lin (struct {
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f1 ;
+  }
+* c_lin){
+  const int x_lin = c_lin -> f0 . f0 ;
+  c_lin -> f1 . f0 = 1 ;
+  const int y_lin = c_lin -> f1 . f1 ;
+  c_lin -> f0 . f1 = 2 ;
+  }
+void par_ten_ten_v1_lin (struct {
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f1 ;
+  }
+* c_lin){
+  const int x_lin = c_lin -> f0 . f0 ;
+  c_lin -> f1 . f0 = 1 ;
+  const int y_lin = c_lin -> f1 . f1 ;
+  c_lin -> f0 . f1 = 2 ;
+  }
+void par_ten_ten_v2_lin (struct {
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f1 ;
+  }
+* c_lin){
+  c_lin -> f1 . f0 = 1 ;
+  const int x_lin = c_lin -> f0 . f0 ;
+  const int y_lin = c_lin -> f1 . f1 ;
+  c_lin -> f0 . f1 = 2 ;
+  }
+void replicate_par_lin (int c_lin [10]) {
+  for (int i_lin = 0 ;
+  i_lin < 10 ;
+  i_lin = i_lin + 1){
+    c_lin [i_lin]= i_lin ;
+    } ;
+  }
+void replicate_ten_lin (int c_lin [10]) {
+  for (int i_lin = 0 ;
+  i_lin < 10 ;
+  i_lin = i_lin + 1){
+    c_lin [i_lin]= i_lin ;
+    } ;
+  }
+void seq3_lin (struct {
+  int f0 ;
+  int f1 ;
+  int f2 ;
+  }
+* c_lin){
+  c_lin -> f0 = 0 ;
+  c_lin -> f1 = 1 ;
+  c_lin -> f2 = 2 ;
+  }
+void seq3_seq2_lin (struct {
+  int f0 ;
+  int f1 ;
+  int f2 ;
+  }
+* c_lin, struct {
+  int f0 ;
+  int f1 ;
+  }
+* d_lin){
+  c_lin -> f0 = 0 ;
+  c_lin -> f1 = 1 ;
+  d_lin -> f0 = 0 ;
+  c_lin -> f2 = 2 ;
+  d_lin -> f1 = 1 ;
+  }
+void singleRecv_lin (const int * c_lin){
+  const int x_lin = * c_lin ;
+  }
+void singleSend_lin (int * c_lin){
+  * c_lin = 42 ;
+  }
+void ten_loli_par_lin (struct {
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  f1 ;
+  }
+* c_lin){
+  const int x__i0_lin = c_lin -> f0 . f0 ;
+  const int x__i1_lin = c_lin -> f0 . f1 ;
+  c_lin -> f1 . f0 = x__i0_lin ;
+  c_lin -> f1 . f1 = x__i1_lin ;
+  }
+void ten_par_par_split_lin (const struct {
+  struct {
+    }
+  f0 ;
+  struct {
+    }
+  f1 ;
+  }
+* c_lin){
+  }
+void tensor0_lin (const struct {
+  }
+* c_lin){
+  }
+void tensor1_lin (int * c_lin){
+  * c_lin = 42 ;
+  }
+void tensor2_lin (struct {
+  int f0 ;
+  int f1 ;
+  }
+* c_lin){
+  const int x_lin = c_lin -> f1 ;
+  c_lin -> f0 = 42 ;
+  }
+void tensor2_tensor0_tensor0_parallel_lin (const struct {
+  struct {
+    }
+  f0 ;
+  struct {
+    }
+  f1 ;
+  }
+* cd_lin){
+  }
+void tensor2_tensor0_tensor0_sequence_lin (const struct {
+  struct {
+    }
+  f0 ;
+  struct {
+    }
+  f1 ;
+  }
+* cd_lin){
+  }
+void tensor2_using_dual_lin (struct {
+  int f0 ;
+  int f1 ;
+  }
+* c_lin){
+  const int x_lin = c_lin -> f1 ;
+  c_lin -> f0 = 42 ;
+  }
+void test2_lin () {
+  struct {
+    int f0 ;
+    int f1 ;
+    }
+  c_lin ;
+  c_lin . f0 = 1 ;
+  const int x0_lin = c_lin . f0 ;
+  c_lin . f1 = x0_lin + 1 ;
+  const int z0_lin = c_lin . f1 ;
+  c_lin . f1 = z0_lin + 5 ;
+  const int x1_lin = c_lin . f1 ;
+  c_lin . f0 = x1_lin + (x0_lin + 2);
+  const int y0_lin = c_lin . f0 ;
+  c_lin . f0 = y0_lin + 4 ;
+  const int x2_lin = c_lin . f0 ;
+  c_lin . f1 = x2_lin + (x1_lin + (x0_lin + 3)) ;
+  const int z1_lin = c_lin . f1 ;
+  }
+void test4_lin (int * r_lin){
+  int c_lin ;
+  c_lin = 1 ;
+  const int x0_lin = c_lin ;
+  c_lin = 2 ;
+  const int x1_lin = c_lin ;
+  c_lin = 3 ;
+  const int x2_lin = c_lin ;
+  * r_lin = x0_lin + (x1_lin + x2_lin);
+  }
+void zap_ten_fwd_lin (struct {
+  int f0 ;
+  int f1 ;
+  }
+cf_lin [10], const int cn_lin [10], int co_lin [10]) {
+  for (int i_lin = 0 ;
+  i_lin < 10 ;
+  i_lin = i_lin + 1){
+    const int x__cni_lin = cn_lin [i_lin];
+    const int x__cfio_lin = cf_lin [i_lin]. f1 ;
+    cf_lin [i_lin]. f0 = x__cni_lin ;
+    co_lin [i_lin]= x__cfio_lin ;
+    } ;
+  }
+void zap_ten_par_lin (struct {
+  int f0 ;
+  int f1 ;
+  }
+cf_lin [10], const int cn_lin [10], int co_lin [10]) {
+  for (int i_lin = 0 ;
+  i_lin < 10 ;
+  i_lin = i_lin + 1){
+    const int x_lin = cn_lin [i_lin];
+    const int y_lin = cf_lin [i_lin]. f1 ;
+    cf_lin [i_lin]. f0 = x_lin ;
+    co_lin [i_lin]= y_lin ;
+    } ;
+  }
+void zap_ten_seq_lin (struct {
+  int f0 ;
+  int f1 ;
+  }
+cf_lin [10], const int cn_lin [10], int co_lin [10]) {
+  for (int i_lin = 0 ;
+  i_lin < 10 ;
+  i_lin = i_lin + 1){
+    const int x_lin = cn_lin [i_lin];
+    cf_lin [i_lin]. f0 = x_lin ;
+    const int y_lin = cf_lin [i_lin]. f1 ;
+    co_lin [i_lin]= y_lin ;
+    } ;
+  }
+void zip_add_lin (const int xs_lin [10], const int ys_lin [10], int zs_lin [10]) {
+  for (int i_lin = 0 ;
+  i_lin < 10 ;
+  i_lin = i_lin + 1){
+    const int a_lin = xs_lin [i_lin];
+    const int b_lin = ys_lin [i_lin];
+    zs_lin [i_lin]= a_lin + b_lin ;
+    } ;
   }
 

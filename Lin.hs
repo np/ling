@@ -12,12 +12,12 @@ import Lin.Par
 import Lin.Abs
 import Lin.Print
 
-import qualified MiniCXX.Print as C
+import qualified MiniC.Print as C
 
 import Lin.Reify
 import Lin.Utils
 import Lin.Print.Instances ()
-import Lin.Compile.CXX
+import Lin.Compile.C
 import qualified Lin.Norm as N
 import qualified Lin.Sequential as S
 import Lin.Proc.Checker (checkProgram)
@@ -99,13 +99,13 @@ transP opts prg = do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims opts $ nprg
     putStrLn "Checking Sucessful!"
   when (opts ^. sequential) $
-    putStrLn $ "\n[Sequential process]\n\n" ++ printTree stree
+    putStrLn $ "\n{- Sequential process -}\n\n" ++ printTree sprg
   when (opts ^. compile) $
-    putStrLn $ "\n[Transformed tree]\n\n" ++ C.printTree tree
+    putStrLn $ "\n/* Transformed tree */\n\n" ++ C.printTree cprg
 
   where nprg  = norm prg
-        tree  = transProgram nprg
         stree = S.transProgram nprg
+        tree  = transProgram stree
 
 showTree :: (Show a, Print a) => Opts -> a -> IO ()
 showTree opts tree

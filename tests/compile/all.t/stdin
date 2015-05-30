@@ -1,4 +1,9 @@
 cutEmptyParTensor = new (c : {}, d : []) (c{} | d[]).
+cut_par_cut =
+  ( new (c  : !Int, d  : ?Int) ( send c 1  | recv d  (x  : Int) )
+  | new (c' : !Int, d' : ?Int) ( send c' 1 | recv d' (x' : Int) )
+  )
+.
 cutSendRecv = new (c : !Int, d : ?Int) ( send c 1 | recv d (x : Int) ).
 double (i : ?Int, r : !Int) =
   recv i(xi : Int)
@@ -8,11 +13,27 @@ double (i : ?Int, r : !Int) =
   |
     send d xi send d xi recv d(z : Int) send r z
   ).
-id : (A : Type)(x : A) -> A.
-
-idproc (c : ?Int, d : !Int) =
-  recv c (y : Int)
-  send d (id Int y).
+fwd0_par2_ten2 (c : Fwd 0 {?Int,!Int.?Int}) = c{i,o} fwd {?Int,!Int.?Int}(i,o).
+fwd1_par2_ten2_ten2 (c : Fwd 1 {?Int,!Int.?Int}) =
+  c{i,o,l}
+  fwd {?Int,!Int.?Int}(i,o,l).
+fwd_par0_ten0 (i : {}, o : []) = fwd {}(i,o).
+fwd_par2_ten2 (i : {?Int,!Int.?Int}, o : [!Int,?Int.!Int]) = fwd {?Int,!Int.?Int}(i,o).
+fwd_par2_ten2_ten2 ( i : {?Int,!Int.?Int}
+                   , o : [!Int,?Int.!Int]
+                   , l : {!Int,!Int.!Int}
+                   ) =
+  fwd {?Int,!Int.?Int}(i,o,l).
+fwd_par2_ten2_ten2_ten2
+  ( i : {?Int,!Int.?Int}
+  , o : [!Int,?Int.!Int]
+  , l : {!Int,!Int.!Int}
+  , m : {!Int,!Int.!Int}
+  ) =
+  fwd {?Int,!Int.?Int}(i,o,l,m).
+fwd_send_recv (i : ?Int, o : !Int) = fwd (?Int)(i,o).
+fwd_send_recv_recv_send (i : ?Int. !Int, o : !Int. ?Int) = fwd (?Int.!Int)(i,o).
+fwd_ten2_par2 (i : [?Int,!Int.?Int], o : {!Int,?Int.!Int}) = fwd [?Int,!Int.?Int](i,o).
 par0 (c : {}) = c{}.
 par1 (c : {!Int}) = c{d} send d 42.
 par2 (c : {!Int,?Int}) = c{d,e} recv e (x : Int) send d x.
@@ -99,8 +120,39 @@ par_ten_ten_v2 (c : {[?Int, !Int], [!Int, ?Int]}) =
     )
   | send g 2
   ).
+replicate_par (c : {!Int ^ 10}) =
+  slice 10 as i
+    c{d}
+      send d i.
+replicate_ten (c : [!Int ^ 10]) =
+  slice 10 as i
+    c[d]
+      send d i.
+seq3 (c : [: !Int, !Int, !Int :]) =
+  c[: c0, c1, c2 :]
+  send c0 0
+  send c1 1
+  send c2 2
+.
+seq3_seq2 (c : [: !Int, !Int, !Int :], d : [: !Int, !Int :]) =
+  c[: c0, c1, c2 :]
+  d[: d0, d1 :]
+  send c0 0
+  send c1 1
+  send d0 0
+  send c2 2
+  send d1 1
+.
 singleRecv (c : ?Int) = recv c (x : Int).
 singleSend (c : !Int) = send c 42.
+ten_loli_par (c : [!Int,!Int] -o {!Int,!Int}) =
+  c{i,o}
+  i{i0,i1}
+  o{o0,o1}
+  ( fwd (?Int)(i0,o0)
+  | fwd (?Int)(i1,o1)
+  ).
+ten_par_par_split (c : [{},{}]) = c[d,e] (d{} | e{}).
 tensor0 (c : []) = c[].
 tensor1 (c : [!Int]) = c[d] send d 42.
 tensor2 (c : [!Int,?Int]) = c[d,e](recv e (x : Int) | send d 42).
@@ -135,17 +187,6 @@ test2 =
       recv d1 (z1 : Int)
     )
   ).
-test3 =
-  new (c : ?Int. [!Int, !Int], d)
-  (
-    recv c (x0 : Int)
-    c[c0,c1]
-    ( send c0 x0 | send c1 x0 )
-  |
-    send d 1
-    d{d0,d1}
-    ( recv d0 (y0 : Int) | recv d1 (z0 : Int) )
-  ).
 test4 (r : !Int) =
   new (c : ?Int. ?Int. ?Int, d)
   (
@@ -158,3 +199,44 @@ test4 (r : !Int) =
     send d 2
     send d 3
   ).
+zap_ten_fwd (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
+  slice 10 as i
+  cf{cfi}
+  cn{cni}
+  co[coi]
+  cfi{cfii,cfio}
+  ( fwd (?Int)(cni,cfii)
+  | fwd (?Int)(cfio,coi)
+  )
+.
+zap_ten_par (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
+  slice 10 as i
+  cf{cfi}
+  cn{cni}
+  co[coi]
+  cfi{cfii,cfio}
+  ( recv cni (x : Int)
+    send cfii x
+  | recv cfio (y : Int)
+    send coi y
+  )
+.
+zap_ten_seq (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
+  slice 10 as i
+  cf{cfi}
+  cn{cni}
+  co[coi]
+  cfi{cfii,cfio}
+  recv cni (x : Int)
+  send cfii x
+  recv cfio (y : Int)
+  send coi y
+.
+zip_add (xs : {?Int ^ 10}, ys : {?Int ^ 10}, zs : [!Int ^ 10]) =
+  slice 10 as i
+    xs{x}
+      ys{y}
+        zs[z]
+          recv x (a : Int)
+          recv y (b : Int)
+          send z (a + b).

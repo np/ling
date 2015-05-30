@@ -6,16 +6,16 @@ import System.IO ( stdin, hGetContents )
 import System.Environment ( getArgs, getProgName )
 import System.Exit ( exitFailure, exitSuccess )
 
-import MiniCXX.Lex
-import MiniCXX.Par
-import MiniCXX.Skel
-import MiniCXX.Print
-import MiniCXX.Abs
+import MiniC.Lex
+import MiniC.Par
+import MiniC.Skel
+import MiniC.Print
+import MiniC.Abs
 
 
 
 
-import MiniCXX.ErrM
+import MiniC.ErrM
 
 type ParseFun a = [Token] -> Err a
 

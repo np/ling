@@ -3,7 +3,7 @@
 {
 {-# OPTIONS -fno-warn-incomplete-patterns #-}
 {-# OPTIONS_GHC -w #-}
-module MiniCXX.Lex where
+module MiniC.Lex where
 
 
 
@@ -20,7 +20,7 @@ $i = [$l $d _ ']          -- identifier character
 $u = [\0-\255]          -- universal: any character
 
 @rsyms =    -- symbols and non-identifier-like reserved words
-   \, | \( | \) | \{ | \} | \; | "tuple" \< | \> | "union" \_ "t" \< | \[ | \] | \= | \+ | \.
+   \, | \( | \) | \{ | \} | \; | \* | \[ | \] | \= | \+ | \< | \- \> | \.
 
 :-
 "//" [.]* ; -- Toss single line comments
@@ -97,7 +97,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b "[" 9 (b "." 5 (b "+" 3 (b ")" 2 (b "(" 1 N N) N) (b "," 4 N N)) (b "=" 7 (b ";" 6 N N) (b ">" 8 N N))) (b "union_t<" 14 (b "int" 12 (b "const" 11 (b "]" 10 N N) N) (b "tuple<" 13 N N)) (b "{" 16 (b "void" 15 N N) (b "}" 17 N N)))
+resWords = b "[" 11 (b "->" 6 (b "*" 3 (b ")" 2 (b "(" 1 N N) N) (b "," 5 (b "+" 4 N N) N)) (b "<" 9 (b ";" 8 (b "." 7 N N) N) (b "=" 10 N N))) (b "struct" 17 (b "double" 14 (b "const" 13 (b "]" 12 N N) N) (b "int" 16 (b "for" 15 N N) N)) (b "{" 20 (b "void" 19 (b "union" 18 N N) N) (b "}" 21 N N)))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 
