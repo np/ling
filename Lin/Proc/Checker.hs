@@ -166,6 +166,14 @@ actTCEnv act env =
           NewSlice _ x       -> evars %~ Map.insert x int
           _                  -> id
 
+-- TODO improve error message
+substChansTC :: ConstraintFlag -> ([Channel], [(Channel,Session)]) -> Proto -> TC Proto
+substChansTC flag (cs,css) p =
+  case substChans flag (cs,css) p of
+    Just p' -> return p'
+    Nothing -> throwError $
+      "The set of channels " ++ pretty cs ++ " should be used at once"
+
 {-
 Γ(P) is the protocol, namely mapping from channel to sessions of the process P
 Δ(P) is the set of sequential channels, namely each set of C ∈ Δ(P) is a set
@@ -231,21 +239,22 @@ checkAct (act : acts) procs = do
             dsSessions = map defaultEnd $ chanSessions ds proto
             s = array k (list dsSessions)
         mapM_ (checkChanDec proto) dOSs
+            -- TODO refactor
         case k of
           TenK -> do
             proto' <- checkConflictingChans proto ds
-            return . addChanOnly (c,s) . rmChans ds $ proto'
+            substChansTC WithoutConstraints (ds, [(c,s)]) proto'
           ParK ->
-            return . addChan (c,s) . rmChans ds $ proto
+            substChansTC WithConstraint     (ds, [(c,s)]) proto
           SeqK -> do
             checkOrderedChans proto ds
-            return . addChanOnly (c,s) . rmChans ds $ proto
+            substChansTC WithConstraint     (ds, [(c,s)]) proto
       Send c e -> do
         let cSession = defaultEnd $ chanSession c proto
         typ <- inferTerm e
-        return $ addChan (c, Snd typ cSession) proto
+        return $ addChanWithOrder (c, Snd typ cSession) proto
       Recv c (Arg _x typ) -> do
         let cSession = defaultEnd $ chanSession c proto
-        return $ addChan (c, Rcv typ cSession) proto
+        return $ addChanWithOrder (c, Rcv typ cSession) proto
       NewSlice t _ ->
         return $ replProto t proto

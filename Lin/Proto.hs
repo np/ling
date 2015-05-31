@@ -9,6 +9,7 @@ import Lin.Norm
 import Lin.Print.Instances ()
 
 import qualified Data.Set as Set
+import Data.Set (Set)
 import qualified Data.Map as Map
 import Data.Map (Map)
 
@@ -43,28 +44,72 @@ prettyChanDecs = prettyList . chanDecs
 emptyProto :: Proto
 emptyProto = MkProto Map.empty emptyConstraints []
 
-addChanOnly :: (Channel,Session) -> Proto -> Proto
-addChanOnly (c,s) p = p & chans  %~ at c .~ Just s
-                        & orders %~ ([]:)
-                        & orders . mapped %~ (c:)
-
-addChan :: (Channel,Session) -> Proto -> Proto
-addChan (c,s) p = p & addChanOnly (c,s)
-                    & constraints %~ mapConstraints (c `Set.insert`)
-
 chanPresent :: Proto -> Channel -> Bool
 chanPresent p c = has (chans . at c . _Just) p
 
 isEmptyProto :: Proto -> Bool
 isEmptyProto p = p ^. chans . to Map.null
 
+addChanOnly :: (Channel,Session) -> Proto -> Proto
+addChanOnly (c,s) = chans  %~ at c .~ Just s
+
+data ConstraintFlag = WithConstraint | WithoutConstraints
+
+addChanConstraint :: ConstraintFlag -> Channel -> Proto -> Proto
+addChanConstraint WithoutConstraints _ = id
+addChanConstraint WithConstraint     c = constraints %~ mapConstraints (c `Set.insert`)
+
+addChan :: ConstraintFlag -> (Channel,Session) -> Proto -> Proto
+addChan flag (c,s) = addChanOnly (c,s) . addChanConstraint flag c
+
+addChans :: ConstraintFlag -> [(Channel,Session)] -> Proto -> Proto
+addChans flag = flip (foldr (addChan flag))
+
+addChanWithOrder :: (Channel,Session) -> Proto -> Proto
+addChanWithOrder (c,s) p = p & addChan WithConstraint (c,s)
+                             & orders %~ addOrder
+  where addOrder []   = [[c]]
+        addOrder [cs] = [c:cs]
+        addOrder _css = error "addChanWithOrder: TODO"
+           -- TODO: if we do
+           -- map (c:) css
+           -- then substChans will complain about the extra 'c' everywhere...
+
+rmChanAndConstraint :: Channel -> Proto -> Proto
+rmChanAndConstraint c p =
+  p & chans . at c .~ Nothing
+    & constraints %~ mapConstraints (c `Set.delete`)
+            --   & orders . mapped %~ filter (/= c)
+
+rmChansAndConstraints :: [Channel] -> Proto -> Proto
+rmChansAndConstraints = flip (foldr rmChanAndConstraint)
+
 rmChan :: Channel -> Proto -> Proto
-rmChan c p = p & chans . at c .~ Nothing
-               & constraints %~ mapConstraints (c `Set.delete`)
-               & orders . mapped %~ filter (/= c)
+rmChan c p =
+  p & rmChanAndConstraint c
+    & orders . mapped %~ filter (/= c)
 
 rmChans :: [Channel] -> Proto -> Proto
 rmChans = flip (foldr rmChan)
+
+-- TODO write quickcheck props about this function
+substList :: Ord a => (Set a,[a]) -> [a] -> Maybe [a]
+substList (xs,ys) zs
+  | Set.null xs           = Just $ ys  ++ zs
+  | null zs1              = Just   zs0
+  | xs == xs' && null zs5 = Just $ zs0 ++ ys ++ zs4
+  | otherwise             = Nothing
+    where
+      (zs0,zs1) = break (`Set.member` xs) zs
+      (zs2,zs3) = span  (`Set.member` xs) zs1
+      (zs4,zs5) = break (`Set.member` xs) zs3
+      xs'       = l2s zs2
+
+substChans :: ConstraintFlag -> ([Channel], [(Channel,Session)]) -> Proto -> Maybe Proto
+substChans flag (cs, css) p =
+  p & orders . each %%~ substList (l2s cs, map fst css)
+   <&> rmChansAndConstraints cs
+   <&> addChans flag css
 
 chanSession :: Channel -> Proto -> Maybe Session
 chanSession c p = p ^. chans . at c
