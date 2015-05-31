@@ -116,14 +116,15 @@ checkDecs :: [Dec] -> TC ()
 checkDecs = foldr checkDec (return ())
 
 checkDec :: Dec -> TC () -> TC ()
-checkDec (Sig d typ)       kont = checkVarDec (Arg d typ) kont
+checkDec (Sig d typ)      kont = checkVarDec (Arg d typ) kont
 checkDec (Dec d cds proc) kont = do
   let cs  = map _argName cds
   proto <- checkProc proc
   mapM_ (checkChanDec proto) cds
-  assert (isEmptyProto $ proto `rmChans` cs) $
+  let proto' = rmChans cs proto
+  assert (isEmptyProto proto') $
     "These channels have not been introduced:" :
-    prettyChanDecs proto
+    prettyChanDecs proto'
   local (pdefs %~ Map.insert d (ProcDef d cds proc proto)) kont
 
 checkChanDec :: Proto -> ChanDec -> TC ()
@@ -223,7 +224,7 @@ checkAct (act : acts) procs = do
         checkOptSession d dOS dSession
         checkDual cNSession dNSession
         proto' <- checkConflictingChans proto ds
-        return $ proto' `rmChans` ds
+        return $ rmChans ds proto'
       Split k c dOSs -> do
         assertAbsent c proto
         let ds = map _argName dOSs
@@ -233,18 +234,18 @@ checkAct (act : acts) procs = do
         case k of
           TenK -> do
             proto' <- checkConflictingChans proto ds
-            return $ proto' `rmChans` ds `addChanOnly` (c,s)
+            return . addChanOnly (c,s) . rmChans ds $ proto'
           ParK ->
-            return $ proto `rmChans` ds `addChan` (c,s)
+            return . addChan (c,s) . rmChans ds $ proto
           SeqK -> do
             checkOrderedChans proto ds
-            return $ proto `rmChans` ds `addChanOnly` (c,s)
+            return . addChanOnly (c,s) . rmChans ds $ proto
       Send c e -> do
         let cSession = defaultEnd $ chanSession c proto
         typ <- inferTerm e
-        return $ proto `addChan` (c, Snd typ cSession)
+        return $ addChan (c, Snd typ cSession) proto
       Recv c (Arg _x typ) -> do
         let cSession = defaultEnd $ chanSession c proto
-        return $ proto `addChan` (c, Rcv typ cSession)
+        return $ addChan (c, Rcv typ cSession) proto
       NewSlice t _ ->
         return $ replProto t proto

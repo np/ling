@@ -32,7 +32,7 @@ prettyProto p =
   ++
   if p ^. orders . to null then [] else
   " orders:"
-  : map ("  " ++) (map show (p ^. orders))
+  : map ("  " ++) (map (show . map unName) (p ^. orders))
 
 chanDecs :: Proto -> [Arg Session]
 chanDecs p = p ^.. chans . to m2l . each . to (uncurry Arg)
@@ -43,14 +43,14 @@ prettyChanDecs = prettyList . chanDecs
 emptyProto :: Proto
 emptyProto = MkProto Map.empty emptyConstraints []
 
-addChanOnly :: Proto -> (Channel,Session) -> Proto
-addChanOnly p (c,s) = p & chans  %~ at c .~ Just s
+addChanOnly :: (Channel,Session) -> Proto -> Proto
+addChanOnly (c,s) p = p & chans  %~ at c .~ Just s
                         & orders %~ ([]:)
                         & orders . mapped %~ (c:)
 
-addChan :: Proto -> (Channel,Session) -> Proto
-addChan p (c,s) = addChanOnly p (c,s)
-                & constraints %~ mapConstraints (c `Set.insert`)
+addChan :: (Channel,Session) -> Proto -> Proto
+addChan (c,s) p = p & addChanOnly (c,s)
+                    & constraints %~ mapConstraints (c `Set.insert`)
 
 chanPresent :: Proto -> Channel -> Bool
 chanPresent p c = has (chans . at c . _Just) p
@@ -63,8 +63,8 @@ rmChan c p = p & chans . at c .~ Nothing
                & constraints %~ mapConstraints (c `Set.delete`)
                & orders . mapped %~ filter (/= c)
 
-rmChans :: Proto -> [Channel] -> Proto
-rmChans = foldr rmChan
+rmChans :: [Channel] -> Proto -> Proto
+rmChans = flip (foldr rmChan)
 
 chanSession :: Channel -> Proto -> Maybe Session
 chanSession c p = p ^. chans . at c
@@ -81,4 +81,5 @@ protoAx :: Session -> Channel -> Channel -> [Channel] -> Proto
 protoAx s c d es = mkProto ((c,s):(d,dual s):map (\e -> (e, log s)) es)
 
 replProto :: Term -> Proto -> Proto
-replProto n p = p & chans . mapped %~ replSessionTerm n
+replProto n = chans . mapped %~ replSessionTerm n
+-- -}
