@@ -20,8 +20,6 @@ import Control.Lens hiding (act,acts,op)
 import Data.Maybe
 import qualified Data.Map as Map
 import Data.Map (Map)
-import qualified Data.Set as Set
-import Data.Set (Set)
 import Lin.Utils
 import Lin.Print.Instances ()
 import Lin.Session
@@ -30,19 +28,31 @@ import Lin.Norm
 
 data Status = Full | Empty deriving (Eq,Read,Show)
 
+toStatus :: Maybe () -> Status
+toStatus Nothing    = Empty
+toStatus (Just  ()) = Full
+
+fromStatus :: Status -> Maybe ()
+fromStatus Empty = Nothing
+fromStatus Full  = Just ()
+
 data Location
   = Root Channel
   | Proj Location Int
   deriving (Read,Show,Ord,Eq)
 
-data Env = Env { _chans :: Map Channel (Location, Session)
-               , _locs  :: Set Location }
+data Env = Env { _chans   :: Map Channel (Location, Session)
+               , _locs    :: Map Location ()
+               , _writers :: Map Location Channel }
+               -- writers ^. at l == Just c
+               -- means that the process owning c was the
+               -- last one to write at location l.
   deriving (Show)
 
 $(makeLenses ''Env)
 
 emptyEnv :: Env
-emptyEnv = Env Map.empty Set.empty
+emptyEnv = Env Map.empty Map.empty Map.empty
 
 addChans :: [(Channel, (Location, Session))] -> Env -> Env
 addChans xys = chans %~ Map.union (Map.fromList xys)
@@ -55,9 +65,11 @@ env ! i = fromMaybe err (env ^. chans . at i)
   where err = error $ "lookup/env " ++ show i ++ " in "
                    ++ show (map unName (Map.keys (env ^. chans)))
 
+addLoc :: (Location, Status) -> Env -> Env
+addLoc (l, s) = locs . at l .~ fromStatus s
+
 addLocs :: [(Location, Status)] -> Env -> Env
-addLocs xys = locs %~ Set.union         (Set.fromList [l | (l,Full)  <- xys])
-                    . (`Set.difference`  Set.fromList [l | (l,Empty) <- xys])
+addLocs = flip (foldrOf each addLoc)
 
 {-
 statusStep :: Status -> Status
@@ -65,13 +77,14 @@ statusStep Full  = Empty
 statusStep Empty = Full
 -}
 
-mnot :: Maybe () -> Maybe ()
-mnot Nothing   = Just ()
-mnot (Just ()) = Nothing
+mnot :: a -> Maybe a -> Maybe a
+mnot a Nothing = Just a
+mnot _ Just{}  = Nothing
 
 actEnv :: Channel -> Env -> Env
-actEnv c env = env & chans . at c . mapped . _2 %~ sessionStep
-                   & locs  . at l %~ mnot
+actEnv c env = env & chans   . at c . mapped . _2 %~ sessionStep
+                   & locs    . at l %~ mnot ()
+                   & writers . at l %~ mnot c
   where l = fst (env!c)
 
 sessionsStatus :: (Session -> Status) -> Location -> Sessions -> [(Location,Status)]
@@ -86,12 +99,14 @@ sessionStatus dflt l x = case x of
   Seq ss -> sessionsStatus dflt l ss
   _      -> [(l, dflt x)]
 
-statusAt :: Channel -> Env -> Status
-statusAt c env = env ^. locs . at l . to f
+statusAt :: Channel -> Env -> Maybe Status
+statusAt c env
+  | Just c == d = Nothing -- We were the last one to write so we're not ready
+  | otherwise   = Just s
   where
-    l   = fst (env ! c)
-    f Nothing    = Empty
-    f (Just  ()) = Full
+    l = fst (env ! c)
+    s = env ^. locs . at l . to toStatus
+    d = env ^. writers . at l
 
 -- TODO generalize by looking deeper at what is ready now
 isReady :: Env -> [Pref] -> Maybe ([Pref], [Pref])
@@ -106,8 +121,8 @@ isReadyPref env pref =
     Split{}    -> True
     NewSlice{} -> True
     Nu{}       -> True
-    Send c _   -> statusAt c env == Empty
-    Recv c _   -> statusAt c env == Full
+    Send c _   -> statusAt c env == Just Empty
+    Recv c _   -> statusAt c env == Just Full
 
 transPi :: Channel -> [ChanDec] -> Env -> Env
 transPi c dOSs env =
