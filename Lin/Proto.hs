@@ -43,28 +43,51 @@ prettyChanDecs = prettyList . chanDecs
 emptyProto :: Proto
 emptyProto = MkProto Map.empty emptyConstraints []
 
-addChanOnly :: (Channel,Session) -> Proto -> Proto
-addChanOnly (c,s) p = p & chans  %~ at c .~ Just s
-                        & orders %~ ([]:)
-                        & orders . mapped %~ (c:)
-
-addChan :: (Channel,Session) -> Proto -> Proto
-addChan (c,s) p = p & addChanOnly (c,s)
-                    & constraints %~ mapConstraints (c `Set.insert`)
-
 chanPresent :: Proto -> Channel -> Bool
 chanPresent p c = has (chans . at c . _Just) p
 
 isEmptyProto :: Proto -> Bool
 isEmptyProto p = p ^. chans . to Map.null
 
+addChanOnly :: (Channel,Session) -> Proto -> Proto
+addChanOnly (c,s) = chans  %~ at c .~ Just s
+
+data ConstraintFlag = WithConstraint | WithoutConstraints
+
+addChanConstraint :: ConstraintFlag -> Channel -> Proto -> Proto
+addChanConstraint WithoutConstraints _ = id
+addChanConstraint WithConstraint     c = constraints %~ mapConstraints (c `Set.insert`)
+
+addChan :: ConstraintFlag -> (Channel,Session) -> Proto -> Proto
+addChan flag (c,s) = addChanOnly (c,s) . addChanConstraint flag c
+
+addChanWithOrder :: (Channel,Session) -> Proto -> Proto
+addChanWithOrder (c,s) p = p & addChan WithConstraint (c,s)
+                             & orders %~ addOrder
+  where addOrder []  = [[c]]
+        addOrder css = map (c:) css
+
+rmChanAndConstraint :: Channel -> Proto -> Proto
+rmChanAndConstraint c p =
+  p & chans . at c .~ Nothing
+    & constraints %~ mapConstraints (c `Set.delete`)
+
+rmChansAndConstraints :: [Channel] -> Proto -> Proto
+rmChansAndConstraints = flip (foldr rmChanAndConstraint)
+
 rmChan :: Channel -> Proto -> Proto
-rmChan c p = p & chans . at c .~ Nothing
-               & constraints %~ mapConstraints (c `Set.delete`)
-               & orders . mapped %~ filter (/= c)
+rmChan c p =
+  p & rmChanAndConstraint c
+    & orders . mapped %~ filter (/= c)
 
 rmChans :: [Channel] -> Proto -> Proto
 rmChans = flip (foldr rmChan)
+
+substChans :: ConstraintFlag -> ([Channel], (Channel,Session)) -> Proto -> Proto
+substChans flag (cs, cs') p =
+  p & orders . each %~ substList (l2s cs) (fst cs')
+    & rmChansAndConstraints cs
+    & addChan flag cs'
 
 chanSession :: Channel -> Proto -> Maybe Session
 chanSession c p = p ^. chans . at c

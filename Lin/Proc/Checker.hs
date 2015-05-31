@@ -34,8 +34,10 @@ checkConflictingChans proto cs =
 
 checkOrderedChans :: Proto -> [Channel] -> TC ()
 checkOrderedChans proto cs =
-  assert (or [ cs `subList` os | os <- proto ^. orders ])
+  assert (or [ cs == sub os | os <- proto ^. orders ])
     ["These channels should be used in-order:", pretty cs]
+  where
+    sub = rmDups . filter (`Set.member` l2s cs)
 
 checkEqSessions :: Name -> Session -> Maybe Session -> TC ()
 checkEqSessions c s0 Nothing   = assertEqual s0 End ["Unused channel: " ++ pretty c]
@@ -231,22 +233,24 @@ checkAct (act : acts) procs = do
             dsSessions = map defaultEnd $ chanSessions ds proto
             s = array k (list dsSessions)
         checkChanDecs proto dOSs
-        case k of
-          TenK -> do
-            proto' <- checkConflictingChans proto ds
-            return . addChanOnly (c,s) . rmChans ds $ proto'
-          ParK ->
-            return . addChan (c,s) . rmChans ds $ proto
-          SeqK -> do
-            checkOrderedChans proto ds
-            return . addChanOnly (c,s) . rmChans ds $ proto
+        (proto', flag) <-
+          case k of
+            TenK -> do
+              proto' <- checkConflictingChans proto ds
+              return (proto', WithoutConstraints)
+            ParK ->
+              return (proto,  WithConstraint)
+            SeqK -> do
+              checkOrderedChans proto ds
+              return (proto,  WithConstraint)
+        return $ substChans flag (ds, (c,s)) proto'
       Send c e -> do
         let cSession = defaultEnd $ chanSession c proto
         typ <- inferTerm e
-        return $ addChan (c, Snd typ cSession) proto
+        return $ addChanWithOrder (c, Snd typ cSession) proto
       Recv c (Arg _x typ) -> do
         checkTyp typ
         let cSession = defaultEnd $ chanSession c proto
-        return $ addChan (c, Rcv typ cSession) proto
+        return $ addChanWithOrder (c, Rcv typ cSession) proto
       NewSlice t _ ->
         return $ replProto t proto

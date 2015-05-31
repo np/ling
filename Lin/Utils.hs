@@ -115,3 +115,15 @@ subList (_:_) [] = False
 subList (x:xs) (y:ys)
   | x == y    = xs     `subList` ys
   | otherwise = (x:xs) `subList` ys
+
+rmDups :: Eq a => [a] -> [a]
+rmDups (x1:x2:xs)
+  | x1 == x2  = rmDups (x1:xs)
+  | otherwise = x1 : rmDups (x2:xs)
+rmDups xs = xs
+
+-- TODO write quickcheck props about this function
+substList :: Ord a => Set a -> a -> [a] -> [a]
+substList xs y = rmDups . map f where
+  f z | z `Set.member` xs = y
+      | otherwise         = z
