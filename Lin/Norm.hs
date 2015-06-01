@@ -74,3 +74,6 @@ vec t e = Def (Name "Vec") [t,e]
 
 int :: Typ
 int = Def (Name "Int") []
+
+tSession :: Typ
+tSession = Def (Name "Session") []

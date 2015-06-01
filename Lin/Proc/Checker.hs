@@ -37,9 +37,9 @@ checkOrderedChans proto cs =
   assert (or [ cs `subList` os | os <- proto ^. orders ])
     ["These channels should be used in-order:", pretty cs]
 
-checkSession :: Name -> Session -> Maybe Session -> TC ()
-checkSession c s0 Nothing   = assertEqual s0 End ["Unused channel: " ++ pretty c]
-checkSession c s0 (Just s1) =
+checkEqSessions :: Name -> Session -> Maybe Session -> TC ()
+checkEqSessions c s0 Nothing   = assertEqual s0 End ["Unused channel: " ++ pretty c]
+checkEqSessions c s0 (Just s1) =
   assertEqual s0 s1
     ["On channel " ++ pretty c ++ " sessions are not equivalent."
     ,"Given session (expanded):"
@@ -50,7 +50,7 @@ checkSession c s0 (Just s1) =
 
 checkOptSession :: Name -> Maybe Session -> Maybe Session -> TC ()
 checkOptSession _ Nothing   _   = return ()
-checkOptSession c (Just s0) ms1 = checkSession c s0 ms1
+checkOptSession c (Just s0) ms1 = checkSession s0 >> checkEqSessions c s0 ms1
 
 -- checkUnused c ms s: Check if the channel c is used given the
 -- inferred session ms, and its dual ds.
@@ -120,7 +120,7 @@ checkDec (Sig d typ)      kont = checkVarDec (Arg d typ) kont
 checkDec (Dec d cds proc) kont = do
   let cs  = map _argName cds
   proto <- checkProc proc
-  mapM_ (checkChanDec proto) cds
+  checkChanDecs proto cds
   let proto' = rmChans cs proto
   assert (isEmptyProto proto') $
     "These channels have not been introduced:" :
@@ -230,7 +230,7 @@ checkAct (act : acts) procs = do
         let ds = map _argName dOSs
             dsSessions = map defaultEnd $ chanSessions ds proto
             s = array k (list dsSessions)
-        mapM_ (checkChanDec proto) dOSs
+        checkChanDecs proto dOSs
         case k of
           TenK -> do
             proto' <- checkConflictingChans proto ds
@@ -245,6 +245,7 @@ checkAct (act : acts) procs = do
         typ <- inferTerm e
         return $ addChan (c, Snd typ cSession) proto
       Recv c (Arg _x typ) -> do
+        checkTyp typ
         let cSession = defaultEnd $ chanSession c proto
         return $ addChan (c, Rcv typ cSession) proto
       NewSlice t _ ->

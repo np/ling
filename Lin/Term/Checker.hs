@@ -58,7 +58,20 @@ checkVarDec (Arg x typ) kont = do
 
 -- TODO: Here I assume that sessions are well formed
 checkSessions :: [RSession] -> TC ()
-checkSessions _ = return ()
+checkSessions = mapM_ checkRSession
+
+checkRSession :: RSession -> TC ()
+checkRSession (Repl s t) = checkSession s >> checkTerm int t
+
+checkSession :: Session -> TC ()
+checkSession s0 = case s0 of
+  Atm _ n -> checkTerm tSession (Def n [])
+  End -> return ()
+  Snd t s -> checkTyp t >> checkSession s
+  Rcv t s -> checkTyp t >> checkSession s
+  Par ss -> checkSessions ss
+  Ten ss -> checkSessions ss
+  Seq ss -> checkSessions ss
 
 inferTerm :: Term -> TC Typ
 inferTerm e0 = case e0 of
