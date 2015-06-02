@@ -13,6 +13,13 @@ instance Print a => Print (Arg a) where
 
   prtList = concatD . map (prt 0)
 
+instance (Print a,Print b,Print c) => Print (a,b,c) where
+  prt _i (a,b,c) =
+    concatD [ doc (showString "(") , prt 0 a
+            , doc (showString ",") , prt 0 b
+            , doc (showString ",") , prt 0 c
+            , doc (showString ")") ]
+
 instance Print Session where
   prt i   = prt i . reifySession
   prtList = prtList . reifySessions

@@ -45,23 +45,23 @@ Act.        Proc ::= [Pref] Procs ;
 
 separator Proc "|" ;
 
-ZeroP. Procs ::= ;
-Ax.    Procs ::= "fwd" Session "(" [Name] ")" ;
-At.    Procs ::= "@" ATerm "(" [Name] ")" ;
-Procs. Procs ::= "(" [Proc] ")" ;
+ZeroP.    Procs ::= ;
+Ax.       Procs ::= "fwd" Session "(" [Name] ")" ;
+At.       Procs ::= "@" ATerm "(" [Name] ")" ;
+NewSlice. Procs ::= "slice" "(" [Name] ")" ATerm "as" Name Proc ;
+Procs.    Procs ::= "(" [Proc] ")" ;
 
 Nu.       Pref ::= "new" "(" ChanDec "," ChanDec ")" ;
 ParSplit. Pref ::= Name "{" [ChanDec] "}" ;
 TenSplit. Pref ::= Name "[" [ChanDec] "]" ;
 SeqSplit. Pref ::= Name "[:" [ChanDec] ":]" ;
-NewSlice. Pref ::= "slice" ATerm "as" Name ;
 Send.     Pref ::= "send" Name ATerm ;
 Recv.     Pref ::= "recv" Name VarDec ;
 
 separator Pref  ""  ;
 
 NoSession. OptSession ::= ;
-SoSession. OptSession ::= ":" Session ;
+SoSession. OptSession ::= ":" RSession ;
 
 -- Atomic sessions
 Atm.  Session4 ::= Name ;

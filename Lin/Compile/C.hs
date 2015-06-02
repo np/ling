@@ -44,6 +44,8 @@ import Data.Map (Map)
 import Data.Set (Set)
 import Lin.Abs (Name(Name))
 import Lin.Utils
+import Lin.Print
+import Lin.Print.Instances ()
 import Lin.Session
 import Lin.Norm
 import qualified MiniC.Abs as C
@@ -159,7 +161,7 @@ transTerm env x = case x of
        [e0,e1] | Just op <- transOp f -> C.EInf e0 op e1
        es                             -> C.EApp (transName f) es
   Lit n          -> C.ELit n
-  Proc ids proc  -> error "transTerm/Proc" ids proc
+  Proc{}         -> transErr "transTerm/Proc" x
   TFun{}         -> C.ELit 0 -- <- types are erased to 0
   TSig{}         -> C.ELit 0 -- <- types are erased to 0
   TProto{}       -> C.ELit 0 -- <- types are erased to 0
@@ -168,13 +170,19 @@ transTerm env x = case x of
 transProc :: Env -> Proc -> [C.Stm]
 transProc env x = case x of
   Ax{} ->
-    error $ "transProc/Ax" ++ show x
+    transErr "transProc/Ax" x
   At{} ->
-    error $ "transProc/At" ++ show x
-  Act acts [] ->
-    transAct env acts
-  Act{} ->
-    error $ "transProc(non sequential)" ++ show x
+    transErr "transProc/At" x
+  acts `Act` procs ->
+    transAct env acts procs
+  NewSlice cs t xi p ->
+    [stdFor i (transTerm env t) (transProc env' p)]
+    where
+      i = transName xi
+      sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
+                  | otherwise   = l
+      env' = env & locs . imapped %@~ sliceIf
+                 & addEVar xi i
 
 transLVal :: C.LVal -> C.Exp
 transLVal (C.LVar x)   = C.EVar x
@@ -183,37 +191,37 @@ transLVal (C.LArw l f) = C.EArw (transLVal l) f
 transLVal (C.LArr l i) = C.EArr (transLVal l) i
 transLVal (C.LPtr l)   = C.EPtr (transLVal l)
 
+transErr :: Print a => String -> a -> b
+transErr msg v = error $ msg ++ "\n" ++ pretty v
+
+transProcs :: Env -> [Proc] -> [C.Stm]
+transProcs = concatMap . transProc
+
 -- prefixes about different channels can be reordered
-transAct :: Env -> [Pref] -> [C.Stm]
-transAct _   []           = []
-transAct env (pref:prefs) =
+transAct :: Env -> [Pref] -> [Proc] -> [C.Stm]
+transAct env []           procs = transProcs env procs
+transAct env (pref:prefs) procs =
   case pref of
     Nu (Arg c0 c0OS) (Arg c1 c1OS) ->
-      sDec typ cid C.NoInit ++ transAct env' prefs
+      sDec typ cid C.NoInit ++ transAct env' prefs procs
       where
         s    = log $ extractSession [c0OS, c1OS]
         cid  = transName c0
         l    = C.LVar cid
-        typ  = transSession env s
+        typ  = transRSession env s
         env' = addChans [(c0,l),(c1,l)] env
     Split _ c ds ->
-      transAct (transPi c ds env) prefs
+      transAct (transSplit c ds env) prefs procs
     Send c expr ->
       C.SPut (env ! c) (transTerm env expr) :
-      transAct env prefs
+      transAct env prefs procs
     Recv c (Arg x typ) ->
       sDec ctyp y (C.SoInit (transLVal l)) ++
-      transAct (addEVar x y env) prefs
+      transAct (addEVar x y env) prefs procs
       where
         l    = env ! c
         ctyp = transCTyp env C.QConst typ
         y    = transName x
-    NewSlice t x ->
-      [stdFor i (transTerm env t) (transAct env' prefs)]
-      where
-        i    = transName x
-        env' = env & locs . mapped %~ (`C.LArr` C.EVar i)
-                   & addEVar x i
 
 {- stdFor i t body ~~~> for (int i = 0; i < t; i = i + 1) { body } -}
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm
@@ -225,8 +233,8 @@ stdFor i t =
 {- Special case:
    {S}/[S] has the same implementation as S.
    See tupQ -}
-transPi :: Name -> [ChanDec] -> Env -> Env
-transPi c dOSs env = rmChan c $ addChans newChans env
+transSplit :: Name -> [ChanDec] -> Env -> Env
+transSplit c dOSs env = rmChan c $ addChans newChans env
   where
     lval = env ! c
     ds   = map _argName dOSs
@@ -264,7 +272,7 @@ unionQ :: [AQTyp] -> AQTyp
 unionQ ts = (_1 %~ C.QTyp (unionQuals [ q     | (C.QTyp q _, _) <- ts ]))
             (unionT     [ (t,a) | (C.QTyp _ t, a) <- ts, not (isEmptyTyp t) ])
 
-{- See transPi about the special case -}
+{- See transSplit about the special case -}
 tupQ :: [AQTyp] -> AQTyp
 tupQ [t] = t
 tupQ ts = (C.QTyp (unionQuals [ q | (C.QTyp q _, _) <- ts ])
@@ -279,13 +287,13 @@ transTyp env e0 = case e0 of
     case (unName x, es) of
       -- ("Vec", [a,e]) -> tArr (transTyp env a) (transTerm env e)
       ("Vec", [a,_e]) -> tPtr (transTyp env a)
-      _               -> tVoidPtr -- WARNING error $ "transTyp: " ++ show e0
+      _               -> tVoidPtr -- WARNING transError "transTyp: " e0
   TTyp{}   -> tInt -- <- types are erased to 0
-  TProto{} -> error "transTyp: TProto"
-  TFun{}   -> error "transTyp: TFun"
-  TSig{}   -> error "transTyp: TSig" -- TODO struct ?
-  Lit{}    -> error "transTyp: Not a type: Lit"
-  Proc{}   -> error "transTyp: Not a type: Proc"
+  TProto{} -> transErr "transTyp: TProto" e0
+  TFun{}   -> transErr "transTyp: TFun" e0
+  TSig{}   -> transErr "transTyp: TSig" e0 -- TODO struct ?
+  Lit{}    -> transErr "transTyp: Not a type: Lit" e0
+  Proc{}   -> transErr "transTyp: Not a type: Proc" e0
 
 transCTyp :: Env -> C.Qual -> Typ -> AQTyp
 transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env
@@ -307,7 +315,7 @@ transSession env x = case x of
   Par ss   -> tupQ (transSessions env ss)
   Ten ss   -> tupQ (transSessions env ss)
   Seq ss   -> tupQ (transSessions env ss)
-  Atm _ n  -> error $ "Cannot compile an abstract session: " ++ pretty n
+  Atm _ n  -> transErr "Cannot compile an abstract session: " n
 
 transRSession :: Env -> RSession -> AQTyp
 transRSession env (Repl s a) = case a of
@@ -337,8 +345,9 @@ transChanDec env (Arg c (Just session)) =
     (dDec ctyp d, (c, trlval (C.LVar d)))
   where
     d              = transName c
-    (ctyp, trlval) = mkPtrTyp (transSession env session)
-transChanDec _   (Arg _ Nothing)        = error "transChanDec: TODO No Session"
+    (ctyp, trlval) = mkPtrTyp (transRSession env session)
+transChanDec _   (Arg c Nothing)
+  = transErr "transChanDec: TODO No Session for channel:" c
 
 -- Of course this does not properlly handle dependent types
 transSig :: Env -> Name -> Typ -> C.Def

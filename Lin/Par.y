@@ -168,6 +168,7 @@ Procs :: { Procs }
 Procs : {- empty -} { ZeroP } 
   | 'fwd' Session '(' ListName ')' { Ax $2 $4 }
   | '@' ATerm '(' ListName ')' { At $2 $4 }
+  | 'slice' '(' ListName ')' ATerm 'as' Name Proc { NewSlice $3 $5 $7 $8 }
   | '(' ListProc ')' { Procs $2 }
 
 
@@ -176,7 +177,6 @@ Pref : 'new' '(' ChanDec ',' ChanDec ')' { Nu $3 $5 }
   | Name '{' ListChanDec '}' { ParSplit $1 $3 }
   | Name '[' ListChanDec ']' { TenSplit $1 $3 }
   | Name '[:' ListChanDec ':]' { SeqSplit $1 $3 }
-  | 'slice' ATerm 'as' Name { NewSlice $2 $4 }
   | 'send' Name ATerm { Send $2 $3 }
   | 'recv' Name VarDec { Recv $2 $3 }
 
@@ -188,7 +188,7 @@ ListPref : {- empty -} { [] }
 
 OptSession :: { OptSession }
 OptSession : {- empty -} { NoSession } 
-  | ':' Session { SoSession $2 }
+  | ':' RSession { SoSession $2 }
 
 
 Session4 :: { Session }

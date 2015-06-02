@@ -3,7 +3,7 @@ module Lin.Norm where
 import Lin.Abs (Name(Name))
 import Lin.Utils
 
-type ChanDec = Arg (Maybe Session)
+type ChanDec = Arg (Maybe RSession)
 type VarDec  = Arg Typ
 
 data Program = Program [Dec]
@@ -18,6 +18,7 @@ data Proc
   = Act [Pref] Procs
   | Ax Session Channel Channel [Channel]
   | At Term [Channel]
+  | NewSlice [Channel] Term Name Proc
   deriving (Eq,Ord,Show,Read)
 
 type Procs = [Proc]
@@ -34,7 +35,6 @@ data Pref
   | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term
   | Recv     Channel VarDec
-  | NewSlice Term Name
   deriving (Eq,Ord,Show,Read)
 
 type Typ = Term
@@ -77,3 +77,6 @@ int = Def (Name "Int") []
 
 tSession :: Typ
 tSession = Def (Name "Session") []
+
+multName :: Name
+multName = Name "_*_"

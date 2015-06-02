@@ -170,6 +170,7 @@ instance Print Procs where
    ZeroP  -> prPrec i 0 (concatD [])
    Ax session names -> prPrec i 0 (concatD [doc (showString "fwd") , prt 0 session , doc (showString "(") , prt 0 names , doc (showString ")")])
    At aterm names -> prPrec i 0 (concatD [doc (showString "@") , prt 0 aterm , doc (showString "(") , prt 0 names , doc (showString ")")])
+   NewSlice names aterm name proc -> prPrec i 0 (concatD [doc (showString "slice") , doc (showString "(") , prt 0 names , doc (showString ")") , prt 0 aterm , doc (showString "as") , prt 0 name , nl , prt 0 proc])
    Procs procs -> prPrec i 0 (concatD [doc (showString "(") , prt 0 procs , doc (showString ")")])
 
 
@@ -179,7 +180,6 @@ instance Print Pref where
    ParSplit name chandecs -> prPrec i 0 (concatD [prt 0 name , doc (showString "{") , prt 0 chandecs , doc (showString "}")])
    TenSplit name chandecs -> prPrec i 0 (concatD [prt 0 name , doc (showString "[") , prt 0 chandecs , doc (showString "]")])
    SeqSplit name chandecs -> prPrec i 0 (concatD [prt 0 name , doc (showString "[:") , prt 0 chandecs , doc (showString ":]")])
-   NewSlice aterm name -> prPrec i 0 (concatD [doc (showString "slice") , prt 0 aterm , doc (showString "as") , prt 0 name])
    Send name aterm -> prPrec i 0 (concatD [doc (showString "send") , prt 0 name , prt 0 aterm])
    Recv name vardec -> prPrec i 0 (concatD [doc (showString "recv") , prt 0 name , prt 0 vardec])
 
@@ -190,7 +190,7 @@ instance Print Pref where
 instance Print OptSession where
   prt i e = case e of
    NoSession  -> prPrec i 0 (concatD [])
-   SoSession session -> prPrec i 0 (concatD [doc (showString ":") , prt 0 session])
+   SoSession rsession -> prPrec i 0 (concatD [doc (showString ":") , prt 0 rsession])
 
 
 instance Print Session where

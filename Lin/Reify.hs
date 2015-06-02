@@ -81,23 +81,30 @@ reifyRSessions :: [N.RSession] -> [RSession]
 reifyRSessions = reify
 
 instance Norm Proc where
-  type Normalized Proc = N.Proc
-  reify (N.Act prefs procs) = Act (reify prefs) (reify procs)
-  reify (N.Ax s c d es)     = Act [] (Ax (reify s) (c : d : es))
-  reify (N.At t cs)         = Act [] (At (reify t) cs)
-  norm  (Act   prefs procs) = N.Act (norm  prefs) (norm  procs)
+  type Normalized Proc        = N.Proc
+  reify (N.Act prefs procs)   = Act (reify prefs) (reify procs)
+  reify (N.Ax s c d es)       = Act [] (Ax (reify s) (c : d : es))
+  reify (N.At t cs)           = Act [] (At (reify t) cs)
+  reify (N.NewSlice cs t x p) = Act [] (NewSlice cs (reify t) x (reify p))
+  norm  (Act prefs procs)     = N.Act (norm prefs) (norm procs)
 
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
 
+reifyProcs :: N.Procs -> Procs
+reifyProcs ps = case reify ps of
+  [Act [] ps'] -> ps'
+  ps'          -> Procs ps'
+
 instance Norm Procs where
-  type Normalized Procs = N.Procs
-  reify []              = ZeroP
-  reify procs           = Procs (reify procs)
-  norm ZeroP            = []
-  norm (Procs procs)    = norm procs
-  norm (At t cs)        = [N.At (norm t) cs]
-  norm (Ax s es0)       =
+  type Normalized Procs    = N.Procs
+  reify []                 = ZeroP
+  reify procs              = reifyProcs procs
+  norm ZeroP               = []
+  norm (Procs procs)       = norm procs
+  norm (At t cs)           = [N.At (norm t) cs]
+  norm (NewSlice cs t x p) = [N.NewSlice cs (norm t) x (norm p)]
+  norm (Ax s es0)          =
     case es0 of
       c : d : es -> [fwdP (norm s) c d es]
                 --  [N.Ax (norm s) c d es]
@@ -112,16 +119,14 @@ instance Norm Pref where
     N.Split N.SeqK c ds -> SeqSplit c (reify ds)
     N.Send     c t      -> Send     c (reify t)
     N.Recv     c a      -> Recv     c (reify a)
-    N.NewSlice t x      -> NewSlice (reify t) x
 
   norm  e = case e of
-    Nu c d        -> N.Nu (norm c) (norm d)
-    ParSplit c ds -> N.Split N.ParK c (norm ds)
-    TenSplit c ds -> N.Split N.TenK c (norm ds)
-    SeqSplit c ds -> N.Split N.SeqK c (norm ds)
-    Send     c t  -> N.Send         c (norm t)
-    Recv     c a  -> N.Recv         c (norm a)
-    NewSlice t x  -> N.NewSlice     (norm t) x
+    Nu c d            -> N.Nu (norm c) (norm d)
+    ParSplit c ds     -> N.Split N.ParK c (norm ds)
+    TenSplit c ds     -> N.Split N.TenK c (norm ds)
+    SeqSplit c ds     -> N.Split N.SeqK c (norm ds)
+    Send     c t      -> N.Send         c (norm t)
+    Recv     c a      -> N.Recv         c (norm a)
 
 reifyPref :: N.Pref -> Pref
 reifyPref = reify
@@ -210,7 +215,7 @@ instance Norm VarDec where
   norm  (VarDec x s)     = Arg x (norm s)
 
 instance Norm OptSession where
-  type Normalized OptSession = Maybe N.Session
+  type Normalized OptSession = Maybe N.RSession
   reify (Just s)     = SoSession (reify s)
   reify Nothing      = NoSession
   norm NoSession     = Nothing

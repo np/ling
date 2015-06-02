@@ -15,7 +15,7 @@ import Lin.Term.Checker
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import Control.Monad.Reader (local, unless)
+import Control.Monad.Reader (local, unless, when)
 import Control.Monad.Error (throwError)
 import Control.Lens hiding (act, acts)
 
@@ -39,8 +39,8 @@ checkOrderedChans proto cs =
   where
     sub = rmDups . filter (`Set.member` l2s cs)
 
-checkEqSessions :: Name -> Session -> Maybe Session -> TC ()
-checkEqSessions c s0 Nothing   = assertEqual s0 End ["Unused channel: " ++ pretty c]
+checkEqSessions :: Name -> RSession -> Maybe RSession -> TC ()
+checkEqSessions c s0 Nothing   = assertEqual s0 (one End) ["Unused channel: " ++ pretty c]
 checkEqSessions c s0 (Just s1) =
   assertEqual s0 s1
     ["On channel " ++ pretty c ++ " sessions are not equivalent."
@@ -50,18 +50,18 @@ checkEqSessions c s0 (Just s1) =
     ,"  " ++ pretty s1
     ]
 
-checkOptSession :: Name -> Maybe Session -> Maybe Session -> TC ()
+checkOptSession :: Name -> Maybe RSession -> Maybe RSession -> TC ()
 checkOptSession _ Nothing   _   = return ()
-checkOptSession c (Just s0) ms1 = checkSession s0 >> checkEqSessions c s0 ms1
+checkOptSession c (Just s0) ms1 = checkRSession s0 >> checkEqSessions c s0 ms1
 
 -- checkUnused c ms s: Check if the channel c is used given the
 -- inferred session ms, and its dual ds.
-checkUnused :: Name -> Maybe Session -> Session -> TC ()
-checkUnused _ (Just _) _  = return ()
-checkUnused c Nothing  ds = assertEqual ds End ["Unused channel " ++ pretty c]
+checkUnused :: Name -> Maybe RSession -> RSession -> TC ()
+checkUnused _ (Just _) _ = return ()
+checkUnused c Nothing  s = assertEqual s (one End) ["Unused channel " ++ pretty c]
 
-checkDual :: Session -> Session -> TC ()
-checkDual s0 s1 =
+checkDual :: RSession -> RSession -> TC ()
+checkDual (Repl s0 (Lit 1)) (Repl s1 (Lit 1)) =
   assertEqual s0 (dual s1)
     ["Sessions are not dual."
     ,"Given session (expanded):"
@@ -69,6 +69,8 @@ checkDual s0 s1 =
     ,"Inferred dual session:"
     ,"  " ++ pretty s1
     ]
+checkDual _ _ =
+  throwError "Unexpected session replication in 'new'."
 
 assertAbsent :: Channel -> Proto -> TC ()
 assertAbsent c p =
@@ -85,14 +87,32 @@ mergeConstraints (Constraints c0) (Constraints c1) = do
     ]
   return . Constraints $ c0 `Set.union` c1
 
+isSendRecv :: Session -> Bool
+isSendRecv (Snd _ s) = isSendRecv s
+isSendRecv (Rcv _ s) = isSendRecv s
+isSendRecv End       = True
+isSendRecv _         = False
+
+checkSlice :: (Channel -> Bool) -> (Channel, RSession) -> TC ()
+checkSlice cond (c, rs) = when (cond c) $
+  case rs of
+    Repl s (Lit 1) ->
+      assert (isSendRecv s) ["checkSlice: non send/recv session"]
+    _ -> throwError "checkSlice: Replicated session"
+
 checkProc :: Proc -> TC Proto
-checkProc (Act acts procs) = checkAct acts procs
-checkProc (Ax s c d es)    = return $ protoAx s c d es
-checkProc (At e cs)        =
+checkProc (acts `Act` procs) = checkAct acts procs
+checkProc (Ax s c d es)    = return $ protoAx (one s) c d es
+checkProc (NewSlice cs t i p) =
+  do checkTerm int t
+     proto <- local (evars %~ Map.insert i int) $ checkProc p
+     mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to Map.toList)
+     return $ replProtoWhen (`elem` cs) t proto
+
+checkProc (At e cs) =
   do t <- inferTerm e
      case t of
-       TProto ss' -> do
-         let ss = [s | Repl s (Lit 1) <- ss']
+       TProto ss -> do
          assertEqual (length cs) (length ss)
             ["Expected " ++ show (length ss) ++ " channels, not " ++ show (length cs)]
          return . mkProto $ zip cs ss
@@ -140,14 +160,13 @@ kindLabel ParK = "par/⅋"
 kindLabel TenK = "tensor/⊗"
 kindLabel SeqK = "sequence/»"
 
-actLabel :: Act -> String
+actLabel :: Pref -> String
 actLabel Nu{}          = "restriction/ν"
 actLabel (Split k _ _) = "split:" ++ kindLabel k
 actLabel Send{}        = "send"
 actLabel Recv{}        = "recv"
-actLabel NewSlice{}    = "slice"
 
-debugCheckAct :: Proto -> Act -> [Act] -> Procs -> TC Proto -> TC Proto
+debugCheckAct :: Proto -> Pref -> [Pref] -> Procs -> TC Proto -> TC Proto
 debugCheckAct proto act acts procs m = do
   unless (null acts && null procs) $
     debug $ [ "Checking " ++ actLabel act ++ proc
@@ -161,11 +180,10 @@ debugCheckAct proto act acts procs m = do
   where proc  = " `" ++ pretty act ++ " " ++ proc' ++ "`"
         proc' = pretty (actP acts procs)
 
-actTCEnv :: Act -> TCEnv -> TCEnv
+actTCEnv :: Pref -> TCEnv -> TCEnv
 actTCEnv act env =
   env & case act of
           Recv _ (Arg x typ) -> evars %~ Map.insert x typ
-          NewSlice _ x       -> evars %~ Map.insert x int
           _                  -> id
 
 {-
@@ -209,7 +227,7 @@ or classically:
 Γ(c{c0,...,cN} P)(d) = (Γ(P)/(c0,...,cN))(d)
 
 -}
-checkAct :: [Act] -> Procs -> TC Proto
+checkAct :: [Pref] -> Procs -> TC Proto
 checkAct []           procs = checkProcs procs
 checkAct (act : acts) procs = do
   proto <- local (actTCEnv act) $ checkAct acts procs
@@ -218,8 +236,8 @@ checkAct (act : acts) procs = do
       Nu (Arg c cOS) (Arg d dOS) -> do
         let ds = [c,d]
             [cSession,dSession] = chanSessions ds proto
-            cNSession = defaultEnd cSession
-            dNSession = defaultEnd dSession
+            cNSession = defaultEndR cSession
+            dNSession = defaultEndR dSession
         checkUnused c cSession dNSession
         checkUnused d dSession cNSession
         checkOptSession c cOS cSession
@@ -229,9 +247,9 @@ checkAct (act : acts) procs = do
         return $ rmChans ds proto'
       Split k c dOSs -> do
         assertAbsent c proto
-        let ds = map _argName dOSs
-            dsSessions = map defaultEnd $ chanSessions ds proto
-            s = array k (list dsSessions)
+        let ds         = map _argName dOSs
+            dsSessions = map defaultEndR $ chanSessions ds proto
+            s          = array k dsSessions
         checkChanDecs proto dOSs
         (proto', flag) <-
           case k of
@@ -243,14 +261,12 @@ checkAct (act : acts) procs = do
             SeqK -> do
               checkOrderedChans proto ds
               return (proto,  WithConstraint)
-        return $ substChans flag (ds, (c,s)) proto'
+        return $ substChans flag (ds, (c,one s)) proto'
       Send c e -> do
-        let cSession = defaultEnd $ chanSession c proto
+        let cSession = defaultEndR $ chanSession c proto
         typ <- inferTerm e
-        return $ addChanWithOrder (c, Snd typ cSession) proto
+        return $ addChanWithOrder (c, mapR (Snd typ) cSession) proto
       Recv c (Arg _x typ) -> do
         checkTyp typ
-        let cSession = defaultEnd $ chanSession c proto
-        return $ addChanWithOrder (c, Rcv typ cSession) proto
-      NewSlice t _ ->
-        return $ replProto t proto
+        let cSession = defaultEndR $ chanSession c proto
+        return $ addChanWithOrder (c, mapR (Rcv typ) cSession) proto

@@ -15,7 +15,7 @@ import Data.Map (Map)
 import Control.Lens
 
 -- These constraints are solved!
-data Proto = MkProto { _chans       :: Map Channel Session
+data Proto = MkProto { _chans       :: Map Channel RSession
                      , _constraints :: Constraints
                      , _orders      :: [[Channel]]
                      }
@@ -32,9 +32,9 @@ prettyProto p =
   ++
   if p ^. orders . to null then [] else
   " orders:"
-  : map ("  " ++) (map (show . map unName) (p ^. orders))
+  : map (("  " ++) . show . map unName) (p ^. orders)
 
-chanDecs :: Proto -> [Arg Session]
+chanDecs :: Proto -> [Arg RSession]
 chanDecs p = p ^.. chans . to m2l . each . to (uncurry Arg)
 
 prettyChanDecs :: Proto -> [String]
@@ -49,7 +49,7 @@ chanPresent p c = has (chans . at c . _Just) p
 isEmptyProto :: Proto -> Bool
 isEmptyProto p = p ^. chans . to Map.null
 
-addChanOnly :: (Channel,Session) -> Proto -> Proto
+addChanOnly :: (Channel,RSession) -> Proto -> Proto
 addChanOnly (c,s) = chans  %~ at c .~ Just s
 
 data ConstraintFlag = WithConstraint | WithoutConstraints
@@ -58,10 +58,10 @@ addChanConstraint :: ConstraintFlag -> Channel -> Proto -> Proto
 addChanConstraint WithoutConstraints _ = id
 addChanConstraint WithConstraint     c = constraints %~ mapConstraints (c `Set.insert`)
 
-addChan :: ConstraintFlag -> (Channel,Session) -> Proto -> Proto
+addChan :: ConstraintFlag -> (Channel,RSession) -> Proto -> Proto
 addChan flag (c,s) = addChanOnly (c,s) . addChanConstraint flag c
 
-addChanWithOrder :: (Channel,Session) -> Proto -> Proto
+addChanWithOrder :: (Channel,RSession) -> Proto -> Proto
 addChanWithOrder (c,s) p = p & addChan WithConstraint (c,s)
                              & orders %~ addOrder
   where addOrder []  = [[c]]
@@ -83,26 +83,28 @@ rmChan c p =
 rmChans :: [Channel] -> Proto -> Proto
 rmChans = flip (foldr rmChan)
 
-substChans :: ConstraintFlag -> ([Channel], (Channel,Session)) -> Proto -> Proto
+substChans :: ConstraintFlag -> ([Channel], (Channel,RSession)) -> Proto -> Proto
 substChans flag (cs, cs') p =
   p & orders . each %~ substList (l2s cs) (fst cs')
     & rmChansAndConstraints cs
     & addChan flag cs'
 
-chanSession :: Channel -> Proto -> Maybe Session
+chanSession :: Channel -> Proto -> Maybe RSession
 chanSession c p = p ^. chans . at c
 
-chanSessions :: [Channel] -> Proto -> [Maybe Session]
+chanSessions :: [Channel] -> Proto -> [Maybe RSession]
 chanSessions cs p = map (`chanSession` p) cs
 
-mkProto :: [(Channel,Session)] -> Proto
+mkProto :: [(Channel,RSession)] -> Proto
 mkProto css = MkProto (l2m css) (Constraints (l2s [l2s cs]))
                       (map return cs)
   where cs = map fst css
 
-protoAx :: Session -> Channel -> Channel -> [Channel] -> Proto
+protoAx :: RSession -> Channel -> Channel -> [Channel] -> Proto
 protoAx s c d es = mkProto ((c,s):(d,dual s):map (\e -> (e, log s)) es)
 
-replProto :: Term -> Proto -> Proto
-replProto n = chans . mapped %~ replSessionTerm n
+replProtoWhen :: (Channel -> Bool) -> Term -> Proto -> Proto
+replProtoWhen cond n = chans . imapped %@~ replRSessionWhen where
+  replRSessionWhen c s | cond c    = replRSession n s
+                       | otherwise = s
 -- -}

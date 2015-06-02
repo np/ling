@@ -82,18 +82,18 @@ All other symbols are terminals.
   | //Procs// | -> | **eps**
   |  |  **|**  | ``fwd`` //Session// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``slice`` ``(`` //[Name]// ``)`` //ATerm// ``as`` //Name// //Proc// 
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
   | //Pref// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
   |  |  **|**  | //Name// ``{`` //[ChanDec]// ``}`` 
   |  |  **|**  | //Name// ``[`` //[ChanDec]// ``]`` 
   |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 
-  |  |  **|**  | ``slice`` //ATerm// ``as`` //Name// 
   |  |  **|**  | ``send`` //Name// //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
   | //[Pref]// | -> | **eps**
   |  |  **|**  | //Pref// //[Pref]// 
   | //OptSession// | -> | **eps**
-  |  |  **|**  | ``:`` //Session// 
+  |  |  **|**  | ``:`` //RSession// 
   | //Session4// | -> | //Name// 
   |  |  **|**  | ``end`` 
   |  |  **|**  | ``{`` //[RSession]// ``}`` 

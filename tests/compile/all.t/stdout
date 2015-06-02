@@ -420,6 +420,19 @@ void singleRecv_lin (const int * c_lin){
 void singleSend_lin (int * c_lin){
   * c_lin = 42 ;
   }
+void sum_int_lin (const int a_lin [10], int * r_lin){
+  int itmp_lin ;
+  itmp_lin = 0 ;
+  for (int i_lin = 0 ;
+  i_lin < 10 ;
+  i_lin = i_lin + 1){
+    const int x_lin = a_lin [i_lin];
+    const int y_lin = itmp_lin ;
+    itmp_lin = x_lin + y_lin ;
+    } ;
+  const int x__itmp_lin = itmp_lin ;
+  * r_lin = x__itmp_lin ;
+  }
 void ten_loli_par_lin (struct {
   struct {
     int f0 ;

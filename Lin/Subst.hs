@@ -50,26 +50,25 @@ hideArg :: Arg a -> E Sub
 hideArg (Arg x _) = Map.delete x
 
 hidePref :: Pref -> E Sub
-hidePref (Recv _ arg)   = hideArg arg
-hidePref (NewSlice _ x) = Map.delete x
-hidePref _              = id
+hidePref (Recv _ arg)       = hideArg arg
+hidePref _                  = id
 
 hidePrefs :: [Pref] -> E Sub
 hidePrefs = flip (foldr hidePref)
 
 instance Subst Pref where
   subst f pref = case pref of
-    Split k c ds  -> Split k c (subst f ds)
-    Send c e      -> Send c (subst f e)
-    Recv c arg    -> Recv c (subst f arg)
-    Nu c d        -> Nu (subst f c) (subst f d)
-    NewSlice t x  -> NewSlice (subst f t) x
+    Split k c ds      -> Split k c (subst f ds)
+    Send c e          -> Send c (subst f e)
+    Recv c arg        -> Recv c (subst f arg)
+    Nu c d            -> Nu (subst f c) (subst f d)
 
 instance Subst Proc where
   subst f p = case p of
-    Act prefs procs -> Act (subst f prefs) (subst f procs)
-    Ax{}            -> p
-    At t cs         -> At (subst f t) cs
+    Act prefs procs   -> Act (subst f prefs) (subst f procs)
+    Ax{}              -> p
+    At t cs           -> At (subst f t) cs
+    NewSlice cs t x p -> NewSlice cs (subst f t) x (subst (Map.delete x f) p)
 
 instance Subst Session where
   subst f s0 = case s0 of

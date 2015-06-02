@@ -14,6 +14,7 @@ freeChans :: Proc -> Set Channel
 freeChans (prefs `Act` procs) = fcAct prefs procs
 freeChans (Ax _ c d es)       = l2s (c:d:es)
 freeChans (At _ cs)           = l2s cs
+freeChans NewSlice{}          = error "freeChans/NewSlice undefined"
 
 bndChans :: [ChanDec] -> Set Channel
 bndChans = l2s . map _argName
@@ -29,11 +30,14 @@ fcAct (pref:prefs) procs =
     Split _ c ds   -> c  `Set.insert` (cs `Set.difference` bndChans ds)
     Send c _e      -> c  `Set.insert` cs
     Recv c _xt     -> c  `Set.insert` cs
-    NewSlice _t _x -> error "fcAct/NewSlice undefined" -- cs ?
   where cs = fcAct prefs procs
 
 zeroP :: Proc
 zeroP = [] `Act` []
+
+parP :: Proc -> Proc -> Proc
+([] `Act` ps) `parP` ([] `Act` ps') = [] `Act` (ps ++ ps')
+p0            `parP` p1             = [] `Act` [p0,p1]
 
 actP :: [Pref] -> Procs -> Proc
 prefs `actP` [prefs' `Act` procs] = (prefs ++ prefs') `Act` procs
@@ -54,6 +58,7 @@ filter0 p = case p of
   prefs `Act` procs -> prefs `actP0s` procs
   Ax{}              -> [p]
   At{}              -> [p]
+  NewSlice{}        -> [p]
 
 suffChan :: Channel -> Int -> Channel
 suffChan (Name c) i = Name (c ++ show i ++ "#")
@@ -122,7 +127,6 @@ replPref n x pref p =
     Send _c _e     -> error "replPref/Send"
     Recv _c _xt    -> error "replPref/Recv"
     Nu _c _d       -> error "replPref/Nu"
-    NewSlice _t _x -> error "replPref/NewSlice"
 
 replProc :: Int -> Name -> Proc -> Procs
 replProc n x p0 =
@@ -130,10 +134,11 @@ replProc n x p0 =
     prefs0 `Act` procs ->
       case prefs0 of
         []           -> replProcs n x procs
-        pref : prefs -> [replPref n x pref (prefs `Act` procs)]
+        pref : prefs -> [replPref n x pref (prefs `actP` procs)]
     -- If Ax are expanded before, nothing to do here
     -- Otherwise this should do the same as the
     -- replication of the expansion.
     -- This might be needed because of abstract sessions.
-    Ax{} -> error "replProcs/Ax"
-    At{} -> error "replProcs/At"
+    Ax{}       -> error "replProc/Ax"
+    At{}       -> error "replProc/At"
+    NewSlice{} -> error "replProc/NewSlice"

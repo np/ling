@@ -57,6 +57,7 @@ data Procs =
    ZeroP
  | Ax Session [Name]
  | At ATerm [Name]
+ | NewSlice [Name] ATerm Name Proc
  | Procs [Proc]
   deriving (Eq,Ord,Show,Read)
 
@@ -65,14 +66,13 @@ data Pref =
  | ParSplit Name [ChanDec]
  | TenSplit Name [ChanDec]
  | SeqSplit Name [ChanDec]
- | NewSlice ATerm Name
  | Send Name ATerm
  | Recv Name VarDec
   deriving (Eq,Ord,Show,Read)
 
 data OptSession =
    NoSession
- | SoSession Session
+ | SoSession RSession
   deriving (Eq,Ord,Show,Read)
 
 data Session =

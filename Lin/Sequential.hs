@@ -18,9 +18,11 @@ module Lin.Sequential where
 import Control.Lens hiding (act,acts,op)
 
 import Data.Maybe
+import Data.Functor
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Lin.Utils
+import Lin.Print
 import Lin.Print.Instances ()
 import Lin.Session
 import Lin.Proc
@@ -41,7 +43,7 @@ data Location
   | Proj Location Int
   deriving (Read,Show,Ord,Eq)
 
-data Env = Env { _chans   :: Map Channel (Location, Session)
+data Env = Env { _chans   :: Map Channel (Location, RSession)
                , _locs    :: Map Location ()
                , _writers :: Map Location Channel }
                -- writers ^. at l == Just c
@@ -51,16 +53,19 @@ data Env = Env { _chans   :: Map Channel (Location, Session)
 
 $(makeLenses ''Env)
 
+transErr :: Print a => String -> a -> b
+transErr msg v = error $ msg ++ "\n" ++ pretty v
+
 emptyEnv :: Env
 emptyEnv = Env Map.empty Map.empty Map.empty
 
-addChans :: [(Channel, (Location, Session))] -> Env -> Env
+addChans :: [(Channel, (Location, RSession))] -> Env -> Env
 addChans xys = chans %~ Map.union (Map.fromList xys)
 
 rmChan :: Channel -> Env -> Env
 rmChan c = chans . at c .~ Nothing
 
-(!) :: Env -> Channel -> (Location, Session)
+(!) :: Env -> Channel -> (Location, RSession)
 env ! i = fromMaybe err (env ^. chans . at i)
   where err = error $ "lookup/env " ++ show i ++ " in "
                    ++ show (map unName (Map.keys (env ^. chans)))
@@ -82,15 +87,16 @@ mnot a Nothing = Just a
 mnot _ Just{}  = Nothing
 
 actEnv :: Channel -> Env -> Env
-actEnv c env = env & chans   . at c . mapped . _2 %~ sessionStep
+actEnv c env = env & chans   . at c . mapped . _2 %~ mapR sessionStep
                    & locs    . at l %~ mnot ()
                    & writers . at l %~ mnot c
   where l = fst (env!c)
 
 sessionsStatus :: (Session -> Status) -> Location -> Sessions -> [(Location,Status)]
-sessionsStatus dflt l ss = [ ls
-                      | (i,s) <- zip [0..] (flatSessions ss)
-                      , ls <- sessionStatus dflt (Proj l i) s ]
+sessionsStatus dflt l ss =
+  [ ls
+  | (i,s) <- zip [0..] (flatSessions ss)
+  , ls <- sessionStatus dflt (Proj l i) s ]
 
 sessionStatus :: (Session -> Status) -> Location -> Session -> [(Location,Status)]
 sessionStatus dflt l x = case x of
@@ -98,6 +104,12 @@ sessionStatus dflt l x = case x of
   Par ss -> sessionsStatus dflt l ss
   Seq ss -> sessionsStatus dflt l ss
   _      -> [(l, dflt x)]
+
+rsessionStatus :: (Session -> Status) -> Location -> RSession -> [(Location,Status)]
+rsessionStatus dflt l r@(Repl s t) =
+  case t of
+    Lit 1 -> sessionStatus  dflt l  s
+    _     -> sessionsStatus dflt l [r]
 
 statusAt :: Channel -> Env -> Maybe Status
 statusAt c env
@@ -119,73 +131,80 @@ isReadyPref :: Env -> Pref -> Bool
 isReadyPref env pref =
   case pref of
     Split{}    -> True
-    NewSlice{} -> True
     Nu{}       -> True
     Send c _   -> statusAt c env == Just Empty
     Recv c _   -> statusAt c env == Just Full
 
-transPi :: Channel -> [ChanDec] -> Env -> Env
-transPi c dOSs env =
+transSplit :: Channel -> [ChanDec] -> Env -> Env
+transSplit c dOSs env =
   rmChan c $
-  addChans [ (d, (Proj l n, projSession (fromIntegral n) session))
+  addChans [ (d, (Proj l n, one (projSession (fromIntegral n) (unRepl session))))
            | (d, n) <- zip ds [(0 :: Int)..] ] env
   where (l, session) = env ! c
         ds = map _argName dOSs
 
-transProc :: Env -> Proc -> [Pref]
-transProc env x = case x of
-  Ax{} ->
-    error $ "transProc" ++ show x
-  At{} ->
-    error $ "transProc" ++ show x
-  Act acts procs ->
-    transAct env acts procs
+transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
+transProc env p0 k = case p0 of
+  Ax{}              -> k env p0
+  At{}              -> k env p0
+  Act acts procs    -> transAct env acts procs k
+  NewSlice xs t i p -> transProc env p $ \env' p' -> k env' (NewSlice xs t i p')
 
 -- prefixes about different channels can be reordered
-transAct :: Env -> [Pref] -> [Proc] -> [Pref]
-transAct env prefs0 procs =
+transAct :: Env -> [Pref] -> [Proc] -> (Env -> Proc -> r) -> r
+transAct env prefs0 procs k =
   case prefs0 of
-    []         -> transProcs env (filter0s procs) []
-    pref:prefs -> pref : transAct (transPref pref env) prefs procs
+    []         -> transProcs env (filter0s procs) [] k
+    pref:prefs -> transAct (transPref pref env) prefs procs $ \env' proc' ->
+                  k env' ([pref] `actP` [proc'])
+
+unRepl :: RSession -> Session
+unRepl (Repl s (Lit 1)) = s
+unRepl r                = transErr "unRepl: unexpected replicated session" r
 
 transPref :: Pref -> Env -> Env
 transPref pref =
   case pref of
-    Nu (Arg c0 c0OS) (Arg c1 c1OS) ->
-      let Just (c0S , c1S) = extractDuals (c0OS, c1OS)
+    Nu (Arg c0 c0ORS) (Arg c1 c1ORS) ->
+      let c0OS = unRepl <$> c0ORS
+          c1OS = unRepl <$> c1ORS
+          Just (c0S , c1S) = extractDuals (c0OS, c1OS)
           l = Root c0
       in
       addLocs  (sessionStatus (const Empty) l c0S) .
-      addChans [(c0,(l,c0S)),(c1,(l,c1S))]
+      addChans [(c0,(l,one c0S)),(c1,(l,one c1S))]
     Split _ c ds ->
-      transPi c ds
+      transSplit c ds
     Send c _ ->
       actEnv c
     Recv c _ ->
       actEnv c
-    NewSlice{} ->
-      id
 
 -- Assumption input processes should not have zeros (filter0s)
-transProcs :: Env -> [Proc] -> [Proc] -> [Pref]
-transProcs _   []       []      = []
-transProcs _   []       waiting = error $ "transProcs: impossible all the processes are stuck: " ++ pretty waiting
-transProcs env [p]      []      = transProc env p
-transProcs env (p0:p0s) waiting =
+transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
+transProcs env []       []      k = k env zeroP
+transProcs _   []       waiting _ = transErr "transProcs: impossible all the processes are stuck:" waiting
+transProcs env [p]      []      k = transProc env p k
+transProcs env (p0:p0s) waiting k =
   case p0 of
     Act acts@(_:_) procs0 ->
       case isReady env acts of
         Nothing ->
-          transProcs env p0s (p0 : waiting)
+          transProcs env p0s (p0 : waiting) k
         Just (readyPis,restPis) ->
-          transAct env readyPis (p0s ++ reverse waiting ++ [restPis `actP` procs0])
+          transAct env readyPis (p0s ++ reverse waiting ++ [restPis `actP` procs0]) k
 
-    At{} ->
-      error "transProcs: At"
+    NewSlice xs t i p ->
+      transProc env p $ \env' p' ->
+        transProcs env' (p0s ++ reverse waiting) [] $ \env'' ps' ->
+          k env'' (NewSlice xs t i p' `parP` ps')
 
-    -- One should expand the forwarders
-    Ax{} ->
-      error "transProcs: Ax"
+
+    -- These cases are considered non-ready, so if another parallel process can
+    -- proceed we do so.
+    -- Therefor we cannot put a process like (@p0() | @p1()) in sequence.
+    At{} -> transProcs env p0s (p0 : waiting) k
+    Ax{} -> transProcs env p0s (p0 : waiting) k
 
     Act [] _procs0 ->
       error "transProcs: impossible" -- filter0s prevents that
@@ -193,13 +212,13 @@ transProcs env (p0:p0s) waiting =
 transDec :: Dec -> Dec
 transDec x = case x of
   Sig _d _t -> x
-  Dec d cs proc -> Dec d cs (transProc env proc `actP` [])
+  Dec d cs proc -> transProc env proc (const $ Dec d cs)
     where
       decSt Snd{} = Empty
       decSt Rcv{} = Full
       decSt End{} = Empty
       decSt _     = error "transDec.decSt: impossible"
-      env = addLocs  [ ls          | Arg c (Just s) <- cs, ls <- sessionStatus decSt (Root c) s ] $
+      env = addLocs  [ ls          | Arg c (Just s) <- cs, ls <- rsessionStatus decSt (Root c) s ] $
             addChans [ (c, (l, s)) | Arg c (Just s) <- cs, let l = Root c ]
             emptyEnv
 

@@ -4,7 +4,28 @@ cut_par_cut =
   | new (c' : !Int, d' : ?Int) ( send c' 1 | recv d' (x : Int) )
   )
 .
+cut_recv_send_send_recv = new (d : ?Int.!Int, c : !Int.?Int)
+  ( send c 1
+    recv c (x : Int)
+  | recv d (y : Int)
+    send d 2
+  )
+.
 cutSendRecv = new (c : !Int, d : ?Int) ( send c 1 | recv d (x : Int) ).
+cut_send_recv_recv_send = new (c : !Int.?Int, d : ?Int.!Int)
+  ( send c 1
+    recv c (x : Int)
+  | recv d (y : Int)
+    send d 2
+  )
+.
+cut_send_recv_recv_send_v2 = new (c : !Int.?Int, d : ?Int.!Int)
+  ( recv d (y : Int)
+    send d 2
+  | send c 1
+    recv c (x : Int)
+  )
+.
 double (i : ?Int, r : !Int) =
   recv i(xi : Int)
   new (c : ?Int. ?Int. !Int, d)
@@ -168,13 +189,13 @@ par_ten_ten_v2 (c : {[?Int, !Int], [!Int, ?Int]}) =
   | send g 2
   ).
 replicate_par (c : {!Int ^ 10}) =
-  slice 10 as i
-    c{d}
-      send d i.
+  c{d}
+  slice (d) 10 as i
+  send d i.
 replicate_ten (c : [!Int ^ 10]) =
-  slice 10 as i
-    c[d]
-      send d i.
+  c[d]
+  slice (d) 10 as i
+  send d i.
 seq3 (c : [: !Int, !Int, !Int :]) =
   c[: c0, c1, c2 :]
   send c0 0
@@ -198,6 +219,18 @@ sorter (c : {? Vec Int n, ! Vec Int n}) =
   c{ci,co}
   recv ci (v : Vec Int n)
   send co (sort n v).
+sum_int (a : {?Int ^ 10}, r : !Int) =
+  new (itmp : !Int.?Int, tmp)
+  (send itmp 0
+   fwd(?Int)(itmp, r)
+  |
+   a{ai}
+   slice (ai) 10 as i
+   recv ai  (x : Int)
+   recv tmp (y : Int)
+   send tmp (x + y)
+  )
+.
 ten_loli_par (c : [!Int,!Int] -o {!Int,!Int}) =
   c{i,o}
   i{i0,i1}
@@ -264,20 +297,20 @@ test4 (r : !Int) =
     send d 3
   ).
 zap_ten_fwd (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
-  slice 10 as i
   cf{cfi}
   cn{cni}
   co[coi]
+  slice (cfi,cni,coi) 10 as i
   cfi{cfii,cfio}
   ( fwd (?Int)(cni,cfii)
   | fwd (?Int)(cfio,coi)
   )
 .
 zap_ten_par (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
-  slice 10 as i
   cf{cfi}
   cn{cni}
   co[coi]
+  slice (cfi,cni,coi) 10 as i
   cfi{cfii,cfio}
   ( recv cni (x : Int)
     send cfii x
@@ -286,10 +319,10 @@ zap_ten_par (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
   )
 .
 zap_ten_seq (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
-  slice 10 as i
   cf{cfi}
   cn{cni}
   co[coi]
+  slice (cfi,cni,coi) 10 as i
   cfi{cfii,cfio}
   recv cni (x : Int)
   send cfii x
@@ -297,10 +330,10 @@ zap_ten_seq (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
   send coi y
 .
 zip_add (xs : {?Int ^ 10}, ys : {?Int ^ 10}, zs : [!Int ^ 10]) =
-  slice 10 as i
-    xs{x}
-      ys{y}
-        zs[z]
-          recv x (a : Int)
-          recv y (b : Int)
-          send z (a + b).
+  xs{x}
+  ys{y}
+  zs[z]
+  slice (x,y,z) 10 as i
+  recv x (a : Int)
+  recv y (b : Int)
+  send z (a + b).

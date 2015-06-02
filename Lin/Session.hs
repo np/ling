@@ -32,10 +32,12 @@ mapSessions = map . mapR
 
 class Dual a where
   dual :: a -> a
+  log  :: a -> a
 
 instance Dual RW where
   dual Read  = Write
   dual Write = Read
+  log _      = Write
 
 instance Dual Session where
   dual (Par s)    = Ten   (dual s)
@@ -46,24 +48,29 @@ instance Dual Session where
   dual (Atm p n)  = Atm (dual p) n
   dual End        = End
 
+  log (Par s)    = Par (mapSessions log s)
+  log (Ten s)    = Par (mapSessions log s)
+  log (Seq s)    = Par (mapSessions log s)
+  log (Snd a s)  = Snd a (log s)
+  log (Rcv a s)  = Snd a (log s)
+  log (Atm _ n)  = Atm Write n
+  log End        = End
+
 instance Dual RSession where
   dual = mapR dual
+  log  = mapR log
 
 instance Dual a => Dual [a] where
   dual = map dual
-
-log :: Session -> Session
-log (Par s)    = Par (mapSessions log s)
-log (Ten s)    = Par (mapSessions log s)
-log (Seq s)    = Par (mapSessions log s)
-log (Snd a s)  = Snd a (log s)
-log (Rcv a s)  = Snd a (log s)
-log (Atm _ n)  = Atm Write n
-log End        = End
+  log  = map log
 
 defaultEnd :: Maybe Session -> Session
 defaultEnd Nothing  = End
 defaultEnd (Just s) = s
+
+defaultEndR :: Maybe RSession -> RSession
+defaultEndR Nothing  = one End
+defaultEndR (Just s) = s
 
 sessionStep :: Session -> Session
 sessionStep (Snd _ s) = s
@@ -77,7 +84,7 @@ extractDuals (Nothing , Just s1) = Just (dual s1, s1)
 extractDuals (Just s0 , Just s1) = Just (s0, s1)
 
 -- TODO: would it be nicer with the First monoid
-extractSession :: [Maybe Session] -> Session
+extractSession :: [Maybe a] -> a
 extractSession l =
   case catMaybes l of
     s:_ -> s
@@ -106,26 +113,13 @@ projSession n (Ten ss) = projRSessions n ss
 projSession n (Seq ss) = projRSessions n ss
 projSession _ _        = error "projSession: not a par/tensor/seq session"
 
-replRSession :: (Session -> [RSession]) -> RSession -> RSession
-replRSession r (Repl s (Lit 1)) = one $ replSession r s
-replRSession _ _ = error "replRSession: undefined"
+multTerm :: Term -> Term -> Term
+multTerm x@(Lit 0) _       = x
+multTerm (Lit 1)   x       = x
+multTerm (Lit x)   (Lit y) = Lit (x * y)
+multTerm x         y       = Def multName [x,y]
 
-replRSessionTerm :: Term -> RSession -> RSession
-replRSessionTerm t = replRSession (\s -> [Repl s t])
-
-replRSessionInt :: Int -> RSession -> RSession
-replRSessionInt n = replRSession (list . replicate n)
-
-replSession :: (Session -> [RSession]) -> Session -> Session
-replSession r (Ten [Repl s (Lit 1)]) = Ten $ r s
-replSession r (Par [Repl s (Lit 1)]) = Par $ r s
-replSession r (Seq [Repl s (Lit 1)]) = Seq $ r s
-replSession _ _ = error "replSession: undefined"
-
-replSessionTerm :: Term -> Session -> Session
-replSessionTerm t = replSession (\s -> [Repl s t])
-
-replSessionInt :: Int -> Session -> Session
-replSessionInt n = replSession (list . replicate n)
+replRSession :: Term -> RSession -> RSession
+replRSession r (Repl s t) = Repl s (multTerm r t)
 
 -- -}
