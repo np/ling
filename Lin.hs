@@ -1,19 +1,19 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
-import System.IO ( stderr, hPutStrLn )
-import System.Environment ( getArgs )
-import System.Exit ( exitFailure )
-import Control.Lens
+import System.IO (stderr, hPutStrLn)
+import System.Environment (getArgs)
+import System.Exit (exitFailure)
+
 import Control.Monad (when)
+import Control.Lens
+
+import qualified MiniC.Print as C
 
 import Lin.Lex (Token)
 import Lin.Par
 import Lin.Abs
 import Lin.Print
-
-import qualified MiniC.Print as C
-
 import Lin.Reify
 import Lin.Utils
 import Lin.Print.Instances ()
@@ -72,9 +72,7 @@ run opts p s = do
      putStrLn "Tokens:"
      print ts
    case p ts of
-     Bad e    -> do putStrLn "\nParse              Failed...\n"
-                    putStrLn e
-                    exitFailure
+     Bad e    -> failIO $ "Parse Failed: " ++ e
      Ok  tree -> do showTree opts tree
                     return tree
   where ts = myLexer s
@@ -84,10 +82,12 @@ addPrims doAddPrims prg@(N.Program ds)
   | doAddPrims = N.Program (primsN ++ ds)
   | otherwise  = prg
 
+failIO :: String -> IO a
+failIO s = hPutStrLn stderr s >> exitFailure
+
 runErr :: Err a -> IO a
 runErr (Ok a)  = return a
-runErr (Bad s) = do hPutStrLn stderr s
-                    exitFailure
+runErr (Bad s) = failIO s
 
 transP :: Opts -> Program -> IO ()
 transP opts prg = do
@@ -125,6 +125,7 @@ mainArgs opts args0 = case args0 of
   "--compile-prims":args -> mainArgs (opts & compilePrims .~ True) args
   "--seq":args -> mainArgs (opts & sequential .~ True) args
   "--no-prims":args -> mainArgs (opts & noPrims .~ True) args
+  arg@('-':'-':_:_):_ -> failIO $ "Unexpected argument " ++ arg
   [f] -> runProgram opts f
   fs  -> mapM_ (\f -> putStrLn f >> runProgram opts f) fs
 
