@@ -11,4 +11,5 @@ cmdr() {
   done
 }
 alias cmdrseq='cmdrecord tests/sequence/all.t --env empty -- Lin --seq < fixtures/sequence/*.ll'
+alias cmdrcom='cmdrecord tests/compile/all.t  --env empty -- Lin --compile-prims --compile < fixtures/compile/*.ll'
 export PATH=`pwd`/dist/build/Lin:$PATH
