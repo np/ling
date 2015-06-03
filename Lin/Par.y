@@ -93,12 +93,12 @@ ListName : {- empty -} { [] }
 
 
 Program :: { Program }
-Program : ListDec { Program (reverse $1) } 
+Program : ListDec { Prg (reverse $1) } 
 
 
 Dec :: { Dec }
-Dec : Name OptChanDecs '=' Proc '.' { Dec $1 $2 $4 } 
-  | Name ':' Term '.' { Sig $1 $3 }
+Dec : Name OptChanDecs '=' Proc '.' { DDef $1 $2 $4 } 
+  | Name ':' Term '.' { DSig $1 $3 }
 
 
 ListDec :: { [Dec] }
@@ -107,7 +107,7 @@ ListDec : {- empty -} { [] }
 
 
 VarDec :: { VarDec }
-VarDec : '(' Name ':' Term ')' { VarDec $2 $4 } 
+VarDec : '(' Name ':' Term ')' { VD $2 $4 } 
 
 
 ListVarDec :: { [VarDec] }
@@ -121,7 +121,7 @@ OptChanDecs : {- empty -} { NoChanDecs }
 
 
 ChanDec :: { ChanDec }
-ChanDec : Name OptSession { ChanDec $1 $2 } 
+ChanDec : Name OptSession { CD $1 $2 } 
 
 
 ListChanDec :: { [ChanDec] }
@@ -144,14 +144,14 @@ ListATerm : {- empty -} { [] }
 
 
 DTerm :: { DTerm }
-DTerm : Name ListATerm { DTerm $1 (reverse $2) } 
+DTerm : Name ListATerm { DT $1 (reverse $2) } 
 
 
 Term :: { Term }
 Term : ATerm ListATerm { RawApp $1 (reverse $2) } 
   | VarDec ListVarDec '->' Term { TFun $1 (reverse $2) $4 }
   | VarDec ListVarDec '**' Term { TSig $1 (reverse $2) $4 }
-  | 'proc' '(' ListChanDec ')' Proc { Proc $3 $5 }
+  | 'proc' '(' ListChanDec ')' Proc { TProc $3 $5 }
 
 
 Proc :: { Proc }
@@ -169,7 +169,7 @@ Procs : {- empty -} { ZeroP }
   | 'fwd' Session '(' ListName ')' { Ax $2 $4 }
   | '@' ATerm '(' ListName ')' { At $2 $4 }
   | 'slice' '(' ListName ')' ATerm 'as' Name Proc { NewSlice $3 $5 $7 $8 }
-  | '(' ListProc ')' { Procs $2 }
+  | '(' ListProc ')' { Prll $2 }
 
 
 Pref :: { Pref }

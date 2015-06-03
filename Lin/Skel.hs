@@ -16,18 +16,18 @@ transName x = case x of
 
 transProgram :: Program -> Result
 transProgram x = case x of
-  Program decs  -> failure x
+  Prg decs  -> failure x
 
 
 transDec :: Dec -> Result
 transDec x = case x of
-  Dec name optchandecs proc  -> failure x
-  Sig name term  -> failure x
+  DDef name optchandecs proc  -> failure x
+  DSig name term  -> failure x
 
 
 transVarDec :: VarDec -> Result
 transVarDec x = case x of
-  VarDec name term  -> failure x
+  VD name term  -> failure x
 
 
 transOptChanDecs :: OptChanDecs -> Result
@@ -38,7 +38,7 @@ transOptChanDecs x = case x of
 
 transChanDec :: ChanDec -> Result
 transChanDec x = case x of
-  ChanDec name optsession  -> failure x
+  CD name optsession  -> failure x
 
 
 transATerm :: ATerm -> Result
@@ -52,7 +52,7 @@ transATerm x = case x of
 
 transDTerm :: DTerm -> Result
 transDTerm x = case x of
-  DTerm name aterms  -> failure x
+  DT name aterms  -> failure x
 
 
 transTerm :: Term -> Result
@@ -60,7 +60,7 @@ transTerm x = case x of
   RawApp aterm aterms  -> failure x
   TFun vardec vardecs term  -> failure x
   TSig vardec vardecs term  -> failure x
-  Proc chandecs proc  -> failure x
+  TProc chandecs proc  -> failure x
 
 
 transProc :: Proc -> Result
@@ -74,7 +74,7 @@ transProcs x = case x of
   Ax session names  -> failure x
   At aterm names  -> failure x
   NewSlice names aterm name proc  -> failure x
-  Procs procs  -> failure x
+  Prll procs  -> failure x
 
 
 transPref :: Pref -> Result

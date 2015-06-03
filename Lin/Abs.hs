@@ -9,16 +9,16 @@ module Lin.Abs where
 
 newtype Name = Name String deriving (Eq,Ord,Show,Read)
 data Program =
-   Program [Dec]
+   Prg [Dec]
   deriving (Eq,Ord,Show,Read)
 
 data Dec =
-   Dec Name OptChanDecs Proc
- | Sig Name Term
+   DDef Name OptChanDecs Proc
+ | DSig Name Term
   deriving (Eq,Ord,Show,Read)
 
 data VarDec =
-   VarDec Name Term
+   VD Name Term
   deriving (Eq,Ord,Show,Read)
 
 data OptChanDecs =
@@ -27,7 +27,7 @@ data OptChanDecs =
   deriving (Eq,Ord,Show,Read)
 
 data ChanDec =
-   ChanDec Name OptSession
+   CD Name OptSession
   deriving (Eq,Ord,Show,Read)
 
 data ATerm =
@@ -39,14 +39,14 @@ data ATerm =
   deriving (Eq,Ord,Show,Read)
 
 data DTerm =
-   DTerm Name [ATerm]
+   DT Name [ATerm]
   deriving (Eq,Ord,Show,Read)
 
 data Term =
    RawApp ATerm [ATerm]
  | TFun VarDec [VarDec] Term
  | TSig VarDec [VarDec] Term
- | Proc [ChanDec] Proc
+ | TProc [ChanDec] Proc
   deriving (Eq,Ord,Show,Read)
 
 data Proc =
@@ -58,7 +58,7 @@ data Procs =
  | Ax Session [Name]
  | At ATerm [Name]
  | NewSlice [Name] ATerm Name Proc
- | Procs [Proc]
+ | Prll [Proc]
   deriving (Eq,Ord,Show,Read)
 
 data Pref =

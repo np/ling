@@ -96,13 +96,13 @@ instance Print Name where
 
 instance Print Program where
   prt i e = case e of
-   Program decs -> prPrec i 0 (concatD [prt 0 decs])
+   Prg decs -> prPrec i 0 (concatD [prt 0 decs])
 
 
 instance Print Dec where
   prt i e = case e of
-   Dec name optchandecs proc -> prPrec i 0 (concatD [prt 0 name , prt 0 optchandecs , doc (showString "=") , nl , prt 0 proc , doc (showString ".\n")])
-   Sig name term -> prPrec i 0 (concatD [prt 0 name , doc (showString ":") , prt 0 term , doc (showString ".")])
+   DDef name optchandecs proc -> prPrec i 0 (concatD [prt 0 name , prt 0 optchandecs , doc (showString "=") , nl , prt 0 proc , doc (showString ".\n")])
+   DSig name term -> prPrec i 0 (concatD [prt 0 name , doc (showString ":") , prt 0 term , doc (showString ".")])
 
   prtList es = case es of
    [] -> (concatD [])
@@ -110,7 +110,7 @@ instance Print Dec where
 
 instance Print VarDec where
   prt i e = case e of
-   VarDec name term -> prPrec i 0 (concatD [doc (showString "(") , prt 0 name , doc (showString ":") , prt 0 term , doc (showString ")")])
+   VD name term -> prPrec i 0 (concatD [doc (showString "(") , prt 0 name , doc (showString ":") , prt 0 term , doc (showString ")")])
 
   prtList es = case es of
    [] -> (concatD [])
@@ -124,7 +124,7 @@ instance Print OptChanDecs where
 
 instance Print ChanDec where
   prt i e = case e of
-   ChanDec name optsession -> prPrec i 0 (concatD [prt 0 name , prt 0 optsession])
+   CD name optsession -> prPrec i 0 (concatD [prt 0 name , prt 0 optsession])
 
   prtList es = case es of
    [] -> (concatD [])
@@ -145,7 +145,7 @@ instance Print ATerm where
 
 instance Print DTerm where
   prt i e = case e of
-   DTerm name aterms -> prPrec i 0 (concatD [prt 0 name , prt 0 aterms])
+   DT name aterms -> prPrec i 0 (concatD [prt 0 name , prt 0 aterms])
 
 
 instance Print Term where
@@ -153,7 +153,7 @@ instance Print Term where
    RawApp aterm aterms -> prPrec i 0 (concatD [prt 0 aterm , prt 0 aterms])
    TFun vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec , prt 0 vardecs , doc (showString "->") , prt 0 term])
    TSig vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec , prt 0 vardecs , doc (showString "**") , prt 0 term])
-   Proc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc") , doc (showString "(") , prt 0 chandecs , doc (showString ")") , prt 0 proc])
+   TProc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc") , doc (showString "(") , prt 0 chandecs , doc (showString ")") , prt 0 proc])
 
 
 instance Print Proc where
@@ -170,8 +170,8 @@ instance Print Procs where
    ZeroP  -> prPrec i 0 (concatD [])
    Ax session names -> prPrec i 0 (concatD [doc (showString "fwd") , prt 0 session , doc (showString "(") , prt 0 names , doc (showString ")")])
    At aterm names -> prPrec i 0 (concatD [doc (showString "@") , prt 0 aterm , doc (showString "(") , prt 0 names , doc (showString ")")])
-   NewSlice names aterm name proc -> prPrec i 0 (concatD [doc (showString "slice") , doc (showString "(") , prt 0 names , doc (showString ")") , prt 0 aterm , doc (showString "as") , prt 0 name , nl , prt 0 proc])
-   Procs procs -> prPrec i 0 (concatD [doc (showString "(") , prt 0 procs , doc (showString ")")])
+   NewSlice names aterm name proc -> prPrec i 0 (concatD [doc (showString "slice") , doc (showString "(") , prt 0 names , doc (showString ")") , prt 0 aterm , doc (showString "as") , prt 0 name , prt 0 proc])
+   Prll procs -> prPrec i 0 (concatD [doc (showString "(") , prt 0 procs , doc (showString ")")])
 
 
 instance Print Pref where

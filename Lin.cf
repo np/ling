@@ -7,21 +7,22 @@ token Name ((letter | ["_-+*/'"] | digit)*
 
 separator Name "," ;
 
-Program. Program ::= [Dec] ;
+Prg. Program ::= [Dec] ;
 
-Dec. Dec ::= Name OptChanDecs "=" Proc "." ;
-Sig. Dec ::= Name ":" Term "." ;
+DDef. Dec ::= Name OptChanDecs "=" Proc "." ;
+DSig. Dec ::= Name ":" Term "." ;
+
 
 terminator Dec "" ;
 
-VarDec.  VarDec  ::= "(" Name ":" Term ")" ;
+VD. VarDec  ::= "(" Name ":" Term ")" ;
 
 separator VarDec "" ;
 
 NoChanDecs. OptChanDecs ::= ;
 SoChanDecs. OptChanDecs ::= "(" [ChanDec] ")" ;
 
-ChanDec. ChanDec ::= Name OptSession ;
+CD. ChanDec ::= Name OptSession ;
 
 separator ChanDec "," ;
 
@@ -34,12 +35,12 @@ Paren.   ATerm ::= "(" Term ")" ;
 
 separator ATerm "" ;
 
-DTerm.   DTerm ::= Name [ATerm] ;
+DT.      DTerm ::= Name [ATerm] ;
 
 RawApp.  Term  ::= ATerm [ATerm] ;
 TFun.    Term  ::= VarDec [VarDec] "->" Term ;
 TSig.    Term  ::= VarDec [VarDec] "**" Term ;
-Proc.    Term  ::= "proc" "(" [ChanDec] ")" Proc ;
+TProc.   Term  ::= "proc" "(" [ChanDec] ")" Proc ;
 
 Act.        Proc ::= [Pref] Procs ;
 
@@ -49,7 +50,7 @@ ZeroP.    Procs ::= ;
 Ax.       Procs ::= "fwd" Session "(" [Name] ")" ;
 At.       Procs ::= "@" ATerm "(" [Name] ")" ;
 NewSlice. Procs ::= "slice" "(" [Name] ")" ATerm "as" Name Proc ;
-Procs.    Procs ::= "(" [Proc] ")" ;
+Prll.     Procs ::= "(" [Proc] ")" ;
 
 Nu.       Pref ::= "new" "(" ChanDec "," ChanDec ")" ;
 ParSplit. Pref ::= Name "{" [ChanDec] "}" ;

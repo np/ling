@@ -94,14 +94,14 @@ reifyProc = reify
 reifyProcs :: N.Procs -> Procs
 reifyProcs ps = case reify ps of
   [Act [] ps'] -> ps'
-  ps'          -> Procs ps'
+  ps'          -> Prll ps'
 
 instance Norm Procs where
   type Normalized Procs    = N.Procs
   reify []                 = ZeroP
   reify procs              = reifyProcs procs
   norm ZeroP               = []
-  norm (Procs procs)       = norm procs
+  norm (Prll procs)        = norm procs
   norm (At t cs)           = [N.At (norm t) cs]
   norm (NewSlice cs t x p) = [N.NewSlice cs (norm t) x (norm p)]
   norm (Ax s es0)          =
@@ -161,10 +161,10 @@ instance Norm DTerm where
   type Normalized DTerm = N.Term
 
   reify e0 = case e0 of
-    N.Def x es -> DTerm x (reify es)
+    N.Def x es -> DT x (reify es)
     _          -> error "DTerm.reify"
 
-  norm (DTerm x es) = N.Def x (norm es)
+  norm (DT x es) = N.Def x (norm es)
 
 instance Norm ATerm where
   type Normalized ATerm = N.Term
@@ -192,12 +192,12 @@ instance Norm Term where
     N.Lit n            -> RawApp (Lit n) []
     N.TTyp             -> RawApp  TTyp   []
     N.TProto ss        -> RawApp (TProto (reify ss)) []
-    N.Proc cs p        -> Proc (reify cs) (reify p)
-    N.TFun (Arg a t) s -> TFun (VarDec a (reify t)) [] (reify s)
-    N.TSig (Arg a t) s -> TSig (VarDec a (reify t)) [] (reify s)
+    N.Proc cs p        -> TProc (reify cs) (reify p)
+    N.TFun (Arg a t) s -> TFun (VD a (reify t)) [] (reify s)
+    N.TSig (Arg a t) s -> TSig (VD a (reify t)) [] (reify s)
 
   norm (RawApp e es)    = normRawApp (e:es)
-  norm (Proc cs p)      = N.Proc (norm cs) (norm p)
+  norm (TProc cs p)     = N.Proc (norm cs) (norm p)
   norm (TFun xs xss t)  = normTele N.TFun (xs:xss) (norm t)
   norm (TSig xs xss t)  = normTele N.TSig (xs:xss) (norm t)
 
@@ -206,13 +206,13 @@ reifyTerm = reify
 
 instance Norm ChanDec where
   type Normalized ChanDec = N.ChanDec
-  reify (Arg c s)         = ChanDec c (reify s)
-  norm  (ChanDec c s)     = Arg c (norm s)
+  reify (Arg c s)         = CD c (reify s)
+  norm  (CD c s)          = Arg c (norm s)
 
 instance Norm VarDec where
   type Normalized VarDec = N.VarDec
-  reify (Arg x s)        = VarDec x (reify s)
-  norm  (VarDec x s)     = Arg x (norm s)
+  reify (Arg x s)        = VD x (reify s)
+  norm  (VD x s)         = Arg x (norm s)
 
 instance Norm OptSession where
   type Normalized OptSession = Maybe N.RSession
@@ -234,17 +234,17 @@ instance Norm OptChanDecs where
 
 instance Norm Program where
   type Normalized Program = N.Program
-  reify (N.Program decs)  =   Program (reify decs)
-  norm  (Program   decs)  = N.Program (norm  decs)
+  reify (N.Program decs)  =   Prg     (reify decs)
+  norm  (Prg       decs)  = N.Program (norm  decs)
 
 reifyProgram :: N.Program -> Program
 reifyProgram = reify
 
 instance Norm Dec where
   type Normalized Dec  = N.Dec
-  reify (N.Sig d t)    =   Sig d (reify t)
-  reify (N.Dec d cs p) =   Dec d (reify cs) (reify p)
-  norm  (Sig   d t)    = N.Sig d (norm t)
-  norm  (Dec   d cs p) = N.Dec d (norm cs) (norm p)
+  reify (N.Sig d t)    =  DSig d (reify t)
+  reify (N.Dec d cs p) =  DDef d (reify cs) (reify p)
+  norm  ( DSig d t)    = N.Sig d (norm t)
+  norm  ( DDef d cs p) = N.Dec d (norm cs) (norm p)
 
 -- -}
