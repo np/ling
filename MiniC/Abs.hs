@@ -8,6 +8,7 @@ module MiniC.Abs where
 
 
 newtype Ident = Ident String deriving (Eq,Ord,Show,Read)
+newtype Op = Op String deriving (Eq,Ord,Show,Read)
 data Prg =
    PPrg [Def]
   deriving (Eq,Ord,Show,Read)
@@ -57,11 +58,6 @@ data Stm =
 data Init =
    NoInit
  | SoInit Exp
-  deriving (Eq,Ord,Show,Read)
-
-data Op =
-   Plus
- | Lt
   deriving (Eq,Ord,Show,Read)
 
 data Exp =

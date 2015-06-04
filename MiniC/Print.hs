@@ -82,6 +82,10 @@ instance Print Ident where
   prt _ (Ident i) = doc (showString ( i))
 
 
+instance Print Op where
+  prt _ (Op i) = doc (showString ( i))
+
+
 
 instance Print Prg where
   prt i e = case e of
@@ -162,12 +166,6 @@ instance Print Init where
   prt i e = case e of
    NoInit  -> prPrec i 0 (concatD [])
    SoInit exp -> prPrec i 0 (concatD [doc (showString "=") , prt 0 exp])
-
-
-instance Print Op where
-  prt i e = case e of
-   Plus  -> prPrec i 0 (concatD [doc (showString "+")])
-   Lt  -> prPrec i 0 (concatD [doc (showString "<")])
 
 
 instance Print Exp where

@@ -145,7 +145,14 @@ transName (Name x) = C.Ident (concatMap f x ++ "_lin") where
 
 transOp :: EVar -> Maybe C.Op
 transOp (Name v) = case v of
-  "_+_" -> Just C.Plus
+  "_+_"  -> Just (C.Op "+")
+  "_+D_" -> Just (C.Op "+")
+  "_*_"  -> Just (C.Op "*")
+  "_*D_" -> Just (C.Op "*")
+  "_%_"  -> Just (C.Op "%")
+  "_%D_" -> Just (C.Op "%")
+  "_-_"  -> Just (C.Op "-")
+  "_-D_" -> Just (C.Op "-")
   _     -> Nothing
 
 transEVar :: Env -> EVar -> C.Ident
@@ -227,8 +234,8 @@ transAct env (pref:prefs) procs =
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm
 stdFor i t =
   C.SFor (C.SDec (C.Dec (C.QTyp C.NoQual C.TInt) i []) (C.SoInit (C.ELit 0)))
-         (C.EInf (C.EVar i) C.Lt t)
-         (C.SPut (C.LVar i) (C.EInf (C.EVar i) C.Plus (C.ELit 1)))
+         (C.EInf (C.EVar i) (C.Op "<") t)
+         (C.SPut (C.LVar i) (C.EInf (C.EVar i) (C.Op "+") (C.ELit 1)))
 
 {- Special case:
    {S}/[S] has the same implementation as S.

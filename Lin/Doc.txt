@@ -18,7 +18,7 @@ Integer literals //Integer// are nonempty sequences of digits.
 
 
 Name literals are recognized by the regular expression
-`````(letter | ["_-+*/'"] | digit)* (letter | ["_-+*/'"]) (letter | ["_-+*/'"] | digit)*`````
+`````(letter | ["_-+*/'%^"] | digit)* (letter | ["_-+*/'%^"]) (letter | ["_-+*/'%^"] | digit)*`````
 
 
 ===Reserved words and symbols===

@@ -114,10 +114,12 @@ projSession n (Seq ss) = projRSessions n ss
 projSession _ _        = error "projSession: not a par/tensor/seq session"
 
 multTerm :: Term -> Term -> Term
-multTerm x@(Lit 0) _       = x
-multTerm (Lit 1)   x       = x
-multTerm (Lit x)   (Lit y) = Lit (x * y)
-multTerm x         y       = Def multName [x,y]
+multTerm x@(Lit 0) _         = x
+multTerm (Lit 1)   x         = x
+multTerm _         x@(Lit 0) = x
+multTerm x         (Lit 1)   = x
+multTerm (Lit x)   (Lit y)   = Lit (x * y)
+multTerm x         y         = Def multName [x,y]
 
 replRSession :: Term -> RSession -> RSession
 replRSession r (Repl s t) = Repl s (multTerm r t)

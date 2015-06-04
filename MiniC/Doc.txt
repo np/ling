@@ -22,6 +22,10 @@ Integer literals //Integer// are nonempty sequences of digits.
 
 
 
+Op literals are recognized by the regular expression
+`````["-+*/%<>=^"] ["-+*/%<>=^"]*`````
+
+
 ===Reserved words and symbols===
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
@@ -32,8 +36,7 @@ The reserved words used in MiniC are the following:
 The symbols used in MiniC are the following:
   | , | ( | ) | {
   | } | ; | * | [
-  | ] | = | + | <
-  | -> | . |  | 
+  | ] | = | -> | .
 
 ===Comments===
 Single-line comments begin with //.Multiple-line comments are  enclosed with /* and */.
@@ -79,8 +82,6 @@ All other symbols are terminals.
   |  |  **|**  | ``=`` //Exp// 
   | //[Stm]// | -> | **eps**
   |  |  **|**  | //Stm// ``;`` //[Stm]// 
-  | //Op// | -> | ``+`` 
-  |  |  **|**  | ``<`` 
   | //Exp4// | -> | //Ident// 
   |  |  **|**  | //Integer// 
   |  |  **|**  | ``(`` //Exp// ``)`` 

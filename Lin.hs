@@ -40,6 +40,11 @@ prims :: String
 prims = unlines
   ["Int   : Type."
   ,"_+_   : (m : Int)(n : Int) -> Int."
+  ,"_-_   : (m : Int)(n : Int) -> Int."
+  ,"_*_   : (m : Int)(n : Int) -> Int."
+  ,"_/_   : (m : Int)(n : Int) -> Int."
+  ,"_%_   : (m : Int)(n : Int) -> Int."
+  ,"pow   : (m : Int)(n : Int) -> Int."
   ,"Vec   : (A : Type)(n : Int) -> Type."
   ,"take  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A m."
   ,"drop  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A n."
@@ -52,6 +57,7 @@ prims = unlines
   ,"_-D_ : (m : Double)(n : Double) -> Double."
   ,"_*D_ : (m : Double)(n : Double) -> Double."
   ,"_/D_ : (m : Double)(n : Double) -> Double."
+  ,"powD : (m : Double)(n : Double) -> Double."
   ]
 
 primsN :: [N.Dec]

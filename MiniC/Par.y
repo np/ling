@@ -24,7 +24,6 @@ import MiniC.ErrM
 %name pStm Stm
 %name pInit Init
 %name pListStm ListStm
-%name pOp Op
 %name pExp4 Exp4
 %name pExp3 Exp3
 %name pExp2 Exp2
@@ -42,33 +41,33 @@ import MiniC.ErrM
   '(' { PT _ (TS _ 1) }
   ')' { PT _ (TS _ 2) }
   '*' { PT _ (TS _ 3) }
-  '+' { PT _ (TS _ 4) }
-  ',' { PT _ (TS _ 5) }
-  '->' { PT _ (TS _ 6) }
-  '.' { PT _ (TS _ 7) }
-  ';' { PT _ (TS _ 8) }
-  '<' { PT _ (TS _ 9) }
-  '=' { PT _ (TS _ 10) }
-  '[' { PT _ (TS _ 11) }
-  ']' { PT _ (TS _ 12) }
-  'const' { PT _ (TS _ 13) }
-  'double' { PT _ (TS _ 14) }
-  'for' { PT _ (TS _ 15) }
-  'int' { PT _ (TS _ 16) }
-  'struct' { PT _ (TS _ 17) }
-  'union' { PT _ (TS _ 18) }
-  'void' { PT _ (TS _ 19) }
-  '{' { PT _ (TS _ 20) }
-  '}' { PT _ (TS _ 21) }
+  ',' { PT _ (TS _ 4) }
+  '->' { PT _ (TS _ 5) }
+  '.' { PT _ (TS _ 6) }
+  ';' { PT _ (TS _ 7) }
+  '=' { PT _ (TS _ 8) }
+  '[' { PT _ (TS _ 9) }
+  ']' { PT _ (TS _ 10) }
+  'const' { PT _ (TS _ 11) }
+  'double' { PT _ (TS _ 12) }
+  'for' { PT _ (TS _ 13) }
+  'int' { PT _ (TS _ 14) }
+  'struct' { PT _ (TS _ 15) }
+  'union' { PT _ (TS _ 16) }
+  'void' { PT _ (TS _ 17) }
+  '{' { PT _ (TS _ 18) }
+  '}' { PT _ (TS _ 19) }
 
 L_ident  { PT _ (TV $$) }
 L_integ  { PT _ (TI $$) }
+L_Op { PT _ (T_Op $$) }
 
 
 %%
 
 Ident   :: { Ident }   : L_ident  { Ident $1 }
 Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
+Op    :: { Op} : L_Op { Op ($1)}
 
 Prg :: { Prg }
 Prg : ListDef { PPrg (reverse $1) } 
@@ -151,11 +150,6 @@ Init : {- empty -} { NoInit }
 ListStm :: { [Stm] }
 ListStm : {- empty -} { [] } 
   | ListStm Stm ';' { flip (:) $1 $2 }
-
-
-Op :: { Op }
-Op : '+' { Plus } 
-  | '<' { Lt }
 
 
 Exp4 :: { Exp }

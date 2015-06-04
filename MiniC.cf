@@ -44,8 +44,7 @@ SoInit. Init ::= "=" Exp ;
 
 terminator Stm ";" ;
 
-Plus. Op  ::= "+" ;
-Lt.   Op  ::= "<" ;
+token Op ["-+*/%<>=^"] ["-+*/%<>=^"]* ;
 
 EVar. Exp4 ::= Ident ;
 ELit. Exp4 ::= Integer ;

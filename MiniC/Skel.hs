@@ -14,6 +14,11 @@ transIdent x = case x of
   Ident str  -> failure x
 
 
+transOp :: Op -> Result
+transOp x = case x of
+  Op str  -> failure x
+
+
 transPrg :: Prg -> Result
 transPrg x = case x of
   PPrg defs  -> failure x
@@ -73,12 +78,6 @@ transInit :: Init -> Result
 transInit x = case x of
   NoInit  -> failure x
   SoInit exp  -> failure x
-
-
-transOp :: Op -> Result
-transOp x = case x of
-  Plus  -> failure x
-  Lt  -> failure x
 
 
 transExp :: Exp -> Result
