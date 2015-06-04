@@ -170,7 +170,7 @@ instance Print Procs where
    ZeroP  -> prPrec i 0 (concatD [])
    Ax session names -> prPrec i 0 (concatD [doc (showString "fwd") , prt 0 session , doc (showString "(") , prt 0 names , doc (showString ")")])
    At aterm names -> prPrec i 0 (concatD [doc (showString "@") , prt 0 aterm , doc (showString "(") , prt 0 names , doc (showString ")")])
-   NewSlice names aterm name proc -> prPrec i 0 (concatD [doc (showString "slice") , doc (showString "(") , prt 0 names , doc (showString ")") , prt 0 aterm , doc (showString "as") , prt 0 name , prt 0 proc])
+   NewSlice names aterm name proc -> prPrec i 0 (concatD [doc (showString "slice") , doc (showString "(") , prt 0 names , doc (showString ")") , prt 0 aterm , doc (showString "as") , prt 0 name , nl , prt 0 proc])
    Prll procs -> prPrec i 0 (concatD [doc (showString "(") , prt 0 procs , doc (showString ")")])
 
 
