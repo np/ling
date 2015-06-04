@@ -145,7 +145,8 @@ instance Print ATerm where
 
 instance Print DTerm where
   prt i e = case e of
-   DT name aterms -> prPrec i 0 (concatD [prt 0 name , prt 0 aterms])
+   DTTyp name aterms -> prPrec i 0 (concatD [prt 0 name , prt 0 aterms])
+   DTBnd name term -> prPrec i 0 (concatD [doc (showString "(") , prt 0 name , doc (showString ":") , prt 0 term , doc (showString ")")])
 
 
 instance Print Term where

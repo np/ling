@@ -52,7 +52,8 @@ transATerm x = case x of
 
 transDTerm :: DTerm -> Result
 transDTerm x = case x of
-  DT name aterms  -> failure x
+  DTTyp name aterms  -> failure x
+  DTBnd name term  -> failure x
 
 
 transTerm :: Term -> Result

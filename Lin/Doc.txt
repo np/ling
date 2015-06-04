@@ -71,6 +71,7 @@ All other symbols are terminals.
   | //[ATerm]// | -> | **eps**
   |  |  **|**  | //ATerm// //[ATerm]// 
   | //DTerm// | -> | //Name// //[ATerm]// 
+  |  |  **|**  | ``(`` //Name// ``:`` //Term// ``)`` 
   | //Term// | -> | //ATerm// //[ATerm]// 
   |  |  **|**  | //VarDec// //[VarDec]// ``->`` //Term// 
   |  |  **|**  | //VarDec// //[VarDec]// ``**`` //Term// 

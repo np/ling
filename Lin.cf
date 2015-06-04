@@ -35,7 +35,8 @@ Paren.   ATerm ::= "(" Term ")" ;
 
 separator ATerm "" ;
 
-DT.      DTerm ::= Name [ATerm] ;
+DTTyp.   DTerm ::= Name [ATerm] ;
+DTBnd.   DTerm ::= "(" Name ":" Term ")" ;
 
 RawApp.  Term  ::= ATerm [ATerm] ;
 TFun.    Term  ::= VarDec [VarDec] "->" Term ;

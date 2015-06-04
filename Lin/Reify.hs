@@ -161,10 +161,11 @@ instance Norm DTerm where
   type Normalized DTerm = N.Term
 
   reify e0 = case e0 of
-    N.Def x es -> DT x (reify es)
+    N.Def x es -> DTTyp x (reify es)
     _          -> error "DTerm.reify"
 
-  norm (DT x es) = N.Def x (norm es)
+  norm (DTTyp x es) = N.Def x (norm es)
+  norm  DTBnd{} = error "DTBnd..."
 
 instance Norm ATerm where
   type Normalized ATerm = N.Term

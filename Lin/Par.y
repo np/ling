@@ -144,7 +144,8 @@ ListATerm : {- empty -} { [] }
 
 
 DTerm :: { DTerm }
-DTerm : Name ListATerm { DT $1 (reverse $2) } 
+DTerm : Name ListATerm { DTTyp $1 (reverse $2) } 
+  | '(' Name ':' Term ')' { DTBnd $2 $4 }
 
 
 Term :: { Term }

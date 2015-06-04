@@ -39,7 +39,8 @@ data ATerm =
   deriving (Eq,Ord,Show,Read)
 
 data DTerm =
-   DT Name [ATerm]
+   DTTyp Name [ATerm]
+ | DTBnd Name Term
   deriving (Eq,Ord,Show,Read)
 
 data Term =
