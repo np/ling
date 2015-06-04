@@ -1,7 +1,46 @@
+% lin: Programing with linear types, a tutorial
+% Nicolas Pouillard
+% 2015-06-04, Agda Intensive Meeting XXI
+
+and Daniel Gustafsson (ITU, IT University of Copenhagen)
+
 This is a tutorial for Lin language. Concepts, constructs and idoms are
 introduced through a series of examples.
 
-# Send and receive, atomic sessions
+# A glimpse of the goal
+
+This process is reading an array
+
+```
+sum_int (a : {?Int ^ 10}, r : !Int) =
+  new (itmp : !Int.?Int, tmp)
+  ( send itmp 0
+    fwd(?Int)(itmp, r)
+  |
+    a{ai}
+    slice (ai) 10 as i
+    recv ai  (x : Int)
+    recv tmp (y : Int)
+    send tmp (x + y)
+  )
+.
+```
+
+```{.c}
+void sum_int(const int a[10], int *r) {
+  int itmp;
+  itmp = 0;
+  for (int i = 0; i < 10; i = i + 1) {
+    const int x = a[i];
+    const int y = itmp;
+    itmp = x + y;
+  };
+  const int z = itmp;
+  *r = z;
+}
+```
+
+# Send and receive: atomic sessions
 
 ## A first example
 
@@ -109,6 +148,8 @@ div_mod_server (rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int) =
 .
 ```
 
+## Sending two results (in parallel)
+
 Exchanging the order of the two `recv` commands yields to an equivalent process.
 Similarily with exchanging the `send` commands. One can even compose them in
 parallel:
@@ -121,7 +162,32 @@ div_mod_server_explicit_prll (rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int) =
 .
 ```
 
-## ...
+## Continued sessions: imposing a strict processing order
+
+```
+div_mod_server_cont (c : ?Int.?Int.!Int.!Int) =
+  recv c (m : Int)
+  recv c (n : Int)
+  send c (m / n)
+  send c (m % n)
+.
+```
+
+## Sequences(`»`/`[::]`): Fixed, left-to-right processing order
+
+```
+div_mod_server_seq4 (c : [: ?Int, ?Int, !Int, !Int :]) =
+  c[:rm,rn,sdiv,smod:]
+  recv rm (m : Int)
+  recv rn (n : Int)
+  send sdiv (m / n)
+  send smod (m % n)
+.
+```
+
+No flexibility. It has to be in this order.
+
+## Par(`⅋`/`{}`): You control the processing order!
 
 ```
 div_mod_server_par4 (c : {?Int, ?Int, !Int, !Int}) =
@@ -133,19 +199,9 @@ div_mod_server_par4 (c : {?Int, ?Int, !Int, !Int}) =
 .
 ```
 
-same flexibility as in `div_mod_server`
+Same flexibility as in `div_mod_server`
 
-```
-div_mod_server_seq4 (c : [: ?Int, ?Int, !Int, !Int :]) =
-  c{rm,rn,sdiv,smod}
-  recv rm (m : Int)
-  recv rn (n : Int)
-  send sdiv (m / n)
-  send smod (m % n)
-.
-```
-
-no flexibility has to be this order.
+## Tensor(`⊗`/`[]`): You have to be ready for any processing order
 
 ```
 div_mod_server_par3_ten2 (c : {?Int, ?Int, [!Int, !Int]}) =
@@ -158,13 +214,187 @@ div_mod_server_par3_ten2 (c : {?Int, ?Int, [!Int, !Int]}) =
 .
 ```
 
-`s[sdiv,smod]` and the `recv` can commute.
+* `s[sdiv,smod]` and the `recv` can commute.
+* The two `send` must be in parallel.
+
+## Forwarders
+
+If we have a channel `c` following a session `S` and a channel `d` following
+session `~S` (the dual of `S`) and for which `c` and `d` are
+allowed to be used together, then one can define a process forwarding data
+back and forth between `c` and `d`.
+
+For instance, let have the session `S` be `!Int.?Int.?Int`.
 
 ```
-div_mod_server_cont (c : ?Int.?Int.!Int.!Int) =
-  recv c (m : Int)
-  recv c (n : Int)
-  send c (m / n)
-  send c (m % n)
+fwd_send_recv_recv (c : !Int.?Int.?Int, d : ?Int.!Int.!Int) =
+  recv d (x : Int)
+  send c x
+  recv c (y : Int)
+  send d y
+  recv c (z : Int)
+  send d z
 .
+```
+
+Since forwarding works for any session and can easily be automated, the language
+has a built-in construct called `fwd`:
+
+```
+fwd_send_recv_recv_auto (c : !Int.?Int.?Int, d : ?Int.!Int.!Int) =
+  fwd(!Int.?Int)(c,d)
+.
+```
+
+The forwarders are actually more flexible than this, not only data can be
+forwarded back and forth but it can also be duplicated and forwarded to listeners
+on the side. Consider the previous example where one adds one listener `e`:
+
+```
+fwd_send_recv_recv_with_listener (c : !Int.?Int.?Int,
+                                  d : ?Int.!Int.!Int,
+                                  e : ?Int.?Int.?Int) =
+  recv d (x : Int)
+  send c x
+  send e x
+  recv c (y : Int)
+  send d y
+  send e y
+  recv c (z : Int)
+  send d z
+  send e z
+.
+```
+
+Or using the `fwd` construct:
+
+```
+fwd_send_recv_recv_with_listener_auto (c : !Int.?Int.?Int,
+                                       d : ?Int.!Int.!Int,
+                                       e : ?Int.?Int.?Int) =
+  fwd(!Int.?Int.?Int)(c,d,e)
+.
+```
+
+## Additives
+
+(not yet supported in the prototype)
+
+```
+A₀ ⊕ A₁ = !(x : 𝟚). case x 0: A₀ 1: A₁
+A₀ & A₁ = ?(x : 𝟚). case x 0: A₀ 1: A₁
+0       = !(x : 𝟘). λ()
+⊤       = ?(x : 𝟘). λ()
+```
+
+## Loli
+
+```
+A -o B = {~A,B}
+A -o B -o C -o D
+  = {~A,B -o C -o D}
+  = {~A,{~B,C -o D}}
+  = {~A,{~B,{~C,D}}}
+  ≃ {~A,~B,~C,D}
+```
+
+## `{}`/`[]` are associative and commutative
+
+```
+{A,B} -o {B,A}
+[A,B] -o [B,A]
+```
+
+## `[::]` is associative
+
+```
+[:[:A,B:],C:] -o [:A,[:B,C:]:]
+```
+
+## Mix rule
+
+```
+[A0,...,An] -o {A,...,An}
+
+[] -o {}
+[A,B] -o {A,B}
+```
+
+##
+
+```
+A : Session.
+B : Session.
+C : Session.
+ten_loli_par (c : [A,B] -o {A,B}) =
+  c{i,o}
+  i{na,nb}
+  o{a,b}
+  (fwd(A)(a,na) | fwd(B)(b,nb))
+.
+par_comm_core (i : ~{A,B}, o : {B,A}) =
+  i[na,nb]
+  o{b,a}
+  (fwd(A)(a,na) | fwd(B)(b,nb))
+.
+par_comm (c : {A,B} -o {B,A}) =
+  c{i,o}
+  @par_comm_core(i,o)
+.
+ten_comm (c : [~B,~A] -o [~A,~B]) =
+  c{i,o}
+  @par_comm_core(o,i)
+.
+par_assoc_core (i : ~{{A,B},C}, o : {A,{B,C}}) =
+  i[nab,nc] nab[na,nb] o{a,bc} bc{b,c}
+  (fwd(A)(a,na) | fwd(B)(b,nb) | fwd(C)(c,nc))
+.
+par_assoc (c : {{A,B},C} -o {A,{B,C}}) =
+  c{i,o}
+  @par_assoc_core(i,o)
+.
+ten_assoc (c : [[~A,~B],~C] -o [~A,[~B,~C]]) =
+  c{i,o}
+  @par_assoc_core(o,i)
+.
+ten_loli_seq (c : [A,B] -o [:A,B:]) =
+  c{i,o}
+  i{na,nb}
+  o[:a,b:]
+  (fwd(A)(a,na) | fwd(B)(b,nb))
+.
+par_loli_seq (c : {A,B} -o [:A,B:]) =
+  c{i,o}
+  i[na,nb]
+  o[:a,b:]
+  (fwd(A)(a,na) | fwd(B)(b,nb))
+.
+seq_assoc_core (i : ~[:[:A,B:],C:], o : [:A,[:B,C:]:]) =
+  i[:nab,nc:]
+  nab[:na,nb:]
+  o[:a,bc:]
+  bc[:b,c:]
+  (fwd(A)(a,na) | fwd(B)(b,nb) | fwd(C)(c,nc))
+.
+seq_assoc (c : [:[:A,B:],C:] -o [:A,[:B,C:]:]) =
+  c{i,o}
+  @seq_assoc_core(i,o)
+.
+```
+
+##
+
+### Rejected
+
+```
+{A,B} -o [A,B]
+```
+
+### Should be accepted eventually
+
+```
+{!S,!T} -o [!S,!T]
+{?S,?T} -o [?S,?T]
+[:[:A,B:],C:] -o [:A,[:B,C:]:]
+[:A,[:B,C:]:] -o [:[:A,B:],C:]
 ```
