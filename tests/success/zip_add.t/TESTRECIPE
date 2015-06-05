@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=zip_add.t
-command=Lin
+command=Ling
 args=( --check zip_add.ll )
 exit_code=0
 stdin_file=/dev/null

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=seq_par_back_v2.t
-command=Lin
+command=Ling
 args=( --check seq_par_back_v2.ll )
 exit_code=0
 stdin_file=/dev/null

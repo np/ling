@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=cut_par_cut.t
-command=Lin
+command=Ling
 args=( --check cut_par_cut.ll )
 exit_code=0
 stdin_file=/dev/null

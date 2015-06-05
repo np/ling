@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=par_ten_ten_v0.t
-command=Lin
+command=Ling
 args=( --compile par_ten_ten_v0.ll )
 exit_code=0
 stdin_file=/dev/null

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=seq3_seq2.t
-command=Lin
+command=Ling
 args=( --check seq3_seq2.ll )
 exit_code=0
 stdin_file=/dev/null

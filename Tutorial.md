@@ -1,10 +1,10 @@
-% lin: Programing with linear types, a tutorial
+% ling: Programing with linear types, a tutorial
 % Nicolas Pouillard
 % 2015-06-04, Agda Intensive Meeting XXI
 
 and Daniel Gustafsson (ITU, IT University of Copenhagen)
 
-This is a tutorial for Lin language. Concepts, constructs and idoms are
+This is a tutorial for Ling language. Concepts, constructs and idoms are
 introduced through a series of examples.
 
 # A glimpse of the goal

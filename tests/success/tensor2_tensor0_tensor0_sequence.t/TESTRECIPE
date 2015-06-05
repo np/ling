@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=tensor2_tensor0_tensor0_sequence.t
-command=Lin
+command=Ling
 args=( --check tensor2_tensor0_tensor0_sequence.ll )
 exit_code=0
 stdin_file=/dev/null

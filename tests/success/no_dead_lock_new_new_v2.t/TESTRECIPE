@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=no_dead_lock_new_new_v2.t
-command=Lin
+command=Ling
 args=( --check no_dead_lock_new_new_v2.ll )
 exit_code=0
 stdin_file=/dev/null

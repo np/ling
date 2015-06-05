@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=badCutSendRecv.t
-command=Lin
+command=Ling
 args=( --check badCutSendRecv.ll )
 exit_code=1
 stdin_file=/dev/null

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=zap_ten_par.t
-command=Lin
+command=Ling
 args=( --check zap_ten_par.ll )
 exit_code=0
 stdin_file=/dev/null

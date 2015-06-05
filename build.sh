@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
 #echo MiniC; bnfc -d MiniC.cf
-#echo Lin;     bnfc -d Lin.cf
+#echo Ling;     bnfc -d Ling.cf
 cabal build

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=seq_ten.t
-command=Lin
+command=Ling
 args=( --check seq_ten.ll )
 exit_code=0
 stdin_file=/dev/null

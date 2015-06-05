@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=merger.t
-command=Lin
+command=Ling
 args=( --check merger.ll )
 exit_code=0
 stdin_file=/dev/null

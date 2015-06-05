@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=sum_int.t
-command=Lin
+command=Ling
 args=( --chcek sum_int.ll )
 exit_code=1
 stdin_file=/dev/null

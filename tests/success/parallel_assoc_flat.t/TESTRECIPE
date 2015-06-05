@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=parallel_assoc_flat.t
-command=Lin
+command=Ling
 args=( --check parallel_assoc_flat.ll )
 exit_code=0
 stdin_file=/dev/null

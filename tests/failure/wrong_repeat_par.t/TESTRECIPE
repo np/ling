@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=wrong_repeat_par.t
-command=Lin
+command=Ling
 args=( --check wrong_repeat_par.ll )
 exit_code=1
 stdin_file=/dev/null

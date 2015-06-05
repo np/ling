@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=fwd_ten2_par2.t
-command=Lin
+command=Ling
 args=( --check fwd_ten2_par2.ll )
 exit_code=0
 stdin_file=/dev/null

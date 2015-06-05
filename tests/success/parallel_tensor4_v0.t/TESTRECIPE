@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=parallel_tensor4_v0.t
-command=Lin
+command=Ling
 args=( --check parallel_tensor4_v0.ll )
 exit_code=0
 stdin_file=/dev/null

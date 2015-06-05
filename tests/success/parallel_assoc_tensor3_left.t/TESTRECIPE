@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=parallel_assoc_tensor3_left.t
-command=Lin
+command=Ling
 args=( --check parallel_assoc_tensor3_left.ll )
 exit_code=0
 stdin_file=/dev/null
