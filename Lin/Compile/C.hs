@@ -153,7 +153,7 @@ transOp (Name v) = case v of
   "_%D_" -> Just (C.Op "%")
   "_-_"  -> Just (C.Op "-")
   "_-D_" -> Just (C.Op "-")
-  _     -> Nothing
+  _      -> Nothing
 
 transEVar :: Env -> EVar -> C.Ident
 transEVar env y = fromMaybe (transName y) (env ^. evars . at y)
