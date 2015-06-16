@@ -17,7 +17,7 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Control.Monad.Reader (local, unless, when)
 import Control.Monad.Error (throwError)
-import Control.Lens hiding (act, acts)
+import Control.Lens
 
 checkConflictingChans :: Proto -> [Channel] -> TC Proto
 checkConflictingChans proto cs =
@@ -101,8 +101,8 @@ checkSlice cond (c, rs) = when (cond c) $
     _ -> throwError "checkSlice: Replicated session"
 
 checkProc :: Proc -> TC Proto
-checkProc (acts `Act` procs) = checkAct acts procs
-checkProc (Ax s c d es)    = return $ protoAx (one s) c d es
+checkProc (prefs `Act` procs) = checkAct prefs procs
+checkProc (Ax s c d es)       = return $ protoAx (one s) c d es
 checkProc (NewSlice cs t i p) =
   do checkTerm int t
      proto <- local (evars %~ Map.insert i int) $ checkProc p
@@ -167,9 +167,9 @@ actLabel Send{}        = "send"
 actLabel Recv{}        = "recv"
 
 debugCheckAct :: Proto -> Pref -> [Pref] -> Procs -> TC Proto -> TC Proto
-debugCheckAct proto act acts procs m = do
-  unless (null acts && null procs) $
-    debug $ [ "Checking " ++ actLabel act ++ proc
+debugCheckAct proto pref prefs procs m = do
+  unless (null prefs && null procs) $
+    debug $ [ "Checking " ++ actLabel pref ++ proc
             , "Inferred protocol for `" ++ proc' ++ "`:"
             ] ++ prettyProto proto
   proto' <- m
@@ -177,12 +177,12 @@ debugCheckAct proto act acts procs m = do
           : prettyProto proto'
   return proto'
 
-  where proc  = " `" ++ pretty act ++ " " ++ proc' ++ "`"
-        proc' = pretty (actP acts procs)
+  where proc  = " `" ++ pretty pref ++ " " ++ proc' ++ "`"
+        proc' = pretty (actP prefs procs)
 
 actTCEnv :: Pref -> TCEnv -> TCEnv
-actTCEnv act env =
-  env & case act of
+actTCEnv pref env =
+  env & case pref of
           Recv _ (Arg x typ) -> evars %~ Map.insert x typ
           _                  -> id
 
@@ -228,11 +228,11 @@ or classically:
 
 -}
 checkAct :: [Pref] -> Procs -> TC Proto
-checkAct []           procs = checkProcs procs
-checkAct (act : acts) procs = do
-  proto <- local (actTCEnv act) $ checkAct acts procs
-  debugCheckAct proto act acts procs $
-    case act of
+checkAct []             procs = checkProcs procs
+checkAct (pref : prefs) procs = do
+  proto <- local (actTCEnv pref) $ checkAct prefs procs
+  debugCheckAct proto pref prefs procs $
+    case pref of
       Nu (Arg c cOS) (Arg d dOS) -> do
         let ds = [c,d]
             [cSession,dSession] = chanSessions ds proto
