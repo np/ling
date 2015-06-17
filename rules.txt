@@ -1,0 +1,63 @@
+map f C = {f E | E ∈ C}
+indep D C = map (∩ D) C ≢ {D}
+subst D c E = fold D (λ d E → E := E[d:=c]) E
+Δ / D = {c : S | (c : S) ∈ Δ, c ∉ D}
+Δ, c : S = (Δ / {c}) ∪ {c : S}
+Δ(c) | {c : S} ∈ Δ = S
+     | otherwise   = end
+
+C is a set of sets of channels
+When c and d a member of a common subset it means they have been used
+together.
+
+Γ => P => Δ, C
+D  := {d0,d1}
+Δ' := (Δ/D), c : [Δ(d0),Δ(d1)]
+C' := map (/D) C
+c # Δ/D
+indep D C
+---------------------------
+Γ => c[d0,d1] P => Δ', C'
+
+Γ => P => Δ, C
+D  := {d0,d1}
+Δ' := (Δ/D), c : {Δ(d0),Δ(d1)}
+C' := map (subst D c) C
+c # Δ/D
+------------------------------
+Γ => c{d0,d1} P => Δ', C'
+
+Γ => P0 => Δ0, C0
+Γ => P1 => Δ1, C1
+Δ' := Δ0 ∪ Δ1
+C' := C0 ∪ C1
+dom Δ0 # dom Δ1
+-----------------
+Γ => P0 | P1 => Δ', C'
+
+Γ => P => Δ, C
+Γ => t => T
+Δ' := Δ, c : !T. Δ(c)
+C' := map (∪ {c}) (C ∪ {{}})
+----------------------------
+Γ => send c t P => Δ', C'
+
+Γ,x:T => P => Δ, C
+Δ' := Δ, c : ?T. Δ(c)
+C' := map (∪ {c}) (C ∪ {{}})
+-------------------------------
+Γ => recv c (x : T) P => Δ', C'
+
+Γ => P => Δ, C
+D  := {d,d'}
+Δ' := Δ/D
+C' := map (/D) C
+indep D C
+--------------------------------
+Γ => new (d:S,d':~S) P => Δ', C'
+
+
+TODO:
+  Ax
+  At
+  NewSlice
