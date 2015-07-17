@@ -32,11 +32,9 @@ import MiniC.ErrM
 %name pLVal3 LVal3
 %name pLVal2 LVal2
 %name pLVal LVal
-
 -- no lexer declaration
 %monad { Err } { thenM } { returnM }
-%tokentype { Token }
-
+%tokentype {Token}
 %token
   '(' { PT _ (TS _ 1) }
   ')' { PT _ (TS _ 2) }
@@ -70,135 +68,79 @@ Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
 Op    :: { Op} : L_Op { Op ($1)}
 
 Prg :: { Prg }
-Prg : ListDef { PPrg (reverse $1) } 
-
-
+Prg : ListDef { MiniC.Abs.PPrg (reverse $1) }
 Dec :: { Dec }
-Dec : QTyp Ident ListArr { Dec $1 $2 (reverse $3) } 
-
-
+Dec : QTyp Ident ListArr { MiniC.Abs.Dec $1 $2 (reverse $3) }
 ListDec :: { [Dec] }
-ListDec : {- empty -} { [] } 
-  | Dec { (:[]) $1 }
-  | Dec ',' ListDec { (:) $1 $3 }
-
-
+ListDec : {- empty -} { [] }
+        | Dec { (:[]) $1 }
+        | Dec ',' ListDec { (:) $1 $3 }
 Def :: { Def }
-Def : Dec '(' ListDec ')' '{' ListStm '}' { DDef $1 $3 (reverse $6) } 
-  | Dec '(' ListDec ')' ';' { DSig $1 $3 }
-  | Dec ';' { DDec $1 }
-
-
+Def : Dec '(' ListDec ')' '{' ListStm '}' { MiniC.Abs.DDef $1 $3 (reverse $6) }
+    | Dec '(' ListDec ')' ';' { MiniC.Abs.DSig $1 $3 }
+    | Dec ';' { MiniC.Abs.DDec $1 }
 ListDef :: { [Def] }
-ListDef : {- empty -} { [] } 
-  | ListDef Def { flip (:) $1 $2 }
-
-
+ListDef : {- empty -} { [] } | ListDef Def { flip (:) $1 $2 }
 Typ :: { Typ }
-Typ : 'int' { TInt } 
-  | 'double' { TDouble }
-  | 'struct' '{' ListFld '}' { TStr (reverse $3) }
-  | 'union' '{' ListFld '}' { TUni (reverse $3) }
-  | 'void' { TVoid }
-  | Typ '*' { TPtr $1 }
-
-
+Typ : 'int' { MiniC.Abs.TInt }
+    | 'double' { MiniC.Abs.TDouble }
+    | 'struct' '{' ListFld '}' { MiniC.Abs.TStr (reverse $3) }
+    | 'union' '{' ListFld '}' { MiniC.Abs.TUni (reverse $3) }
+    | 'void' { MiniC.Abs.TVoid }
+    | Typ '*' { MiniC.Abs.TPtr $1 }
 ListTyp :: { [Typ] }
-ListTyp : {- empty -} { [] } 
-  | Typ { (:[]) $1 }
-  | Typ ',' ListTyp { (:) $1 $3 }
-
-
+ListTyp : {- empty -} { [] }
+        | Typ { (:[]) $1 }
+        | Typ ',' ListTyp { (:) $1 $3 }
 Fld :: { Fld }
-Fld : Typ Ident ListArr { FFld $1 $2 (reverse $3) } 
-
-
+Fld : Typ Ident ListArr { MiniC.Abs.FFld $1 $2 (reverse $3) }
 ListFld :: { [Fld] }
-ListFld : {- empty -} { [] } 
-  | ListFld Fld ';' { flip (:) $1 $2 }
-
-
+ListFld : {- empty -} { [] } | ListFld Fld ';' { flip (:) $1 $2 }
 Arr :: { Arr }
-Arr : '[' Exp ']' { AArr $2 } 
-
-
+Arr : '[' Exp ']' { MiniC.Abs.AArr $2 }
 ListArr :: { [Arr] }
-ListArr : {- empty -} { [] } 
-  | ListArr Arr { flip (:) $1 $2 }
-
-
+ListArr : {- empty -} { [] } | ListArr Arr { flip (:) $1 $2 }
 QTyp :: { QTyp }
-QTyp : Qual Typ { QTyp $1 $2 } 
-
-
+QTyp : Qual Typ { MiniC.Abs.QTyp $1 $2 }
 Qual :: { Qual }
-Qual : {- empty -} { NoQual } 
-  | 'const' { QConst }
-
-
+Qual : {- empty -} { MiniC.Abs.NoQual }
+     | 'const' { MiniC.Abs.QConst }
 Stm :: { Stm }
-Stm : Dec Init { SDec $1 $2 } 
-  | LVal '=' Exp { SPut $1 $3 }
-  | 'for' '(' Stm ';' Exp ';' Stm ')' '{' ListStm '}' { SFor $3 $5 $7 (reverse $10) }
-
-
+Stm : Dec Init { MiniC.Abs.SDec $1 $2 }
+    | LVal '=' Exp { MiniC.Abs.SPut $1 $3 }
+    | 'for' '(' Stm ';' Exp ';' Stm ')' '{' ListStm '}' { MiniC.Abs.SFor $3 $5 $7 (reverse $10) }
 Init :: { Init }
-Init : {- empty -} { NoInit } 
-  | '=' Exp { SoInit $2 }
-
-
+Init : {- empty -} { MiniC.Abs.NoInit }
+     | '=' Exp { MiniC.Abs.SoInit $2 }
 ListStm :: { [Stm] }
-ListStm : {- empty -} { [] } 
-  | ListStm Stm ';' { flip (:) $1 $2 }
-
-
+ListStm : {- empty -} { [] } | ListStm Stm ';' { flip (:) $1 $2 }
 Exp4 :: { Exp }
-Exp4 : Ident { EVar $1 } 
-  | Integer { ELit $1 }
-  | '(' Exp ')' { $2 }
-
-
+Exp4 : Ident { MiniC.Abs.EVar $1 }
+     | Integer { MiniC.Abs.ELit $1 }
+     | '(' Exp ')' { $2 }
 Exp3 :: { Exp }
-Exp3 : Exp3 '->' Ident { EArw $1 $3 } 
-  | Exp3 '.' Ident { EFld $1 $3 }
-  | Exp3 '[' Exp ']' { EArr $1 $3 }
-  | Exp4 { $1 }
-
-
+Exp3 : Exp3 '->' Ident { MiniC.Abs.EArw $1 $3 }
+     | Exp3 '.' Ident { MiniC.Abs.EFld $1 $3 }
+     | Exp3 '[' Exp ']' { MiniC.Abs.EArr $1 $3 }
+     | Exp4 { $1 }
 Exp2 :: { Exp }
-Exp2 : Exp2 Op Exp3 { EInf $1 $2 $3 } 
-  | Exp3 { $1 }
-
-
+Exp2 : Exp2 Op Exp3 { MiniC.Abs.EInf $1 $2 $3 } | Exp3 { $1 }
 Exp :: { Exp }
-Exp : '*' Exp3 { EPtr $2 } 
-  | Ident '(' ListExp ')' { EApp $1 $3 }
-
-
+Exp : '*' Exp3 { MiniC.Abs.EPtr $2 }
+    | Ident '(' ListExp ')' { MiniC.Abs.EApp $1 $3 }
 ListExp :: { [Exp] }
-ListExp : {- empty -} { [] } 
-  | Exp { (:[]) $1 }
-  | Exp ',' ListExp { (:) $1 $3 }
-
-
+ListExp : {- empty -} { [] }
+        | Exp { (:[]) $1 }
+        | Exp ',' ListExp { (:) $1 $3 }
 LVal3 :: { LVal }
-LVal3 : Ident { LVar $1 } 
-  | '(' LVal ')' { $2 }
-
-
+LVal3 : Ident { MiniC.Abs.LVar $1 } | '(' LVal ')' { $2 }
 LVal2 :: { LVal }
-LVal2 : LVal2 '->' Ident { LArw $1 $3 } 
-  | LVal2 '.' Ident { LFld $1 $3 }
-  | LVal2 '[' Exp ']' { LArr $1 $3 }
-  | LVal3 { $1 }
-
-
+LVal2 : LVal2 '->' Ident { MiniC.Abs.LArw $1 $3 }
+      | LVal2 '.' Ident { MiniC.Abs.LFld $1 $3 }
+      | LVal2 '[' Exp ']' { MiniC.Abs.LArr $1 $3 }
+      | LVal3 { $1 }
 LVal :: { LVal }
-LVal : '*' LVal2 { LPtr $2 } 
-  | LVal2 { $1 }
-
-
-
+LVal : '*' LVal2 { MiniC.Abs.LPtr $2 } | LVal2 { $1 }
 {
 
 returnM :: a -> Err a

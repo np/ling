@@ -81,7 +81,7 @@ mkPosToken t@(PT p _) = (posLineCol p, prToken t)
 prToken :: Token -> String
 prToken t = case t of
   PT _ (TS s _) -> s
-  PT _ (TL s)   -> s
+  PT _ (TL s)   -> show s
   PT _ (TI s)   -> s
   PT _ (TV s)   -> s
   PT _ (TD s)   -> s

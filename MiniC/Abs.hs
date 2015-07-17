@@ -7,75 +7,55 @@ module MiniC.Abs where
 
 
 
-newtype Ident = Ident String deriving (Eq,Ord,Show,Read)
-newtype Op = Op String deriving (Eq,Ord,Show,Read)
-data Prg =
-   PPrg [Def]
-  deriving (Eq,Ord,Show,Read)
+newtype Ident = Ident String deriving (Eq, Ord, Show, Read)
+newtype Op = Op String deriving (Eq, Ord, Show, Read)
+data Prg = PPrg [Def]
+  deriving (Eq, Ord, Show, Read)
 
-data Dec =
-   Dec QTyp Ident [Arr]
-  deriving (Eq,Ord,Show,Read)
+data Dec = Dec QTyp Ident [Arr]
+  deriving (Eq, Ord, Show, Read)
 
-data Def =
-   DDef Dec [Dec] [Stm]
- | DSig Dec [Dec]
- | DDec Dec
-  deriving (Eq,Ord,Show,Read)
+data Def = DDef Dec [Dec] [Stm] | DSig Dec [Dec] | DDec Dec
+  deriving (Eq, Ord, Show, Read)
 
-data Typ =
-   TInt
- | TDouble
- | TStr [Fld]
- | TUni [Fld]
- | TVoid
- | TPtr Typ
-  deriving (Eq,Ord,Show,Read)
+data Typ
+    = TInt | TDouble | TStr [Fld] | TUni [Fld] | TVoid | TPtr Typ
+  deriving (Eq, Ord, Show, Read)
 
-data Fld =
-   FFld Typ Ident [Arr]
-  deriving (Eq,Ord,Show,Read)
+data Fld = FFld Typ Ident [Arr]
+  deriving (Eq, Ord, Show, Read)
 
-data Arr =
-   AArr Exp
-  deriving (Eq,Ord,Show,Read)
+data Arr = AArr Exp
+  deriving (Eq, Ord, Show, Read)
 
-data QTyp =
-   QTyp Qual Typ
-  deriving (Eq,Ord,Show,Read)
+data QTyp = QTyp Qual Typ
+  deriving (Eq, Ord, Show, Read)
 
-data Qual =
-   NoQual
- | QConst
-  deriving (Eq,Ord,Show,Read)
+data Qual = NoQual | QConst
+  deriving (Eq, Ord, Show, Read)
 
-data Stm =
-   SDec Dec Init
- | SPut LVal Exp
- | SFor Stm Exp Stm [Stm]
-  deriving (Eq,Ord,Show,Read)
+data Stm = SDec Dec Init | SPut LVal Exp | SFor Stm Exp Stm [Stm]
+  deriving (Eq, Ord, Show, Read)
 
-data Init =
-   NoInit
- | SoInit Exp
-  deriving (Eq,Ord,Show,Read)
+data Init = NoInit | SoInit Exp
+  deriving (Eq, Ord, Show, Read)
 
-data Exp =
-   EVar Ident
- | ELit Integer
- | EArw Exp Ident
- | EFld Exp Ident
- | EArr Exp Exp
- | EInf Exp Op Exp
- | EPtr Exp
- | EApp Ident [Exp]
-  deriving (Eq,Ord,Show,Read)
+data Exp
+    = EVar Ident
+    | ELit Integer
+    | EArw Exp Ident
+    | EFld Exp Ident
+    | EArr Exp Exp
+    | EInf Exp Op Exp
+    | EPtr Exp
+    | EApp Ident [Exp]
+  deriving (Eq, Ord, Show, Read)
 
-data LVal =
-   LVar Ident
- | LArw LVal Ident
- | LFld LVal Ident
- | LArr LVal Exp
- | LPtr LVal
-  deriving (Eq,Ord,Show,Read)
+data LVal
+    = LVar Ident
+    | LArw LVal Ident
+    | LFld LVal Ident
+    | LArr LVal Exp
+    | LPtr LVal
+  deriving (Eq, Ord, Show, Read)
 

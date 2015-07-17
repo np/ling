@@ -35,11 +35,9 @@ import Ling.ErrM
 %name pListRSession ListRSession
 %name pOptRepl OptRepl
 %name pCSession CSession
-
 -- no lexer declaration
 %monad { Err } { thenM } { returnM }
-%tokentype { Token }
-
+%tokentype {Token}
 %token
   '!' { PT _ (TS _ 1) }
   '(' { PT _ (TS _ 2) }
@@ -87,160 +85,102 @@ Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
 Name    :: { Name} : L_Name { Name ($1)}
 
 ListName :: { [Name] }
-ListName : {- empty -} { [] } 
-  | Name { (:[]) $1 }
-  | Name ',' ListName { (:) $1 $3 }
-
-
+ListName : {- empty -} { [] }
+         | Name { (:[]) $1 }
+         | Name ',' ListName { (:) $1 $3 }
 Program :: { Program }
-Program : ListDec { Prg (reverse $1) } 
-
-
+Program : ListDec { Ling.Abs.Prg (reverse $1) }
 Dec :: { Dec }
-Dec : Name OptChanDecs '=' Proc '.' { DDef $1 $2 $4 } 
-  | Name ':' Term '.' { DSig $1 $3 }
-
-
+Dec : Name OptChanDecs '=' Proc '.' { Ling.Abs.DDef $1 $2 $4 }
+    | Name ':' Term '.' { Ling.Abs.DSig $1 $3 }
 ListDec :: { [Dec] }
-ListDec : {- empty -} { [] } 
-  | ListDec Dec { flip (:) $1 $2 }
-
-
+ListDec : {- empty -} { [] } | ListDec Dec { flip (:) $1 $2 }
 VarDec :: { VarDec }
-VarDec : '(' Name ':' Term ')' { VD $2 $4 } 
-
-
+VarDec : '(' Name ':' Term ')' { Ling.Abs.VD $2 $4 }
 ListVarDec :: { [VarDec] }
-ListVarDec : {- empty -} { [] } 
-  | ListVarDec VarDec { flip (:) $1 $2 }
-
-
+ListVarDec : {- empty -} { [] }
+           | ListVarDec VarDec { flip (:) $1 $2 }
 OptChanDecs :: { OptChanDecs }
-OptChanDecs : {- empty -} { NoChanDecs } 
-  | '(' ListChanDec ')' { SoChanDecs $2 }
-
-
+OptChanDecs : {- empty -} { Ling.Abs.NoChanDecs }
+            | '(' ListChanDec ')' { Ling.Abs.SoChanDecs $2 }
 ChanDec :: { ChanDec }
-ChanDec : Name OptSession { CD $1 $2 } 
-
-
+ChanDec : Name OptSession { Ling.Abs.CD $1 $2 }
 ListChanDec :: { [ChanDec] }
-ListChanDec : {- empty -} { [] } 
-  | ChanDec { (:[]) $1 }
-  | ChanDec ',' ListChanDec { (:) $1 $3 }
-
-
+ListChanDec : {- empty -} { [] }
+            | ChanDec { (:[]) $1 }
+            | ChanDec ',' ListChanDec { (:) $1 $3 }
 ATerm :: { ATerm }
-ATerm : Name { Var $1 } 
-  | Integer { Lit $1 }
-  | 'Type' { TTyp }
-  | '<' ListRSession '>' { TProto $2 }
-  | '(' Term ')' { Paren $2 }
-
-
+ATerm : Name { Ling.Abs.Var $1 }
+      | Integer { Ling.Abs.Lit $1 }
+      | 'Type' { Ling.Abs.TTyp }
+      | '<' ListRSession '>' { Ling.Abs.TProto $2 }
+      | '(' Term ')' { Ling.Abs.Paren $2 }
 ListATerm :: { [ATerm] }
-ListATerm : {- empty -} { [] } 
-  | ListATerm ATerm { flip (:) $1 $2 }
-
-
+ListATerm : {- empty -} { [] } | ListATerm ATerm { flip (:) $1 $2 }
 DTerm :: { DTerm }
-DTerm : Name ListATerm { DTTyp $1 (reverse $2) } 
-  | '(' Name ':' Term ')' { DTBnd $2 $4 }
-
-
+DTerm : Name ListATerm { Ling.Abs.DTTyp $1 (reverse $2) }
+      | '(' Name ':' Term ')' { Ling.Abs.DTBnd $2 $4 }
 Term :: { Term }
-Term : ATerm ListATerm { RawApp $1 (reverse $2) } 
-  | VarDec ListVarDec '->' Term { TFun $1 (reverse $2) $4 }
-  | VarDec ListVarDec '**' Term { TSig $1 (reverse $2) $4 }
-  | 'proc' '(' ListChanDec ')' Proc { TProc $3 $5 }
-
-
+Term : ATerm ListATerm { Ling.Abs.RawApp $1 (reverse $2) }
+     | VarDec ListVarDec '->' Term { Ling.Abs.TFun $1 (reverse $2) $4 }
+     | VarDec ListVarDec '**' Term { Ling.Abs.TSig $1 (reverse $2) $4 }
+     | 'proc' '(' ListChanDec ')' Proc { Ling.Abs.TProc $3 $5 }
 Proc :: { Proc }
-Proc : ListPref Procs { Act (reverse $1) $2 } 
-
-
+Proc : ListPref Procs { Ling.Abs.Act (reverse $1) $2 }
 ListProc :: { [Proc] }
-ListProc : {- empty -} { [] } 
-  | Proc { (:[]) $1 }
-  | Proc '|' ListProc { (:) $1 $3 }
-
-
+ListProc : {- empty -} { [] }
+         | Proc { (:[]) $1 }
+         | Proc '|' ListProc { (:) $1 $3 }
 Procs :: { Procs }
-Procs : {- empty -} { ZeroP } 
-  | 'fwd' Session '(' ListName ')' { Ax $2 $4 }
-  | '@' ATerm '(' ListName ')' { At $2 $4 }
-  | 'slice' '(' ListName ')' ATerm 'as' Name Proc { NewSlice $3 $5 $7 $8 }
-  | '(' ListProc ')' { Prll $2 }
-
-
+Procs : {- empty -} { Ling.Abs.ZeroP }
+      | 'fwd' Session '(' ListName ')' { Ling.Abs.Ax $2 $4 }
+      | '@' ATerm '(' ListName ')' { Ling.Abs.At $2 $4 }
+      | 'slice' '(' ListName ')' ATerm 'as' Name Proc { Ling.Abs.NewSlice $3 $5 $7 $8 }
+      | '(' ListProc ')' { Ling.Abs.Prll $2 }
 Pref :: { Pref }
-Pref : 'new' '(' ChanDec ',' ChanDec ')' { Nu $3 $5 } 
-  | Name '{' ListChanDec '}' { ParSplit $1 $3 }
-  | Name '[' ListChanDec ']' { TenSplit $1 $3 }
-  | Name '[:' ListChanDec ':]' { SeqSplit $1 $3 }
-  | 'send' Name ATerm { Send $2 $3 }
-  | 'recv' Name VarDec { Recv $2 $3 }
-
-
+Pref : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Abs.Nu $3 $5 }
+     | Name '{' ListChanDec '}' { Ling.Abs.ParSplit $1 $3 }
+     | Name '[' ListChanDec ']' { Ling.Abs.TenSplit $1 $3 }
+     | Name '[:' ListChanDec ':]' { Ling.Abs.SeqSplit $1 $3 }
+     | 'send' Name ATerm { Ling.Abs.Send $2 $3 }
+     | 'recv' Name VarDec { Ling.Abs.Recv $2 $3 }
 ListPref :: { [Pref] }
-ListPref : {- empty -} { [] } 
-  | ListPref Pref { flip (:) $1 $2 }
-
-
+ListPref : {- empty -} { [] } | ListPref Pref { flip (:) $1 $2 }
 OptSession :: { OptSession }
-OptSession : {- empty -} { NoSession } 
-  | ':' RSession { SoSession $2 }
-
-
+OptSession : {- empty -} { Ling.Abs.NoSession }
+           | ':' RSession { Ling.Abs.SoSession $2 }
 Session4 :: { Session }
-Session4 : Name { Atm $1 } 
-  | 'end' { End }
-  | '{' ListRSession '}' { Par $2 }
-  | '[' ListRSession ']' { Ten $2 }
-  | '[:' ListRSession ':]' { Seq $2 }
-  | '(' Session ')' { $2 }
-
-
+Session4 : Name { Ling.Abs.Atm $1 }
+         | 'end' { Ling.Abs.End }
+         | '{' ListRSession '}' { Ling.Abs.Par $2 }
+         | '[' ListRSession ']' { Ling.Abs.Ten $2 }
+         | '[:' ListRSession ':]' { Ling.Abs.Seq $2 }
+         | '(' Session ')' { $2 }
 Session3 :: { Session }
-Session3 : 'Sort' ATerm ATerm { Sort $2 $3 } 
-  | 'Log' Session4 { Log $2 }
-  | 'Fwd' Integer Session4 { Fwd $2 $3 }
-  | Session4 { $1 }
-
-
+Session3 : 'Sort' ATerm ATerm { Ling.Abs.Sort $2 $3 }
+         | 'Log' Session4 { Ling.Abs.Log $2 }
+         | 'Fwd' Integer Session4 { Ling.Abs.Fwd $2 $3 }
+         | Session4 { $1 }
 Session2 :: { Session }
-Session2 : '!' DTerm CSession { Snd $2 $3 } 
-  | '?' DTerm CSession { Rcv $2 $3 }
-  | '~' Session2 { Dual $2 }
-  | Session3 { $1 }
-
-
+Session2 : '!' DTerm CSession { Ling.Abs.Snd $2 $3 }
+         | '?' DTerm CSession { Ling.Abs.Rcv $2 $3 }
+         | '~' Session2 { Ling.Abs.Dual $2 }
+         | Session3 { $1 }
 Session :: { Session }
-Session : Session2 '-o' Session { Loli $1 $3 } 
-  | Session2 { $1 }
-
-
+Session : Session2 '-o' Session { Ling.Abs.Loli $1 $3 }
+        | Session2 { $1 }
 RSession :: { RSession }
-RSession : Session OptRepl { Repl $1 $2 } 
-
-
+RSession : Session OptRepl { Ling.Abs.Repl $1 $2 }
 ListRSession :: { [RSession] }
-ListRSession : {- empty -} { [] } 
-  | RSession { (:[]) $1 }
-  | RSession ',' ListRSession { (:) $1 $3 }
-
-
+ListRSession : {- empty -} { [] }
+             | RSession { (:[]) $1 }
+             | RSession ',' ListRSession { (:) $1 $3 }
 OptRepl :: { OptRepl }
-OptRepl : {- empty -} { One } 
-  | '^' ATerm { Some $2 }
-
-
+OptRepl : {- empty -} { Ling.Abs.One }
+        | '^' ATerm { Ling.Abs.Some $2 }
 CSession :: { CSession }
-CSession : '.' Session2 { Cont $2 } 
-  | {- empty -} { Done }
-
-
-
+CSession : '.' Session2 { Ling.Abs.Cont $2 }
+         | {- empty -} { Ling.Abs.Done }
 {
 
 returnM :: a -> Err a
