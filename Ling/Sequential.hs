@@ -15,7 +15,7 @@ module Ling.Sequential where
     Read then write
 -}
 
-import Control.Lens hiding (act,acts,op)
+import Control.Lens hiding (op)
 
 import Data.Maybe
 import Data.Functor
@@ -147,7 +147,7 @@ transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
 transProc env p0 k = case p0 of
   Ax{}              -> k env p0
   At{}              -> k env p0
-  Act acts procs    -> transAct env acts procs k
+  prefs `Act` procs -> transAct env prefs procs k
   NewSlice xs t i p -> transProc env p $ \env' p' -> k env' (NewSlice xs t i p')
 
 -- prefixes about different channels can be reordered
@@ -187,8 +187,8 @@ transProcs _   []       waiting _ = transErr "transProcs: impossible all the pro
 transProcs env [p]      []      k = transProc env p k
 transProcs env (p0:p0s) waiting k =
   case p0 of
-    Act acts@(_:_) procs0 ->
-      case isReady env acts of
+    prefs@(_:_) `Act` procs0 ->
+      case isReady env prefs of
         Nothing ->
           transProcs env p0s (p0 : waiting) k
         Just (readyPis,restPis) ->

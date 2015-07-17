@@ -64,9 +64,9 @@ instance Subst Pref where
     Nu c d            -> Nu (subst f c) (subst f d)
 
 instance Subst Proc where
-  subst f p = case p of
+  subst f p0 = case p0 of
     Act prefs procs   -> Act (subst f prefs) (subst f procs)
-    Ax{}              -> p
+    Ax{}              -> p0
     At t cs           -> At (subst f t) cs
     NewSlice cs t x p -> NewSlice cs (subst f t) x (subst (Map.delete x f) p)
 

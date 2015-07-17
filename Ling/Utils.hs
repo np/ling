@@ -7,7 +7,7 @@ import qualified Data.Set as Set
 import Data.Set (Set)
 import qualified Data.Map as Map
 import Data.Map (Map)
-import Control.Lens hiding (act,acts)
+import Control.Lens
 
 data Arg a = Arg { _argName :: Name, _unArg :: a }
   deriving (Eq,Ord,Show,Read)

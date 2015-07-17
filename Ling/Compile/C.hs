@@ -36,7 +36,7 @@ module Ling.Compile.C where
 -}
 
 import Prelude hiding (log)
-import Control.Lens hiding (act,acts,op)
+import Control.Lens hiding (op)
 
 import Data.Maybe
 import qualified Data.Map as Map
@@ -180,8 +180,8 @@ transProc env x = case x of
     transErr "transProc/Ax" x
   At{} ->
     transErr "transProc/At" x
-  acts `Act` procs ->
-    transAct env acts procs
+  prefs `Act` procs ->
+    transAct env prefs procs
   NewSlice cs t xi p ->
     [stdFor i (transTerm env t) (transProc env' p)]
     where
