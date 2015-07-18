@@ -4,6 +4,7 @@ module Ling.Term.Checker where
 
 import Ling.Abs (Name)
 import Ling.Utils
+import Ling.Print
 import Ling.Proto
 import Ling.Norm
 import Ling.Subst
@@ -39,14 +40,17 @@ instance MonadError String TC where
   throwError = MkTC . lift . Bad
   catchError = error "catchError: not implemented for TC"
 
-checkTypEquality :: Typ -> Typ -> TC ()
-checkTypEquality t0 t1 = assertEqual t0 t1
-  ["Types are not equivalent."
+checkEquality :: (Print a, Eq a) => String -> a -> a -> TC ()
+checkEquality msg t0 t1 = assertEqual t0 t1
+  [msg
   ,"Expected:"
   ,"  " ++ pretty t0
   ,"Inferred:"
   ,"  " ++ pretty t1
   ]
+
+checkTypEquality :: Typ -> Typ -> TC ()
+checkTypEquality = checkEquality "Types are not equivalent."
 
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp

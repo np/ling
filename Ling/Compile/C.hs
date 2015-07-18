@@ -49,6 +49,7 @@ import Ling.Print.Instances ()
 import Ling.Session
 import Ling.Norm
 import qualified MiniC.Abs as C
+import qualified MiniC.Print as C
 
 type ATyp = (C.Typ, [C.Arr])
 type AQTyp = (C.QTyp, [C.Arr])
