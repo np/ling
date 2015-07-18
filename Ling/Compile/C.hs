@@ -161,7 +161,7 @@ transEVar env y = fromMaybe (transName y) (env ^. evars . at y)
 transTerm :: Env -> Term -> C.Exp
 transTerm env x = case x of
   Def f es0
-   | env ^. types . contains f -> C.ELit 0 -- <- types are erased to 0
+   | env ^. types . contains f -> dummyTyp
    | otherwise ->
      case map (transTerm env) es0 of
        []                             -> C.EVar (transEVar env f)
@@ -169,10 +169,14 @@ transTerm env x = case x of
        es                             -> C.EApp (transName f) es
   Lit n          -> C.ELit n
   Proc{}         -> transErr "transTerm/Proc" x
-  TFun{}         -> C.ELit 0 -- <- types are erased to 0
-  TSig{}         -> C.ELit 0 -- <- types are erased to 0
-  TProto{}       -> C.ELit 0 -- <- types are erased to 0
-  TTyp            -> C.ELit 0 -- <- types are erased to 0
+  TFun{}         -> dummyTyp
+  TSig{}         -> dummyTyp
+  TProto{}       -> dummyTyp
+  TTyp           -> dummyTyp
+
+-- Types are erased to 0
+dummyTyp :: C.Exp
+dummyTyp = C.ELit 0
 
 transProc :: Env -> Proc -> [C.Stm]
 transProc env x = case x of
