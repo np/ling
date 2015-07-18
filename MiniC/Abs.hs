@@ -8,7 +8,6 @@ module MiniC.Abs where
 
 
 newtype Ident = Ident String deriving (Eq, Ord, Show, Read)
-newtype Op = Op String deriving (Eq, Ord, Show, Read)
 data Prg = PPrg [Def]
   deriving (Eq, Ord, Show, Read)
 
@@ -19,7 +18,16 @@ data Def = DDef Dec [Dec] [Stm] | DSig Dec [Dec] | DDec Dec
   deriving (Eq, Ord, Show, Read)
 
 data Typ
-    = TInt | TDouble | TStr [Fld] | TUni [Fld] | TVoid | TPtr Typ
+    = TInt
+    | TDouble
+    | TStr [Fld]
+    | TUni [Fld]
+    | TEnum [Enm]
+    | TVoid
+    | TPtr Typ
+  deriving (Eq, Ord, Show, Read)
+
+data Enm = EEnm Ident | ECst Ident Exp
   deriving (Eq, Ord, Show, Read)
 
 data Fld = FFld Typ Ident [Arr]
@@ -34,10 +42,20 @@ data QTyp = QTyp Qual Typ
 data Qual = NoQual | QConst
   deriving (Eq, Ord, Show, Read)
 
-data Stm = SDec Dec Init | SPut LVal Exp | SFor Stm Exp Stm [Stm]
+data Stm
+    = SDec Dec Init
+    | SPut LVal Exp
+    | SFor Stm Exp Stm [Stm]
+    | SSwi Exp [Branch]
+  deriving (Eq, Ord, Show, Read)
+
+data Branch = Case Exp [Stm]
   deriving (Eq, Ord, Show, Read)
 
 data Init = NoInit | SoInit Exp
+  deriving (Eq, Ord, Show, Read)
+
+data UOp = UAmp | UPtr | UPlus | UMinus | UTilde | UBang
   deriving (Eq, Ord, Show, Read)
 
 data Exp
@@ -46,9 +64,27 @@ data Exp
     | EArw Exp Ident
     | EFld Exp Ident
     | EArr Exp Exp
-    | EInf Exp Op Exp
-    | EPtr Exp
-    | EApp Ident [Exp]
+    | EApp Exp [Exp]
+    | UOp UOp Exp
+    | Mul Exp Exp
+    | Div Exp Exp
+    | Mod Exp Exp
+    | Add Exp Exp
+    | Sub Exp Exp
+    | Lsl Exp Exp
+    | Lsr Exp Exp
+    | Lt Exp Exp
+    | Gt Exp Exp
+    | Le Exp Exp
+    | Ge Exp Exp
+    | Eq Exp Exp
+    | NEq Exp Exp
+    | And Exp Exp
+    | Xor Exp Exp
+    | Ior Exp Exp
+    | Land Exp Exp
+    | Lor Exp Exp
+    | Cond Exp Exp Exp
   deriving (Eq, Ord, Show, Read)
 
 data LVal

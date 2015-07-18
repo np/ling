@@ -17,10 +17,16 @@ TInt.    Typ ::= "int" ;
 TDouble. Typ ::= "double" ;
 TStr.    Typ ::= "struct" "{" [Fld] "}" ;
 TUni.    Typ ::= "union"  "{" [Fld] "}" ;
+TEnum.   Typ ::= "enum"   "{" [Enm] "}" ;
 TVoid.   Typ ::= "void" ;
 TPtr.    Typ ::= Typ "*" ;
 
 separator Typ "," ;
+
+EEnm. Enm ::= Ident ;
+ECst. Enm ::= Ident "=" Exp2 ;
+
+separator Enm "," ;
 
 FFld. Fld ::= Typ Ident [Arr] ;
 
@@ -38,28 +44,129 @@ QConst. Qual ::= "const" ;
 SDec. Stm ::= Dec Init ;
 SPut. Stm ::= LVal "=" Exp ;
 SFor. Stm ::= "for" "(" Stm ";" Exp ";" Stm ")" "{" [Stm] "}" ;
+SSwi. Stm ::= "switch" "(" Exp ")" "{" [Branch] "}" ;
+
+Case. Branch ::= "case" Exp2 ":" [Stm] "break" ";" ;
+
+terminator Branch "" ;
 
 NoInit. Init ::= ;
 SoInit. Init ::= "=" Exp ;
 
 terminator Stm ";" ;
 
-token Op ["-+*/%<>=^"] ["-+*/%<>=^"]* ;
+-- primary-expression
+EVar. Exp16 ::= Ident ;
+ELit. Exp16 ::= Integer ;
+_.    Exp16 ::= "(" Exp ")" ;
 
-EVar. Exp4 ::= Ident ;
-ELit. Exp4 ::= Integer ;
-_.    Exp4 ::= "(" Exp ")" ;
+-- postfix-expression
+EArw. Exp15 ::= Exp15 "->" Ident ;
+EFld. Exp15 ::= Exp15 "." Ident ;
+EArr. Exp15 ::= Exp15 "[" Exp "]" ;
+EApp. Exp15 ::= Exp15 "(" [Exp] ")" ;
+_.    Exp15 ::= Exp16 ;
 
-EArw. Exp3 ::= Exp3 "->" Ident ;
-EFld. Exp3 ::= Exp3 "." Ident ;
-EArr. Exp3 ::= Exp3 "[" Exp "]" ;
-_.    Exp3 ::= Exp4 ;
+-- unary-operator
+UAmp.   UOp ::= "&" ;
+UPtr.   UOp ::= "*" ;
+UPlus.  UOp ::= "+" ;
+UMinus. UOp ::= "-" ;
+UTilde. UOp ::= "~" ;
+UBang.  UOp ::= "!" ;
 
-EInf. Exp2 ::= Exp2 Op Exp3 ;
+-- unary-expression
+_.            Exp14 ::= Exp15 ;
+-- Incr.      Exp14 ::= "++" Exp14 ;
+-- Decr.      Exp14 ::= "--" Exp14 ;
+UOp.          Exp14 ::= UOp Exp13 ;
+-- Sizeof.    Exp14 ::= "sizeof" Exp14 ;
+-- SizeofTyp. Exp14 ::= "sizeof" "(" type-name ")" ;
+
+-- cast-expression
+_.    Exp13 ::= Exp14 ;
+-- Cast. Exp13 ::= "(" type-name ")" Exp13 ;
+
+-- multiplicative-expression
+_.   Exp12 ::= Exp13 ;
+Mul. Exp12 ::= Exp12 "*" Exp13 ;
+Div. Exp12 ::= Exp12 "/" Exp13 ;
+Mod. Exp12 ::= Exp12 "%" Exp13 ;
+
+-- additive-expression
+_.   Exp11 ::= Exp12 ;
+Add. Exp11 ::= Exp11 "+" Exp12 ;
+Sub. Exp11 ::= Exp11 "-" Exp12 ;
+
+-- shift-expression
+_.   Exp10 ::= Exp11 ;
+Lsl. Exp10 ::= Exp10 "<<" Exp11 ;
+Lsr. Exp10 ::= Exp10 ">>" Exp11 ;
+
+-- relational-expression
+_.  Exp9 ::= Exp10 ;
+Lt. Exp9 ::= Exp9 "<"  Exp10 ;
+Gt. Exp9 ::= Exp9 ">"  Exp10 ;
+Le. Exp9 ::= Exp9 "<=" Exp10 ;
+Ge. Exp9 ::= Exp9 ">=" Exp10 ;
+
+-- equality-expression
+_.   Exp8 ::= Exp9 ;
+Eq.  Exp8 ::= Exp8 "==" Exp9 ;
+NEq. Exp8 ::= Exp8 "!=" Exp9 ;
+
+-- AND-expression
+_.   Exp7 ::= Exp8 ;
+And. Exp7 ::= Exp7 "&" Exp8 ;
+
+-- exclusive-OR-expression
+_.   Exp6 ::= Exp7 ;
+Xor. Exp6 ::= Exp6 "^" Exp7 ;
+
+-- inclusive-OR-expression
+_.   Exp5 ::= Exp6 ;
+Ior. Exp5 ::= Exp5 "|" Exp6 ;
+
+-- logical-AND-expression
+_.    Exp4 ::= Exp5 ;
+Land. Exp4 ::= Exp4 "&&" Exp5 ;
+
+-- logical-OR-expression
+_.   Exp3 ::= Exp4 ;
+Lor. Exp3 ::= Exp3 "||" Exp4 ;
+
+-- conditional-expression OR constant-expression
 _.    Exp2 ::= Exp3 ;
+Cond. Exp2 ::= Exp3 "?" Exp ":" Exp2 ;
 
-EPtr. Exp ::= "*" Exp3 ;
-EApp. Exp ::= Ident "(" [Exp] ")" ;
+{-
+assignment-expression
+    conditional-expression
+    unary-expression assignment-operator assignment-expression
+-}
+_. Exp1 ::= Exp2 ;
+
+{-
+expression
+    assignment-expression
+    expression , assignment-expression
+-}
+_. Exp ::= Exp1 ;
+
+{-
+assignment-operator
+    =
+    *=
+    /=
+    %=
+    +=
+    -=
+    <<=
+    >>=
+    &=
+    ^=
+    |=
+-}
 
 separator Exp "," ;
 

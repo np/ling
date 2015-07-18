@@ -74,8 +74,8 @@ tDouble = (C.TDouble, [])
 
 -- unused
 eFld :: C.Exp -> C.Ident -> C.Exp
-eFld (C.EPtr l) = C.EArw l
-eFld         l  = C.EFld l
+eFld (C.UOp C.UPtr l) = C.EArw l
+eFld               l  = C.EFld l
 
 lFld :: C.LVal -> C.Ident -> C.LVal
 lFld (C.LPtr e) = C.LArw e
@@ -144,16 +144,16 @@ transName (Name x) = C.Ident (concatMap f x ++ "_lin") where
   f '-'  = "_sub_"
   f  c   = [c]
 
-transOp :: EVar -> Maybe C.Op
+transOp :: EVar -> Maybe (C.Exp -> C.Exp -> C.Exp)
 transOp (Name v) = case v of
-  "_+_"  -> Just (C.Op "+")
-  "_+D_" -> Just (C.Op "+")
-  "_*_"  -> Just (C.Op "*")
-  "_*D_" -> Just (C.Op "*")
-  "_%_"  -> Just (C.Op "%")
-  "_%D_" -> Just (C.Op "%")
-  "_-_"  -> Just (C.Op "-")
-  "_-D_" -> Just (C.Op "-")
+  "_+_"  -> Just C.Add
+  "_+D_" -> Just C.Add
+  "_*_"  -> Just C.Mul
+  "_*D_" -> Just C.Mul
+  "_%_"  -> Just C.Mod
+  "_%D_" -> Just C.Mod
+  "_-_"  -> Just C.Sub
+  "_-D_" -> Just C.Sub
   _      -> Nothing
 
 transEVar :: Env -> EVar -> C.Ident
@@ -166,8 +166,8 @@ transTerm env x = case x of
    | otherwise ->
      case map (transTerm env) es0 of
        []                             -> C.EVar (transEVar env f)
-       [e0,e1] | Just op <- transOp f -> C.EInf e0 op e1
-       es                             -> C.EApp (transName f) es
+       [e0,e1] | Just op <- transOp f -> op e0 e1
+       es                             -> C.EApp (C.EVar (transName f)) es
   Lit n          -> C.ELit n
   Proc{}         -> transErr "transTerm/Proc" x
   TFun{}         -> dummyTyp
@@ -201,10 +201,16 @@ transLVal (C.LVar x)   = C.EVar x
 transLVal (C.LFld l f) = C.EFld (transLVal l) f
 transLVal (C.LArw l f) = C.EArw (transLVal l) f
 transLVal (C.LArr l i) = C.EArr (transLVal l) i
-transLVal (C.LPtr l)   = C.EPtr (transLVal l)
+transLVal (C.LPtr l)   = ePtr   (transLVal l)
+
+ePtr :: C.Exp -> C.Exp
+ePtr = C.UOp C.UPtr
 
 transErr :: Print a => String -> a -> b
 transErr msg v = error $ msg ++ "\n" ++ pretty v
+
+transErrC :: C.Print a => String -> a -> b
+transErrC msg v = error $ msg ++ "\n" ++ C.render (C.prt 0 v)
 
 transProcs :: Env -> [Proc] -> [C.Stm]
 transProcs = concatMap . transProc
@@ -239,8 +245,8 @@ transAct env (pref:prefs) procs =
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm
 stdFor i t =
   C.SFor (C.SDec (C.Dec (C.QTyp C.NoQual C.TInt) i []) (C.SoInit (C.ELit 0)))
-         (C.EInf (C.EVar i) (C.Op "<") t)
-         (C.SPut (C.LVar i) (C.EInf (C.EVar i) (C.Op "+") (C.ELit 1)))
+         (C.Lt (C.EVar i) t)
+         (C.SPut (C.LVar i) (C.Add (C.EVar i) (C.ELit 1)))
 
 {- Special case:
    {S}/[S] has the same implementation as S.

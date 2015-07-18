@@ -23,21 +23,24 @@ Integer literals //Integer// are nonempty sequences of digits.
 
 
 
-Op literals are recognized by the regular expression
-`````["-+*/%<>=^"] ["-+*/%<>=^"]*`````
-
-
 ===Reserved words and symbols===
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
 The reserved words used in MiniC are the following:
-  | ``const`` | ``double`` | ``for`` | ``int``
-  | ``struct`` | ``union`` | ``void`` | 
+  | ``break`` | ``case`` | ``const`` | ``double``
+  | ``enum`` | ``for`` | ``int`` | ``struct``
+  | ``switch`` | ``union`` | ``void`` | 
 
 The symbols used in MiniC are the following:
   | , | ( | ) | {
-  | } | ; | * | [
-  | ] | = | -> | .
+  | } | ; | * | =
+  | [ | ] | : | ->
+  | . | & | + | -
+  | ~ | ! | / | %
+  | << | >> | < | >
+  | <= | >= | == | !=
+  | ^ | | | && | ||
+  | ? |  |  | 
 
 ===Comments===
 Single-line comments begin with //.Multiple-line comments are  enclosed with /* and */.
@@ -62,11 +65,17 @@ All other symbols are terminals.
   |  |  **|**  | ``double`` 
   |  |  **|**  | ``struct`` ``{`` //[Fld]// ``}`` 
   |  |  **|**  | ``union`` ``{`` //[Fld]// ``}`` 
+  |  |  **|**  | ``enum`` ``{`` //[Enm]// ``}`` 
   |  |  **|**  | ``void`` 
   |  |  **|**  | //Typ// ``*`` 
   | //[Typ]// | -> | **eps**
   |  |  **|**  | //Typ// 
   |  |  **|**  | //Typ// ``,`` //[Typ]// 
+  | //Enm// | -> | //Ident// 
+  |  |  **|**  | //Ident// ``=`` //Exp2// 
+  | //[Enm]// | -> | **eps**
+  |  |  **|**  | //Enm// 
+  |  |  **|**  | //Enm// ``,`` //[Enm]// 
   | //Fld// | -> | //Typ// //Ident// //[Arr]// 
   | //[Fld]// | -> | **eps**
   |  |  **|**  | //Fld// ``;`` //[Fld]// 
@@ -79,21 +88,63 @@ All other symbols are terminals.
   | //Stm// | -> | //Dec// //Init// 
   |  |  **|**  | //LVal// ``=`` //Exp// 
   |  |  **|**  | ``for`` ``(`` //Stm// ``;`` //Exp// ``;`` //Stm// ``)`` ``{`` //[Stm]// ``}`` 
+  |  |  **|**  | ``switch`` ``(`` //Exp// ``)`` ``{`` //[Branch]// ``}`` 
+  | //Branch// | -> | ``case`` //Exp2// ``:`` //[Stm]// ``break`` ``;`` 
+  | //[Branch]// | -> | **eps**
+  |  |  **|**  | //Branch// //[Branch]// 
   | //Init// | -> | **eps**
   |  |  **|**  | ``=`` //Exp// 
   | //[Stm]// | -> | **eps**
   |  |  **|**  | //Stm// ``;`` //[Stm]// 
-  | //Exp4// | -> | //Ident// 
+  | //Exp16// | -> | //Ident// 
   |  |  **|**  | //Integer// 
   |  |  **|**  | ``(`` //Exp// ``)`` 
-  | //Exp3// | -> | //Exp3// ``->`` //Ident// 
-  |  |  **|**  | //Exp3// ``.`` //Ident// 
-  |  |  **|**  | //Exp3// ``[`` //Exp// ``]`` 
-  |  |  **|**  | //Exp4// 
-  | //Exp2// | -> | //Exp2// //Op// //Exp3// 
-  |  |  **|**  | //Exp3// 
-  | //Exp// | -> | ``*`` //Exp3// 
-  |  |  **|**  | //Ident// ``(`` //[Exp]// ``)`` 
+  | //Exp15// | -> | //Exp15// ``->`` //Ident// 
+  |  |  **|**  | //Exp15// ``.`` //Ident// 
+  |  |  **|**  | //Exp15// ``[`` //Exp// ``]`` 
+  |  |  **|**  | //Exp15// ``(`` //[Exp]// ``)`` 
+  |  |  **|**  | //Exp16// 
+  | //UOp// | -> | ``&`` 
+  |  |  **|**  | ``*`` 
+  |  |  **|**  | ``+`` 
+  |  |  **|**  | ``-`` 
+  |  |  **|**  | ``~`` 
+  |  |  **|**  | ``!`` 
+  | //Exp14// | -> | //Exp15// 
+  |  |  **|**  | //UOp// //Exp13// 
+  | //Exp13// | -> | //Exp14// 
+  | //Exp12// | -> | //Exp13// 
+  |  |  **|**  | //Exp12// ``*`` //Exp13// 
+  |  |  **|**  | //Exp12// ``/`` //Exp13// 
+  |  |  **|**  | //Exp12// ``%`` //Exp13// 
+  | //Exp11// | -> | //Exp12// 
+  |  |  **|**  | //Exp11// ``+`` //Exp12// 
+  |  |  **|**  | //Exp11// ``-`` //Exp12// 
+  | //Exp10// | -> | //Exp11// 
+  |  |  **|**  | //Exp10// ``<<`` //Exp11// 
+  |  |  **|**  | //Exp10// ``>>`` //Exp11// 
+  | //Exp9// | -> | //Exp10// 
+  |  |  **|**  | //Exp9// ``<`` //Exp10// 
+  |  |  **|**  | //Exp9// ``>`` //Exp10// 
+  |  |  **|**  | //Exp9// ``<=`` //Exp10// 
+  |  |  **|**  | //Exp9// ``>=`` //Exp10// 
+  | //Exp8// | -> | //Exp9// 
+  |  |  **|**  | //Exp8// ``==`` //Exp9// 
+  |  |  **|**  | //Exp8// ``!=`` //Exp9// 
+  | //Exp7// | -> | //Exp8// 
+  |  |  **|**  | //Exp7// ``&`` //Exp8// 
+  | //Exp6// | -> | //Exp7// 
+  |  |  **|**  | //Exp6// ``^`` //Exp7// 
+  | //Exp5// | -> | //Exp6// 
+  |  |  **|**  | //Exp5// ``|`` //Exp6// 
+  | //Exp4// | -> | //Exp5// 
+  |  |  **|**  | //Exp4// ``&&`` //Exp5// 
+  | //Exp3// | -> | //Exp4// 
+  |  |  **|**  | //Exp3// ``||`` //Exp4// 
+  | //Exp2// | -> | //Exp3// 
+  |  |  **|**  | //Exp3// ``?`` //Exp// ``:`` //Exp2// 
+  | //Exp1// | -> | //Exp2// 
+  | //Exp// | -> | //Exp1// 
   | //[Exp]// | -> | **eps**
   |  |  **|**  | //Exp// 
   |  |  **|**  | //Exp// ``,`` //[Exp]// 

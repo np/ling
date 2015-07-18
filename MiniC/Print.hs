@@ -82,10 +82,6 @@ instance Print Ident where
   prt _ (Ident i) = doc (showString ( i))
 
 
-instance Print Op where
-  prt _ (Op i) = doc (showString ( i))
-
-
 
 instance Print Prg where
   prt i e = case e of
@@ -110,8 +106,16 @@ instance Print Typ where
     TDouble -> prPrec i 0 (concatD [doc (showString "double")])
     TStr flds -> prPrec i 0 (concatD [doc (showString "struct"), doc (showString "{"), prt 0 flds, doc (showString "}")])
     TUni flds -> prPrec i 0 (concatD [doc (showString "union"), doc (showString "{"), prt 0 flds, doc (showString "}")])
+    TEnum enms -> prPrec i 0 (concatD [doc (showString "enum"), doc (showString "{"), prt 0 enms, doc (showString "}")])
     TVoid -> prPrec i 0 (concatD [doc (showString "void")])
     TPtr typ -> prPrec i 0 (concatD [prt 0 typ, doc (showString "*")])
+  prtList _ [] = (concatD [])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
+instance Print Enm where
+  prt i e = case e of
+    EEnm id -> prPrec i 0 (concatD [prt 0 id])
+    ECst id exp -> prPrec i 0 (concatD [prt 0 id, doc (showString "="), prt 2 exp])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
@@ -139,23 +143,56 @@ instance Print Stm where
     SDec dec init -> prPrec i 0 (concatD [prt 0 dec, prt 0 init])
     SPut lval exp -> prPrec i 0 (concatD [prt 0 lval, doc (showString "="), prt 0 exp])
     SFor stm1 exp stm2 stms -> prPrec i 0 (concatD [doc (showString "for"), doc (showString "("), prt 0 stm1, doc (showString ";"), prt 0 exp, doc (showString ";"), prt 0 stm2, doc (showString ")"), doc (showString "{"), prt 0 stms, doc (showString "}")])
+    SSwi exp branchs -> prPrec i 0 (concatD [doc (showString "switch"), doc (showString "("), prt 0 exp, doc (showString ")"), doc (showString "{"), prt 0 branchs, doc (showString "}")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ";"), prt 0 xs])
+instance Print Branch where
+  prt i e = case e of
+    Case exp stms -> prPrec i 0 (concatD [doc (showString "case"), prt 2 exp, doc (showString ":"), prt 0 stms, doc (showString "break"), doc (showString ";")])
+  prtList _ [] = (concatD [])
+  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print Init where
   prt i e = case e of
     NoInit -> prPrec i 0 (concatD [])
     SoInit exp -> prPrec i 0 (concatD [doc (showString "="), prt 0 exp])
 
+instance Print UOp where
+  prt i e = case e of
+    UAmp -> prPrec i 0 (concatD [doc (showString "&")])
+    UPtr -> prPrec i 0 (concatD [doc (showString "*")])
+    UPlus -> prPrec i 0 (concatD [doc (showString "+")])
+    UMinus -> prPrec i 0 (concatD [doc (showString "-")])
+    UTilde -> prPrec i 0 (concatD [doc (showString "~")])
+    UBang -> prPrec i 0 (concatD [doc (showString "!")])
+
 instance Print Exp where
   prt i e = case e of
-    EVar id -> prPrec i 4 (concatD [prt 0 id])
-    ELit n -> prPrec i 4 (concatD [prt 0 n])
-    EArw exp id -> prPrec i 3 (concatD [prt 3 exp, doc (showString "->"), prt 0 id])
-    EFld exp id -> prPrec i 3 (concatD [prt 3 exp, doc (showString "."), prt 0 id])
-    EArr exp1 exp2 -> prPrec i 3 (concatD [prt 3 exp1, doc (showString "["), prt 0 exp2, doc (showString "]")])
-    EInf exp1 op exp2 -> prPrec i 2 (concatD [prt 2 exp1, prt 0 op, prt 3 exp2])
-    EPtr exp -> prPrec i 0 (concatD [doc (showString "*"), prt 3 exp])
-    EApp id exps -> prPrec i 0 (concatD [prt 0 id, doc (showString "("), prt 0 exps, doc (showString ")")])
+    EVar id -> prPrec i 16 (concatD [prt 0 id])
+    ELit n -> prPrec i 16 (concatD [prt 0 n])
+    EArw exp id -> prPrec i 15 (concatD [prt 15 exp, doc (showString "->"), prt 0 id])
+    EFld exp id -> prPrec i 15 (concatD [prt 15 exp, doc (showString "."), prt 0 id])
+    EArr exp1 exp2 -> prPrec i 15 (concatD [prt 15 exp1, doc (showString "["), prt 0 exp2, doc (showString "]")])
+    EApp exp exps -> prPrec i 15 (concatD [prt 15 exp, doc (showString "("), prt 0 exps, doc (showString ")")])
+    UOp uop exp -> prPrec i 14 (concatD [prt 0 uop, prt 13 exp])
+    Mul exp1 exp2 -> prPrec i 12 (concatD [prt 12 exp1, doc (showString "*"), prt 13 exp2])
+    Div exp1 exp2 -> prPrec i 12 (concatD [prt 12 exp1, doc (showString "/"), prt 13 exp2])
+    Mod exp1 exp2 -> prPrec i 12 (concatD [prt 12 exp1, doc (showString "%"), prt 13 exp2])
+    Add exp1 exp2 -> prPrec i 11 (concatD [prt 11 exp1, doc (showString "+"), prt 12 exp2])
+    Sub exp1 exp2 -> prPrec i 11 (concatD [prt 11 exp1, doc (showString "-"), prt 12 exp2])
+    Lsl exp1 exp2 -> prPrec i 10 (concatD [prt 10 exp1, doc (showString "<<"), prt 11 exp2])
+    Lsr exp1 exp2 -> prPrec i 10 (concatD [prt 10 exp1, doc (showString ">>"), prt 11 exp2])
+    Lt exp1 exp2 -> prPrec i 9 (concatD [prt 9 exp1, doc (showString "<"), prt 10 exp2])
+    Gt exp1 exp2 -> prPrec i 9 (concatD [prt 9 exp1, doc (showString ">"), prt 10 exp2])
+    Le exp1 exp2 -> prPrec i 9 (concatD [prt 9 exp1, doc (showString "<="), prt 10 exp2])
+    Ge exp1 exp2 -> prPrec i 9 (concatD [prt 9 exp1, doc (showString ">="), prt 10 exp2])
+    Eq exp1 exp2 -> prPrec i 8 (concatD [prt 8 exp1, doc (showString "=="), prt 9 exp2])
+    NEq exp1 exp2 -> prPrec i 8 (concatD [prt 8 exp1, doc (showString "!="), prt 9 exp2])
+    And exp1 exp2 -> prPrec i 7 (concatD [prt 7 exp1, doc (showString "&"), prt 8 exp2])
+    Xor exp1 exp2 -> prPrec i 6 (concatD [prt 6 exp1, doc (showString "^"), prt 7 exp2])
+    Ior exp1 exp2 -> prPrec i 5 (concatD [prt 5 exp1, doc (showString "|"), prt 6 exp2])
+    Land exp1 exp2 -> prPrec i 4 (concatD [prt 4 exp1, doc (showString "&&"), prt 5 exp2])
+    Lor exp1 exp2 -> prPrec i 3 (concatD [prt 3 exp1, doc (showString "||"), prt 4 exp2])
+    Cond exp1 exp2 exp3 -> prPrec i 2 (concatD [prt 3 exp1, doc (showString "?"), prt 0 exp2, doc (showString ":"), prt 2 exp3])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
