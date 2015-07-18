@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleInstances, TypeFamilies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, TypeFamilies, MultiParamTypeClasses,
+             Rank2Types #-}
 module Ling.Proc.Checker where
 
 -- TODO deal with name re-use
@@ -15,6 +16,7 @@ import Ling.Term.Checker
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+import Data.Map (Map)
 import Control.Monad.Reader (local, unless, when)
 import Control.Monad.Error (throwError)
 import Control.Lens
@@ -137,9 +139,24 @@ checkProgram (Program decs) = checkDecs decs
 checkDecs :: [Dec] -> TC ()
 checkDecs = foldr checkDec (return ())
 
+checkNotIn :: Lens' TCEnv (Map Name v) -> String -> Name -> TC ()
+checkNotIn l msg c = do
+  b <- view $ l . at c . to (isn't _Nothing)
+  assert (not b) ["Already defined " ++ msg ++ ": ", pretty c]
+
 checkDec :: Dec -> TC () -> TC ()
-checkDec (Sig d typ mt)   kont = checkVarDef d typ mt kont
+checkDec (Sig d typ mt)   kont = do
+  checkNotIn evars "name" d
+  checkVarDef d typ mt kont
+checkDec (Dat d cs)       kont = do
+  checkNoDups ("in the definition of " ++ pretty d) cs
+  checkNotIn evars "name" d
+  mapM_ (checkNotIn ctyps "data constructor") cs
+  local ((ctyps %~ Map.union (l2m [ (c,d) | c <- cs ]))
+        .(evars %~ Map.insert d TTyp)
+        .(ddefs %~ Map.insert d cs)) kont
 checkDec (Dec d cds proc) kont = do
+  checkNotIn pdefs "process" d
   let cs  = map _argName cds
   proto <- checkProc proc
   checkChanDecs proto cds

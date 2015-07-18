@@ -11,7 +11,13 @@ newtype Name = Name String deriving (Eq, Ord, Show, Read)
 data Program = Prg [Dec]
   deriving (Eq, Ord, Show, Read)
 
-data Dec = DDef Name OptChanDecs Proc | DSig Name Term OptDef
+data Dec
+    = DDef Name OptChanDecs Proc
+    | DSig Name Term OptDef
+    | DDat Name [ConName]
+  deriving (Eq, Ord, Show, Read)
+
+data ConName = CN Name
   deriving (Eq, Ord, Show, Read)
 
 data OptDef = NoDef | SoDef Term
@@ -26,8 +32,16 @@ data OptChanDecs = NoChanDecs | SoChanDecs [ChanDec]
 data ChanDec = CD Name OptSession
   deriving (Eq, Ord, Show, Read)
 
+data Branch = Br ConName Term
+  deriving (Eq, Ord, Show, Read)
+
 data ATerm
-    = Var Name | Lit Integer | TTyp | TProto [RSession] | Paren Term
+    = Var Name
+    | Lit Integer
+    | Con ConName
+    | TTyp
+    | TProto [RSession]
+    | Paren Term
   deriving (Eq, Ord, Show, Read)
 
 data DTerm = DTTyp Name [ATerm] | DTBnd Name Term
@@ -35,6 +49,7 @@ data DTerm = DTTyp Name [ATerm] | DTBnd Name Term
 
 data Term
     = RawApp ATerm [ATerm]
+    | Case Term [Branch]
     | TFun VarDec [VarDec] Term
     | TSig VarDec [VarDec] Term
     | Lam VarDec [VarDec] Term

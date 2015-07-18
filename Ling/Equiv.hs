@@ -64,6 +64,8 @@ instance Equiv Term where
     case (t0',t1') of
       (Def x0 es0,   Def x1 es1)   -> equiv env (x0, es0) (x1, es1)
       (Lit l0,       Lit l1)       -> l0 == l1
+      (Con c0,       Con c1)       -> c0 == c1
+      (Case u0 brs0, Case u1 brs1) -> equiv env (u0,brs0) (u1,brs1)
       (TTyp,         TTyp)         -> True
       (Lam  arg0 u0, Lam  arg1 u1) -> equivBnd env arg0 u0 arg1 u1
       (TFun arg0 s0, TFun arg1 s1) -> equivBnd env arg0 s0 arg1 s1
@@ -73,6 +75,8 @@ instance Equiv Term where
 
       (Def{},        _)            -> False
       (Lit{},        _)            -> False
+      (Con{},        _)            -> False
+      (Case{},       _)            -> False
       (TTyp,         _)            -> False
       (Lam{},        _)            -> False
       (TFun{},       _)            -> False

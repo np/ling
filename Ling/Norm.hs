@@ -12,6 +12,7 @@ data Program = Program [Dec]
 data Dec
   = Dec Name [ChanDec] Proc
   | Sig Name Typ (Maybe Term)
+  | Dat Name [Name]
   deriving (Eq,Ord,Show,Read)
 
 data Proc
@@ -42,6 +43,9 @@ data Term
   = Def Name [Term]
   | Lit Integer
   | Lam VarDec Term
+  | Con Name
+  | Case Term [(Name,Term)]
+  --          ^ Sorted
   | Proc [ChanDec] Proc
   | TTyp
   | TFun VarDec Typ

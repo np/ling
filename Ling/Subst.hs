@@ -3,6 +3,7 @@ module Ling.Subst where
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
+import Data.Bifunctor
 import Control.Applicative
 import Control.Lens
 
@@ -50,6 +51,8 @@ instance Subst Term where
     Lam  arg t -> Lam  (subst f arg) (subst (hideArg arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hideArg arg f) t)
+    Case t brs -> Case (subst f t)   (map (second (subst f)) brs)
+    Con{}      -> e0
     TTyp       -> e0
     Lit{}      -> e0
 

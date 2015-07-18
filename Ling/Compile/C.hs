@@ -134,6 +134,9 @@ addEVar x y env = env & evars . at x .~ Just y
 env ! i = fromMaybe (error $ "lookup/env " ++ show i ++ " in " ++ show (map unName (Map.keys (env ^. locs))))
                     (env ^. locs . at i)
 
+transCon :: Name -> C.Ident
+transCon (Name x) = C.Ident ("con_" ++ x)
+
 transName :: Name -> C.Ident
 transName (Name x) = C.Ident (concatMap f x ++ "_lin") where
   f '#'  = "__"
@@ -159,6 +162,29 @@ transOp (Name v) = case v of
 transEVar :: Env -> EVar -> C.Ident
 transEVar env y = fromMaybe (transName y) (env ^. evars . at y)
 
+mkCase :: C.Ident -> [C.Stm] -> C.Branch
+mkCase = C.Case . C.EVar
+
+switch :: C.Exp -> [(C.Ident,[C.Stm])] -> C.Stm
+switch e brs = C.SSwi e (map (uncurry mkCase) brs)
+
+isEVar :: C.Exp -> Bool
+isEVar C.EVar{} = True
+isEVar _        = False
+
+switchE :: C.Exp -> [(C.Ident,C.Exp)] -> C.Exp
+switchE e brs
+  -- If there is less than 3 branches then only comparison is done,
+  -- if `e` is a variable then it is cheap to compare it multiple times
+  | length brs < 3 || isEVar e =
+      case brs of
+        [] -> e -- dynamically impossible because of `e`, so just return `e`
+        [(_i0,e0)]  -> e0 -- x must be equal to _i0, to go directly to e0
+        (i0,e0):ies -> C.Cond (C.Eq e (C.EVar i0)) e0 (switchE e ies)
+  | otherwise =
+  -- This could be replaced by a warning instead
+      transErrC "switchE" e
+
 transTerm :: Env -> Term -> C.Exp
 transTerm env x = case x of
   Def f es0
@@ -170,6 +196,9 @@ transTerm env x = case x of
        es                             -> C.EApp (C.EVar (transName f)) es
   Lit n          -> C.ELit n
   Lam{}          -> transErr "transTerm/Lam"  x
+  Con n          -> C.EVar (transCon n)
+  Case t brs     -> switchE (transTerm env t)
+                            (map (bimap transCon (transTerm env)) brs)
   Proc{}         -> transErr "transTerm/Proc" x
   TFun{}         -> dummyTyp
   TSig{}         -> dummyTyp
@@ -308,11 +337,13 @@ transTyp env e0 = case e0 of
       ("Vec", [a,_e]) -> tPtr (transTyp env a)
       _               -> tVoidPtr -- WARNING transError "transTyp: " e0
   TTyp{}   -> tInt -- <- types are erased to 0
+  Case{}   -> transErr "transTyp: Case" e0
   TProto{} -> transErr "transTyp: TProto" e0
   TFun{}   -> transErr "transTyp: TFun" e0
   TSig{}   -> transErr "transTyp: TSig" e0 -- TODO struct ?
   Lam{}    -> transErr "transTyp: Not a type: Lam" e0
   Lit{}    -> transErr "transTyp: Not a type: Lit" e0
+  Con{}    -> transErr "transTyp: Not a type: Con" e0
   Proc{}   -> transErr "transTyp: Not a type: Proc" e0
 
 transCTyp :: Env -> C.Qual -> Typ -> AQTyp
@@ -385,6 +416,8 @@ transSig env0 f ty0 tm = case ty0 of
 transDec :: Env -> Dec -> [C.Def]
 transDec env x = case x of
   Sig d ty tm -> [transSig env d ty tm]
+  Dat d cs ->
+    [] -- TODO typedef ? => [C.TEnum (map (C.EEnm . transCon) cs)]
   Dec d cs proc ->
     [C.DDef (C.Dec voidQ (transName d) [])
             (map fst news)

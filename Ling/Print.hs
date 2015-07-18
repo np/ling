@@ -100,8 +100,15 @@ instance Print Dec where
   prt i e = case e of
     DDef name optchandecs proc -> prPrec i 0 (concatD [prt 0 name, prt 0 optchandecs, doc (showString "="), nl , prt 0 proc, doc (showString ".\n")])
     DSig name term optdef -> prPrec i 0 (concatD [prt 0 name, doc (showString ":"), prt 0 term, prt 0 optdef, doc (showString ".\n")])
+    DDat name connames -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "="), nl , prt 0 connames, doc (showString ".\n")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+instance Print ConName where
+  prt i e = case e of
+    CN name -> prPrec i 0 (concatD [doc (showString "`"), prt 0 name])
+  prtList _ [] = (concatD [])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "|"), prt 0 xs])
 instance Print OptDef where
   prt i e = case e of
     NoDef -> prPrec i 0 (concatD [])
@@ -123,10 +130,17 @@ instance Print ChanDec where
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
+instance Print Branch where
+  prt i e = case e of
+    Br conname term -> prPrec i 0 (concatD [prt 0 conname, doc (showString "->"), prt 0 term])
+  prtList _ [] = (concatD [])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 instance Print ATerm where
   prt i e = case e of
     Var name -> prPrec i 0 (concatD [prt 0 name])
     Lit n -> prPrec i 0 (concatD [prt 0 n])
+    Con conname -> prPrec i 0 (concatD [prt 0 conname])
     TTyp -> prPrec i 0 (concatD [doc (showString "Type")])
     TProto rsessions -> prPrec i 0 (concatD [doc (showString "<"), prt 0 rsessions, doc (showString ">")])
     Paren term -> prPrec i 0 (concatD [doc (showString "("), prt 0 term, doc (showString ")")])
@@ -140,6 +154,7 @@ instance Print DTerm where
 instance Print Term where
   prt i e = case e of
     RawApp aterm aterms -> prPrec i 0 (concatD [prt 0 aterm, prt 0 aterms])
+    Case term branchs -> prPrec i 0 (concatD [doc (showString "case"), prt 0 term, doc (showString "of"), doc (showString "{"), prt 0 branchs, doc (showString "}")])
     TFun vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec, prt 0 vardecs, doc (showString "->"), prt 0 term])
     TSig vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec, prt 0 vardecs, doc (showString "**"), prt 0 term])
     Lam vardec vardecs term -> prPrec i 0 (concatD [doc (showString "\\"), prt 0 vardec, prt 0 vardecs, doc (showString "->"), prt 0 term])

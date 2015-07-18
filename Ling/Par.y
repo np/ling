@@ -11,6 +11,8 @@ import Ling.ErrM
 %name pListName ListName
 %name pProgram Program
 %name pDec Dec
+%name pConName ConName
+%name pListConName ListConName
 %name pOptDef OptDef
 %name pListDec ListDec
 %name pVarDec VarDec
@@ -18,6 +20,8 @@ import Ling.ErrM
 %name pOptChanDecs OptChanDecs
 %name pChanDec ChanDec
 %name pListChanDec ListChanDec
+%name pBranch Branch
+%name pListBranch ListBranch
 %name pATerm ATerm
 %name pListATerm ListATerm
 %name pDTerm DTerm
@@ -64,18 +68,22 @@ import Ling.ErrM
   '\\' { PT _ (TS _ 22) }
   ']' { PT _ (TS _ 23) }
   '^' { PT _ (TS _ 24) }
-  'as' { PT _ (TS _ 25) }
-  'end' { PT _ (TS _ 26) }
-  'fwd' { PT _ (TS _ 27) }
-  'new' { PT _ (TS _ 28) }
-  'proc' { PT _ (TS _ 29) }
-  'recv' { PT _ (TS _ 30) }
-  'send' { PT _ (TS _ 31) }
-  'slice' { PT _ (TS _ 32) }
-  '{' { PT _ (TS _ 33) }
-  '|' { PT _ (TS _ 34) }
-  '}' { PT _ (TS _ 35) }
-  '~' { PT _ (TS _ 36) }
+  '`' { PT _ (TS _ 25) }
+  'as' { PT _ (TS _ 26) }
+  'case' { PT _ (TS _ 27) }
+  'data' { PT _ (TS _ 28) }
+  'end' { PT _ (TS _ 29) }
+  'fwd' { PT _ (TS _ 30) }
+  'new' { PT _ (TS _ 31) }
+  'of' { PT _ (TS _ 32) }
+  'proc' { PT _ (TS _ 33) }
+  'recv' { PT _ (TS _ 34) }
+  'send' { PT _ (TS _ 35) }
+  'slice' { PT _ (TS _ 36) }
+  '{' { PT _ (TS _ 37) }
+  '|' { PT _ (TS _ 38) }
+  '}' { PT _ (TS _ 39) }
+  '~' { PT _ (TS _ 40) }
 
 L_integ  { PT _ (TI $$) }
 L_Name { PT _ (T_Name $$) }
@@ -95,6 +103,13 @@ Program : ListDec { Ling.Abs.Prg (reverse $1) }
 Dec :: { Dec }
 Dec : Name OptChanDecs '=' Proc '.' { Ling.Abs.DDef $1 $2 $4 }
     | Name ':' Term OptDef '.' { Ling.Abs.DSig $1 $3 $4 }
+    | 'data' Name '=' ListConName '.' { Ling.Abs.DDat $2 $4 }
+ConName :: { ConName }
+ConName : '`' Name { Ling.Abs.CN $2 }
+ListConName :: { [ConName] }
+ListConName : {- empty -} { [] }
+            | ConName { (:[]) $1 }
+            | ConName '|' ListConName { (:) $1 $3 }
 OptDef :: { OptDef }
 OptDef : {- empty -} { Ling.Abs.NoDef }
        | '=' Term { Ling.Abs.SoDef $2 }
@@ -114,9 +129,16 @@ ListChanDec :: { [ChanDec] }
 ListChanDec : {- empty -} { [] }
             | ChanDec { (:[]) $1 }
             | ChanDec ',' ListChanDec { (:) $1 $3 }
+Branch :: { Branch }
+Branch : ConName '->' Term { Ling.Abs.Br $1 $3 }
+ListBranch :: { [Branch] }
+ListBranch : {- empty -} { [] }
+           | Branch { (:[]) $1 }
+           | Branch ',' ListBranch { (:) $1 $3 }
 ATerm :: { ATerm }
 ATerm : Name { Ling.Abs.Var $1 }
       | Integer { Ling.Abs.Lit $1 }
+      | ConName { Ling.Abs.Con $1 }
       | 'Type' { Ling.Abs.TTyp }
       | '<' ListRSession '>' { Ling.Abs.TProto $2 }
       | '(' Term ')' { Ling.Abs.Paren $2 }
@@ -127,6 +149,7 @@ DTerm : Name ListATerm { Ling.Abs.DTTyp $1 (reverse $2) }
       | '(' Name ':' Term ')' { Ling.Abs.DTBnd $2 $4 }
 Term :: { Term }
 Term : ATerm ListATerm { Ling.Abs.RawApp $1 (reverse $2) }
+     | 'case' Term 'of' '{' ListBranch '}' { Ling.Abs.Case $2 $5 }
      | VarDec ListVarDec '->' Term { Ling.Abs.TFun $1 (reverse $2) $4 }
      | VarDec ListVarDec '**' Term { Ling.Abs.TSig $1 (reverse $2) $4 }
      | '\\' VarDec ListVarDec '->' Term { Ling.Abs.Lam $2 (reverse $3) $5 }

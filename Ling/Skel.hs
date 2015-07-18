@@ -19,6 +19,10 @@ transDec :: Dec -> Result
 transDec x = case x of
   DDef name optchandecs proc -> failure x
   DSig name term optdef -> failure x
+  DDat name connames -> failure x
+transConName :: ConName -> Result
+transConName x = case x of
+  CN name -> failure x
 transOptDef :: OptDef -> Result
 transOptDef x = case x of
   NoDef -> failure x
@@ -33,10 +37,14 @@ transOptChanDecs x = case x of
 transChanDec :: ChanDec -> Result
 transChanDec x = case x of
   CD name optsession -> failure x
+transBranch :: Branch -> Result
+transBranch x = case x of
+  Br conname term -> failure x
 transATerm :: ATerm -> Result
 transATerm x = case x of
   Var name -> failure x
   Lit integer -> failure x
+  Con conname -> failure x
   TTyp -> failure x
   TProto rsessions -> failure x
   Paren term -> failure x
@@ -47,6 +55,7 @@ transDTerm x = case x of
 transTerm :: Term -> Result
 transTerm x = case x of
   RawApp aterm aterms -> failure x
+  Case term branchs -> failure x
   TFun vardec vardecs term -> failure x
   TSig vardec vardecs term -> failure x
   Lam vardec vardecs term -> failure x

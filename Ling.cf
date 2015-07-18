@@ -11,6 +11,11 @@ Prg. Program ::= [Dec] ;
 
 DDef. Dec ::= Name OptChanDecs "=" Proc "." ;
 DSig. Dec ::= Name ":" Term OptDef "." ;
+DDat. Dec ::= "data" Name "=" [ConName] "." ;
+
+CN. ConName ::= "`" Name ;
+
+separator ConName "|" ;
 
 NoDef. OptDef ::= ;
 SoDef. OptDef ::= "=" Term ;
@@ -28,9 +33,14 @@ CD. ChanDec ::= Name OptSession ;
 
 separator ChanDec "," ;
 
+Br. Branch ::= ConName "->" Term ;
+
+separator Branch "," ;
+
 -- Atomic terms
 Var.     ATerm ::= Name ;
 Lit.     ATerm ::= Integer ;
+Con.     ATerm ::= ConName ;
 TTyp.    ATerm ::= "Type" ;
 TProto.  ATerm ::= "<" [RSession] ">" ;
 Paren.   ATerm ::= "(" Term ")" ;
@@ -41,6 +51,7 @@ DTTyp.   DTerm ::= Name [ATerm] ;
 DTBnd.   DTerm ::= "(" Name ":" Term ")" ;
 
 RawApp.  Term  ::= ATerm [ATerm] ;
+Case.    Term  ::= "case" Term "of" "{" [Branch] "}" ;
 TFun.    Term  ::= VarDec [VarDec] "->" Term ;
 TSig.    Term  ::= VarDec [VarDec] "**" Term ;
 Lam.     Term  ::= "\\" VarDec [VarDec] "->" Term ;

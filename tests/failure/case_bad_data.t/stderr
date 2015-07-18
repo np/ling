@@ -1,0 +1,6 @@
+Labels are not equal.
+Expected:
+  c, d
+Inferred:
+  e, f
+

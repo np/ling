@@ -2,9 +2,10 @@
 module Ling.Reify where
 
 import Prelude hiding (log)
+import Data.List as L
 import Ling.Abs
 import Ling.Utils
-import Ling.Session
+import Ling.Session as S
 import Ling.Proc
 import qualified Ling.Norm as N
 
@@ -52,7 +53,7 @@ instance Norm Session where
     | otherwise           = error "Do you really want to blow the stack?"
   norm End        = N.End
   norm (Atm n)    = N.Atm N.Read n -- Read is abitrary here
-  norm (Sort a e) = sort (norm a) (norm e)
+  norm (Sort a e) = S.sort (norm a) (norm e)
 
 instance Norm CSession where
   type Normalized CSession = N.Session
@@ -174,12 +175,14 @@ instance Norm ATerm where
   reify e0 = case e0 of
     N.Def x []         -> Var x
     N.Lit n            -> Lit n
+    N.Con n            -> Con (reify n)
     N.TTyp             -> TTyp
     N.TProto ss        -> TProto (reify ss)
     _                  -> Paren (reify e0)
 
   norm (Var x)          = N.Def x []
   norm (Lit n)          = N.Lit n
+  norm (Con n)          = N.Con (norm n)
   norm TTyp             = N.TTyp
   norm (TProto ss)      = N.TProto (norm ss)
   norm (Paren t)        = norm t
@@ -192,18 +195,33 @@ instance Norm Term where
                        -> RawApp (reify e1) (Var op : reifyRawApp e2)
     N.Def x es         -> RawApp (Var x) (reify es)
     N.Lit n            -> RawApp (Lit n) []
+    N.Con n            -> RawApp (Con (reify n)) []
     N.TTyp             -> RawApp  TTyp   []
     N.TProto ss        -> RawApp (TProto (reify ss)) []
     N.Proc cs p        -> TProc (reify cs) (reify p)
     N.Lam  (Arg a t) s -> Lam  (VD a (reify t)) [] (reify s)
     N.TFun (Arg a t) s -> TFun (VD a (reify t)) [] (reify s)
     N.TSig (Arg a t) s -> TSig (VD a (reify t)) [] (reify s)
+    N.Case t brs       -> Case (reify t) (reify brs)
 
   norm (RawApp e es)    = normRawApp (e:es)
+  norm (Case t brs)     = N.Case (norm t) (L.sort (norm brs))
   norm (TProc cs p)     = N.Proc (norm cs) (norm p)
   norm (Lam  xs xss t)  = normVarDec N.Lam  (xs:xss) (norm t)
   norm (TFun xs xss t)  = normVarDec N.TFun (xs:xss) (norm t)
   norm (TSig xs xss t)  = normVarDec N.TSig (xs:xss) (norm t)
+
+instance Norm Branch where
+  type Normalized Branch = (Name, N.Term)
+
+  reify (n, t) = Br (reify n) (reify t)
+
+  norm (Br n t) = (norm n, norm t)
+
+instance Norm ConName where
+  type Normalized ConName = Name
+  reify = CN
+  norm (CN n) = n
 
 reifyTerm :: N.Term -> Term
 reifyTerm = reify
@@ -255,7 +273,9 @@ instance Norm Dec where
   type Normalized Dec   = N.Dec
   reify (N.Sig d ty tm) =  DSig d (reify ty) (reify tm)
   reify (N.Dec d cs p)  =  DDef d (reify cs) (reify p)
+  reify (N.Dat d cs)    =  DDat d (reify cs)
   norm  ( DSig d ty tm) = N.Sig d (norm ty) (norm tm)
   norm  ( DDef d cs p)  = N.Dec d (norm cs) (norm p)
+  norm  ( DDat d cs)    = N.Dat d (norm cs)
 
 -- -}

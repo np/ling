@@ -26,16 +26,18 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 
 The reserved words used in Ling are the following:
   | ``Fwd`` | ``Log`` | ``Sort`` | ``Type``
-  | ``as`` | ``end`` | ``fwd`` | ``new``
-  | ``proc`` | ``recv`` | ``send`` | ``slice``
+  | ``as`` | ``case`` | ``data`` | ``end``
+  | ``fwd`` | ``new`` | ``of`` | ``proc``
+  | ``recv`` | ``send`` | ``slice`` | 
 
 The symbols used in Ling are the following:
   | , | = | . | :
-  | ( | ) | < | >
-  | -> | ** | \ | |
-  | @ | { | } | [
-  | ] | [: | :] | !
-  | ? | ~ | -o | ^
+  | ` | | | ( | )
+  | -> | < | > | {
+  | } | ** | \ | @
+  | [ | ] | [: | :]
+  | ! | ? | ~ | -o
+  | ^ |  |  | 
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {- and -}.
@@ -52,6 +54,11 @@ All other symbols are terminals.
   | //Program// | -> | //[Dec]// 
   | //Dec// | -> | //Name// //OptChanDecs// ``=`` //Proc// ``.`` 
   |  |  **|**  | //Name// ``:`` //Term// //OptDef// ``.`` 
+  |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// ``.`` 
+  | //ConName// | -> | ````` //Name// 
+  | //[ConName]// | -> | **eps**
+  |  |  **|**  | //ConName// 
+  |  |  **|**  | //ConName// ``|`` //[ConName]// 
   | //OptDef// | -> | **eps**
   |  |  **|**  | ``=`` //Term// 
   | //[Dec]// | -> | **eps**
@@ -65,8 +72,13 @@ All other symbols are terminals.
   | //[ChanDec]// | -> | **eps**
   |  |  **|**  | //ChanDec// 
   |  |  **|**  | //ChanDec// ``,`` //[ChanDec]// 
+  | //Branch// | -> | //ConName// ``->`` //Term// 
+  | //[Branch]// | -> | **eps**
+  |  |  **|**  | //Branch// 
+  |  |  **|**  | //Branch// ``,`` //[Branch]// 
   | //ATerm// | -> | //Name// 
   |  |  **|**  | //Integer// 
+  |  |  **|**  | //ConName// 
   |  |  **|**  | ``Type`` 
   |  |  **|**  | ``<`` //[RSession]// ``>`` 
   |  |  **|**  | ``(`` //Term// ``)`` 
@@ -75,6 +87,7 @@ All other symbols are terminals.
   | //DTerm// | -> | //Name// //[ATerm]// 
   |  |  **|**  | ``(`` //Name// ``:`` //Term// ``)`` 
   | //Term// | -> | //ATerm// //[ATerm]// 
+  |  |  **|**  | ``case`` //Term// ``of`` ``{`` //[Branch]// ``}`` 
   |  |  **|**  | //VarDec// //[VarDec]// ``->`` //Term// 
   |  |  **|**  | //VarDec// //[VarDec]// ``**`` //Term// 
   |  |  **|**  | ``\`` //VarDec// //[VarDec]// ``->`` //Term// 
