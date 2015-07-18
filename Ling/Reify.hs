@@ -162,9 +162,10 @@ instance Norm DTerm where
 
   reify e0 = case e0 of
     N.Def x es -> DTTyp x (reify es)
-    _          -> error "DTerm.reify"
+    _          -> DTBnd (Name "_") (reify e0)
 
   norm (DTTyp x es) = N.Def x (norm es)
+  norm (DTBnd (Name "_") e) = norm e
   norm  DTBnd{} = error "DTBnd..."
 
 instance Norm ATerm where
