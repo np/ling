@@ -1,17 +1,10 @@
-{ pkgs ? import <nixpkgs> {} }:
-let haskellPackages =
-      pkgs.recurseIntoAttrs
-        (pkgs.haskellPackages.override {
-           extension = self: super:
-                       {
-                         BNFC = self.callPackage ./nix/BNFC.nix {};
-                         thisPackage = haskellPackages.callPackage (import ./default.nix) {};
-                       };
-         });
-in pkgs.lib.overrideDerivation haskellPackages.thisPackage (old: {
-   buildInputs = old.buildInputs ++ [
-     haskellPackages.cabalInstall
-     haskellPackages.BNFC
-#     haskellPackages.ghcMod
-     # (2)
-   ];})
+{ nixpkgs ? import <nixpkgs> {}, compiler ? "ghc7101" }:
+nixpkgs.lib.overrideDerivation
+  (import ./default.nix { inherit nixpkgs compiler; }).env
+  (old:
+   { buildInputs = old.buildInputs ++
+       (with nixpkgs.haskell.packages.${compiler}; [
+       cabal-install
+       BNFC
+      #ghcMod
+    ]);})
