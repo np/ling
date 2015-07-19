@@ -10,8 +10,10 @@ separator Name "," ;
 Prg. Program ::= [Dec] ;
 
 DDef. Dec ::= Name OptChanDecs "=" Proc "." ;
-DSig. Dec ::= Name ":" Term "." ;
+DSig. Dec ::= Name ":" Term OptDef "." ;
 
+NoDef. OptDef ::= ;
+SoDef. OptDef ::= "=" Term ;
 
 terminator Dec "" ;
 

@@ -368,20 +368,21 @@ transChanDec _   (Arg c Nothing)
   = transErr "transChanDec: TODO No Session for channel:" c
 
 -- Of course this does not properlly handle dependent types
-transSig :: Env -> Name -> Typ -> C.Def
-transSig env0 f t0 = case t0 of
-  TFun{} -> go env0 [] t0 where
+transSig :: Env -> Name -> Typ -> Maybe Term -> C.Def
+transSig env0 f ty0 (Just t) = transErr "transSig: TODO unsupported def" t
+transSig env0 f ty0 tm = case ty0 of
+  TFun{} -> go env0 [] ty0 where
     go env args t1 = case t1 of
       TFun (Arg n s) t -> go (addEVar n (transName n) env)
                              (dDec (transCTyp env C.QConst s) (transName n) : args)
                              t
       _                -> C.DSig (dDec (transCTyp env C.NoQual t1) (transName f))
                                  (reverse args)
-  _ -> C.DDec (dDec (transCTyp env0 C.NoQual t0) (transName f))
+  _ -> C.DDec (dDec (transCTyp env0 C.NoQual ty0) (transName f))
 
 transDec :: Env -> Dec -> [C.Def]
 transDec env x = case x of
-  Sig d t -> [transSig env d t]
+  Sig d ty tm -> [transSig env d ty tm]
   Dec d cs proc ->
     [C.DDef (C.Dec voidQ (transName d) [])
             (map fst news)

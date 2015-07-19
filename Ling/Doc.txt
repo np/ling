@@ -51,7 +51,9 @@ All other symbols are terminals.
   |  |  **|**  | //Name// ``,`` //[Name]// 
   | //Program// | -> | //[Dec]// 
   | //Dec// | -> | //Name// //OptChanDecs// ``=`` //Proc// ``.`` 
-  |  |  **|**  | //Name// ``:`` //Term// ``.`` 
+  |  |  **|**  | //Name// ``:`` //Term// //OptDef// ``.`` 
+  | //OptDef// | -> | **eps**
+  |  |  **|**  | ``=`` //Term// 
   | //[Dec]// | -> | **eps**
   |  |  **|**  | //Dec// //[Dec]// 
   | //VarDec// | -> | ``(`` //Name// ``:`` //Term// ``)`` 

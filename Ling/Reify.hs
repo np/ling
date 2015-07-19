@@ -242,11 +242,18 @@ instance Norm Program where
 reifyProgram :: N.Program -> Program
 reifyProgram = reify
 
+instance Norm OptDef where
+  type Normalized OptDef = Maybe N.Term
+  reify Nothing          = NoDef
+  reify (Just t)         = SoDef (reify t)
+  norm NoDef             = Nothing
+  norm (SoDef t)         = Just (norm t)
+
 instance Norm Dec where
-  type Normalized Dec  = N.Dec
-  reify (N.Sig d t)    =  DSig d (reify t)
-  reify (N.Dec d cs p) =  DDef d (reify cs) (reify p)
-  norm  ( DSig d t)    = N.Sig d (norm t)
-  norm  ( DDef d cs p) = N.Dec d (norm cs) (norm p)
+  type Normalized Dec   = N.Dec
+  reify (N.Sig d ty tm) =  DSig d (reify ty) (reify tm)
+  reify (N.Dec d cs p)  =  DDef d (reify cs) (reify p)
+  norm  ( DSig d ty tm) = N.Sig d (norm ty) (norm tm)
+  norm  ( DDef d cs p)  = N.Dec d (norm cs) (norm p)
 
 -- -}

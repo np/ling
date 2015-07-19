@@ -18,7 +18,11 @@ transProgram x = case x of
 transDec :: Dec -> Result
 transDec x = case x of
   DDef name optchandecs proc -> failure x
-  DSig name term -> failure x
+  DSig name term optdef -> failure x
+transOptDef :: OptDef -> Result
+transOptDef x = case x of
+  NoDef -> failure x
+  SoDef term -> failure x
 transVarDec :: VarDec -> Result
 transVarDec x = case x of
   VD name term -> failure x

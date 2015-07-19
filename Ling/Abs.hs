@@ -11,7 +11,10 @@ newtype Name = Name String deriving (Eq, Ord, Show, Read)
 data Program = Prg [Dec]
   deriving (Eq, Ord, Show, Read)
 
-data Dec = DDef Name OptChanDecs Proc | DSig Name Term
+data Dec = DDef Name OptChanDecs Proc | DSig Name Term OptDef
+  deriving (Eq, Ord, Show, Read)
+
+data OptDef = NoDef | SoDef Term
   deriving (Eq, Ord, Show, Read)
 
 data VarDec = VD Name Term

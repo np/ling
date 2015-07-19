@@ -25,13 +25,14 @@ data ProcDef = ProcDef Name [ChanDec] Proc Proto
 data TCEnv = TCEnv
   { _verbosity :: Bool
   , _evars     :: Map Name Typ
+  , _edefs     :: Map Name Term
   , _pdefs     :: Map Name ProcDef
   }
 
 $(makeLenses ''TCEnv)
 
 emptyTCEnv :: TCEnv
-emptyTCEnv = TCEnv False {-emptyConstraints-} Map.empty Map.empty -- Map.empty
+emptyTCEnv = TCEnv False Map.empty Map.empty Map.empty
 
 newtype TC a = MkTC { unTC :: ReaderT TCEnv Err a }
   deriving (Functor, Applicative, Monad, MonadReader TCEnv)
@@ -55,10 +56,15 @@ checkTypEquality = checkEquality "Types are not equivalent."
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp
 
-checkVarDec :: VarDec -> TC () -> TC ()
-checkVarDec (Arg x typ) kont = do
+checkVarDef :: Name -> Typ -> Maybe Term -> TC () -> TC ()
+checkVarDef x typ mt kont = do
   checkTyp typ
-  local (evars %~ Map.insert x typ) kont
+  checkMaybeTerm typ mt
+  local ((evars %~ Map.insert x typ)
+       . (edefs %~ maybe id (Map.insert x) mt)) kont
+
+checkVarDec :: VarDec -> TC () -> TC ()
+checkVarDec (Arg x typ) = checkVarDef x typ Nothing
 
 -- TODO: Here I assume that sessions are well formed
 checkSessions :: [RSession] -> TC ()
@@ -89,6 +95,10 @@ inferTerm e0 = case e0 of
 
 checkTerm :: Typ -> Term -> TC ()
 checkTerm typ e = inferTerm e >>= checkTypEquality typ
+
+checkMaybeTerm :: Typ -> Maybe Term -> TC ()
+checkMaybeTerm _   Nothing   = return ()
+checkMaybeTerm typ (Just tm) = checkTerm typ tm
 
 inferDef :: Name -> [Term] -> TC Typ
 inferDef f es = do

@@ -138,7 +138,7 @@ checkDecs :: [Dec] -> TC ()
 checkDecs = foldr checkDec (return ())
 
 checkDec :: Dec -> TC () -> TC ()
-checkDec (Sig d typ)      kont = checkVarDec (Arg d typ) kont
+checkDec (Sig d typ mt)   kont = checkVarDef d typ mt kont
 checkDec (Dec d cds proc) kont = do
   let cs  = map _argName cds
   proto <- checkProc proc

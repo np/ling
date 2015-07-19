@@ -11,6 +11,7 @@ import Ling.ErrM
 %name pListName ListName
 %name pProgram Program
 %name pDec Dec
+%name pOptDef OptDef
 %name pListDec ListDec
 %name pVarDec VarDec
 %name pListVarDec ListVarDec
@@ -92,7 +93,10 @@ Program :: { Program }
 Program : ListDec { Ling.Abs.Prg (reverse $1) }
 Dec :: { Dec }
 Dec : Name OptChanDecs '=' Proc '.' { Ling.Abs.DDef $1 $2 $4 }
-    | Name ':' Term '.' { Ling.Abs.DSig $1 $3 }
+    | Name ':' Term OptDef '.' { Ling.Abs.DSig $1 $3 $4 }
+OptDef :: { OptDef }
+OptDef : {- empty -} { Ling.Abs.NoDef }
+       | '=' Term { Ling.Abs.SoDef $2 }
 ListDec :: { [Dec] }
 ListDec : {- empty -} { [] } | ListDec Dec { flip (:) $1 $2 }
 VarDec :: { VarDec }
