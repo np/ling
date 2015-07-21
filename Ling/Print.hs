@@ -142,6 +142,7 @@ instance Print Term where
     RawApp aterm aterms -> prPrec i 0 (concatD [prt 0 aterm, prt 0 aterms])
     TFun vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec, prt 0 vardecs, doc (showString "->"), prt 0 term])
     TSig vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec, prt 0 vardecs, doc (showString "**"), prt 0 term])
+    Lam vardec vardecs term -> prPrec i 0 (concatD [doc (showString "\\"), prt 0 vardec, prt 0 vardecs, doc (showString "->"), prt 0 term])
     TProc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc"), doc (showString "("), prt 0 chandecs, doc (showString ")"), prt 0 proc])
 
 instance Print Proc where

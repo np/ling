@@ -61,20 +61,21 @@ import Ling.ErrM
   'Type' { PT _ (TS _ 19) }
   '[' { PT _ (TS _ 20) }
   '[:' { PT _ (TS _ 21) }
-  ']' { PT _ (TS _ 22) }
-  '^' { PT _ (TS _ 23) }
-  'as' { PT _ (TS _ 24) }
-  'end' { PT _ (TS _ 25) }
-  'fwd' { PT _ (TS _ 26) }
-  'new' { PT _ (TS _ 27) }
-  'proc' { PT _ (TS _ 28) }
-  'recv' { PT _ (TS _ 29) }
-  'send' { PT _ (TS _ 30) }
-  'slice' { PT _ (TS _ 31) }
-  '{' { PT _ (TS _ 32) }
-  '|' { PT _ (TS _ 33) }
-  '}' { PT _ (TS _ 34) }
-  '~' { PT _ (TS _ 35) }
+  '\\' { PT _ (TS _ 22) }
+  ']' { PT _ (TS _ 23) }
+  '^' { PT _ (TS _ 24) }
+  'as' { PT _ (TS _ 25) }
+  'end' { PT _ (TS _ 26) }
+  'fwd' { PT _ (TS _ 27) }
+  'new' { PT _ (TS _ 28) }
+  'proc' { PT _ (TS _ 29) }
+  'recv' { PT _ (TS _ 30) }
+  'send' { PT _ (TS _ 31) }
+  'slice' { PT _ (TS _ 32) }
+  '{' { PT _ (TS _ 33) }
+  '|' { PT _ (TS _ 34) }
+  '}' { PT _ (TS _ 35) }
+  '~' { PT _ (TS _ 36) }
 
 L_integ  { PT _ (TI $$) }
 L_Name { PT _ (T_Name $$) }
@@ -128,6 +129,7 @@ Term :: { Term }
 Term : ATerm ListATerm { Ling.Abs.RawApp $1 (reverse $2) }
      | VarDec ListVarDec '->' Term { Ling.Abs.TFun $1 (reverse $2) $4 }
      | VarDec ListVarDec '**' Term { Ling.Abs.TSig $1 (reverse $2) $4 }
+     | '\\' VarDec ListVarDec '->' Term { Ling.Abs.Lam $2 (reverse $3) $5 }
      | 'proc' '(' ListChanDec ')' Proc { Ling.Abs.TProc $3 $5 }
 Proc :: { Proc }
 Proc : ListPref Procs { Ling.Abs.Act (reverse $1) $2 }

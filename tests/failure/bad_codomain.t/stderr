@@ -1,0 +1,6 @@
+Types are not equivalent.
+Expected:
+  (Y : Type)-> Y
+Inferred:
+  (Y : Type)-> Int
+

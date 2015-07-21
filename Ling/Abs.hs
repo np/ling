@@ -37,6 +37,7 @@ data Term
     = RawApp ATerm [ATerm]
     | TFun VarDec [VarDec] Term
     | TSig VarDec [VarDec] Term
+    | Lam VarDec [VarDec] Term
     | TProc [ChanDec] Proc
   deriving (Eq, Ord, Show, Read)
 

@@ -41,6 +41,7 @@ type Typ = Term
 data Term
   = Def Name [Term]
   | Lit Integer
+  | Lam VarDec Term
   | Proc [ChanDec] Proc
   | TTyp
   | TFun VarDec Typ

@@ -8,6 +8,7 @@ import Ling.Print
 import Ling.Proto
 import Ling.Norm
 import Ling.Subst
+import Ling.Equiv
 import Ling.ErrM
 
 import qualified Data.Map as Map
@@ -41,6 +42,7 @@ instance MonadError String TC where
   throwError = MkTC . lift . Bad
   catchError = error "catchError: not implemented for TC"
 
+{-
 checkEquality :: (Print a, Eq a) => String -> a -> a -> TC ()
 checkEquality msg t0 t1 = assertEqual t0 t1
   [msg
@@ -49,21 +51,42 @@ checkEquality msg t0 t1 = assertEqual t0 t1
   ,"Inferred:"
   ,"  " ++ pretty t1
   ]
+-}
 
-checkTypEquality :: Typ -> Typ -> TC ()
-checkTypEquality = checkEquality "Types are not equivalent."
+tcEqEnv :: TC EqEnv
+tcEqEnv = emptyEqEnv <$> view edefs
+
+checkEquivalence :: (Print a, Eq a, Equiv a) => String -> a -> a -> TC ()
+checkEquivalence msg t0 t1 = do
+  when (t0 /= t1) $ debug
+    ["checkEquivalence:"
+    ,"  " ++ pretty t0
+    ,"against"
+    ,"  " ++ pretty t1
+    ]
+  env <- tcEqEnv
+  assert (equiv env t0 t1)
+    [msg
+    ,"Expected:"
+    ,"  " ++ pretty t0
+    ,"Inferred:"
+    ,"  " ++ pretty t1
+    ]
+
+checkTypeEquivalence :: Typ -> Typ -> TC ()
+checkTypeEquivalence = checkEquivalence "Types are not equivalent."
 
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp
 
-checkVarDef :: Name -> Typ -> Maybe Term -> TC () -> TC ()
+checkVarDef :: Name -> Typ -> Maybe Term -> TC a -> TC a
 checkVarDef x typ mt kont = do
   checkTyp typ
   checkMaybeTerm typ mt
   local ((evars %~ Map.insert x typ)
        . (edefs %~ maybe id (Map.insert x) mt)) kont
 
-checkVarDec :: VarDec -> TC () -> TC ()
+checkVarDec :: VarDec -> TC a -> TC a
 checkVarDec (Arg x typ) = checkVarDef x typ Nothing
 
 -- TODO: Here I assume that sessions are well formed
@@ -88,13 +111,14 @@ inferTerm e0 = case e0 of
   Lit _           -> return int
   TTyp            -> return TTyp -- type-in-type
   Def x es        -> inferDef x es
+  Lam arg t       -> TFun arg <$> checkVarDec arg (inferTerm t)
   Proc{}          -> throwError "inferTerm: NProc"
   TFun arg s      -> checkVarDec arg (checkTyp s) >> return TTyp
   TSig arg s      -> checkVarDec arg (checkTyp s) >> return TTyp
   TProto sessions -> checkSessions sessions       >> return TTyp
 
 checkTerm :: Typ -> Term -> TC ()
-checkTerm typ e = inferTerm e >>= checkTypEquality typ
+checkTerm typ e = inferTerm e >>= checkTypeEquivalence typ
 
 checkMaybeTerm :: Typ -> Maybe Term -> TC ()
 checkMaybeTerm _   Nothing   = return ()
@@ -107,14 +131,18 @@ inferDef f es = do
     Just typ -> checkApp typ es
     Nothing  -> throwError $ "unknown definition " ++ unName f
 
+unDefTC :: Term -> TC Term
+unDefTC tm = unDef <$> view edefs <*> return tm
+
 checkApp :: Typ -> [Term] -> TC Typ
 checkApp typ []     = return typ
-checkApp typ (e:es) =
-  case typ of
+checkApp typ (e:es) = do
+  typ' <- unDefTC typ
+  case typ' of
     TFun (Arg x t) s -> do
       checkTerm t e
       checkApp (subst1 (x,e) s) es
-    _ -> throwError "checkApp: TODO"
+    _ -> throwError "checkApp: impossible"
 
 debug :: [Msg] -> TC ()
 debug xs = do

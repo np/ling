@@ -43,6 +43,7 @@ DTBnd.   DTerm ::= "(" Name ":" Term ")" ;
 RawApp.  Term  ::= ATerm [ATerm] ;
 TFun.    Term  ::= VarDec [VarDec] "->" Term ;
 TSig.    Term  ::= VarDec [VarDec] "**" Term ;
+Lam.     Term  ::= "\\" VarDec [VarDec] "->" Term ;
 TProc.   Term  ::= "proc" "(" [ChanDec] ")" Proc ;
 
 Act.        Proc ::= [Pref] Procs ;

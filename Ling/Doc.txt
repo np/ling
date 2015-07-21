@@ -32,10 +32,10 @@ The reserved words used in Ling are the following:
 The symbols used in Ling are the following:
   | , | = | . | :
   | ( | ) | < | >
-  | -> | ** | | | @
-  | { | } | [ | ]
-  | [: | :] | ! | ?
-  | ~ | -o | ^ | 
+  | -> | ** | \ | |
+  | @ | { | } | [
+  | ] | [: | :] | !
+  | ? | ~ | -o | ^
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {- and -}.
@@ -77,6 +77,7 @@ All other symbols are terminals.
   | //Term// | -> | //ATerm// //[ATerm]// 
   |  |  **|**  | //VarDec// //[VarDec]// ``->`` //Term// 
   |  |  **|**  | //VarDec// //[VarDec]// ``**`` //Term// 
+  |  |  **|**  | ``\`` //VarDec// //[VarDec]// ``->`` //Term// 
   |  |  **|**  | ``proc`` ``(`` //[ChanDec]// ``)`` //Proc// 
   | //Proc// | -> | //[Pref]// //Procs// 
   | //[Proc]// | -> | **eps**

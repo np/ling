@@ -169,6 +169,7 @@ transTerm env x = case x of
        [e0,e1] | Just op <- transOp f -> op e0 e1
        es                             -> C.EApp (C.EVar (transName f)) es
   Lit n          -> C.ELit n
+  Lam{}          -> transErr "transTerm/Lam"  x
   Proc{}         -> transErr "transTerm/Proc" x
   TFun{}         -> dummyTyp
   TSig{}         -> dummyTyp
@@ -310,6 +311,7 @@ transTyp env e0 = case e0 of
   TProto{} -> transErr "transTyp: TProto" e0
   TFun{}   -> transErr "transTyp: TFun" e0
   TSig{}   -> transErr "transTyp: TSig" e0 -- TODO struct ?
+  Lam{}    -> transErr "transTyp: Not a type: Lam" e0
   Lit{}    -> transErr "transTyp: Not a type: Lit" e0
   Proc{}   -> transErr "transTyp: Not a type: Proc" e0
 

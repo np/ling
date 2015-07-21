@@ -2,6 +2,7 @@ module Ling.Subst where
 
 import qualified Data.Map as Map
 import Data.Map (Map)
+import Data.Maybe (fromMaybe)
 import Control.Applicative
 import Control.Lens
 
@@ -11,6 +12,7 @@ import Ling.Norm
 -- import Ling.Print.Instances ()
 
 type Sub = Map Name Term
+type Defs = Sub
 
 class Subst a where
   subst :: Sub -> a -> a
@@ -18,15 +20,34 @@ class Subst a where
 subst1 :: Subst a => (Name, Term) -> a -> a
 subst1 = subst . l2m . pure
 
+app :: Defs -> Term -> [Term] -> Term
+app _    t []     = t
+app defs t (u:us) = case unDef defs t of
+                      Lam (Arg x _) t' -> app defs (subst1 (x,u) t') us
+                      Def x es         -> Def x (es ++ us)
+                      _                -> error "Ling.Subst.app: IMPOSSIBLE"
+
+-- Spec: app0 = app Map.empty
+app0 :: Term -> [Term] -> Term
+app0 t []     = t
+app0 t (u:us) = case t of
+                  Lam (Arg x _) t' -> app0 (subst1 (x,u) t') us
+                  Def x es         -> Def x (es ++ u:us)
+                  _                -> error "Ling.Subst.app0: IMPOSSIBLE"
+
+unDef :: Defs -> Term -> Term
+unDef defs e0 =
+  case e0 of
+    Def x es -> fromMaybe e0 (app defs <$> defs ^. at x <*> pure es)
+    _        -> e0
+
+substName :: Sub -> Name -> Term
+substName f x = fromMaybe (Def x []) (f ^. at x)
+
 instance Subst Term where
   subst f e0 = case e0 of
-    Def x es ->
-     case (f ^. at x, es) of
-       (Nothing, _)           -> Def x  (subst f es)
-       (Just (Def x' es'), _) -> Def x' (es' ++ subst f es)
-       (Just e', [])          -> e'
-       (Just _e', _)          -> error $ "subst/Def " -- ++ pretty e' ++ " " ++ pretty es
-
+    Def x es   -> app0 (substName f x) (subst f es)
+    Lam  arg t -> Lam  (subst f arg) (subst (hideArg arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hideArg arg f) t)
     TTyp       -> e0
@@ -50,8 +71,8 @@ hideArg :: Arg a -> E Sub
 hideArg (Arg x _) = Map.delete x
 
 hidePref :: Pref -> E Sub
-hidePref (Recv _ arg)       = hideArg arg
-hidePref _                  = id
+hidePref (Recv _ arg) = hideArg arg
+hidePref _            = id
 
 hidePrefs :: [Pref] -> E Sub
 hidePrefs = flip (foldr hidePref)

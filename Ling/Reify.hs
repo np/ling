@@ -195,13 +195,15 @@ instance Norm Term where
     N.TTyp             -> RawApp  TTyp   []
     N.TProto ss        -> RawApp (TProto (reify ss)) []
     N.Proc cs p        -> TProc (reify cs) (reify p)
+    N.Lam  (Arg a t) s -> Lam  (VD a (reify t)) [] (reify s)
     N.TFun (Arg a t) s -> TFun (VD a (reify t)) [] (reify s)
     N.TSig (Arg a t) s -> TSig (VD a (reify t)) [] (reify s)
 
   norm (RawApp e es)    = normRawApp (e:es)
   norm (TProc cs p)     = N.Proc (norm cs) (norm p)
-  norm (TFun xs xss t)  = normTele N.TFun (xs:xss) (norm t)
-  norm (TSig xs xss t)  = normTele N.TSig (xs:xss) (norm t)
+  norm (Lam  xs xss t)  = normVarDec N.Lam  (xs:xss) (norm t)
+  norm (TFun xs xss t)  = normVarDec N.TFun (xs:xss) (norm t)
+  norm (TSig xs xss t)  = normVarDec N.TSig (xs:xss) (norm t)
 
 reifyTerm :: N.Term -> Term
 reifyTerm = reify
@@ -223,8 +225,8 @@ instance Norm OptSession where
   norm NoSession     = Nothing
   norm (SoSession s) = Just (norm s)
 
-normTele :: (Arg N.Typ -> N.Typ -> N.Typ) -> [VarDec] -> N.Typ -> N.Typ
-normTele f xs z = foldr (f . norm) z xs
+normVarDec :: (Arg N.Term -> N.Term -> N.Term) -> [VarDec] -> N.Term -> N.Term
+normVarDec f xs z = foldr (f . norm) z xs
 
 instance Norm OptChanDecs where
   type Normalized OptChanDecs = [N.ChanDec]

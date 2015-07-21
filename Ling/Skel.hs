@@ -49,6 +49,7 @@ transTerm x = case x of
   RawApp aterm aterms -> failure x
   TFun vardec vardecs term -> failure x
   TSig vardec vardecs term -> failure x
+  Lam vardec vardecs term -> failure x
   TProc chandecs proc -> failure x
 transProc :: Proc -> Result
 transProc x = case x of
