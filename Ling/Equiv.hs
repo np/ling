@@ -47,18 +47,21 @@ equivDef :: EqEnv -> Term -> Term -> Bool
 equivDef env (Def x0 es0) (Def x1 es1) = equiv env (x0, es0) (x1, es1)
 equivDef _   _            _            = False
 
+nameIndex :: Name -> [Name] -> Either Int Name
+nameIndex x = maybe (Right x) Left . findIndex (== x)
+
 instance Equiv Name where
-  equiv env x0 x1 = isn't _Nothing i0 && i0 == i1
+  equiv env x0 x1 = i0 == i1
     where
-      i0 = findIndex ((==x0).fst) es
-      i1 = findIndex ((==x1).snd) es
+      i0 = nameIndex x0 $ map fst es
+      i1 = nameIndex x1 $ map snd es
       es = env ^. eqnms
 
 instance Equiv Term where
   equiv env t0 t1 =
     t0 == t1 || -- Quadratic but safe
     equivDef env t0 t1 ||
-    case (unDef defs0 t0, unDef defs1 t1) of
+    case (t0',t1') of
       (Def x0 es0,   Def x1 es1)   -> equiv env (x0, es0) (x1, es1)
       (Lit l0,       Lit l1)       -> l0 == l1
       (TTyp,         TTyp)         -> True
@@ -79,6 +82,8 @@ instance Equiv Term where
     where
       defs0 = env ^. edefs0
       defs1 = env ^. edefs1
+      t0'   = unDef defs0 t0
+      t1'   = unDef defs1 t1
 
 instance Equiv RSession where
   equiv _ _ _ = error "Equiv Session: TODO"
