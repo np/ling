@@ -94,8 +94,8 @@ checkVarDef :: Name -> Typ -> Maybe Term -> TC a -> TC a
 checkVarDef x typ mt kont = do
   checkTyp typ
   checkMaybeTerm typ mt
-  local ((evars %~ Map.insert x typ)
-       . (edefs %~ maybe id (Map.insert x) mt)) kont
+  local ((evars . at x .~ Just typ)
+       . (edefs . at x .~ mt)) kont
 
 checkVarDec :: VarDec -> TC a -> TC a
 checkVarDec (Arg x typ) = checkVarDef x typ Nothing

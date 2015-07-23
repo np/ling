@@ -107,7 +107,7 @@ checkProc (prefs `Act` procs) = checkAct prefs procs
 checkProc (Ax s c d es)       = return $ protoAx (one s) c d es
 checkProc (NewSlice cs t i p) =
   do checkTerm int t
-     proto <- local (evars %~ Map.insert i int) $ checkProc p
+     proto <- local (evars . at i .~ Just int) $ checkProc p
      mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to Map.toList)
      return $ replProtoWhen (`elem` cs) t proto
 
@@ -153,8 +153,8 @@ checkDec (Dat d cs)       kont = do
   checkNotIn evars "name" d
   mapM_ (checkNotIn ctyps "data constructor") cs
   local ((ctyps %~ Map.union (l2m [ (c,d) | c <- cs ]))
-        .(evars %~ Map.insert d TTyp)
-        .(ddefs %~ Map.insert d cs)) kont
+        .(evars . at d .~ Just TTyp)
+        .(ddefs . at d .~ Just cs)) kont
 checkDec (Dec d cds proc) kont = do
   checkNotIn pdefs "process" d
   let cs  = map _argName cds
@@ -164,7 +164,7 @@ checkDec (Dec d cds proc) kont = do
   assert (isEmptyProto proto') $
     "These channels have not been introduced:" :
     prettyChanDecs proto'
-  local (pdefs %~ Map.insert d (ProcDef d cds proc proto)) kont
+  local (pdefs . at d .~ Just (ProcDef d cds proc proto)) kont
 
 checkChanDec :: Proto -> ChanDec -> TC ()
 checkChanDec proto (Arg c s) = checkOptSession c s $ chanSession c proto
@@ -200,7 +200,7 @@ debugCheckAct proto pref prefs procs m = do
 actTCEnv :: Pref -> TCEnv -> TCEnv
 actTCEnv pref env =
   env & case pref of
-          Recv _ (Arg x typ) -> evars %~ Map.insert x typ
+          Recv _ (Arg x typ) -> evars . at x .~ Just typ
           _                  -> id
 
 {-
