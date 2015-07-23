@@ -212,6 +212,7 @@ transProcs env (p0:p0s) waiting k =
 transDec :: Dec -> Dec
 transDec x = case x of
   Sig{} -> x
+  Dat{} -> x
   Dec d cs proc -> transProc env proc (const $ Dec d cs)
     where
       decSt Snd{} = Empty
