@@ -76,7 +76,7 @@ checkDual _ _ =
 
 assertAbsent :: Channel -> Proto -> TC ()
 assertAbsent c p =
-  assertEqual (p ^. chans . at c) Nothing
+  assert (p ^. chans . hasNoKey c)
     ["The channel " ++ pretty c ++ " has been re-used"]
 
 mergeConstraints :: Constraints -> Constraints -> TC Constraints
@@ -141,7 +141,7 @@ checkDecs = foldr checkDec (return ())
 
 checkNotIn :: Lens' TCEnv (Map Name v) -> String -> Name -> TC ()
 checkNotIn l msg c = do
-  b <- view $ l . at c . to (isn't _Nothing)
+  b <- view $ l . hasKey c
   assert (not b) ["Already defined " ++ msg ++ ": ", pretty c]
 
 checkDec :: Dec -> TC () -> TC ()

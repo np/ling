@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, Rank2Types #-}
 module Ling.Utils where
 
 import Ling.Abs
@@ -127,3 +127,9 @@ substList :: Ord a => Set a -> a -> [a] -> [a]
 substList xs y = rmDups . map f where
   f z | z `Set.member` xs = y
       | otherwise         = z
+
+hasKey :: At m => Index m -> Getter m Bool
+hasKey k = at k . to (isn't _Nothing)
+
+hasNoKey :: At m => Index m -> Getter m Bool
+hasNoKey k = at k . to (isn't _Just)

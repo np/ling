@@ -43,8 +43,9 @@ prettyChanDecs = prettyList . chanDecs
 emptyProto :: Proto
 emptyProto = MkProto Map.empty emptyConstraints []
 
+-- Not used
 chanPresent :: Proto -> Channel -> Bool
-chanPresent p c = has (chans . at c . _Just) p
+chanPresent p c = p ^. chans . hasKey c
 
 isEmptyProto :: Proto -> Bool
 isEmptyProto p = p ^. chans . to Map.null
