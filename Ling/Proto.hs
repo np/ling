@@ -8,7 +8,6 @@ import Ling.Session
 import Ling.Norm
 import Ling.Print.Instances ()
 
-import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Map (Map)
 
@@ -57,7 +56,7 @@ data ConstraintFlag = WithConstraint | WithoutConstraints
 
 addChanConstraint :: ConstraintFlag -> Channel -> Proto -> Proto
 addChanConstraint WithoutConstraints _ = id
-addChanConstraint WithConstraint     c = constraints %~ mapConstraints (c `Set.insert`)
+addChanConstraint WithConstraint     c = constraints %~ constrainChan c
 
 addChan :: ConstraintFlag -> (Channel,RSession) -> Proto -> Proto
 addChan flag (c,s) = addChanOnly (c,s) . addChanConstraint flag c
@@ -71,7 +70,7 @@ addChanWithOrder (c,s) p = p & addChan WithConstraint (c,s)
 rmChanAndConstraint :: Channel -> Proto -> Proto
 rmChanAndConstraint c p =
   p & chans . at c .~ Nothing
-    & constraints %~ mapConstraints (c `Set.delete`)
+    & constraints %~ unconstrainChan c
 
 rmChansAndConstraints :: [Channel] -> Proto -> Proto
 rmChansAndConstraints = flip (foldr rmChanAndConstraint)
@@ -97,7 +96,7 @@ chanSessions :: [Channel] -> Proto -> [Maybe RSession]
 chanSessions cs p = map (`chanSession` p) cs
 
 mkProto :: [(Channel,RSession)] -> Proto
-mkProto css = MkProto (l2m css) (Constraints (l2s [l2s cs]))
+mkProto css = MkProto (l2m css) (singleConstraint (l2s cs))
                       (map return cs)
   where cs = map fst css
 

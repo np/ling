@@ -79,16 +79,6 @@ assertAbsent c p =
   assert (p ^. chans . hasNoKey c)
     ["The channel " ++ pretty c ++ " has been re-used"]
 
-mergeConstraints :: Constraints -> Constraints -> TC Constraints
-mergeConstraints (Constraints c0) (Constraints c1) = do
-  unless (Set.null c0 && Set.null c1) . debug . concat $
-    [["Merge constraints:"]
-    ,prettyConstraints $ Constraints c0
-    ,["******************"]
-    ,prettyConstraints $ Constraints c1
-    ]
-  return . Constraints $ c0 `Set.union` c1
-
 isSendRecv :: Session -> Bool
 isSendRecv (Snd _ s) = isSendRecv s
 isSendRecv (Rcv _ s) = isSendRecv s
@@ -126,11 +116,17 @@ checkProcs [] = return emptyProto
 checkProcs (proc : procs) = do
   proto0 <- checkProc  proc
   proto1 <- checkProcs procs
-  let ks0 = proto0 ^. constraints
-      ks1 = proto1 ^. constraints
-  ks <- mergeConstraints ks0 ks1
-  let mchans = Map.mergeWithKey (error "mergeSession") id id
+  let ks0    = proto0 ^. constraints
+      ks1    = proto1 ^. constraints
+      ks     = mergeConstraints ks0 ks1
+      mchans = Map.mergeWithKey (error "mergeSession") id id
                                 (proto0 ^. chans) (proto1 ^. chans)
+  unless (noConstraints ks0 && noConstraints ks1) . debug . concat $
+    [["Merge constraints:"]
+    ,prettyConstraints ks0
+    ,["******************"]
+    ,prettyConstraints ks1
+    ]
   return $ MkProto mchans ks (proto0 ^. orders ++ proto1 ^. orders)
 
 checkProgram :: Program -> TC ()
