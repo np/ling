@@ -6,5 +6,5 @@ nixpkgs.lib.overrideDerivation
        (with nixpkgs.haskell.packages.${compiler}; [
        cabal-install
        BNFC
-      #ghcMod
+       ghc-mod
     ]);})
