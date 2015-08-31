@@ -28,6 +28,7 @@ instance Rename Term where
   rename f e0 = case e0 of
     Def x es   -> Def (rename f x) (rename f es)
 
+    Lam  arg t -> Lam  (rename f arg) (rename (hideArg arg f) t)
     TFun arg t -> TFun (rename f arg) (rename (hideArg arg f) t)
     TSig arg t -> TSig (rename f arg) (rename (hideArg arg f) t)
     TTyp       -> e0
