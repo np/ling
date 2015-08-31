@@ -1,5 +1,28 @@
-{-# LANGUAGE TemplateHaskell #-}
-module Ling.Proto where
+{-# LANGUAGE TemplateHaskell, Rank2Types #-}
+module Ling.Proto
+  -- Types
+  ( Proto
+  , ConstraintFlag (WithConstraint, WithoutConstraints)
+  -- Lenses
+  , chans
+  , constraints
+  , orders
+  -- Operations
+  , prettyProto
+  , prettyChanDecs
+  , isEmptyProto
+  , emptyProto
+  , addChanWithOrder
+  , rmChan
+  , rmChans
+  , substChans
+  , chanSession
+  , chanSessions
+  , mkProto
+  , protoAx
+  , replProtoWhen
+  , parallelProtos)
+  where
 
 import Prelude hiding (log)
 import Ling.Utils
@@ -13,7 +36,6 @@ import Data.Map (Map)
 
 import Control.Lens
 
--- These constraints are solved!
 data Proto = MkProto { _chans       :: Map Channel RSession
                      , _constraints :: Constraints
                      , _orders      :: [[Channel]]
@@ -33,67 +55,68 @@ prettyProto p =
   " orders:"
   : map (("  " ++) . show . map unName) (p ^. orders)
 
-chanDecs :: Proto -> [Arg RSession]
-chanDecs p = p ^.. chans . to m2l . each . to (uncurry Arg)
+-- toListOf chanDecs :: Proto -> [Arg Session]
+chanDecs :: Fold Proto (Arg RSession)
+chanDecs = chans . to m2l . each . to (uncurry Arg)
 
 prettyChanDecs :: Proto -> [String]
-prettyChanDecs = prettyList . chanDecs
+prettyChanDecs = prettyList . toListOf chanDecs
 
 emptyProto :: Proto
 emptyProto = MkProto Map.empty emptyConstraints []
 
 -- Not used
-chanPresent :: Proto -> Channel -> Bool
-chanPresent p c = p ^. chans . hasKey c
+chanPresent :: Channel -> Getter Proto Bool
+chanPresent c = chans . hasKey c
 
-isEmptyProto :: Proto -> Bool
-isEmptyProto p = p ^. chans . to Map.null
+isEmptyProto :: Getter Proto Bool
+isEmptyProto = chans . to Map.null
 
-addChanOnly :: (Channel,RSession) -> Proto -> Proto
-addChanOnly (c,s) = chans  %~ at c .~ Just s
+addChanOnly :: (Channel,RSession) -> Endom Proto
+addChanOnly (c,s) = chans %~ at c .~ Just s
 
 data ConstraintFlag = WithConstraint | WithoutConstraints
 
-addChanConstraint :: ConstraintFlag -> Channel -> Proto -> Proto
+addChanConstraint :: ConstraintFlag -> Channel -> Endom Proto
 addChanConstraint WithoutConstraints _ = id
 addChanConstraint WithConstraint     c = constraints %~ constrainChan c
 
-addChan :: ConstraintFlag -> (Channel,RSession) -> Proto -> Proto
+addChan :: ConstraintFlag -> (Channel,RSession) -> Endom Proto
 addChan flag (c,s) = addChanOnly (c,s) . addChanConstraint flag c
 
-addChanWithOrder :: (Channel,RSession) -> Proto -> Proto
+addChanWithOrder :: (Channel,RSession) -> Endom Proto
 addChanWithOrder (c,s) p = p & addChan WithConstraint (c,s)
                              & orders %~ addOrder
   where addOrder []  = [[c]]
         addOrder css = map (c:) css
 
-rmChanAndConstraint :: Channel -> Proto -> Proto
+rmChanAndConstraint :: Channel -> Endom Proto
 rmChanAndConstraint c p =
   p & chans . at c .~ Nothing
     & constraints %~ unconstrainChan c
 
-rmChansAndConstraints :: [Channel] -> Proto -> Proto
+rmChansAndConstraints :: [Channel] -> Endom Proto
 rmChansAndConstraints = flip (foldr rmChanAndConstraint)
 
-rmChan :: Channel -> Proto -> Proto
+rmChan :: Channel -> Endom Proto
 rmChan c p =
   p & rmChanAndConstraint c
     & orders . mapped %~ filter (/= c)
 
-rmChans :: [Channel] -> Proto -> Proto
+rmChans :: [Channel] -> Endom Proto
 rmChans = flip (foldr rmChan)
 
-substChans :: ConstraintFlag -> ([Channel], (Channel,RSession)) -> Proto -> Proto
+substChans :: ConstraintFlag -> ([Channel], (Channel,RSession)) -> Endom Proto
 substChans flag (cs, cs') p =
   p & orders . each %~ substList (l2s cs) (fst cs')
     & rmChansAndConstraints cs
     & addChan flag cs'
 
-chanSession :: Channel -> Proto -> Maybe RSession
-chanSession c p = p ^. chans . at c
+chanSession :: Channel -> Lens' Proto (Maybe RSession)
+chanSession c = chans . at c
 
 chanSessions :: [Channel] -> Proto -> [Maybe RSession]
-chanSessions cs p = map (`chanSession` p) cs
+chanSessions cs p = [ p ^. chanSession c | c <- cs ]
 
 mkProto :: [(Channel,RSession)] -> Proto
 mkProto css = MkProto (l2m css) (singleConstraint (l2s cs))
@@ -103,8 +126,25 @@ mkProto css = MkProto (l2m css) (singleConstraint (l2s cs))
 protoAx :: RSession -> Channel -> Channel -> [Channel] -> Proto
 protoAx s c d es = mkProto ((c,s):(d,dual s):map (\e -> (e, log s)) es)
 
-replProtoWhen :: (Channel -> Bool) -> Term -> Proto -> Proto
+replProtoWhen :: (Channel -> Bool) -> Term -> Endom Proto
 replProtoWhen cond n = chans . imapped %@~ replRSessionWhen where
   replRSessionWhen c s | cond c    = replRSession n s
                        | otherwise = s
+
+parallelProtos :: Verbosity -> Proto -> Proto -> Proto
+parallelProtos v proto0 proto1 =
+  debugTraceWhen (v && noConstraints ks0 && noConstraints ks1)
+    (concat
+      [["Merge constraints:"]
+      ,prettyConstraints ks0
+      ,["******************"]
+      ,prettyConstraints ks1
+      ]) $
+    MkProto mchans ks (proto0 ^. orders ++ proto1 ^. orders)
+  where
+    ks0    = proto0 ^. constraints
+    ks1    = proto1 ^. constraints
+    ks     = mergeConstraints ks0 ks1
+    mchans = Map.mergeWithKey (error "mergeSession") id id
+                              (proto0 ^. chans) (proto1 ^. chans)
 -- -}

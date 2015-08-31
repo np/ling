@@ -18,14 +18,11 @@ import Control.Monad.Reader
 import Control.Monad.Error.Class
 import Control.Applicative
 import Control.Lens
-import Debug.Trace
-
-type Msg = String
 
 data ProcDef = ProcDef Name [ChanDec] Proc Proto
 
 data TCEnv = TCEnv
-  { _verbosity :: Bool
+  { _verbosity :: Verbosity
   , _evars     :: Map Name Typ
   -- ^ Term types
   , _edefs     :: Map Name Term
@@ -197,7 +194,7 @@ checkApp typ (e:es) = do
 debug :: [Msg] -> TC ()
 debug xs = do
   v <- view verbosity
-  when v $ trace (unlines (map ("[DEBUG]  "++) xs)) (return ())
+  debugTraceWhen v xs (return ())
 
 assert :: Bool -> [Msg] -> TC ()
 assert True  _    = return ()

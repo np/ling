@@ -116,18 +116,8 @@ checkProcs [] = return emptyProto
 checkProcs (proc : procs) = do
   proto0 <- checkProc  proc
   proto1 <- checkProcs procs
-  let ks0    = proto0 ^. constraints
-      ks1    = proto1 ^. constraints
-      ks     = mergeConstraints ks0 ks1
-      mchans = Map.mergeWithKey (error "mergeSession") id id
-                                (proto0 ^. chans) (proto1 ^. chans)
-  unless (noConstraints ks0 && noConstraints ks1) . debug . concat $
-    [["Merge constraints:"]
-    ,prettyConstraints ks0
-    ,["******************"]
-    ,prettyConstraints ks1
-    ]
-  return $ MkProto mchans ks (proto0 ^. orders ++ proto1 ^. orders)
+  v      <- view verbosity
+  return $ parallelProtos v proto0 proto1
 
 checkProgram :: Program -> TC ()
 checkProgram (Program decs) = checkDecs decs
@@ -157,13 +147,13 @@ checkDec (Dec d cds proc) kont = do
   proto <- checkProc proc
   checkChanDecs proto cds
   let proto' = rmChans cs proto
-  assert (isEmptyProto proto') $
+  assert (proto' ^. isEmptyProto) $
     "These channels have not been introduced:" :
     prettyChanDecs proto'
   local (pdefs . at d .~ Just (ProcDef d cds proc proto)) kont
 
 checkChanDec :: Proto -> ChanDec -> TC ()
-checkChanDec proto (Arg c s) = checkOptSession c s $ chanSession c proto
+checkChanDec proto (Arg c s) = checkOptSession c s $ proto ^. chanSession c
 
 checkChanDecs :: Proto -> [ChanDec] -> TC ()
 checkChanDecs = mapM_ . checkChanDec
@@ -276,10 +266,10 @@ checkAct (pref : prefs) procs = do
               return (proto,  WithConstraint)
         return $ substChans flag (ds, (c,one s)) proto'
       Send c e -> do
-        let cSession = defaultEndR $ chanSession c proto
+        let cSession = defaultEndR $ proto ^. chanSession c
         typ <- inferTerm e
         return $ addChanWithOrder (c, mapR (Snd typ) cSession) proto
       Recv c (Arg _x typ) -> do
         checkTyp typ
-        let cSession = defaultEndR $ chanSession c proto
+        let cSession = defaultEndR $ proto ^. chanSession c
         return $ addChanWithOrder (c, mapR (Rcv typ) cSession) proto

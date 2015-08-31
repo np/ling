@@ -8,6 +8,11 @@ import Data.Set (Set)
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Control.Lens
+import Debug.Trace
+
+type Endom a = a -> a
+type Msg = String
+type Verbosity = Bool
 
 data Arg a = Arg { _argName :: Name, _unArg :: a }
   deriving (Eq,Ord,Show,Read)
@@ -15,6 +20,10 @@ data Arg a = Arg { _argName :: Name, _unArg :: a }
 $(makeLenses ''Arg)
 
 type Channel     = Name
+
+debugTraceWhen :: Bool -> [Msg] -> a -> a
+debugTraceWhen b xs =
+  if b then trace (unlines (map ("[DEBUG]  "++) xs)) else id
 
 optChanDecs :: OptChanDecs -> [ChanDec]
 optChanDecs NoChanDecs       = []
