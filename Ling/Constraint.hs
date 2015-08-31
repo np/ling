@@ -1,4 +1,3 @@
--- {-# LANGUAGE TemplateHaskell #-}
 module Ling.Constraint
   ( Constraint
   , Constraints
