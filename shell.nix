@@ -7,4 +7,8 @@ nixpkgs.lib.overrideDerivation
        cabal-install
        BNFC
        ghc-mod
+       hlint
+       stylish-haskell
+       pointfree
+       pointful
     ]);})
