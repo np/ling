@@ -16,7 +16,33 @@ executable Ling
   build-tools: alex, happy
   main-is: Ling.hs
   ghc-options:       -Wall
-  other-modules:     Ling.Lex, Ling.Par, MiniC.Lex, MiniC.Par
+  other-modules:
+   Ling.Abs,
+   Ling.Compile.C,
+   Ling.Constraint,
+   Ling.Equiv,
+   Ling.ErrM,
+   Ling.Lex,
+   Ling.Norm,
+   Ling.Par,
+   Ling.Print,
+   Ling.Print.Instances,
+   Ling.Proc,
+   Ling.Proc.Checker,
+   Ling.Proto,
+   Ling.Reify,
+   Ling.Rename,
+   Ling.Scoped,
+   Ling.Sequential,
+   Ling.Session,
+   Ling.Subst,
+   Ling.Term.Checker,
+   Ling.Utils,
+   MiniC.Abs,
+   MiniC.Lex,
+   MiniC.Par,
+   MiniC.Print
+
   -- other-extensions:
   build-depends:       base >=4.7 && <4.9, array, containers,
                        lens, mtl
