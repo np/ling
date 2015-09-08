@@ -7,19 +7,21 @@ import Data.List
 
 import Ling.Utils
 import Ling.Norm
-import Ling.Subst
+import Ling.Subst (substi)
 import Ling.Session
 
-freeChans :: Proc -> Set Channel
+type FreeChans a = a -> Set Channel
+
+freeChans :: FreeChans Proc
 freeChans (prefs `Act` procs) = fcAct prefs procs
 freeChans (Ax _ c d es)       = l2s (c:d:es)
 freeChans (At _ cs)           = l2s cs
 freeChans NewSlice{}          = error "freeChans/NewSlice undefined"
 
-bndChans :: [ChanDec] -> Set Channel
+bndChans :: FreeChans [ChanDec]
 bndChans = l2s . map _argName
 
-fcProcs :: Procs -> Set Channel
+fcProcs :: FreeChans Procs
 fcProcs = Set.unions . map freeChans
 
 fcAct :: [Pref] -> Procs -> Set Channel
@@ -47,7 +49,7 @@ actPs :: [Pref] -> Procs -> Procs
 []    `actPs` procs = procs
 prefs `actPs` procs = [prefs `actP` procs]
 
-filter0s :: Procs -> Procs
+filter0s :: Endom Procs
 filter0s = concatMap filter0
 
 actP0s :: [Pref] -> Procs -> Procs
@@ -60,11 +62,11 @@ filter0 p = case p of
   At{}              -> [p]
   NewSlice{}        -> [p]
 
-suffChan :: Channel -> Int -> Channel
-suffChan (Name c) i = Name (c ++ show i ++ "#")
+suffChan :: Int -> Endom Channel
+suffChan i = suffName $ show i ++ "#"
 
-suffChans :: Channel -> Int -> [Channel]
-suffChans c n = map (suffChan c) [0..n]
+suffChans :: Int -> Channel -> [Channel]
+suffChans n c = map (`suffChan` c) [0..n]
 
 noSession :: Channel -> ChanDec
 noSession c = Arg c Nothing
@@ -82,9 +84,9 @@ fwdParTen rss c d es = pref `actP` ps
   where
     ss   = map unRSession rss
     n    = length ss - 1
-    cs   = suffChans c n
-    ds   = suffChans d n
-    ess  = map (\i -> map (`suffChan` i) es) [0..n]
+    cs   = suffChans n c
+    ds   = suffChans n d
+    ess  = map (\i -> map (suffChan i) es) [0..n]
     ps   = zipWith4 fwdP ss cs ds ess
     pref = split' TenK c cs : split' ParK d ds : zipWith (split' ParK) es (transpose ess)
 
@@ -108,12 +110,9 @@ fwdP s0 c d es =
 replProcs :: Int -> Name -> Procs -> Procs
 replProcs n = concatMap . replProc n
 
-substi :: Subst a => (Name, Int) -> a -> a
-substi (x, i) = subst1 (x, Lit(fromIntegral i))
-
 replArg :: Int -> Name -> ChanDec -> [ChanDec]
 replArg n x (Arg d s) = map go [0..n-1] where
-  go i = Arg (suffChan d i) (substi (x, i) s)
+  go i = Arg (suffChan i d) (substi (x, i) s)
 
 replProc' :: Int -> Name -> Proc -> Procs
 replProc' n x p = map go [0..n-1] where

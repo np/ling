@@ -29,7 +29,7 @@ import Ling.Utils
 import Ling.Constraint
 import Ling.Session
 import Ling.Norm
-import Ling.Print.Instances ()
+import Ling.Print.Instances (prtLst)
 
 import qualified Data.Map as Map
 import Data.Map (Map)
@@ -45,7 +45,7 @@ $(makeLenses ''Proto)
 
 prettyProto :: Proto -> [String]
 prettyProto p =
-  [" channels:"] ++ prettyChanDecs p
+  [" channels:", prettyChanDecs p]
   ++
   if p ^. constraints . to noConstraints then [] else
   " constraints:"
@@ -59,8 +59,8 @@ prettyProto p =
 chanDecs :: Fold Proto (Arg RSession)
 chanDecs = chans . to m2l . each . to (uncurry Arg)
 
-prettyChanDecs :: Proto -> [String]
-prettyChanDecs = prettyList . toListOf chanDecs
+prettyChanDecs :: Proto -> String
+prettyChanDecs = render . prtLst . toListOf chanDecs
 
 emptyProto :: Proto
 emptyProto = MkProto Map.empty emptyConstraints []

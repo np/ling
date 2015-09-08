@@ -3,6 +3,9 @@ module Ling.Norm where
 import Ling.Abs (Name(Name))
 import Ling.Utils
 
+import Data.Map (Map)
+import Control.Lens
+
 type ChanDec = Arg (Maybe RSession)
 type VarDec  = Arg Typ
 
@@ -85,3 +88,20 @@ tSession = Def (Name "Session") []
 
 multName :: Name
 multName = Name "_*_"
+
+actVarDecs :: Pref -> [VarDec]
+actVarDecs pref =
+  case pref of
+    Recv _ a -> [a]
+    _        -> []
+
+kindLabel :: TraverseKind -> String
+kindLabel ParK = "par/⅋"
+kindLabel TenK = "tensor/⊗"
+kindLabel SeqK = "sequence/»"
+
+actLabel :: Pref -> String
+actLabel Nu{}          = "restriction/ν"
+actLabel (Split k _ _) = "split:" ++ kindLabel k
+actLabel Send{}        = "send"
+actLabel Recv{}        = "recv"

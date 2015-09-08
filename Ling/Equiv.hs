@@ -1,22 +1,23 @@
 {-# LANGUAGE TemplateHaskell #-}
--- , GeneralizedNewtypeDeriving, FlexibleInstances, MultiParamTypeClasses #-}
-module Ling.Equiv (Equiv(equiv), EqEnv, emptyEqEnv) where
+module Ling.Equiv (Equiv(equiv), EqEnv, emptyEqEnv, allEquiv) where
 
-import Control.Lens
+import           Control.Lens
 
-import qualified Data.Map as Map
-import Data.Map (Map)
-import Data.List (findIndex)
+import           Data.List            (elemIndex)
+import           Data.Map             (Map)
+import qualified Data.Map             as Map
 
-import Ling.Abs (Name)
-import Ling.Utils (Arg(Arg))
-import Ling.Norm
-import Ling.Subst
+import           Ling.Abs             (Name)
+import           Ling.Norm
+import           Ling.Print.Instances ()
+import           Ling.Scoped          (Defs, Scoped (Scoped), ldefs, scoped,
+                                       unDef)
+import           Ling.Utils           (Arg (Arg))
 
 data EqEnv = EqEnv
   { _eqnms  :: [(Name,Name)]
   , _edefs0
-  , _edefs1 :: Map Name Term
+  , _edefs1 :: Defs
   }
 
 $(makeLenses ''EqEnv)
@@ -24,16 +25,25 @@ $(makeLenses ''EqEnv)
 emptyEqEnv :: Map Name Term -> EqEnv
 emptyEqEnv x = EqEnv [] x x
 
+-- TODO binders
+-- Removing the definitions is wrong they might be needed by others
+-- "Better" solution, use a different binder
 ext :: EqEnv -> Name -> Name -> EqEnv
 ext env x0 x1 = env & eqnms  %~ ((x0,x1):)
-                    & edefs0 %~ Map.delete x0
-                    & edefs1 %~ Map.delete x1
+                    & edefs0 . at x0 .~ Nothing
+                    & edefs1 . at x1 .~ Nothing
 
 class Equiv a where
   equiv :: EqEnv -> a -> a -> Bool
 
+-- TODO (Ok1)
 equivBnd :: Equiv a => EqEnv -> Arg a -> a -> Arg a -> a -> Bool
 equivBnd env (Arg x0 s0) u0 (Arg x1 s1) u1 = equiv env s0 s1 && equiv (ext env x0 x1) u0 u1
+
+allEquiv :: Equiv a => EqEnv -> [a] -> Bool
+allEquiv _   []         = False
+allEquiv _   [_]        = True
+allEquiv env (x0:x1:xs) = equiv env x0 x1 && allEquiv env (x0:xs)
 
 instance (Equiv a, Equiv b) => Equiv (a, b) where
   equiv env (x0,y0) (x1,y1) = equiv env x0 x1 && equiv env y0 y1
@@ -48,7 +58,13 @@ equivDef env (Def x0 es0) (Def x1 es1) = equiv env (x0, es0) (x1, es1)
 equivDef _   _            _            = False
 
 nameIndex :: Name -> [Name] -> Either Int Name
-nameIndex x = maybe (Right x) Left . findIndex (== x)
+nameIndex x = maybe (Right x) Left . elemIndex x
+
+instance Equiv a => Equiv (Scoped a) where
+  equiv env s0 s1 =
+    equiv (env & edefs0 %~ Map.union (s0 ^. ldefs)
+               & edefs1 %~ Map.union (s1 ^. ldefs))
+          (s0 ^. scoped) (s1 ^. scoped)
 
 instance Equiv Name where
   equiv env x0 x1 = i0 == i1
@@ -61,17 +77,17 @@ instance Equiv Term where
   equiv env t0 t1 =
     t0 == t1 || -- Quadratic but safe
     equivDef env t0 t1 ||
-    case (t0',t1') of
-      (Def x0 es0,   Def x1 es1)   -> equiv env (x0, es0) (x1, es1)
+    case (s0'^.scoped,s1'^.scoped) of
+      (Def x0 es0,   Def x1 es1)   -> equiv env' (x0, es0) (x1, es1)
       (Lit l0,       Lit l1)       -> l0 == l1
       (Con c0,       Con c1)       -> c0 == c1
-      (Case u0 brs0, Case u1 brs1) -> equiv env (u0,brs0) (u1,brs1)
+      (Case u0 brs0, Case u1 brs1) -> equiv env' (u0,brs0) (u1,brs1)
       (TTyp,         TTyp)         -> True
-      (Lam  arg0 u0, Lam  arg1 u1) -> equivBnd env arg0 u0 arg1 u1
-      (TFun arg0 s0, TFun arg1 s1) -> equivBnd env arg0 s0 arg1 s1
-      (TSig arg0 s0, TSig arg1 s1) -> equivBnd env arg0 s0 arg1 s1
-      (Proc cds0 p0, Proc cds1 p1) -> error "Equiv Term: Proc: TODO"
-      (TProto ss0,   TProto ss1)   -> equiv env ss0 ss1
+      (Lam  arg0 u0, Lam  arg1 u1) -> equivBnd env' arg0 u0 arg1 u1
+      (TFun arg0 u0, TFun arg1 u1) -> equivBnd env' arg0 u0 arg1 u1
+      (TSig arg0 u0, TSig arg1 u1) -> equivBnd env' arg0 u0 arg1 u1
+      (Proc _cds0 _p0, Proc _cds1 _p1) -> error "Equiv Term: Proc: TODO"
+      (TProto ss0,   TProto ss1)   -> equiv env' ss0 ss1
 
       (Def{},        _)            -> False
       (Lit{},        _)            -> False
@@ -86,8 +102,12 @@ instance Equiv Term where
     where
       defs0 = env ^. edefs0
       defs1 = env ^. edefs1
-      t0'   = unDef defs0 t0
-      t1'   = unDef defs1 t1
+      s0    = Scoped defs0 t0
+      s1    = Scoped defs1 t1
+      s0'   = unDef s0
+      s1'   = unDef s1
+      env'  = env & edefs0 .~ (s0'^.ldefs)
+                  & edefs1 .~ (s1'^.ldefs)
 
 instance Equiv RSession where
   equiv _ _ _ = error "Equiv Session: TODO"

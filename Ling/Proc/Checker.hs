@@ -1,8 +1,5 @@
-{-# LANGUAGE FlexibleInstances, TypeFamilies, MultiParamTypeClasses,
-             Rank2Types #-}
+{-# LANGUAGE FlexibleInstances, TypeFamilies, MultiParamTypeClasses #-}
 module Ling.Proc.Checker where
-
--- TODO deal with name re-use
 
 import Prelude hiding (log)
 import Ling.Abs (Name)
@@ -16,7 +13,6 @@ import Ling.Term.Checker
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import Data.Map (Map)
 import Control.Monad.Reader (local, unless, when)
 import Control.Monad.Error (throwError)
 import Control.Lens
@@ -97,12 +93,12 @@ checkProc (prefs `Act` procs) = checkAct prefs procs
 checkProc (Ax s c d es)       = return $ protoAx (one s) c d es
 checkProc (NewSlice cs t i p) =
   do checkTerm int t
-     proto <- local (evars . at i .~ Just int) $ checkProc p
-     mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to Map.toList)
+     proto <- checkVarDec (Arg i int) $ checkProc p
+     mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
      return $ replProtoWhen (`elem` cs) t proto
 
 checkProc (At e cs) =
-  do t <- inferTerm e
+  do t <- inferTerm' e
      case t of
        TProto ss -> do
          assertEqual (length cs) (length ss)
@@ -125,15 +121,8 @@ checkProgram (Program decs) = checkDecs decs
 checkDecs :: [Dec] -> TC ()
 checkDecs = foldr checkDec (return ())
 
-checkNotIn :: Lens' TCEnv (Map Name v) -> String -> Name -> TC ()
-checkNotIn l msg c = do
-  b <- view $ l . hasKey c
-  assert (not b) ["Already defined " ++ msg ++ ": ", pretty c]
-
 checkDec :: Dec -> TC () -> TC ()
-checkDec (Sig d typ mt)   kont = do
-  checkNotIn evars "name" d
-  checkVarDef d typ mt kont
+checkDec (Sig d typ mt)   kont = checkVarDef d typ mt kont
 checkDec (Dat d cs)       kont = do
   checkNoDups ("in the definition of " ++ pretty d) cs
   checkNotIn evars "name" d
@@ -148,8 +137,8 @@ checkDec (Dec d cds proc) kont = do
   checkChanDecs proto cds
   let proto' = rmChans cs proto
   assert (proto' ^. isEmptyProto) $
-    "These channels have not been introduced:" :
-    prettyChanDecs proto'
+    [ "These channels have not been introduced:"
+    , prettyChanDecs proto']
   local (pdefs . at d .~ Just (ProcDef d cds proc proto)) kont
 
 checkChanDec :: Proto -> ChanDec -> TC ()
@@ -158,18 +147,7 @@ checkChanDec proto (Arg c s) = checkOptSession c s $ proto ^. chanSession c
 checkChanDecs :: Proto -> [ChanDec] -> TC ()
 checkChanDecs = mapM_ . checkChanDec
 
-kindLabel :: TraverseKind -> String
-kindLabel ParK = "par/⅋"
-kindLabel TenK = "tensor/⊗"
-kindLabel SeqK = "sequence/»"
-
-actLabel :: Pref -> String
-actLabel Nu{}          = "restriction/ν"
-actLabel (Split k _ _) = "split:" ++ kindLabel k
-actLabel Send{}        = "send"
-actLabel Recv{}        = "recv"
-
-debugCheckAct :: Proto -> Pref -> [Pref] -> Procs -> TC Proto -> TC Proto
+debugCheckAct :: Proto -> Pref -> [Pref] -> Procs -> Endom (TC Proto)
 debugCheckAct proto pref prefs procs m = do
   unless (null prefs && null procs) $
     debug $ [ "Checking " ++ actLabel pref ++ proc
@@ -182,12 +160,6 @@ debugCheckAct proto pref prefs procs m = do
 
   where proc  = " `" ++ pretty pref ++ " " ++ proc' ++ "`"
         proc' = pretty (actP prefs procs)
-
-actTCEnv :: Pref -> TCEnv -> TCEnv
-actTCEnv pref env =
-  env & case pref of
-          Recv _ (Arg x typ) -> evars . at x .~ Just typ
-          _                  -> id
 
 {-
 Γ(P) is the protocol, namely mapping from channel to sessions of the process P
@@ -233,7 +205,7 @@ or classically:
 checkAct :: [Pref] -> Procs -> TC Proto
 checkAct []             procs = checkProcs procs
 checkAct (pref : prefs) procs = do
-  proto <- local (actTCEnv pref) $ checkAct prefs procs
+  proto <- checkVarDecs (actVarDecs pref) $ checkAct prefs procs
   debugCheckAct proto pref prefs procs $
     case pref of
       Nu (Arg c cOS) (Arg d dOS) -> do
@@ -267,7 +239,7 @@ checkAct (pref : prefs) procs = do
         return $ substChans flag (ds, (c,one s)) proto'
       Send c e -> do
         let cSession = defaultEndR $ proto ^. chanSession c
-        typ <- inferTerm e
+        typ <- inferTerm' e
         return $ addChanWithOrder (c, mapR (Snd typ) cSession) proto
       Recv c (Arg _x typ) -> do
         checkTyp typ

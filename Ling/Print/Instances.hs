@@ -1,9 +1,38 @@
 module Ling.Print.Instances where
 
-import Ling.Print
-import Ling.Utils
-import Ling.Norm
-import Ling.Reify
+import           Data.Map    (Map)
+import           Data.Set    (Set)
+import           Ling.Norm
+import           Ling.Print
+import           Ling.Reify
+import           Ling.Scoped
+import           Ling.Utils
+
+txt :: String -> Doc
+txt = doc . showString
+
+prtSeq :: Doc -> Doc -> Doc -> [Doc] -> Doc
+prtSeq p b e []     = concatD [p, b, e]
+prtSeq p b e [x]    = concatD [p, b, x, e]
+prtSeq p b e (x:xs) = concatD $  [nl, p, b, txt " ", x]
+                              ++ [z | y <- xs, z <- [nl, p, txt ",", y]]
+                              ++ [nl, p, e]
+
+prtLst :: Print a => [a] -> Doc
+prtLst = prtSeq (txt "  ") id id . map (prt 0)
+
+instance (Ord a, Print a) => Print (Set a) where
+  prt _i = prtSeq (txt "  ") (txt "⦃") (txt "⦄") . map (prt 0) . s2l
+
+instance (Ord k, Print k, Print v) => Print (Map k v) where
+  prt _i = prtSeq (txt "  ") (txt "⦃") (txt "⦄") . map prettyKV . m2l
+    where prettyKV (k,v) = prt 0 k . txt " ↦ " . prt 0 v
+
+instance Print a => Print (Scoped a) where
+  prt _i (Scoped ld x) =
+    concatD [ doc (showString "let ") , prt 0 ld
+            , doc (showString "in")
+            , prt 0 x ]
 
 -- Unused
 instance Print a => Print (Arg a) where

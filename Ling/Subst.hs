@@ -1,19 +1,16 @@
 module Ling.Subst where
 
 import qualified Data.Map as Map
-import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Bifunctor
 import Control.Applicative
 import Control.Lens
 
 import Ling.Abs (Name)
-import Ling.Utils
+import Ling.Utils hiding (subst1)
 import Ling.Norm
+import Ling.Scoped hiding (subst1)
 -- import Ling.Print.Instances ()
-
-type Sub = Map Name Term
-type Defs = Sub
 
 class Subst a where
   subst :: Sub -> a -> a
@@ -21,26 +18,37 @@ class Subst a where
 subst1 :: Subst a => (Name, Term) -> a -> a
 subst1 = subst . l2m . pure
 
-app :: Defs -> Term -> [Term] -> Term
-app _    t []     = t
-app defs t (u:us) = case unDef defs t of
-                      Lam (Arg x _) t' -> app defs (subst1 (x,u) t') us
-                      Def x es         -> Def x (es ++ us)
-                      _                -> error "Ling.Subst.app: IMPOSSIBLE"
+substi :: Subst a => (Name, Int) -> a -> a
+substi (x, i) = subst1 (x, Lit(fromIntegral i))
+
+appG :: (Term -> Term) -> Term -> [Term] -> Term
+appG g t []     = g t
+appG g t (u:us) = case g t of
+                    Lam (Arg x _) t' -> appG g (subst1 (x,u) t') us
+                    Def x es         -> Def x (es ++ u:us)
+                    _                -> error "Ling.Subst.app: IMPOSSIBLE"
 
 -- Spec: app0 = app Map.empty
 app0 :: Term -> [Term] -> Term
+app0 = appG id
+{-
 app0 t []     = t
 app0 t (u:us) = case t of
                   Lam (Arg x _) t' -> app0 (subst1 (x,u) t') us
                   Def x es         -> Def x (es ++ u:us)
                   _                -> error "Ling.Subst.app0: IMPOSSIBLE"
+-}
 
+{-
 unDef :: Defs -> Term -> Term
 unDef defs e0 =
   case e0 of
-    Def x es -> fromMaybe e0 (app defs <$> defs ^. at x <*> pure es)
+    Def x es -> fromMaybe e0 (app <$> (Scoped defs <$> defs ^. at x) <*> pure es)
     _        -> e0
+-}
+
+unScoped :: Subst a => Scoped a -> a
+unScoped s = subst (s ^. ldefs) (s ^. scoped)
 
 substName :: Sub -> Name -> Term
 substName f x = fromMaybe (Def x []) (f ^. at x)
@@ -68,16 +76,14 @@ instance Subst a => Subst [a] where
 instance Subst a => Subst (Maybe a) where
   subst = fmap . subst
 
-type E a = a -> a
-
-hideArg :: Arg a -> E Sub
+hideArg :: Arg a -> Endom Sub
 hideArg (Arg x _) = Map.delete x
 
-hidePref :: Pref -> E Sub
+hidePref :: Pref -> Endom Sub
 hidePref (Recv _ arg) = hideArg arg
 hidePref _            = id
 
-hidePrefs :: [Pref] -> E Sub
+hidePrefs :: [Pref] -> Endom Sub
 hidePrefs = flip (foldr hidePref)
 
 instance Subst Pref where

@@ -19,7 +19,22 @@ data Arg a = Arg { _argName :: Name, _unArg :: a }
 
 $(makeLenses ''Arg)
 
-type Channel     = Name
+type Channel = Name
+
+nameString :: Iso' Name String
+nameString = iso unName Name
+
+prefName :: String -> Endom Name
+prefName s n = n & nameString %~ (s ++)
+
+suffName :: String -> Endom Name
+suffName s n = n & nameString %~ (++ s)
+
+traceShow :: Show a => String -> a -> a
+traceShow msg x = trace (msg ++ " " ++ show x) x
+
+tracePretty :: Print a => String -> a -> a
+tracePretty msg x = trace (msg ++ " " ++ pretty x) x
 
 debugTraceWhen :: Bool -> [Msg] -> a -> a
 debugTraceWhen b xs =
@@ -72,29 +87,7 @@ render d = rend 0 (map ($ "") $ d []) "" where
     t        :ts -> space t . rend i ts
     _            -> id
   -- new i   = showChar '\n' . replicateS (2*i) (showChar ' ') . dropWhile isSpace
-  space t = showString t . (\s -> if null s then "" else (' ':s))
-
--- TODO these should build 'Doc's
-
-prettySeq :: String -> String -> String -> [String] -> [String]
-prettySeq p b e []     = [p ++ b ++ e]
-prettySeq p b e [x]    = [p ++ b ++ x ++ e]
-prettySeq p b e (x:xs) = (p ++ b ++ " " ++ x)
-                       : map ((p ++ ", ") ++) xs
-                       ++ [p ++ e]
-
-prettyList :: Print a => [a] -> [String]
-prettyList = prettySeq "  " "" "" . map pretty
-
-prettySet :: (Ord a, Print a) => Set a -> [String]
-prettySet = prettySeq "  " "⦃" "⦄" . map pretty . s2l
-
-prettySets :: (Ord a, Print a) => [Set a] -> [String]
-prettySets = prettyList . map s2l
-
-prettyMap :: (Ord k, Print k, Print v) => Map k v -> [String]
-prettyMap = prettySeq "  " "⦃" "⦄" . map prettyKV . m2l
-  where prettyKV (k,v) = pretty k ++ " ↦ " ++ pretty v
+  space t = showString t . (\s -> if null s then "" else ' ':s)
 
 infixr 3 ||>
 (||>) :: Monad m => Bool -> m Bool -> m Bool
@@ -136,6 +129,10 @@ substList :: Ord a => Set a -> a -> [a] -> [a]
 substList xs y = rmDups . map f where
   f z | z `Set.member` xs = y
       | otherwise         = z
+
+subst1 :: Eq a => (a,a) -> Endom a
+subst1 (x,y) z | x == z    = y
+               | otherwise = z
 
 hasKey :: At m => Index m -> Getter m Bool
 hasKey k = at k . to (isn't _Nothing)

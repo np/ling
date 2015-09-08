@@ -128,7 +128,9 @@ rmChan :: Channel -> Env -> Env
 rmChan c env = env & locs . at c .~ Nothing
 
 addEVar :: Name -> C.Ident -> Env -> Env
-addEVar x y env = env & evars . at x .~ Just y
+addEVar x y env
+  | env ^. evars . hasKey x = error $ "addEVar/IMPOSSIBLE: " ++ show x ++ " is already bound"
+  | otherwise               = env & evars . at x .~ Just y
 
 (!) :: Env -> Name -> C.LVal
 env ! i = fromMaybe (error $ "lookup/env " ++ show i ++ " in " ++ show (map unName (Map.keys (env ^. locs))))
