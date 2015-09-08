@@ -3,9 +3,6 @@ module Ling.Norm where
 import Ling.Abs (Name(Name))
 import Ling.Utils
 
-import Data.Map (Map)
-import Control.Lens
-
 type ChanDec = Arg (Maybe RSession)
 type VarDec  = Arg Typ
 

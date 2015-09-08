@@ -17,7 +17,7 @@ import           Data.Map     (Map)
 import qualified Data.Map     as Map
 import           Data.Maybe   (fromMaybe)
 
-import           Ling.Abs     (Name (Name))
+import           Ling.Abs     (Name)
 import           Ling.Norm
 import           Ling.Utils   hiding (subst1)
 
