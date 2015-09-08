@@ -214,17 +214,19 @@ inferDef f es = do
   mtyp  <- view $ evars . at f
   defs  <- view edefs
   case mtyp of
-    Just typ -> checkApp f (Scoped defs typ) es
+    Just typ -> checkApp f 0 (Scoped defs typ) es
     Nothing  -> throwError $ "unknown definition " ++ unName f
 
-checkApp :: Name -> Scoped Typ -> [Term] -> TC (Scoped Typ)
-checkApp _ typ []     = return typ
-checkApp f typ (e:es) =
+checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC (Scoped Typ)
+checkApp _ _ typ []     = return typ
+checkApp f n typ (e:es) =
   case unDef typ of
     (Scoped defs typ'@(TFun (Arg x ty) s)) -> do
       checkTerm' (Scoped defs ty) e
-      checkApp f (Ren.subst1 f (x, e) (Scoped defs s)) es
-    _ -> throwError "checkApp: impossible"
+      checkApp f (n + 1) (Ren.subst1 f (x, e) (Scoped defs s)) es
+    _ -> throwError ("Too many arguments given to " ++ pretty f ++ ", " ++
+                     show n ++ " arguments expected and " ++
+                     show (n + 1 + length es) ++ " were given.")
 
 whenDebug :: MonadReader TCEnv m => m () -> m ()
 whenDebug f = do
