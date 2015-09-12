@@ -12,10 +12,9 @@ import           Ling.ErrM
 import           Ling.Norm
 import           Ling.Print                hiding (render)
 import           Ling.Proto
-import qualified Ling.Rename               as Ren
 import           Ling.Scoped
 import           Ling.Subst                (Subst, unScoped)
-import           Ling.Utils
+import           Ling.Utils                hiding (subst1)
 
 import           Control.Applicative       hiding (empty)
 import           Control.Lens
@@ -223,7 +222,7 @@ checkApp f n typ (e:es) =
   case unDef typ of
     (Scoped defs typ'@(TFun (Arg x ty) s)) -> do
       checkTerm' (Scoped defs ty) e
-      checkApp f (n + 1) (Ren.subst1 f (x, e) (Scoped defs s)) es
+      checkApp f (n + 1) (subst1 f (x, e) (Scoped defs s)) es
     _ -> throwError ("Too many arguments given to " ++ pretty f ++ ", " ++
                      show n ++ " arguments expected and " ++
                      show (n + 1 + length es) ++ " were given.")

@@ -5,8 +5,7 @@ import           Control.Lens
 
 import           Ling.Abs            (Name)
 import           Ling.Norm
-import           Ling.Scoped
-import           Ling.Utils          as Utils
+import           Ling.Utils
 -- import        Ling.Print.Instances ()
 
 type Ren = Name -> Name
@@ -15,13 +14,7 @@ class Rename a where
   rename :: Ren -> Endom a
 
 rename1 :: Rename a => (Name, Name) -> Endom a
-rename1 = rename . Utils.subst1
-
-subst1 :: Rename a => Name -> (Name, Term) -> Scoped a -> Scoped a
-subst1 f (x,e) (Scoped defs s) =
-  Scoped (addEDef x' e defs) (rename1 (x,x') s)
-  where
-    x'  = prefName (unName f ++ "#") x
+rename1 = rename . subst1
 
 instance Rename Name where
   rename f n = f n

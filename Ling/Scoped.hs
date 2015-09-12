@@ -19,6 +19,7 @@ import           Data.Maybe   (fromMaybe)
 
 import           Ling.Abs     (Name)
 import           Ling.Norm
+import           Ling.Rename
 import           Ling.Utils   hiding (subst1)
 
 type Sub  = Map Name Term
@@ -47,15 +48,18 @@ addEDef x e m
   | x `Map.member` m = error "addEDef: IMPOSSIBLE"
   | otherwise        = Map.insert x e m
 
-subst1 :: (Name,Term) -> Scoped Term -> Scoped Term
-subst1 (x,u) (Scoped defs t) = Scoped (addEDef x u defs) t
+subst1 :: Rename a => Name -> (Name, Term) -> Scoped a -> Scoped a
+subst1 d (x,e) (Scoped defs s) =
+  Scoped (addEDef x' e defs) (rename1 (x,x') s)
+  where
+    x'  = prefName (unName d ++ "#") x
 
-app :: Scoped Term -> [Term] -> Scoped Term
-app t []     = unDef t
-app t (u:us) =
+app :: Name -> Scoped Term -> [Term] -> Scoped Term
+app _ t []     = unDef t
+app d t (u:us) =
   case unDef t of
     Scoped defs (Lam (Arg x _) t') ->
-      app (subst1 (x,u) (Scoped defs t')) us
+      app d (subst1 d (x,u) (Scoped defs t')) us
     Scoped defs (Def x es) ->
       Scoped defs $ Def x (es ++ u:us)
     _                -> error "Ling.Subst.app: IMPOSSIBLE"
@@ -63,7 +67,7 @@ app t (u:us) =
 unDef :: Scoped Term -> Scoped Term
 unDef s@(Scoped defs t) =
   case t of
-    Def x es -> fromMaybe s (app <$> (Scoped defs <$> defs ^. at x) <*> pure es)
-                                         --  ^^^^ TOO MUCH, but one can try
+    Def d es -> fromMaybe s (app d <$> (Scoped defs <$> defs ^. at d) <*> pure es)
+                                           --  ^^^^ TOO MUCH, but one can try
     -- to maintain the invariant that renaming happens before inserting in these maps
     _        -> s
