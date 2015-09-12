@@ -17,7 +17,7 @@ rename1 :: Rename a => (Name, Name) -> Endom a
 rename1 = rename . subst1
 
 instance Rename Name where
-  rename f n = f n
+  rename = id
 
 instance Rename Term where
   rename f e0 = case e0 of

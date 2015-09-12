@@ -222,7 +222,7 @@ checkAct (pref : prefs) procs = do
         return $ rmChans ds proto'
       Split k c dOSs -> do
         assertAbsent c proto
-        let ds         = map _argName dOSs
+        let ds         = dOSs^..each.argName
             dsSessions = map defaultEndR $ chanSessions ds proto
             s          = array k dsSessions
         checkChanDecs proto dOSs
