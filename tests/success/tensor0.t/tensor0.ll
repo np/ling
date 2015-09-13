@@ -1,1 +1,1 @@
-tensor0 (c : []) = c[].
+../../../fixtures/sequence/tensor0.ll

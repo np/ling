@@ -1,7 +1,1 @@
-cut_recv_send_send_recv = new (d : ?Int.!Int, c : !Int.?Int)
-  ( send c 1
-    recv c (x : Int)
-  | recv d (y : Int)
-    send d 2
-  )
-.
+../../../fixtures/sequence/cut_recv_send_send_recv.ll

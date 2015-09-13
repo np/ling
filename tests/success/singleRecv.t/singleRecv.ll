@@ -1,1 +1,1 @@
-singleRecv (c : ?Int) = recv c (x : Int).
+../../../fixtures/sequence/singleRecv.ll

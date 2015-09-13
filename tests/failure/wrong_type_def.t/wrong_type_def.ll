@@ -1,1 +1,1 @@
-wrong : Int = Type.
+../../../fixtures/failure/wrong_type_def.ll

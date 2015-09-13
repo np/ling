@@ -1,1 +1,1 @@
-cutEmptyParTensor = new (c : {}, d : []) (c{} | d[]).
+../../../fixtures/sequence/cutEmptyParTensor.ll

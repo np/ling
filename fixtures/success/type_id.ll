@@ -8,10 +8,6 @@ J-refl : (A : Type)(x : A)(P : (y : A)(p : Id A x y)-> Type)(Px : P x (refl A x)
          Id (P x (refl A x)) (J A x P Px x (refl A x)) Px.
 
 -- also called subst
-treasy : (trA : Type)(trx : trA)(trP : (try : trA)-> Type)(trPx : trP trx)(try : trA)(trp : Id trA trx try)-> trP try
-   = \(trA : Type)(trx : trA)(trP : (try : trA)-> Type)(trPx : trP trx)(try : trA)(trp : Id trA trx try)->
-     J trA trx (\(trz : trA)(trq : Id trA trx trz)-> trP trz) trPx try trp.
-
 tr : (A : Type)(x : A)(P : (y : A)-> Type)(Px : P x)(y : A)(p : Id A x y)-> P y
    = \(A : Type)(x : A)(P : (y : A)-> Type)(Px : P x)(y : A)(p : Id A x y)->
      J A x (\(z : A)(q : Id A x z)-> P z) Px y p.

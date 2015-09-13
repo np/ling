@@ -1,1 +1,1 @@
-missingSendConfuseSendRecv = new (c : !Int, d) recv c (x : Int).
+../../../fixtures/failure/missingSendConfusesSendRecv.ll

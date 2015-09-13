@@ -43,7 +43,7 @@ zeroNat : Nat
         .
 
 sucNat : (n : Nat)-> Nat
-       = \(n : Nat)(A : Type)(z : A)(s : (n : A)-> A)-> s (n A z s)
+       = \(n : Nat)(A : Type)(z : A)(s : (m : A)-> A)-> s (n A z s)
        .
 
 addNat : (m : Nat)(n : Nat)-> Nat
@@ -67,12 +67,12 @@ nilList : (X : Type)-> List X
         .
 
 consList : (X : Type)(head : X)(tail : List X)-> List X
-         = \(X : Type)(head : X)(tail : List X)(A : Type)(nil : A)(cons : (head : X)(tail : A)-> A)->
+         = \(X : Type)(head : X)(tail : List X)(A : Type)(nil : A)(cons : (head' : X)(tail' : A)-> A)->
            cons head (tail A nil cons)
          .
 
 mapList : (X : Type)(Y : Type)(f : (x : X)-> Y)(xs : List X)-> List Y
-        = \(X : Type)(Y : Type)(f : (x : X)-> Y)(xs : List X)(A : Type)(nil : A)(cons : (head : Y)(tail : A)-> A)->
+        = \(X : Type)(Y : Type)(f : (x : X)-> Y)(xs : List X)(A : Type)(nil : A)(cons : (head' : Y)(tail' : A)-> A)->
           xs A nil (\(head : X)(tail : A)-> cons (f head) tail)
         .
 -- -}

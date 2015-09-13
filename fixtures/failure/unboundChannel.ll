@@ -1,1 +1,1 @@
-../../tests/failure/unboundChannel.t/unboundChannel.ll
+unboundChannel = recv c (x : Int).

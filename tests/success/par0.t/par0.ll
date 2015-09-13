@@ -1,1 +1,1 @@
-par0 (c : {}) = c{}.
+../../../fixtures/sequence/par0.ll

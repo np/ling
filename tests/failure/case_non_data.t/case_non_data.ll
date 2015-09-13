@@ -1,1 +1,1 @@
-bad : Int = case 42 of { }.
+../../../fixtures/failure/case_non_data.ll

@@ -1,1 +1,1 @@
-tensor1 (c : [!Int]) = c[d] send d 42.
+../../../fixtures/sequence/tensor1.ll

@@ -1,1 +1,1 @@
-ten_par_par_split (c : [{},{}]) = c[d,e] (d{} | e{}).
+../../../fixtures/success/ten_par_par_split.ll

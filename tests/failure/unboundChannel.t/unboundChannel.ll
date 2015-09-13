@@ -1,1 +1,1 @@
-unboundChannel = recv c (x : Int).
+../../../fixtures/failure/unboundChannel.ll

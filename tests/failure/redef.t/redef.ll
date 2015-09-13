@@ -1,1 +1,1 @@
-Int : Type.
+../../../fixtures/failure/redef.ll

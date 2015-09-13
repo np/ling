@@ -1,1 +1,1 @@
-reusedParChannel (c : {}) = c{} c{}.
+../../../fixtures/failure/reusedParChannel.ll

@@ -1,1 +1,1 @@
-../../tests/failure/missingSend.t/missingSend.ll
+missingSend = new (c : ?Int, d) recv c (x : Int).

@@ -1,1 +1,1 @@
-../../tests/failure/badTensor2.t/badTensor2.ll
+badTensor2 (c : [!Int,?Int]) = c[d,e] recv e (x : Int) send d x.

@@ -1,1 +1,1 @@
-../../tests/failure/confuseSendRecv2_using_dual.t/confuseSendRecv2_using_dual.ll
+confuseSendRecv2_using_dual = new (c : ~!Int, d)(recv c (x : Int) | recv d (y : Int)).

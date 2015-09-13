@@ -1,1 +1,1 @@
-bad : Type = `bad.
+../../../fixtures/failure/undef_con.ll

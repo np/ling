@@ -1,1 +1,1 @@
-../../tests/failure/missingSendConfusesSendRecv.t/missingSendConfusesSendRecv.ll
+missingSendConfuseSendRecv = new (c : !Int, d) recv c (x : Int).

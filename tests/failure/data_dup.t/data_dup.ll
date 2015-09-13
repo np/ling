@@ -1,1 +1,1 @@
-data Bad = `foo | `bar | `foo.
+../../../fixtures/failure/data_dup.ll

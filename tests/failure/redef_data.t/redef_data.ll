@@ -1,2 +1,1 @@
-data T1 = `c1.
-data T1 = `c2.
+../../../fixtures/failure/redef_data.ll

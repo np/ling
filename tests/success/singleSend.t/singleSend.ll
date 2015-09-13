@@ -1,1 +1,1 @@
-singleSend (c : !Int) = send c 42.
+../../../fixtures/sequence/singleSend.ll

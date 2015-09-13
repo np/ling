@@ -1,1 +1,1 @@
-../../tests/failure/badCutSendRecv.t/badCutSendRecv.ll
+badCutSendRecv = new (c : !Int, d : ?Int) send c 1 recv d (x : Int).

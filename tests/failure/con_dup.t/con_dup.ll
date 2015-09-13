@@ -1,1 +1,1 @@
-data T = `c | `d | `c.
+../../../fixtures/failure/con_dup.ll

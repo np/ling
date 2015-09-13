@@ -1,1 +1,1 @@
-../../tests/failure/reusedParChannel.t/reusedParChannel.ll
+reusedParChannel (c : {}) = c{} c{}.

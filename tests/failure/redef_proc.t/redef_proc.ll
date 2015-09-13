@@ -1,2 +1,1 @@
-p1 () = ().
-p1 (c : !Int) = send c 1.
+../../../fixtures/failure/redef_proc.ll
