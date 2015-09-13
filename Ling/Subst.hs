@@ -97,7 +97,7 @@ instance Subst Pref where
 
 instance Subst Proc where
   subst f p0 = case p0 of
-    Act prefs procs   -> Act (subst f prefs) (subst f procs)
+    Act prefs procs   -> Act (subst f prefs) (subst (hidePrefs prefs f) procs)
     Ax{}              -> p0
     At t cs           -> At (subst f t) cs
 
