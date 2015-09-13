@@ -91,11 +91,6 @@ checkSlice cond (c, rs) = when (cond c) $
 checkProc :: Proc -> TC Proto
 checkProc (prefs `Act` procs) = checkAct prefs procs
 checkProc (Ax s c d es)       = return $ protoAx (one s) c d es
-checkProc (NewSlice cs t i p) =
-  do checkTerm int t
-     proto <- checkVarDec (Arg i int) $ checkProc p
-     mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
-     return $ replProtoWhen (`elem` cs) t proto
 
 checkProc (At e cs) =
   do t <- inferTerm' e
@@ -245,3 +240,7 @@ checkAct (pref : prefs) procs = do
         checkTyp typ
         let cSession = defaultEndR $ proto ^. chanSession c
         return $ addChanWithOrder (c, mapR (Rcv typ) cSession) proto
+      NewSlice cs t i -> do
+        checkTerm int t
+        mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
+        return $ replProtoWhen (`elem` cs) t proto

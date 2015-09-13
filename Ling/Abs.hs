@@ -60,11 +60,7 @@ data Proc = Act [Pref] Procs
   deriving (Eq, Ord, Show, Read)
 
 data Procs
-    = ZeroP
-    | Ax Session [Name]
-    | At ATerm [Name]
-    | NewSlice [Name] ATerm Name Proc
-    | Prll [Proc]
+    = ZeroP | Ax Session [Name] | At ATerm [Name] | Prll [Proc]
   deriving (Eq, Ord, Show, Read)
 
 data Pref
@@ -74,6 +70,7 @@ data Pref
     | SeqSplit Name [ChanDec]
     | Send Name ATerm
     | Recv Name VarDec
+    | NewSlice [Name] ATerm Name
   deriving (Eq, Ord, Show, Read)
 
 data OptSession = NoSession | SoSession RSession

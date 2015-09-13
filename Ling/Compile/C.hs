@@ -219,14 +219,6 @@ transProc env x = case x of
     transErr "transProc/At" x
   prefs `Act` procs ->
     transAct env prefs procs
-  NewSlice cs t xi p ->
-    [stdFor i (transTerm env t) (transProc env' p)]
-    where
-      i = transName xi
-      sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
-                  | otherwise   = l
-      env' = env & locs . imapped %@~ sliceIf
-                 & addEVar xi i
 
 transLVal :: C.LVal -> C.Exp
 transLVal (C.LVar x)   = C.EVar x
@@ -272,6 +264,15 @@ transAct env (pref:prefs) procs =
         l    = env ! c
         ctyp = transCTyp env C.QConst typ
         y    = transName x
+    NewSlice cs t xi ->
+      [stdFor i (transTerm env t) p]
+      where
+        i = transName xi
+        sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
+                    | otherwise   = l
+        env' = env & locs . imapped %@~ sliceIf
+                   & addEVar xi i
+        p = transAct env' prefs procs
 
 {- stdFor i t body ~~~> for (int i = 0; i < t; i = i + 1) { body } -}
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm

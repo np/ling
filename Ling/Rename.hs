@@ -62,15 +62,14 @@ hidePrefs = flip (foldr hidePref)
 
 instance Rename Pref where
   rename f pref = case pref of
-    Split k c ds  -> Split k (rename f c) (rename f ds)
-    Send c e      -> Send (rename f c) (rename f e)
-    Recv c arg    -> Recv (rename f c) (rename f arg)
-    Nu c d        -> Nu (rename f c) (rename f d)
+    Split k c ds    -> Split k (rename f c) (rename f ds)
+    Send c e        -> Send (rename f c) (rename f e)
+    Recv c arg      -> Recv (rename f c) (rename f arg)
+    Nu c d          -> Nu (rename f c) (rename f d)
+    NewSlice cs t x -> NewSlice (rename f cs) (rename f t) (rename f x)
 
 instance Rename Proc where
   rename f proc0 = case proc0 of
-    NewSlice cs t x p -> NewSlice (rename f cs) (rename f t) (rename f x)
-                                  (rename (hideName x f) p)
     Act prefs procs   -> Act (rename f prefs) (rename (hidePrefs prefs f) procs)
     Ax s c d es       -> Ax (rename f s) (rename f c) (rename f d) (rename f es)
     At t cs           -> At (rename f t) (rename f cs)

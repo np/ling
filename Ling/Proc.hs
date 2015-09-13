@@ -16,7 +16,6 @@ freeChans :: FreeChans Proc
 freeChans (prefs `Act` procs) = fcAct prefs procs
 freeChans (Ax _ c d es)       = l2s (c:d:es)
 freeChans (At _ cs)           = l2s cs
-freeChans NewSlice{}          = error "freeChans/NewSlice undefined"
 
 bndChans :: FreeChans [ChanDec]
 bndChans = l2s . map _argName
@@ -32,6 +31,7 @@ fcAct (pref:prefs) procs =
     Split _ c ds   -> c  `Set.insert` (cs `Set.difference` bndChans ds)
     Send c _e      -> c  `Set.insert` cs
     Recv c _xt     -> c  `Set.insert` cs
+    NewSlice{}     -> error "fcAct/NewSlice undefined"
   where cs = fcAct prefs procs
 
 zeroP :: Proc
@@ -60,7 +60,6 @@ filter0 p = case p of
   prefs `Act` procs -> prefs `actP0s` procs
   Ax{}              -> [p]
   At{}              -> [p]
-  NewSlice{}        -> [p]
 
 suffChan :: Int -> Endom Channel
 suffChan i = suffName $ show i ++ "#"
@@ -126,6 +125,7 @@ replPref n x pref p =
     Send _c _e     -> error "replPref/Send"
     Recv _c _xt    -> error "replPref/Recv"
     Nu _c _d       -> error "replPref/Nu"
+    NewSlice{}     -> error "replPref/NewSlice"
 
 replProc :: Int -> Name -> Proc -> Procs
 replProc n x p0 =
@@ -140,4 +140,3 @@ replProc n x p0 =
     -- This might be needed because of abstract sessions.
     Ax{}       -> error "replProc/Ax"
     At{}       -> error "replProc/At"
-    NewSlice{} -> error "replProc/NewSlice"

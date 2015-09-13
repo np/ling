@@ -17,9 +17,8 @@ data Dec
 
 data Proc
   = Act [Pref] Procs
-  | Ax Session Channel Channel [Channel]
   | At Term [Channel]
-  | NewSlice [Channel] Term Name Proc
+  | Ax Session Channel Channel [Channel]
   deriving (Eq,Ord,Show,Read)
 
 type Procs = [Proc]
@@ -36,6 +35,7 @@ data Pref
   | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term
   | Recv     Channel VarDec
+  | NewSlice [Channel] Term Name
   deriving (Eq,Ord,Show,Read)
 
 type Typ = Term
@@ -89,8 +89,9 @@ multName = Name "_*_"
 actVarDecs :: Pref -> [VarDec]
 actVarDecs pref =
   case pref of
-    Recv _ a -> [a]
-    _        -> []
+    Recv _ a       -> [a]
+    NewSlice _ _ x -> [Arg x int]
+    _              -> []
 
 kindLabel :: TraverseKind -> String
 kindLabel ParK = "par/⅋"
@@ -102,3 +103,4 @@ actLabel Nu{}          = "restriction/ν"
 actLabel (Split k _ _) = "split:" ++ kindLabel k
 actLabel Send{}        = "send"
 actLabel Recv{}        = "recv"
+actLabel NewSlice{}    = "slice"

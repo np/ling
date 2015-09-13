@@ -80,8 +80,9 @@ hideArg :: Arg a -> Endom Sub
 hideArg (Arg x _) = Map.delete x
 
 hidePref :: Pref -> Endom Sub
-hidePref (Recv _ arg) = hideArg arg
-hidePref _            = id
+hidePref (Recv _ arg)     = hideArg arg
+hidePref (NewSlice _ _ x) = Map.delete x
+hidePref _                = id
 
 hidePrefs :: [Pref] -> Endom Sub
 hidePrefs = flip (foldr hidePref)
@@ -92,13 +93,13 @@ instance Subst Pref where
     Send c e          -> Send c (subst f e)
     Recv c arg        -> Recv c (subst f arg)
     Nu c d            -> Nu (subst f c) (subst f d)
+    NewSlice cs t x   -> NewSlice cs (subst f t) x
 
 instance Subst Proc where
   subst f p0 = case p0 of
     Act prefs procs   -> Act (subst f prefs) (subst f procs)
     Ax{}              -> p0
     At t cs           -> At (subst f t) cs
-    NewSlice cs t x p -> NewSlice cs (subst f t) x (subst (Map.delete x f) p)
 
 instance Subst Session where
   subst f s0 = case s0 of

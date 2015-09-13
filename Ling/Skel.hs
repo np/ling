@@ -68,7 +68,6 @@ transProcs x = case x of
   ZeroP -> failure x
   Ax session names -> failure x
   At aterm names -> failure x
-  NewSlice names aterm name proc -> failure x
   Prll procs -> failure x
 transPref :: Pref -> Result
 transPref x = case x of
@@ -78,6 +77,7 @@ transPref x = case x of
   SeqSplit name chandecs -> failure x
   Send name aterm -> failure x
   Recv name vardec -> failure x
+  NewSlice names aterm name -> failure x
 transOptSession :: OptSession -> Result
 transOptSession x = case x of
   NoSession -> failure x

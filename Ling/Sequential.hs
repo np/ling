@@ -134,6 +134,7 @@ isReadyPref env pref =
     Nu{}       -> True
     Send c _   -> statusAt c env == Just Empty
     Recv c _   -> statusAt c env == Just Full
+    NewSlice{} -> error "isReadyPref: IMPOSSIBLE"
 
 transSplit :: Channel -> [ChanDec] -> Env -> Env
 transSplit c dOSs env =
@@ -148,7 +149,6 @@ transProc env p0 k = case p0 of
   Ax{}              -> k env p0
   At{}              -> k env p0
   prefs `Act` procs -> transAct env prefs procs k
-  NewSlice xs t i p -> transProc env p $ \env' p' -> k env' (NewSlice xs t i p')
 
 -- prefixes about different channels can be reordered
 transAct :: Env -> [Pref] -> [Proc] -> (Env -> Proc -> r) -> r
@@ -179,6 +179,8 @@ transPref pref =
       actEnv c
     Recv c _ ->
       actEnv c
+    NewSlice{} ->
+      id
 
 -- Assumption input processes should not have zeros (filter0s)
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
@@ -187,18 +189,16 @@ transProcs _   []       waiting _ = transErr "transProcs: impossible all the pro
 transProcs env [p]      []      k = transProc env p k
 transProcs env (p0:p0s) waiting k =
   case p0 of
-    prefs@(_:_) `Act` procs0 ->
-      case isReady env prefs of
-        Nothing ->
-          transProcs env p0s (p0 : waiting) k
-        Just (readyPis,restPis) ->
+    prefs@(pref:_) `Act` procs0 ->
+      case () of
+        _ | NewSlice{} <- pref ->
+          transAct env prefs procs0 $ \env' p' ->
+            transProcs env' (p0s ++ reverse waiting) [] $ \env'' ps' ->
+              k env'' (p' `parP` ps')
+        _ | Just (readyPis,restPis) <- isReady env prefs ->
           transAct env readyPis (p0s ++ reverse waiting ++ [restPis `actP` procs0]) k
-
-    NewSlice xs t i p ->
-      transProc env p $ \env' p' ->
-        transProcs env' (p0s ++ reverse waiting) [] $ \env'' ps' ->
-          k env'' (NewSlice xs t i p' `parP` ps')
-
+        _ ->
+          transProcs env p0s (p0 : waiting) k
 
     -- These cases are considered non-ready, so if another parallel process can
     -- proceed we do so.

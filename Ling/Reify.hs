@@ -86,7 +86,6 @@ instance Norm Proc where
   reify (N.Act prefs procs)   = Act (reify prefs) (reify procs)
   reify (N.Ax s c d es)       = Act [] (Ax (reify s) (c : d : es))
   reify (N.At t cs)           = Act [] (At (reify t) cs)
-  reify (N.NewSlice cs t x p) = Act [] (NewSlice cs (reify t) x (reify p))
   norm  (Act prefs procs)     = N.Act (norm prefs) (norm procs)
 
 reifyProc :: N.Proc -> Proc
@@ -104,7 +103,6 @@ instance Norm Procs where
   norm ZeroP               = []
   norm (Prll procs)        = norm procs
   norm (At t cs)           = [N.At (norm t) cs]
-  norm (NewSlice cs t x p) = [N.NewSlice cs (norm t) x (norm p)]
   norm (Ax s es0)          =
     case es0 of
       c : d : es -> [fwdP (norm s) c d es]
@@ -120,6 +118,7 @@ instance Norm Pref where
     N.Split N.SeqK c ds -> SeqSplit c (reify ds)
     N.Send     c t      -> Send     c (reify t)
     N.Recv     c a      -> Recv     c (reify a)
+    N.NewSlice cs t x   -> NewSlice cs (reify t) x
 
   norm  e = case e of
     Nu c d            -> N.Nu (norm c) (norm d)
@@ -128,6 +127,7 @@ instance Norm Pref where
     SeqSplit c ds     -> N.Split N.SeqK c (norm ds)
     Send     c t      -> N.Send         c (norm t)
     Recv     c a      -> N.Recv         c (norm a)
+    NewSlice cs t x   -> N.NewSlice    cs (norm t) x
 
 reifyPref :: N.Pref -> Pref
 reifyPref = reify
