@@ -99,7 +99,7 @@ kindLabel TenK = "tensor/⊗"
 kindLabel SeqK = "sequence/»"
 
 actLabel :: Pref -> String
-actLabel Nu{}          = "restriction/ν"
+actLabel Nu{}          = "new"
 actLabel (Split k _ _) = "split:" ++ kindLabel k
 actLabel Send{}        = "send"
 actLabel Recv{}        = "recv"
