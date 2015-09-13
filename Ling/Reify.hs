@@ -14,13 +14,6 @@ class Norm a where
   norm  :: a -> Normalized a
   reify :: Normalized a -> a
 
-{-
-class Reify a where
-  type Reified a
-  reify :: a -> Reified a
-  norm  :: Reified a -> a
--}
-
 instance Norm a => Norm [a] where
   type Normalized [a] = [Normalized a]
   reify = map reify
