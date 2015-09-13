@@ -110,8 +110,7 @@ checkVarDec (Arg x typ) = checkVarDef x typ Nothing
 
 -- Check a "telescope", where bindings scope over the following ones
 checkVarDecs :: [VarDec] -> Endom (TC a)
-checkVarDecs = foldr ((.) . checkVarDec) id
--- checkVarDecs = foldrOf (...checkVarDec...)
+checkVarDecs = composeMap checkVarDec
 
 -- TODO: Here I assume that sessions are well formed
 checkSessions :: [RSession] -> TC ()
