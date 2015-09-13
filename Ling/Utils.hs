@@ -139,3 +139,7 @@ hasKey k = at k . to (isn't _Nothing)
 
 hasNoKey :: At m => Index m -> Getter m Bool
 hasNoKey k = at k . to (isn't _Just)
+
+-- There must be something equivalent in lens
+composeMap :: (a -> Endom b) -> [a] -> Endom b
+composeMap f = foldr ((.) . f) id

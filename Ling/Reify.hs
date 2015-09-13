@@ -77,9 +77,16 @@ reifyRSessions = reify
 instance Norm Proc where
   type Normalized Proc        = N.Proc
   reify (N.Act prefs procs)   = Act (reify prefs) (reify procs)
-  reify (N.Ax s c d es)       = Act [] (Ax (reify s) (c : d : es))
   reify (N.At t cs)           = Act [] (At (reify t) cs)
-  norm  (Act prefs procs)     = N.Act (norm prefs) (norm procs)
+  norm  (Act prefs procs)     = [] `actP` normPrefs prefs (norm procs)
+
+normPrefs :: [Pref] -> Endom [N.Proc]
+normPrefs = composeMap normPref
+
+normPref :: Pref -> Endom [N.Proc]
+-- This clause expands the forwarders
+normPref (Ax s cs) procs = fwdP (norm s) cs : procs
+normPref pref      procs = [norm pref] `actPs` procs
 
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
@@ -96,11 +103,6 @@ instance Norm Procs where
   norm ZeroP               = []
   norm (Prll procs)        = norm procs
   norm (At t cs)           = [N.At (norm t) cs]
-  norm (Ax s es0)          =
-    case es0 of
-      c : d : es -> [fwdP (norm s) c d es]
-                --  [N.Ax (norm s) c d es]
-      _ -> error "Forwarders must be given at least two channels"
 
 instance Norm Pref where
   type Normalized Pref = N.Pref
@@ -112,6 +114,7 @@ instance Norm Pref where
     N.Send     c t      -> Send     c (reify t)
     N.Recv     c a      -> Recv     c (reify a)
     N.NewSlice cs t x   -> NewSlice cs (reify t) x
+    N.Ax s cs           -> Ax (reify s) cs
 
   norm  e = case e of
     Nu c d            -> N.Nu (norm c) (norm d)
@@ -121,6 +124,7 @@ instance Norm Pref where
     Send     c t      -> N.Send         c (norm t)
     Recv     c a      -> N.Recv         c (norm a)
     NewSlice cs t x   -> N.NewSlice    cs (norm t) x
+    Ax       s cs     -> ax (norm s)   cs
 
 reifyPref :: N.Pref -> Pref
 reifyPref = reify

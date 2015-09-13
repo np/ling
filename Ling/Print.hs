@@ -169,7 +169,6 @@ instance Print Proc where
 instance Print Procs where
   prt i e = case e of
     ZeroP -> prPrec i 0 (concatD [])
-    Ax session names -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 session, doc (showString "("), prt 0 names, doc (showString ")")])
     At aterm names -> prPrec i 0 (concatD [doc (showString "@"), prt 0 aterm, doc (showString "("), prt 0 names, doc (showString ")")])
     Prll procs -> prPrec i 0 (concatD [doc (showString "("), prt 0 procs, doc (showString ")")])
 
@@ -182,6 +181,7 @@ instance Print Pref where
     Send name aterm -> prPrec i 0 (concatD [doc (showString "send"), prt 0 name, prt 0 aterm])
     Recv name vardec -> prPrec i 0 (concatD [doc (showString "recv"), prt 0 name, prt 0 vardec])
     NewSlice names aterm name -> prPrec i 0 (concatD [doc (showString "slice"), doc (showString "("), prt 0 names, doc (showString ")"), prt 0 aterm, doc (showString "as"), prt 0 name])
+    Ax session names -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 session, doc (showString "("), prt 0 names, doc (showString ")")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print OptSession where

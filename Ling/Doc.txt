@@ -97,7 +97,6 @@ All other symbols are terminals.
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
   | //Procs// | -> | **eps**
-  |  |  **|**  | ``fwd`` //Session// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
   | //Pref// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
@@ -107,6 +106,7 @@ All other symbols are terminals.
   |  |  **|**  | ``send`` //Name// //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
   |  |  **|**  | ``slice`` ``(`` //[Name]// ``)`` //ATerm// ``as`` //Name// 
+  |  |  **|**  | ``fwd`` //Session// ``(`` //[Name]// ``)`` 
   | //[Pref]// | -> | **eps**
   |  |  **|**  | //Pref// //[Pref]// 
   | //OptSession// | -> | **eps**

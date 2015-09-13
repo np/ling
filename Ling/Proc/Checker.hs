@@ -90,8 +90,6 @@ checkSlice cond (c, rs) = when (cond c) $
 
 checkProc :: Proc -> TC Proto
 checkProc (prefs `Act` procs) = checkAct prefs procs
-checkProc (Ax s c d es)       = return $ protoAx (one s) c d es
-
 checkProc (At e cs) =
   do t <- inferTerm' e
      case t of
@@ -240,7 +238,13 @@ checkAct (pref : prefs) procs = do
         checkTyp typ
         let cSession = defaultEndR $ proto ^. chanSession c
         return $ addChanWithOrder (c, mapR (Rcv typ) cSession) proto
-      NewSlice cs t i -> do
+      NewSlice cs t _i -> do
         checkTerm int t
         mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
         return $ replProtoWhen (`elem` cs) t proto
+      Ax s cs -> do
+        v <- view verbosity
+        -- TODO: we want to do here the same check as parallelProtos
+        -- but with potentially different error message as they are not
+        -- actually in parallel.
+        return $ parallelProtos v proto (protoAx (one s) cs)

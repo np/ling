@@ -123,8 +123,11 @@ mkProto css = MkProto (l2m css) (singleConstraint (l2s cs))
                       (map return cs)
   where cs = map fst css
 
-protoAx :: RSession -> Channel -> Channel -> [Channel] -> Proto
-protoAx s c d es = mkProto ((c,s):(d,dual s):map (\e -> (e, log s)) es)
+protoAx :: RSession -> [Channel] -> Proto
+protoAx _ []             = emptyProto
+protoAx s [c] | isSink s = mkProto [(c,s)]
+protoAx s (c:d:es)       = mkProto ((c,s):(d,dual s):map (\e -> (e, log s)) es)
+protoAx _ _              = error "protoAx: Not enough channels given to forward"
 
 replProtoWhen :: (Channel -> Bool) -> Term -> Endom Proto
 replProtoWhen cond n = chans . imapped %@~ replRSessionWhen where

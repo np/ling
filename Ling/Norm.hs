@@ -18,7 +18,6 @@ data Dec
 data Proc
   = Act [Pref] Procs
   | At Term [Channel]
-  | Ax Session Channel Channel [Channel]
   deriving (Eq,Ord,Show,Read)
 
 type Procs = [Proc]
@@ -36,6 +35,7 @@ data Pref
   | Send     Channel Term
   | Recv     Channel VarDec
   | NewSlice [Channel] Term Name
+  | Ax       Session [Channel]
   deriving (Eq,Ord,Show,Read)
 
 type Typ = Term
@@ -104,3 +104,4 @@ actLabel (Split k _ _) = "split:" ++ kindLabel k
 actLabel Send{}        = "send"
 actLabel Recv{}        = "recv"
 actLabel NewSlice{}    = "slice"
+actLabel Ax{}          = "fwd"

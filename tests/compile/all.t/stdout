@@ -47,7 +47,7 @@ void double_lin (const int * i_lin, int * r_lin){
   const int z_lin = c_lin ;
   * r_lin = z_lin ;
   }
-void fwd0_par2_ten2_lin (struct {
+void fwd2_par2_ten2_lin (struct {
   struct {
     int f0 ;
     int f1 ;
@@ -67,7 +67,7 @@ void fwd0_par2_ten2_lin (struct {
   const int x__i1___lin = c_lin -> f0 . f1 ;
   c_lin -> f1 . f1 = x__i1___lin ;
   }
-void fwd1_par2_ten2_ten2_lin (struct {
+void fwd3_par2_ten2_ten2_lin (struct {
   struct {
     int f0 ;
     int f1 ;

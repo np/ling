@@ -62,7 +62,6 @@ Act.        Proc ::= [Pref] Procs ;
 separator Proc "|" ;
 
 ZeroP.    Procs ::= ;
-Ax.       Procs ::= "fwd" Session "(" [Name] ")" ;
 At.       Procs ::= "@" ATerm "(" [Name] ")" ;
 Prll.     Procs ::= "(" [Proc] ")" ;
 
@@ -73,6 +72,7 @@ SeqSplit. Pref ::= Name "[:" [ChanDec] ":]" ;
 Send.     Pref ::= "send" Name ATerm ;
 Recv.     Pref ::= "recv" Name VarDec ;
 NewSlice. Pref ::= "slice" "(" [Name] ")" ATerm "as" Name ;
+Ax.       Pref ::= "fwd" Session "(" [Name] ")" ;
 
 separator Pref  ""  ;
 

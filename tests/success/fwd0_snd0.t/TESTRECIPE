@@ -1,13 +1,13 @@
 #!/bin/bash
 
-testname=fwd1_par2_ten2_ten2.t
+testname=fwd0_snd0.t
 command=Ling
-args=( --check fwd1_par2_ten2_ten2.ll )
+args=( --check fwd0_snd0.ll )
 exit_code=0
 stdin_file=/dev/null
 stdout_file=stdout
 stderr_file=/dev/null
-sources=( fwd1_par2_ten2_ten2.ll )
+sources=( fwd0_snd0.ll )
 products=( )
 
 # Environment variables:

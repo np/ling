@@ -132,6 +132,7 @@ isReadyPref env pref =
   case pref of
     Split{}    -> True
     Nu{}       -> True
+    Ax{}       -> True
     Send c _   -> statusAt c env == Just Empty
     Recv c _   -> statusAt c env == Just Full
     NewSlice{} -> error "isReadyPref: IMPOSSIBLE"
@@ -146,7 +147,6 @@ transSplit c dOSs env =
 
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
 transProc env p0 k = case p0 of
-  Ax{}              -> k env p0
   At{}              -> k env p0
   prefs `Act` procs -> transAct env prefs procs k
 
@@ -181,6 +181,8 @@ transPref pref =
       actEnv c
     NewSlice{} ->
       id
+    Ax{} ->
+      id
 
 -- Assumption input processes should not have zeros (filter0s)
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
@@ -204,7 +206,6 @@ transProcs env (p0:p0s) waiting k =
     -- proceed we do so.
     -- Therefor we cannot put a process like (@p0() | @p1()) in sequence.
     At{} -> transProcs env p0s (p0 : waiting) k
-    Ax{} -> transProcs env p0s (p0 : waiting) k
 
     Act [] _procs0 ->
       error "transProcs: impossible" -- filter0s prevents that

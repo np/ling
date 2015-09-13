@@ -10,6 +10,12 @@ cmdr() {
     git add fixtures/"$dir/$i".ll tests/"$dir/$i".t
   done
 }
+cmdrsuccess(){
+  cmdr --check success "$@"
+}
+cmdrfailure(){
+  cmdr --check failure "$@"
+}
 alias cmdrseq='cmdrecord tests/sequence/all.t --env empty -- Ling --seq < fixtures/sequence/*.ll'
 alias cmdrcom='cmdrecord tests/compile/all.t  --env empty -- Ling --compile-prims --compile < fixtures/compile/*.ll'
 export PATH=`pwd`/dist/build/Ling:$PATH

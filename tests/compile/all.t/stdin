@@ -13,8 +13,8 @@ double (i : ?Int, r : !Int) =
   |
     send d xi send d xi recv d(z : Int) send r z
   ).
-fwd0_par2_ten2 (c : Fwd 0 {?Int,!Int.?Int}) = c{i,o} fwd{?Int,!Int.?Int}(i,o).
-fwd1_par2_ten2_ten2 (c : Fwd 1 {?Int,!Int.?Int}) =
+fwd2_par2_ten2 (c : Fwd 2 {?Int,!Int.?Int}) = c{i,o} fwd{?Int,!Int.?Int}(i,o).
+fwd3_par2_ten2_ten2 (c : Fwd 3 {?Int,!Int.?Int}) =
   c{i,o,l}
   fwd {?Int,!Int.?Int}(i,o,l).
 fwd_par0_ten0 (i : {}, o : []) = fwd{}(i,o).

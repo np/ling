@@ -18,8 +18,15 @@ list = map one
 loli :: Session -> Session -> Session
 loli s t = Par $ list [dual s, t]
 
+fwds :: Int -> Session -> Sessions
+fwds n s
+  | n <  0    = error "fwd: Negative number of channels to forward"
+  | n == 0    = []
+  | n == 1    = [one s]
+  | otherwise = list $ s : dual s : replicate (n - 2) (log s)
+
 fwd :: Int -> Session -> Session
-fwd n s = Par . list $ s : dual s : replicate n (log s)
+fwd n s = Par $ fwds n s
 
 sort :: Typ -> Term -> Session
 sort a e = Rcv (vec a e) (Snd (vec a e) End)
@@ -33,6 +40,22 @@ mapSessions = map . mapR
 class Dual a where
   dual :: a -> a
   log  :: a -> a
+
+-- Sub-optimal but concise
+isLog, isSink :: (Eq session, Dual session) => session -> Bool
+
+isLog  s = s ==       log s
+isSink s = s == dual (log s)
+
+validAx :: (Eq session, Dual session) => session -> [channel] -> Bool
+-- Forwarding anything between no channels is always possible
+validAx _ []          = True
+-- At least two for the general case
+validAx _ (_ : _ : _) = True
+-- One is enough if the session is a Sink. A sink can be derived
+-- alone. Another way to think of it is that in the case of a sink,
+-- the other side is a Log and there can be any number of Logs.
+validAx s (_ : _)     = isSink s
 
 instance Dual RW where
   dual Read  = Write

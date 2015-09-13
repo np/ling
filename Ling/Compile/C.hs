@@ -213,8 +213,6 @@ dummyTyp = C.ELit 0
 
 transProc :: Env -> Proc -> [C.Stm]
 transProc env x = case x of
-  Ax{} ->
-    transErr "transProc/Ax" x
   At{} ->
     transErr "transProc/At" x
   prefs `Act` procs ->
@@ -273,6 +271,8 @@ transAct env (pref:prefs) procs =
         env' = env & locs . imapped %@~ sliceIf
                    & addEVar xi i
         p = transAct env' prefs procs
+    Ax{} ->
+      transErr "transAct/Ax" pref
 
 {- stdFor i t body ~~~> for (int i = 0; i < t; i = i + 1) { body } -}
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm
