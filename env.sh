@@ -18,4 +18,4 @@ cmdrfailure(){
 }
 alias cmdrseq='cmdrecord tests/sequence/all.t --env empty -- Ling --seq < fixtures/sequence/*.ll'
 alias cmdrcom='cmdrecord tests/compile/all.t  --env empty -- Ling --compile-prims --compile < fixtures/compile/*.ll'
-export PATH=`pwd`/dist/build/Ling:$PATH
+export PATH=`pwd`/dist/build/Ling:`pwd`/dist/build/ling-fmt:`pwd`/env/bin:$PATH
