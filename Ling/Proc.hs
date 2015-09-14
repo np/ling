@@ -60,11 +60,11 @@ filter0 p = case p of
   prefs `Act` procs -> prefs `actP0s` procs
   At{}              -> [p]
 
-suffChan :: Int -> Endom Channel
-suffChan i = suffName $ show i ++ "#"
+suffChan :: String -> Endom Channel
+suffChan s = suffName $ s ++ "#"
 
-suffChans :: Int -> Channel -> [Channel]
-suffChans n c = map (`suffChan` c) [0..n]
+suffChans :: (Show i, Integral i) => i -> Channel -> [Channel]
+suffChans n c = map ((`suffChan` c) . show) [0..n]
 
 noSession :: Channel -> ChanDec
 noSession c = Arg c Nothing
@@ -112,14 +112,14 @@ fwdP s0 cs =
     Atm{}   -> [ax s0 cs] `Act` []
     Seq _ss -> error "fwdP/Seq TODO"
 
-replProcs :: Int -> Name -> Procs -> Procs
+replProcs :: (Show i, Integral i) => i -> Name -> Procs -> Procs
 replProcs n = concatMap . replProc n
 
-replArg :: Int -> Name -> ChanDec -> [ChanDec]
+replArg :: (Show i, Integral i) => i -> Name -> ChanDec -> [ChanDec]
 replArg n x (Arg d s) = map go [0..n-1] where
-  go i = Arg (suffChan i d) (substi (x, i) s)
+  go i = Arg (suffChan (show i) d) (substi (x, i) s)
 
-replProc' :: Int -> Name -> Proc -> Procs
+replProc' :: Integral i => i -> Name -> Proc -> Procs
 replProc' n x p = map go [0..n-1] where
   go i = substi (x, i) p
 
@@ -127,7 +127,7 @@ ax :: Session -> [Channel] -> Pref
 ax s cs | validAx s cs = Ax s cs
         | otherwise    = error "ax: Not enough channels given for this forwarder (or the session is not a sink)"
 
-replPref :: Int -> Name -> Pref -> Proc -> Proc
+replPref :: (Show i, Integral i) => i -> Name -> Pref -> Proc -> Proc
 replPref n x pref p =
   case pref of
     Split k c [a]  -> [Split k c (replArg n x a)] `actP` replProc' n x p
@@ -142,7 +142,7 @@ replPref n x pref p =
     -- This might be needed because of abstract sessions.
     Ax{}           -> error "replProc/Ax"
 
-replProc :: Int -> Name -> Proc -> Procs
+replProc :: (Show i, Integral i) => i -> Name -> Proc -> Procs
 replProc n x p0 =
   case p0 of
     prefs0 `Act` procs ->

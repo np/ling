@@ -18,7 +18,7 @@ class Subst a where
 subst1 :: Subst a => (Name, Term) -> a -> a
 subst1 = subst . l2m . pure
 
-substi :: Subst a => (Name, Int) -> a -> a
+substi :: (Integral i, Subst a) => (Name, i) -> a -> a
 substi (x, i) = subst1 (x, Lit(fromIntegral i))
 
 appG :: (Term -> Term) -> Term -> [Term] -> Term
