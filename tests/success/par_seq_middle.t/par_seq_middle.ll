@@ -1,1 +1,1 @@
-../../../fixtures/success/par_seq_middle.ll
+../../../fixtures/all/par_seq_middle.ll

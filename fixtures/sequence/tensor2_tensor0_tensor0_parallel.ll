@@ -1,2 +1,1 @@
-tensor2_tensor0_tensor0_parallel (cd : [[], []]) =
-  cd[c,d] ( c[] | d[] ).
+../all/tensor2_tensor0_tensor0_parallel.ll

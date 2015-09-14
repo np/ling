@@ -1,1 +1,1 @@
-../../tests/success/singleSend.t/singleSend.ll
+../all/singleSend.ll

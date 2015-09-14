@@ -1,1 +1,1 @@
-fwd1_rcv (c : Fwd 1 (?Int)) = c{d} fwd (?Int) (d).
+../all/fwd1_rcv.ll

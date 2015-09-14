@@ -1,1 +1,1 @@
-../../../fixtures/sequence/par_ten1_ten1.ll
+../../../fixtures/all/par_ten1_ten1.ll

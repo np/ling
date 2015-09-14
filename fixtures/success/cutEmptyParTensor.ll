@@ -1,1 +1,1 @@
-../../tests/success/cutEmptyParTensor.t/cutEmptyParTensor.ll
+../all/cutEmptyParTensor.ll

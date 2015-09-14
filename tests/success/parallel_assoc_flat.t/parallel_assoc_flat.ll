@@ -1,1 +1,1 @@
-../../../fixtures/sequence/parallel_assoc_flat.ll
+../../../fixtures/all/parallel_assoc_flat.ll

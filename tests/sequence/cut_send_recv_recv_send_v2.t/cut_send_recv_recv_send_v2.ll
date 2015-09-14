@@ -1,1 +1,1 @@
-../../../fixtures/sequence/cut_send_recv_recv_send_v2.ll
+../../../fixtures/all/cut_send_recv_recv_send_v2.ll

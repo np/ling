@@ -1,1 +1,1 @@
-../../../fixtures/success/seq_seq.ll
+../../../fixtures/all/seq_seq.ll

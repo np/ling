@@ -1,1 +1,1 @@
-../../../fixtures/failure/unboundChannel.ll
+../../../fixtures/all/unboundChannel.ll

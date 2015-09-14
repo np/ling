@@ -1,1 +1,1 @@
-singleRecv (c : ?Int) = recv c (x : Int).
+../all/singleRecv.ll

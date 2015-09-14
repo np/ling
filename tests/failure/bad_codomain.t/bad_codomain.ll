@@ -1,1 +1,1 @@
-../../../fixtures/failure/bad_codomain.ll
+../../../fixtures/all/bad_codomain.ll

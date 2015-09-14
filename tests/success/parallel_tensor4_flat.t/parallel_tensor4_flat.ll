@@ -1,1 +1,1 @@
-../../../fixtures/sequence/parallel_tensor4_flat.ll
+../../../fixtures/all/parallel_tensor4_flat.ll

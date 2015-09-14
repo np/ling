@@ -1,1 +1,1 @@
-../../../fixtures/failure/confuseSendRecv2_using_dual.ll
+../../../fixtures/all/confuseSendRecv2_using_dual.ll

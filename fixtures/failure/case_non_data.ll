@@ -1,1 +1,1 @@
-bad : Int = case 42 of { }.
+../all/case_non_data.ll

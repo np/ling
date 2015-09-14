@@ -1,1 +1,1 @@
-../../../fixtures/success/zip_add.ll
+../../../fixtures/all/zip_add.ll

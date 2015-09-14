@@ -1,1 +1,1 @@
-../../../fixtures/failure/local_redef_fwd_par2_ten2_expanded.ll
+../../../fixtures/all/local_redef_fwd_par2_ten2_expanded.ll

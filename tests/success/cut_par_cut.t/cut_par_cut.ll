@@ -1,1 +1,1 @@
-../../../fixtures/success/cut_par_cut.ll
+../../../fixtures/all/cut_par_cut.ll

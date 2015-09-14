@@ -1,1 +1,1 @@
-../../tests/success/cutSendRecv.t/cutSendRecv.ll
+../all/cutSendRecv.ll

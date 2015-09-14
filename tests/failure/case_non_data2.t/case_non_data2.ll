@@ -1,1 +1,1 @@
-../../../fixtures/failure/case_non_data2.ll
+../../../fixtures/all/case_non_data2.ll

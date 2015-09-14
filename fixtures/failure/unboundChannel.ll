@@ -1,1 +1,1 @@
-unboundChannel = recv c (x : Int).
+../all/unboundChannel.ll

@@ -1,1 +1,1 @@
-singleSend (c : !Int) = send c 42.
+../all/singleSend.ll

@@ -1,1 +1,1 @@
-../../../fixtures/success/fwd1_rcv.ll
+../../../fixtures/all/fwd1_rcv.ll

@@ -1,1 +1,1 @@
-../../../fixtures/failure/undef_con.ll
+../../../fixtures/all/undef_con.ll

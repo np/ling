@@ -1,1 +1,1 @@
-../../../fixtures/success/fwd_par2_ten2.ll
+../../../fixtures/all/fwd_par2_ten2.ll

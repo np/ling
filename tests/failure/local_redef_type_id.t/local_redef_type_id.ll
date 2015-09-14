@@ -1,1 +1,1 @@
-../../../fixtures/failure/local_redef_type_id.ll
+../../../fixtures/all/local_redef_type_id.ll

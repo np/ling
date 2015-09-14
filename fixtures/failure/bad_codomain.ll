@@ -1,1 +1,1 @@
-bad : (Y : Type) -> Y = \(Y : Type) -> 42.
+../all/bad_codomain.ll

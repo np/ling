@@ -1,1 +1,1 @@
-../../../fixtures/success/int_defs.ll
+../../../fixtures/all/int_defs.ll

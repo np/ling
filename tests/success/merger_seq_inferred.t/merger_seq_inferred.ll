@@ -1,1 +1,1 @@
-../../../fixtures/sequence/merger_seq_inferred.ll
+../../../fixtures/all/merger_seq_inferred.ll

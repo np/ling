@@ -1,1 +1,1 @@
-../../../fixtures/failure/con_dup.ll
+../../../fixtures/all/con_dup.ll

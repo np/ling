@@ -1,1 +1,1 @@
-../../../fixtures/failure/dead_lock_new_new.ll
+../../../fixtures/all/dead_lock_new_new.ll

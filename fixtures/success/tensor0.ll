@@ -1,1 +1,1 @@
-../../tests/success/tensor0.t/tensor0.ll
+../all/tensor0.ll

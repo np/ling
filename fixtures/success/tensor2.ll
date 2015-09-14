@@ -1,1 +1,1 @@
-../../tests/success/tensor2.t/tensor2.ll
+../all/tensor2.ll

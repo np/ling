@@ -1,1 +1,1 @@
-fwd_par0_ten0 (i : {}, o : []) = fwd{}(i,o).
+../all/fwd_par0_ten0.ll

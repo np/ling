@@ -1,1 +1,1 @@
-../../../fixtures/failure/reusedTensorChannel.ll
+../../../fixtures/all/reusedTensorChannel.ll

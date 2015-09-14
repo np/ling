@@ -1,1 +1,1 @@
-../../../fixtures/sequence/tensor2.ll
+../../../fixtures/all/tensor2.ll

@@ -1,1 +1,1 @@
-../../../fixtures/sequence/test4.ll
+../../../fixtures/all/test4.ll

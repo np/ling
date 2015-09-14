@@ -1,1 +1,1 @@
-../../../fixtures/success/sum_int.ll
+../../../fixtures/all/sum_int.ll

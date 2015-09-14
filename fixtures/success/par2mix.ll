@@ -1,1 +1,1 @@
-../../tests/success/par2mix.t/par2mix.ll
+../all/par2mix.ll

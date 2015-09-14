@@ -1,6 +1,1 @@
-seq3 (c : [: !Int, !Int, !Int :]) =
-  c[: c0, c1, c2 :]
-  send c0 0
-  send c1 1
-  send c2 2
-.
+../all/seq3.ll

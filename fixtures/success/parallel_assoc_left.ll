@@ -1,1 +1,1 @@
-../../tests/success/parallel_assoc_left.t/parallel_assoc_left.ll
+../all/parallel_assoc_left.ll

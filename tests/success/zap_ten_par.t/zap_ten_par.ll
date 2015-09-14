@@ -1,1 +1,1 @@
-../../../fixtures/success/zap_ten_par.ll
+../../../fixtures/all/zap_ten_par.ll

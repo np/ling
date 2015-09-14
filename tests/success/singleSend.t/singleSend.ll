@@ -1,1 +1,1 @@
-../../../fixtures/sequence/singleSend.ll
+../../../fixtures/all/singleSend.ll

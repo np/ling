@@ -1,1 +1,1 @@
-../../../fixtures/sequence/par0.ll
+../../../fixtures/all/par0.ll

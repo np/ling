@@ -1,1 +1,1 @@
-../../tests/success/parallel_assoc_2tensor2_right.t/parallel_assoc_2tensor2_right.ll
+../all/parallel_assoc_2tensor2_right.ll

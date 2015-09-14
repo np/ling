@@ -1,1 +1,1 @@
-../../../fixtures/sequence/par_ten_ten_v2.ll
+../../../fixtures/all/par_ten_ten_v2.ll

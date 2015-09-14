@@ -1,1 +1,1 @@
-../../../fixtures/sequence/parallel_assoc_2tensor2_right.ll
+../../../fixtures/all/parallel_assoc_2tensor2_right.ll

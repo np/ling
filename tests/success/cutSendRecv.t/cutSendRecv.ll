@@ -1,1 +1,1 @@
-../../../fixtures/sequence/cutSendRecv.ll
+../../../fixtures/all/cutSendRecv.ll

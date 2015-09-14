@@ -1,1 +1,1 @@
-../../../fixtures/failure/bad_sym_def.ll
+../../../fixtures/all/bad_sym_def.ll

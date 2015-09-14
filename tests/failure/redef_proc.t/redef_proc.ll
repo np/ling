@@ -1,1 +1,1 @@
-../../../fixtures/failure/redef_proc.ll
+../../../fixtures/all/redef_proc.ll

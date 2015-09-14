@@ -1,1 +1,1 @@
-../../../fixtures/failure/redef_con.ll
+../../../fixtures/all/redef_con.ll

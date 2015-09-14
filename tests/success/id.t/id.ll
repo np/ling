@@ -1,1 +1,1 @@
-../../../fixtures/sequence/id.ll
+../../../fixtures/all/id.ll

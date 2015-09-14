@@ -1,1 +1,1 @@
-../../../fixtures/success/fwd_send_recv_recv_send.ll
+../../../fixtures/all/fwd_send_recv_recv_send.ll

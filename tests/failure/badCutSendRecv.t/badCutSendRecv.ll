@@ -1,1 +1,1 @@
-../../../fixtures/failure/badCutSendRecv.ll
+../../../fixtures/all/badCutSendRecv.ll

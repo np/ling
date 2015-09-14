@@ -1,1 +1,1 @@
-../../tests/success/merger_seq_inferred.t/merger_seq_inferred.ll
+../all/merger_seq_inferred.ll

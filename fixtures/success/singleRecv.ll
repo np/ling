@@ -1,1 +1,1 @@
-../../tests/success/singleRecv.t/singleRecv.ll
+../all/singleRecv.ll

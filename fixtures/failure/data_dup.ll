@@ -1,1 +1,1 @@
-data Bad = `foo | `bar | `foo.
+../all/data_dup.ll

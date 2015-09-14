@@ -1,1 +1,1 @@
-../../../fixtures/failure/over_application.ll
+../../../fixtures/all/over_application.ll

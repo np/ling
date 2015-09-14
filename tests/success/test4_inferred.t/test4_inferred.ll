@@ -1,1 +1,1 @@
-../../../fixtures/success/test4_inferred.ll
+../../../fixtures/all/test4_inferred.ll

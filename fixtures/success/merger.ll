@@ -1,1 +1,1 @@
-../../tests/success/merger.t/merger.ll
+../all/merger.ll

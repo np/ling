@@ -1,1 +1,1 @@
-tensor0 (c : []) = c[].
+../all/tensor0.ll

@@ -1,1 +1,1 @@
-Int : Type.
+../all/redef.ll

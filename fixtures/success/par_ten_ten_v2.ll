@@ -1,1 +1,1 @@
-../../tests/success/par_ten_ten_v2.t/par_ten_ten_v2.ll
+../all/par_ten_ten_v2.ll

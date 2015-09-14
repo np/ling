@@ -1,1 +1,1 @@
-../../../fixtures/failure/not_sink_fwd1_snd.ll
+../../../fixtures/all/not_sink_fwd1_snd.ll

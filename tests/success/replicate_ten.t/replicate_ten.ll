@@ -1,1 +1,1 @@
-../../../fixtures/success/replicate_ten.ll
+../../../fixtures/all/replicate_ten.ll

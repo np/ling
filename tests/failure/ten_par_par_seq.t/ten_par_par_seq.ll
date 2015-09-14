@@ -1,1 +1,1 @@
-../../../fixtures/failure/ten_par_par_seq.ll
+../../../fixtures/all/ten_par_par_seq.ll

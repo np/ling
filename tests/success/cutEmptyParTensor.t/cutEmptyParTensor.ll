@@ -1,1 +1,1 @@
-../../../fixtures/sequence/cutEmptyParTensor.ll
+../../../fixtures/all/cutEmptyParTensor.ll

@@ -1,1 +1,1 @@
-../../../fixtures/failure/badTensor2.ll
+../../../fixtures/all/badTensor2.ll

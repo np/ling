@@ -1,1 +1,1 @@
-data T = `c | `d | `c.
+../all/con_dup.ll

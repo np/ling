@@ -1,1 +1,1 @@
-../../tests/success/double.t/double.ll
+../all/double.ll

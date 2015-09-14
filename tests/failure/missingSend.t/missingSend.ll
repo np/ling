@@ -1,1 +1,1 @@
-../../../fixtures/failure/missingSend.ll
+../../../fixtures/all/missingSend.ll

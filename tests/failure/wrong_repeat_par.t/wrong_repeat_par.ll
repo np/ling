@@ -1,1 +1,1 @@
-../../../fixtures/failure/wrong_repeat_par.ll
+../../../fixtures/all/wrong_repeat_par.ll

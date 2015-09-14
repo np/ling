@@ -1,1 +1,1 @@
-cutEmptyParTensor = new (c : {}, d : []) (c{} | d[]).
+../all/cutEmptyParTensor.ll

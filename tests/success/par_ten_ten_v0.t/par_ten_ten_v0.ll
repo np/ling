@@ -1,1 +1,1 @@
-../../../fixtures/compile/par_ten_ten_v0.ll
+../../../fixtures/all/par_ten_ten_v0.ll

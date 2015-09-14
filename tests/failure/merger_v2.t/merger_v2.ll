@@ -1,1 +1,1 @@
-../../../fixtures/failure/merger_v2.ll
+../../../fixtures/all/merger_v2.ll

@@ -1,1 +1,1 @@
-../../../fixtures/success/bool.ll
+../../../fixtures/all/bool.ll

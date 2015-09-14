@@ -1,3 +1,1 @@
-T : Type = Int.
-t : T = 42.
-bad : Int = case t of {}.
+../all/case_non_data2.ll

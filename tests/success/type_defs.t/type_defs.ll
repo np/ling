@@ -1,1 +1,1 @@
-../../../fixtures/success/type_defs.ll
+../../../fixtures/all/type_defs.ll

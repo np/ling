@@ -1,1 +1,1 @@
-../../../fixtures/sequence/singleRecv.ll
+../../../fixtures/all/singleRecv.ll

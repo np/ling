@@ -1,1 +1,1 @@
-../../../fixtures/failure/data_dup.ll
+../../../fixtures/all/data_dup.ll

@@ -1,1 +1,1 @@
-../../../fixtures/success/no_dead_lock_new_new.ll
+../../../fixtures/all/no_dead_lock_new_new.ll

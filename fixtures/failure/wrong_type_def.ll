@@ -1,1 +1,1 @@
-wrong : Int = Type.
+../all/wrong_type_def.ll

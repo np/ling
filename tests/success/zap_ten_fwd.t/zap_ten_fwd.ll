@@ -1,1 +1,1 @@
-../../../fixtures/success/zap_ten_fwd.ll
+../../../fixtures/all/zap_ten_fwd.ll

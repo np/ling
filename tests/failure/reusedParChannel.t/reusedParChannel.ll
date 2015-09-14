@@ -1,1 +1,1 @@
-../../../fixtures/failure/reusedParChannel.ll
+../../../fixtures/all/reusedParChannel.ll

@@ -1,1 +1,1 @@
-../../tests/success/sorter.t/sorter.ll
+../all/sorter.ll

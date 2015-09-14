@@ -1,1 +1,1 @@
-../../../fixtures/failure/confuseSendRecv2.ll
+../../../fixtures/all/confuseSendRecv2.ll

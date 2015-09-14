@@ -1,1 +1,1 @@
-../../../fixtures/failure/dead_lock_tensor2_tensor2.ll
+../../../fixtures/all/dead_lock_tensor2_tensor2.ll

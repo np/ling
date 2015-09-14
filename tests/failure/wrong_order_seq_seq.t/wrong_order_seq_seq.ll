@@ -1,1 +1,1 @@
-../../../fixtures/failure/wrong_order_seq_seq.ll
+../../../fixtures/all/wrong_order_seq_seq.ll

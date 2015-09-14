@@ -1,1 +1,1 @@
-../../../fixtures/sequence/sorter.ll
+../../../fixtures/all/sorter.ll

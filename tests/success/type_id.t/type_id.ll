@@ -1,1 +1,1 @@
-../../../fixtures/success/type_id.ll
+../../../fixtures/all/type_id.ll

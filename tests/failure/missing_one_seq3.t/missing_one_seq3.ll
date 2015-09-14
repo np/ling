@@ -1,1 +1,1 @@
-../../../fixtures/failure/missing_one_seq3.ll
+../../../fixtures/all/missing_one_seq3.ll

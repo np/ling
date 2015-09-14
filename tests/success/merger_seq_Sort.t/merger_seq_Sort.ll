@@ -1,1 +1,1 @@
-../../../fixtures/sequence/merger_seq_Sort.ll
+../../../fixtures/all/merger_seq_Sort.ll

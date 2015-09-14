@@ -1,1 +1,1 @@
-../../../fixtures/success/replicate_par.ll
+../../../fixtures/all/replicate_par.ll

@@ -1,1 +1,1 @@
-../../../fixtures/sequence/double.ll
+../../../fixtures/all/double.ll

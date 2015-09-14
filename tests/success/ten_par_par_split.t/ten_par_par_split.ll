@@ -1,1 +1,1 @@
-../../../fixtures/success/ten_par_par_split.ll
+../../../fixtures/all/ten_par_par_split.ll

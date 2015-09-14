@@ -1,1 +1,1 @@
-../../../fixtures/failure/wrong_type_def.ll
+../../../fixtures/all/wrong_type_def.ll

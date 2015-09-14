@@ -1,1 +1,1 @@
-../../../fixtures/sequence/par2mix.ll
+../../../fixtures/all/par2mix.ll

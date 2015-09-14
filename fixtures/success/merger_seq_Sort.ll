@@ -1,1 +1,1 @@
-../../tests/success/merger_seq_Sort.t/merger_seq_Sort.ll
+../all/merger_seq_Sort.ll

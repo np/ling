@@ -1,1 +1,1 @@
-../../../fixtures/success/par_seq_send3.ll
+../../../fixtures/all/par_seq_send3.ll

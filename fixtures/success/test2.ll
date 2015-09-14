@@ -1,1 +1,1 @@
-../../tests/success/test2.t/test2.ll
+../all/test2.ll

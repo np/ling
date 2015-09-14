@@ -1,1 +1,1 @@
-../../../fixtures/failure/bad_cast.ll
+../../../fixtures/all/bad_cast.ll

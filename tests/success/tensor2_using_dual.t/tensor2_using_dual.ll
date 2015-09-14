@@ -1,1 +1,1 @@
-../../../fixtures/sequence/tensor2_using_dual.ll
+../../../fixtures/all/tensor2_using_dual.ll
