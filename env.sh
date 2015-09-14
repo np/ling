@@ -6,8 +6,9 @@ cmdr() {
   for i; do
     i="${i%.ll}"
     cmdrecord tests/"$dir/$i".t --no-stdin --source "$i".ll --env empty -- Ling $args "$i".ll
-    mv "$i".ll fixtures/"$dir"
-    git add fixtures/"$dir/$i".ll tests/"$dir/$i".t
+    mv "$i".ll fixtures/all/
+    ln -s ../all/"$i".ll fixtures/"$dir"/
+    git add fixtures/all/"$i".ll fixtures/"$dir/$i".ll tests/"$dir/$i".t
   done
 }
 cmdrsuccess(){
