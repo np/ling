@@ -71,6 +71,7 @@ data Pref
     | Recv Name VarDec
     | NewSlice [Name] ATerm Name
     | Ax Session [Name]
+    | SplitAx Integer Session Name
   deriving (Eq, Ord, Show, Read)
 
 data OptSession = NoSession | SoSession RSession

@@ -48,10 +48,10 @@ The symbols -> (production),  **|**  (union)
 and **eps** (empty rule) belong to the BNF notation. 
 All other symbols are terminals.
 
+  | //Program// | -> | //[Dec]// 
   | //[Name]// | -> | **eps**
   |  |  **|**  | //Name// 
   |  |  **|**  | //Name// ``,`` //[Name]// 
-  | //Program// | -> | //[Dec]// 
   | //Dec// | -> | //Name// //OptChanDecs// ``=`` //Proc// ``.`` 
   |  |  **|**  | //Name// ``:`` //Term// //OptDef// ``.`` 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// ``.`` 
@@ -107,6 +107,7 @@ All other symbols are terminals.
   |  |  **|**  | ``recv`` //Name// //VarDec// 
   |  |  **|**  | ``slice`` ``(`` //[Name]// ``)`` //ATerm// ``as`` //Name// 
   |  |  **|**  | ``fwd`` //Session// ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``fwd`` //Integer// //Session// //Name// 
   | //[Pref]// | -> | **eps**
   |  |  **|**  | //Pref// //[Pref]// 
   | //OptSession// | -> | **eps**

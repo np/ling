@@ -64,7 +64,7 @@ suffChan :: String -> Endom Channel
 suffChan s = suffName $ s ++ "#"
 
 suffChans :: (Show i, Integral i) => i -> Channel -> [Channel]
-suffChans n c = map ((`suffChan` c) . show) [0..n]
+suffChans n c = map ((`suffChan` c) . show) [0..n-1]
 
 noSession :: Channel -> ChanDec
 noSession c = Arg c Nothing
@@ -82,7 +82,7 @@ fwdParTen _   []     = zeroP
 fwdParTen rss (c:cs) = pref `actP` ps
   where
     ss     = map unRSession rss
-    n      = length ss - 1
+    n      = length ss
     ds:dss = map (suffChans n) (c:cs)
     ps     = zipWith fwdP ss (transpose (ds:dss))
     pref   = split' TenK c ds : zipWith (split' ParK) cs dss
@@ -112,6 +112,12 @@ fwdP s0 cs =
     Atm{}   -> [ax s0 cs] `Act` []
     Seq _ss -> error "fwdP/Seq TODO"
 
+-- The session 'Fwd n session' is a par.
+-- This function builds a process which first splits this par.
+fwdProc :: (Show i, Integral i) => i -> Session -> Channel -> Proc
+fwdProc n s c = [split' ParK c cs] `actP` [fwdP s cs]
+  where cs = suffChans n c
+
 replProcs :: (Show i, Integral i) => i -> Name -> Procs -> Procs
 replProcs n = concatMap . replProc n
 
@@ -126,6 +132,10 @@ replProc' n x p = map go [0..n-1] where
 ax :: Session -> [Channel] -> Pref
 ax s cs | validAx s cs = Ax s cs
         | otherwise    = error "ax: Not enough channels given for this forwarder (or the session is not a sink)"
+
+splitAx :: (Show i, Integral i) => i -> Session -> Channel -> [Pref]
+splitAx n s c = [split' ParK c cs, ax s cs]
+  where cs = suffChans n c
 
 replPref :: (Show i, Integral i) => i -> Name -> Pref -> Proc -> Proc
 replPref n x pref p =

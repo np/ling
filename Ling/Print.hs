@@ -182,6 +182,7 @@ instance Print Pref where
     Recv name vardec -> prPrec i 0 (concatD [doc (showString "recv"), prt 0 name, prt 0 vardec])
     NewSlice names aterm name -> prPrec i 0 (concatD [doc (showString "slice"), doc (showString "("), prt 0 names, doc (showString ")"), prt 0 aterm, doc (showString "as"), prt 0 name])
     Ax session names -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 session, doc (showString "("), prt 0 names, doc (showString ")")])
+    SplitAx n session name -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 n, prt 0 session, prt 0 name])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print OptSession where

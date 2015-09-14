@@ -73,6 +73,7 @@ Send.     Pref ::= "send" Name ATerm ;
 Recv.     Pref ::= "recv" Name VarDec ;
 NewSlice. Pref ::= "slice" "(" [Name] ")" ATerm "as" Name ;
 Ax.       Pref ::= "fwd" Session "(" [Name] ")" ;
+SplitAx.  Pref ::= "fwd" Integer Session Name ;
 
 separator Pref  ""  ;
 

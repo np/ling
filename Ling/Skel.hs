@@ -78,6 +78,7 @@ transPref x = case x of
   Recv name vardec -> failure x
   NewSlice names aterm name -> failure x
   Ax session names -> failure x
+  SplitAx integer session name -> failure x
 transOptSession :: OptSession -> Result
 transOptSession x = case x of
   NoSession -> failure x

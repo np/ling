@@ -76,7 +76,7 @@ reifyRSessions = reify
 
 instance Norm Proc where
   type Normalized Proc        = N.Proc
-  reify (N.Act prefs procs)   = Act (reify prefs) (reify procs)
+  reify (N.Act prefs procs)   = Act (map reifyPref prefs) (reify procs)
   reify (N.At t cs)           = Act [] (At (reify t) cs)
   norm  (Act prefs procs)     = [] `actP` normPrefs prefs (norm procs)
 
@@ -84,9 +84,26 @@ normPrefs :: [Pref] -> Endom [N.Proc]
 normPrefs = composeMap normPref
 
 normPref :: Pref -> Endom [N.Proc]
--- This clause expands the forwarders
-normPref (Ax s cs) procs = fwdP (norm s) cs : procs
-normPref pref      procs = [norm pref] `actPs` procs
+normPref pref procs =
+  case pref of
+    -- These two clauses expand the forwarders
+    Ax        s cs    -> fwdP      (norm s) cs : procs
+    SplitAx n s c     -> fwdProc n (norm s) c  : procs
+
+    -- TODO make a flag to turn these on
+{-
+    Ax       s cs     -> go [ax               (norm s) cs]
+    SplitAx  n s c    -> go (splitAx        n (norm s) c)
+-}
+
+    Nu c d            -> go [N.Nu (norm c) (norm d)]
+    ParSplit c ds     -> go [N.Split N.ParK c (norm ds)]
+    TenSplit c ds     -> go [N.Split N.TenK c (norm ds)]
+    SeqSplit c ds     -> go [N.Split N.SeqK c (norm ds)]
+    Send     c t      -> go [N.Send         c (norm t)]
+    Recv     c a      -> go [N.Recv         c (norm a)]
+    NewSlice cs t x   -> go [N.NewSlice    cs (norm t) x]
+  where go = (`actPs` procs)
 
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
@@ -104,30 +121,23 @@ instance Norm Procs where
   norm (Prll procs)        = norm procs
   norm (At t cs)           = [N.At (norm t) cs]
 
+{-
 instance Norm Pref where
   type Normalized Pref = N.Pref
-  reify e = case e of
-    N.Nu c d            -> Nu (reify c) (reify d)
-    N.Split N.ParK c ds -> ParSplit c (reify ds)
-    N.Split N.TenK c ds -> TenSplit c (reify ds)
-    N.Split N.SeqK c ds -> SeqSplit c (reify ds)
-    N.Send     c t      -> Send     c (reify t)
-    N.Recv     c a      -> Recv     c (reify a)
-    N.NewSlice cs t x   -> NewSlice cs (reify t) x
-    N.Ax s cs           -> Ax (reify s) cs
 
   norm  e = case e of
-    Nu c d            -> N.Nu (norm c) (norm d)
-    ParSplit c ds     -> N.Split N.ParK c (norm ds)
-    TenSplit c ds     -> N.Split N.TenK c (norm ds)
-    SeqSplit c ds     -> N.Split N.SeqK c (norm ds)
-    Send     c t      -> N.Send         c (norm t)
-    Recv     c a      -> N.Recv         c (norm a)
-    NewSlice cs t x   -> N.NewSlice    cs (norm t) x
-    Ax       s cs     -> ax (norm s)   cs
+-}
 
 reifyPref :: N.Pref -> Pref
-reifyPref = reify
+reifyPref pref = case pref of
+  N.Nu c d            -> Nu (reify c) (reify d)
+  N.Split N.ParK c ds -> ParSplit c (reify ds)
+  N.Split N.TenK c ds -> TenSplit c (reify ds)
+  N.Split N.SeqK c ds -> SeqSplit c (reify ds)
+  N.Send     c t      -> Send     c (reify t)
+  N.Recv     c a      -> Recv     c (reify a)
+  N.NewSlice cs t x   -> NewSlice cs (reify t) x
+  N.Ax       s cs     -> Ax          (reify s) cs
 
 -- isInfix xs = match "_[^_]*_" xs
 isInfix :: Name -> Maybe Name
