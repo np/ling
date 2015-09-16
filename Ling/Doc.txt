@@ -34,8 +34,8 @@ The symbols used in Ling are the following:
   | , | = | . | :
   | ` | | | ( | )
   | -> | < | > | {
-  | } | ** | \ | @
-  | [ | ] | [: | :]
+  | } | ** | \ | [
+  | ] | [: | :] | @
   | ! | ? | ~ | -o
   | ^ |  |  | 
 
@@ -97,7 +97,6 @@ All other symbols are terminals.
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
   | //Procs// | -> | **eps**
-  |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
   | //Pref// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
   |  |  **|**  | //Name// ``{`` //[ChanDec]// ``}`` 
@@ -108,6 +107,7 @@ All other symbols are terminals.
   |  |  **|**  | ``slice`` ``(`` //[Name]// ``)`` //ATerm// ``as`` //Name// 
   |  |  **|**  | ``fwd`` //Session// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``fwd`` //Integer// //Session// //Name// 
+  |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
   | //[Pref]// | -> | **eps**
   |  |  **|**  | //Pref// //[Pref]// 
   | //OptSession// | -> | **eps**

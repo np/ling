@@ -68,11 +68,11 @@ instance Rename Pref where
     Nu c d          -> Nu (rename f c) (rename f d)
     NewSlice cs t x -> NewSlice (rename f cs) (rename f t) (rename f x)
     Ax s cs         -> Ax (rename f s) (rename f cs)
+    At t cs         -> At (rename f t) (rename f cs)
 
 instance Rename Proc where
-  rename f proc0 = case proc0 of
-    Act prefs procs   -> Act (rename f prefs) (rename (hidePrefs prefs f) procs)
-    At t cs           -> At (rename f t) (rename f cs)
+  rename f (Act prefs procs) =
+    Act (rename f prefs) (rename (hidePrefs prefs f) procs)
 
 instance Rename Session where
   rename f s0 = case s0 of

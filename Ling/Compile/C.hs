@@ -212,11 +212,7 @@ dummyTyp :: C.Exp
 dummyTyp = C.ELit 0
 
 transProc :: Env -> Proc -> [C.Stm]
-transProc env x = case x of
-  At{} ->
-    transErr "transProc/At" x
-  prefs `Act` procs ->
-    transAct env prefs procs
+transProc env (prefs `Act` procs) = transAct env prefs procs
 
 transLVal :: C.LVal -> C.Exp
 transLVal (C.LVar x)   = C.EVar x
@@ -273,6 +269,8 @@ transAct env (pref:prefs) procs =
         p = transAct env' prefs procs
     Ax{} ->
       transErr "transAct/Ax" pref
+    At{} ->
+      transErr "transAct/At" pref
 
 {- stdFor i t body ~~~> for (int i = 0; i < t; i = i + 1) { body } -}
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm

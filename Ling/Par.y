@@ -162,7 +162,6 @@ ListProc : {- empty -} { [] }
          | Proc '|' ListProc { (:) $1 $3 }
 Procs :: { Procs }
 Procs : {- empty -} { Ling.Abs.ZeroP }
-      | '@' ATerm '(' ListName ')' { Ling.Abs.At $2 $4 }
       | '(' ListProc ')' { Ling.Abs.Prll $2 }
 Pref :: { Pref }
 Pref : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Abs.Nu $3 $5 }
@@ -174,6 +173,7 @@ Pref : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Abs.Nu $3 $5 }
      | 'slice' '(' ListName ')' ATerm 'as' Name { Ling.Abs.NewSlice $3 $5 $7 }
      | 'fwd' Session '(' ListName ')' { Ling.Abs.Ax $2 $4 }
      | 'fwd' Integer Session Name { Ling.Abs.SplitAx $2 $3 $4 }
+     | '@' ATerm '(' ListName ')' { Ling.Abs.At $2 $4 }
 ListPref :: { [Pref] }
 ListPref : {- empty -} { [] } | ListPref Pref { flip (:) $1 $2 }
 OptSession :: { OptSession }

@@ -90,15 +90,6 @@ checkSlice cond (c, rs) = when (cond c) $
 
 checkProc :: Proc -> TC Proto
 checkProc (prefs `Act` procs) = checkAct prefs procs
-checkProc (At e cs) =
-  do t <- inferTerm' e
-     case t of
-       TProto ss -> do
-         assertEqual (length cs) (length ss)
-            ["Expected " ++ show (length ss) ++ " channels, not " ++ show (length cs)]
-         return . mkProto $ zip cs ss
-       _ ->
-         throwError . unlines $ ["Expected a protocol type, not:", pretty t]
 
 checkProcs :: [Proc] -> TC Proto
 checkProcs [] = return emptyProto
@@ -248,3 +239,13 @@ checkAct (pref : prefs) procs = do
         -- but with potentially different error message as they are not
         -- actually in parallel.
         return $ parallelProtos v proto (protoAx (one s) cs)
+      At e cs -> do
+        t <- inferTerm' e
+        v <- view verbosity
+        case t of
+          TProto ss -> do
+            assertEqual (length cs) (length ss)
+               ["Expected " ++ show (length ss) ++ " channels, not " ++ show (length cs)]
+            return $ parallelProtos v proto (mkProto $ zip cs ss)
+          _ ->
+            throwError . unlines $ ["Expected a protocol type, not:", pretty t]

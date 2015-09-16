@@ -73,7 +73,6 @@ transProc x = case x of
 transProcs :: Procs -> L.Procs
 transProcs x = case x of
   ZeroP -> L.ZeroP
-  At aterm names -> L.At (transATerm aterm) (map transName names)
   Prll procs -> L.Prll (map transProc procs)
 
 transPref :: Pref -> L.Pref
@@ -87,6 +86,7 @@ transPref x = case x of
   NewSlice names aterm name -> L.NewSlice (map transName names) (transATerm aterm) (transName name)
   Ax session names -> L.Ax (transSession session) (map transName names)
   SplitAx integer session name -> L.SplitAx integer (transSession session) (transName name)
+  At aterm names -> L.At (transATerm aterm) (map transName names)
 
 transOptSession :: OptSession -> L.OptSession
 transOptSession x = case x of

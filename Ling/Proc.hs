@@ -14,7 +14,6 @@ type FreeChans a = a -> Set Channel
 
 freeChans :: FreeChans Proc
 freeChans (prefs `Act` procs) = fcAct prefs procs
-freeChans (At _ cs)           = l2s cs
 
 bndChans :: FreeChans [ChanDec]
 bndChans = l2s . map _argName
@@ -32,6 +31,7 @@ fcAct (pref:prefs) procs =
     Recv c _xt     -> c  `Set.insert` cs
     NewSlice{}     -> error "fcAct/NewSlice undefined"
     Ax _ ds        -> l2s ds
+    At _ cs        -> l2s cs
   where cs = fcAct prefs procs
 
 zeroP :: Proc
@@ -56,9 +56,7 @@ actP0s :: [Pref] -> Procs -> Procs
 actP0s prefs procs = prefs `actPs` filter0s procs
 
 filter0 :: Proc -> Procs
-filter0 p = case p of
-  prefs `Act` procs -> prefs `actP0s` procs
-  At{}              -> [p]
+filter0 (prefs `Act` procs) = prefs `actP0s` procs
 
 suffChan :: String -> Endom Channel
 suffChan s = suffName $ s ++ "#"
@@ -151,12 +149,10 @@ replPref n x pref p =
     -- replication of the expansion.
     -- This might be needed because of abstract sessions.
     Ax{}           -> error "replProc/Ax"
+    At{}           -> error "replProc/At"
 
 replProc :: (Show i, Integral i) => i -> Name -> Proc -> Procs
-replProc n x p0 =
-  case p0 of
-    prefs0 `Act` procs ->
-      case prefs0 of
-        []           -> replProcs n x procs
-        pref : prefs -> [replPref n x pref (prefs `actP` procs)]
-    At{}       -> error "replProc/At"
+replProc n x (prefs0 `Act` procs) =
+  case prefs0 of
+    []           -> replProcs n x procs
+    pref : prefs -> [replPref n x pref (prefs `actP` procs)]

@@ -59,7 +59,7 @@ data Term
 data Proc = Act [Pref] Procs
   deriving (Eq, Ord, Show, Read)
 
-data Procs = ZeroP | At ATerm [Name] | Prll [Proc]
+data Procs = ZeroP | Prll [Proc]
   deriving (Eq, Ord, Show, Read)
 
 data Pref
@@ -72,6 +72,7 @@ data Pref
     | NewSlice [Name] ATerm Name
     | Ax Session [Name]
     | SplitAx Integer Session Name
+    | At ATerm [Name]
   deriving (Eq, Ord, Show, Read)
 
 data OptSession = NoSession | SoSession RSession

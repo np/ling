@@ -8,8 +8,8 @@ import Ling.Fmt.Albert.ErrM
 
 }
 
-%name pListName ListName
 %name pProgram Program
+%name pListName ListName
 %name pDec Dec
 %name pConName ConName
 %name pListConName ListConName
@@ -94,12 +94,12 @@ L_Name { PT _ (T_Name $$) }
 Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
 Name    :: { Name} : L_Name { Name ($1)}
 
+Program :: { Program }
+Program : ListDec { Ling.Fmt.Albert.Abs.Prg (reverse $1) }
 ListName :: { [Name] }
 ListName : {- empty -} { [] }
          | Name { (:[]) $1 }
          | Name ',' ListName { (:) $1 $3 }
-Program :: { Program }
-Program : ListDec { Ling.Fmt.Albert.Abs.Prg (reverse $1) }
 Dec :: { Dec }
 Dec : Name OptChanDecs '=' Proc '.' { Ling.Fmt.Albert.Abs.DDef $1 $2 $4 }
     | Name ':' Term OptDef '.' { Ling.Fmt.Albert.Abs.DSig $1 $3 $4 }
@@ -162,7 +162,6 @@ ListProc : {- empty -} { [] }
          | Proc '|' ListProc { (:) $1 $3 }
 Procs :: { Procs }
 Procs : {- empty -} { Ling.Fmt.Albert.Abs.ZeroP }
-      | '@' ATerm '(' ListName ')' { Ling.Fmt.Albert.Abs.At $2 $4 }
       | '(' ListProc ')' { Ling.Fmt.Albert.Abs.Prll $2 }
 Pref :: { Pref }
 Pref : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Fmt.Albert.Abs.Nu $3 $5 }
@@ -174,6 +173,7 @@ Pref : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Fmt.Albert.Abs.Nu $3 $5 }
      | 'slice' '(' ListName ')' ATerm 'as' Name { Ling.Fmt.Albert.Abs.NewSlice $3 $5 $7 }
      | 'fwd' Session '(' ListName ')' { Ling.Fmt.Albert.Abs.Ax $2 $4 }
      | 'fwd' Integer Session Name { Ling.Fmt.Albert.Abs.SplitAx $2 $3 $4 }
+     | '@' ATerm '(' ListName ')' { Ling.Fmt.Albert.Abs.At $2 $4 }
 ListPref :: { [Pref] }
 ListPref : {- empty -} { [] } | ListPref Pref { flip (:) $1 $2 }
 OptSession :: { OptSession }

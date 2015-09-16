@@ -133,6 +133,9 @@ isReadyPref env pref =
     Split{}    -> True
     Nu{}       -> True
     Ax{}       -> True
+    -- `At` is considered non-ready. Therefor we cannot put
+    -- a process like (@p0() | @p1()) in sequence.
+    At{}       -> False
     Send c _   -> statusAt c env == Just Empty
     Recv c _   -> statusAt c env == Just Full
     NewSlice{} -> error "isReadyPref: IMPOSSIBLE"
@@ -146,9 +149,8 @@ transSplit c dOSs env =
         ds = map _argName dOSs
 
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
-transProc env p0 k = case p0 of
-  At{}              -> k env p0
-  prefs `Act` procs -> transAct env prefs procs k
+transProc env (prefs `Act` procs) k =
+  transAct env prefs procs k
 
 -- prefixes about different channels can be reordered
 transAct :: Env -> [Pref] -> [Proc] -> (Env -> Proc -> r) -> r
@@ -183,6 +185,8 @@ transPref pref =
       id
     Ax{} ->
       id
+    At{} ->
+      id
 
 -- Assumption input processes should not have zeros (filter0s)
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
@@ -201,11 +205,6 @@ transProcs env (p0:p0s) waiting k =
           transAct env readyPis (p0s ++ reverse waiting ++ [restPis `actP` procs0]) k
         _ ->
           transProcs env p0s (p0 : waiting) k
-
-    -- These cases are considered non-ready, so if another parallel process can
-    -- proceed we do so.
-    -- Therefor we cannot put a process like (@p0() | @p1()) in sequence.
-    At{} -> transProcs env p0s (p0 : waiting) k
 
     Act [] _procs0 ->
       error "transProcs: impossible" -- filter0s prevents that

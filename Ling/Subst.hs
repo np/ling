@@ -95,11 +95,11 @@ instance Subst Pref where
     Nu c d            -> Nu (subst f c) (subst f d)
     NewSlice cs t x   -> NewSlice cs (subst f t) x
     Ax{}              -> pref
+    At t cs           -> At (subst f t) cs
 
 instance Subst Proc where
-  subst f p0 = case p0 of
-    Act prefs procs   -> Act (subst f prefs) (subst (hidePrefs prefs f) procs)
-    At t cs           -> At (subst f t) cs
+  subst f (Act prefs procs) =
+    Act (subst f prefs) (subst (hidePrefs prefs f) procs)
 
 instance Subst Session where
   subst f s0 = case s0 of

@@ -77,7 +77,6 @@ reifyRSessions = reify
 instance Norm Proc where
   type Normalized Proc        = N.Proc
   reify (N.Act prefs procs)   = Act (map reifyPref prefs) (reify procs)
-  reify (N.At t cs)           = Act [] (At (reify t) cs)
   norm  (Act prefs procs)     = [] `actP` normPrefs prefs (norm procs)
 
 normPrefs :: [Pref] -> Endom [N.Proc]
@@ -103,6 +102,7 @@ normPref pref procs =
     Send     c t      -> go [N.Send         c (norm t)]
     Recv     c a      -> go [N.Recv         c (norm a)]
     NewSlice cs t x   -> go [N.NewSlice    cs (norm t) x]
+    At       t cs     -> go [N.At             (norm t) cs]
   where go = (`actPs` procs)
 
 reifyProc :: N.Proc -> Proc
@@ -119,14 +119,6 @@ instance Norm Procs where
   reify procs              = reifyProcs procs
   norm ZeroP               = []
   norm (Prll procs)        = norm procs
-  norm (At t cs)           = [N.At (norm t) cs]
-
-{-
-instance Norm Pref where
-  type Normalized Pref = N.Pref
-
-  norm  e = case e of
--}
 
 reifyPref :: N.Pref -> Pref
 reifyPref pref = case pref of
@@ -138,6 +130,7 @@ reifyPref pref = case pref of
   N.Recv     c a      -> Recv     c (reify a)
   N.NewSlice cs t x   -> NewSlice cs (reify t) x
   N.Ax       s cs     -> Ax          (reify s) cs
+  N.At       t cs     -> At          (reify t) cs
 
 -- isInfix xs = match "_[^_]*_" xs
 isInfix :: Name -> Maybe Name
