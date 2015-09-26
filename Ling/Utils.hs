@@ -19,6 +19,14 @@ data Arg a = Arg { _argName :: Name, _unArg :: a }
 
 $(makeLenses ''Arg)
 
+data Abs a b = Abs { _argAbs :: Arg a, _bodyAbs :: b }
+
+$(makeLenses ''Abs)
+
+data Telescope a b = Telescope { _argsTele :: [Arg a], _bodyTele :: b }
+
+$(makeLenses ''Telescope)
+
 type Channel = Name
 
 nameString :: Iso' Name String
