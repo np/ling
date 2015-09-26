@@ -56,16 +56,18 @@ substName f x = fromMaybe (Def x []) (f ^. at x)
 instance Subst Term where
   subst f e0 = case e0 of
     Def x es   -> app0 (substName f x) (subst f es)
+  -- TODO binder
     Lam  arg t -> Lam  (subst f arg) (subst (hideArg arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hideArg arg f) t)
     Case t brs -> Case (subst f t)   (map (second (subst f)) brs)
+
     Con{}      -> e0
     TTyp       -> e0
     Lit{}      -> e0
 
-    Proc{}     -> error "subst/Proc: TODO"
-    TProto{}   -> error "subst/TProto: TODO"
+    Proc cs p  -> Proc cs (subst f p)
+    TProto rs  -> TProto (subst f rs)
 
 instance Subst a => Subst (Arg a) where
   subst f (Arg x e) = Arg x (subst f e)
