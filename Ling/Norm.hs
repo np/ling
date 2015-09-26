@@ -1,12 +1,15 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Ling.Norm where
 
-import Ling.Abs (Name(Name))
-import Ling.Utils
+import           Ling.Abs     (Name (Name))
+import           Ling.Utils
+
+import           Control.Lens
 
 type ChanDec = Arg (Maybe RSession)
 type VarDec  = Arg Typ
 
-data Program = Program [Dec]
+data Program = Program { _prgDecs :: [Dec] }
   deriving (Eq,Ord,Show,Read)
 
 data Dec
@@ -14,8 +17,7 @@ data Dec
   | Dat Name [Name]
   deriving (Eq,Ord,Show,Read)
 
-data Proc
-  = Act [Pref] Procs
+data Proc = Act { _procPrefs :: [Pref], _procProcs :: Procs }
   deriving (Eq,Ord,Show,Read)
 
 type Procs = [Proc]
@@ -67,11 +69,21 @@ data Session
   deriving (Eq,Ord,Show,Read)
 
 data RSession
-  = Repl Session Term
+  = Repl { _rsession :: Session
+         , _rfactor  :: Term
+         }
   deriving (Eq,Ord,Show,Read)
 
 type Sessions = [RSession]
 type NSession = Maybe Session
+
+makeLenses ''Proc
+makeLenses ''Program
+makeLenses ''RSession
+
+instance Monoid Program where
+  mempty        = Program []
+  mappend p0 p1 = Program $ p0^.prgDecs ++ p1^.prgDecs
 
 vec :: Typ -> Term -> Typ
 vec t e = Def (Name "Vec") [t,e]
