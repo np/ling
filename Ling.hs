@@ -1,29 +1,29 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
-import System.IO (stderr, hPutStrLn)
-import System.Environment (getArgs)
-import System.Exit (exitFailure)
+import           System.Environment   (getArgs)
+import           System.Exit          (exitFailure)
+import           System.IO            (hPutStrLn, stderr)
 
-import Control.Monad (when)
-import Control.Lens
+import           Control.Lens
+import           Control.Monad        (when)
 
-import qualified MiniC.Print as C
+import qualified MiniC.Print          as C
 
-import Ling.Lex (Token)
-import Ling.Par
-import Ling.Abs
-import Ling.Print
-import Ling.Reify
-import Ling.Utils
-import Ling.Print.Instances ()
-import qualified Ling.Compile.C as Compile
-import qualified Ling.Norm as N
-import qualified Ling.Sequential as Sequential
-import Ling.Proc.Checker (checkProgram)
-import Ling.Term.Checker (runTC, debugChecker, CheckOpts, defaultCheckOpts)
-
-import Ling.ErrM
+import           Ling.Abs
+import           Ling.Check.Base      (CheckOpts, debugChecker,
+                                       defaultCheckOpts, runTC)
+import           Ling.Check.Program   (checkProgram)
+import qualified Ling.Compile.C       as Compile
+import           Ling.ErrM
+import           Ling.Lex             (Token)
+import qualified Ling.Norm            as N
+import           Ling.Par
+import           Ling.Print
+import           Ling.Print.Instances ()
+import           Ling.Reify
+import qualified Ling.Sequential      as Sequential
+import           Ling.Utils
 
 type ParseFun a = [Token] -> Err a
 

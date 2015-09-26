@@ -2,6 +2,7 @@
 module Ling.Scoped
   ( Sub
   , Defs
+  , emptyScope
   , addEDef
   , Scoped(Scoped)
   , ldefs
@@ -13,8 +14,7 @@ module Ling.Scoped
   where
 
 import           Control.Lens
-import           Data.Map     (Map)
-import qualified Data.Map     as Map
+import           Data.Map     (Map, empty, insert, member)
 import           Data.Maybe   (fromMaybe)
 
 import           Ling.Abs     (Name)
@@ -42,11 +42,14 @@ instance Applicative Scoped where
   Scoped df f <*> Scoped dx x = ...
 -}
 
+emptyScope :: a -> Scoped a
+emptyScope = Scoped empty
+
 addEDef :: Name -> Term -> Endom Defs
 addEDef x e m
-  | e == Def x []    = m
-  | x `Map.member` m = error "addEDef: IMPOSSIBLE"
-  | otherwise        = Map.insert x e m
+  | e == Def x [] = m
+  | x `member` m  = error "addEDef: IMPOSSIBLE"
+  | otherwise     = insert x e m
 
 subst1 :: Rename a => Name -> (Name, Term) -> Scoped a -> Scoped a
 subst1 d (x,e) (Scoped defs s) =

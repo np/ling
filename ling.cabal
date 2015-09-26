@@ -17,6 +17,9 @@ executable Ling
   ghc-options:       -Wall
   other-modules:
    Ling.Abs,
+   Ling.Check.Base,
+   Ling.Check.Core,
+   Ling.Check.Program,
    Ling.Compile.C,
    Ling.Constraint,
    Ling.Equiv,
@@ -27,7 +30,6 @@ executable Ling
    Ling.Print,
    Ling.Print.Instances,
    Ling.Proc,
-   Ling.Proc.Checker,
    Ling.Proto,
    Ling.Reify,
    Ling.Rename,
@@ -35,7 +37,6 @@ executable Ling
    Ling.Sequential,
    Ling.Session,
    Ling.Subst,
-   Ling.Term.Checker,
    Ling.Utils,
    MiniC.Abs,
    MiniC.Lex,

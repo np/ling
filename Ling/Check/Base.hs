@@ -4,15 +4,17 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
-module Ling.Term.Checker where
+module Ling.Check.Base where
 
 import           Ling.Abs                  (Name)
+import           Ling.Constraint
 import           Ling.Equiv
 import           Ling.ErrM
 import           Ling.Norm
 import           Ling.Print                hiding (render)
 import           Ling.Proto
 import           Ling.Scoped
+import           Ling.Session
 import           Ling.Subst                (Subst, unScoped)
 import           Ling.Utils                hiding (subst1)
 
@@ -22,6 +24,7 @@ import           Control.Monad.Error.Class
 import           Control.Monad.Reader
 import           Data.List                 (sort)
 import           Data.Map                  (Map, empty)
+import qualified Data.Set                  as Set
 
 data ProcDef = ProcDef Name [ChanDec] Proc Proto
 
@@ -89,45 +92,10 @@ checkEquivalence msg t0 t1 = do
 checkTypeEquivalence :: Scoped Typ -> Scoped Typ -> TC ()
 checkTypeEquivalence = checkEquivalence "Types are not equivalent."
 
-checkTyp :: Typ -> TC ()
-checkTyp = checkTerm TTyp
-
 checkNotIn :: Lens' TCEnv (Map Name v) -> String -> Name -> TC ()
 checkNotIn l msg c = do
   b <- view $ l . hasKey c
   assert (not b) ["Already defined " ++ msg ++ ": ", pretty c]
-
-checkVarDef :: Name -> Typ -> Maybe Term -> Endom (TC a)
-checkVarDef x typ mt kont = do
-  checkNotIn evars "name" x
-  checkTyp typ
-  checkMaybeTerm typ mt
-  local ((evars . at x .~ Just typ)
-       . (edefs . at x .~ mt)) kont
-
-checkVarDec :: VarDec -> Endom (TC a)
-checkVarDec (Arg x typ) = checkVarDef x typ Nothing
-
--- Check a "telescope", where bindings scope over the following ones
-checkVarDecs :: [VarDec] -> Endom (TC a)
-checkVarDecs = composeMap checkVarDec
-
--- TODO: Here I assume that sessions are well formed
-checkSessions :: [RSession] -> TC ()
-checkSessions = mapM_ checkRSession
-
-checkRSession :: RSession -> TC ()
-checkRSession (Repl s t) = checkSession s >> checkTerm int t
-
-checkSession :: Session -> TC ()
-checkSession s0 = case s0 of
-  Atm _ n -> checkTerm tSession (Def n [])
-  End -> return ()
-  Snd t s -> checkTyp t >> checkSession s
-  Rcv t s -> checkTyp t >> checkSession s
-  Par ss -> checkSessions ss
-  Ten ss -> checkSessions ss
-  Seq ss -> checkSessions ss
 
 checkNoDups :: (Print a, Eq a) => String -> [a] -> TC ()
 checkNoDups _   [] = return ()
@@ -135,8 +103,39 @@ checkNoDups msg (x:xs)
   | x `elem` xs    = throwError $ pretty x ++ " appears twice " ++ msg
   | otherwise      = checkNoDups msg xs
 
-inferCase :: Term -> Scoped Typ -> [(Name,Scoped Typ)] -> TC (Scoped Typ)
-inferCase t ty brs =
+checkConflictingChans :: Proto -> [Channel] -> TC Proto
+checkConflictingChans proto cs =
+   mapM_ check iss >>
+   return (proto & constraints . constraintSet .~ Set.insert com1 mix)
+  where
+    scs = l2s cs
+    iss = map (Set.intersection scs) (s2l ss)
+    ss  = proto ^. constraints . constraintSet
+    (mix, com) = Set.partition (Set.null . Set.intersection scs) ss
+    com1 = Set.unions (s2l com)
+    check cc = assert (Set.size cc < 2)
+      ["These channels should be used independently:", pretty (s2l cc)]
+
+checkOrderedChans :: Proto -> [Channel] -> TC ()
+checkOrderedChans proto cs =
+  assert (or [ cs == sub os | os <- proto ^. orders ])
+    ["These channels should be used in-order:", pretty cs]
+  where
+    sub = rmDups . filter (`Set.member` l2s cs)
+
+checkEqSessions :: Name -> RSession -> Maybe RSession -> TC ()
+checkEqSessions c s0 Nothing   = assertEqual s0 (one End) ["Unused channel: " ++ pretty c]
+checkEqSessions c s0 (Just s1) =
+  assertEqual s0 s1
+    ["On channel " ++ pretty c ++ " sessions are not equivalent."
+    ,"Given session (expanded):"
+    ,"  " ++ pretty s0
+    ,"Inferred session:"
+    ,"  " ++ pretty s1
+    ]
+
+caseType :: Term -> Scoped Typ -> [(Name,Scoped Typ)] -> TC (Scoped Typ)
+caseType t ty brs =
   case unDef ty ^. scoped of
     Def d [] -> do
       def <- view $ ddefs . at d
@@ -148,9 +147,6 @@ inferCase t ty brs =
                    else emptyScope (Case t (brs & mapped . _2 %~ unScoped))
         _ -> throwError $ "Case on a non data type: " ++ pretty d
     _ -> throwError $ "Case on a non data type: " ++ pretty (ty^.scoped)
-
-inferBranch :: (Name,Term) -> TC (Name,Scoped Typ)
-inferBranch (n,t) = (,) n <$> inferTerm t
 
 conTypeName :: Name -> TC Name
 conTypeName c =
@@ -169,61 +165,6 @@ sFun :: VarDec -> Scoped Typ -> Scoped Typ
 sFun arg s
   | s^.ldefs.hasKey(arg^.argName) = error "sFun: IMPOSSIBLE"
   | otherwise                     = TFun arg <$> s
-
-inferTerm' :: Term -> TC Typ
-inferTerm' = fmap unScoped . inferTerm
-
-inferTerm :: Term -> TC (Scoped Typ)
-inferTerm e0 = debug ["Inferring type of " ++ pretty e0] >> case e0 of
-  Lit _           -> return $ emptyScope int
-  TTyp            -> return sTyp -- type-in-type
-  Def x es        -> inferDef x es
-  Lam arg t       -> sFun arg <$> checkVarDec arg (inferTerm t)
-  Con n           -> conType n
-  Case t brs      -> join $ inferCase t <$> inferTerm t <*> mapM inferBranch brs
-  Proc{}          -> throwError "inferTerm: NProc"
-  TFun arg s      -> checkVarDec arg (checkTyp s) >> return sTyp
-  TSig arg s      -> checkVarDec arg (checkTyp s) >> return sTyp
-  TProto sessions -> checkSessions sessions       >> return sTyp
-
-checkTerm :: Typ -> Term -> TC ()
-checkTerm = checkTerm' . emptyScope
-
-emptyScope :: a -> Scoped a
-emptyScope = Scoped empty
-
-checkTerm' :: Scoped Typ -> Term -> TC ()
-checkTerm' expectedTyp e = do
-  inferredTyp <- inferTerm e
-  debug ["Checking term"
-        ,"exp:      " ++ pretty e
-        ,"expected: " ++ pretty expectedTyp
-        ,"inferred: " ++ pretty inferredTyp
-        ]
-  checkTypeEquivalence expectedTyp inferredTyp
-
-checkMaybeTerm :: Typ -> Maybe Term -> TC ()
-checkMaybeTerm _   Nothing   = return ()
-checkMaybeTerm typ (Just tm) = checkTerm typ tm
-
-inferDef :: Name -> [Term] -> TC (Scoped Typ)
-inferDef f es = do
-  mtyp  <- view $ evars . at f
-  defs  <- view edefs
-  case mtyp of
-    Just typ -> checkApp f 0 (Scoped defs typ) es
-    Nothing  -> throwError $ "unknown definition " ++ unName f
-
-checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC (Scoped Typ)
-checkApp _ _ typ []     = return typ
-checkApp f n typ (e:es) =
-  case unDef typ of
-    (Scoped defs typ'@(TFun (Arg x ty) s)) -> do
-      checkTerm' (Scoped defs ty) e
-      checkApp f (n + 1) (subst1 f (x, e) (Scoped defs s)) es
-    _ -> throwError ("Too many arguments given to " ++ pretty f ++ ", " ++
-                     show n ++ " arguments expected and " ++
-                     show (n + 1 + length es) ++ " were given.")
 
 whenDebug :: MonadReader TCEnv m => m () -> m ()
 whenDebug f = do
