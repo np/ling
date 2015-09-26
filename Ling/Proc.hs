@@ -30,8 +30,8 @@ fcAct (pref:prefs) procs =
     Send c _e      -> c  `Set.insert` cs
     Recv c _xt     -> c  `Set.insert` cs
     NewSlice{}     -> error "fcAct/NewSlice undefined"
-    Ax _ ds        -> l2s ds
-    At _ cs        -> l2s cs
+    Ax _ ds        -> l2s ds `Set.union` cs
+    At _ ds        -> l2s ds `Set.union` cs
   where cs = fcAct prefs procs
 
 zeroP :: Proc
