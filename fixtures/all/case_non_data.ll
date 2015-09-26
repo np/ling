@@ -1,1 +1,1 @@
-bad : Int = case 42 of { }.
+bad : Int = case 42 of { }

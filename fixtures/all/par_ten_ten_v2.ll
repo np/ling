@@ -4,4 +4,4 @@ par_ten_ten_v2 (c : {[?Int, !Int], [!Int, ?Int]}) =
     | ( recv h (x : Int) | recv l (y : Int) )
     )
   | send g 2
-  ).
+  )

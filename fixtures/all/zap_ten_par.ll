@@ -9,4 +9,4 @@ zap_ten_par (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
   | recv cfio (y : Int)
     send coi y
   )
-.
+

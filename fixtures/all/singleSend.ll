@@ -1,1 +1,1 @@
-singleSend (c : !Int) = send c 42.
+singleSend (c : !Int) = send c 42

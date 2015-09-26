@@ -4,4 +4,4 @@ fwd_par2_ten2_expanded (i : {?Int, !Int. ?Int}, o : [!Int, ?Int.!Int])
     ( recv i0 (x : Int) send o0 x
     | recv o1 (x : Int) send i1 x
       recv i1 (x : Int) send o1 x
-    ).
+    )

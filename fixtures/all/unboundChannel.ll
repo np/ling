@@ -1,1 +1,1 @@
-unboundChannel = recv c (x : Int).
+unboundChannel = recv c (x : Int)

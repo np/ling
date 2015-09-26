@@ -1,1 +1,1 @@
-data Bad = `foo | `bar | `foo.
+data Bad = `foo | `bar | `foo

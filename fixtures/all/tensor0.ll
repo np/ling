@@ -1,1 +1,1 @@
-tensor0 (c : []) = c[].
+tensor0 (c : []) = c[]

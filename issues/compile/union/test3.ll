@@ -8,4 +8,4 @@ test3 =
     send d 1
     d{d0,d1}
     ( recv d0 (y0 : Int) | recv d1 (z0 : Int) )
-  ).
+  )

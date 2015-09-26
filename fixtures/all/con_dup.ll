@@ -1,1 +1,1 @@
-data T = `c | `d | `c.
+data T = `c | `d | `c

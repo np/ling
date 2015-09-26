@@ -7,5 +7,5 @@ cut_recv_send_send_recv  =
   recv d (y : Int)
   send d 2 
   recv c (x : Int)
-  .
+
 

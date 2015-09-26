@@ -1,5 +1,5 @@
-m : Int.
-n : Int.
+m : Int
+n : Int
 
 merger ( c0 : [! Vec Int m, ? Vec Int m]
        , c1 : [! Vec Int n, ? Vec Int n]
@@ -14,4 +14,4 @@ merger ( c0 : [! Vec Int m, ? Vec Int m]
   | recv c0o (v0 : Vec Int m)
     recv c1o (v1 : Vec Int n)
     send co  (merge m n v0 v1)
-  ).
+  )

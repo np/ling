@@ -4,4 +4,4 @@ parallel_assoc_2tensor2_left (cde : [[!Int, !Int], !Int]) =
   ( send c 1
   | send d 2
   | send e 3
-  ).
+  )

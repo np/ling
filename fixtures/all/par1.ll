@@ -1,1 +1,1 @@
-par1 (c : {!Int}) = c{d} send d 42.
+par1 (c : {!Int}) = c{d} send d 42

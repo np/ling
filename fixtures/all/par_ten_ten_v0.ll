@@ -5,4 +5,4 @@ par_ten_ten_v0 (c : {[?Int, !Int], [!Int, ?Int]}) =
     | ( send k 1 | recv l (y : Int) )
     )
   | send g 2
-  ).
+  )

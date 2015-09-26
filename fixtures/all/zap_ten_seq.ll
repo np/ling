@@ -8,4 +8,4 @@ zap_ten_seq (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
   send cfii x
   recv cfio (y : Int)
   send coi y
-.
+

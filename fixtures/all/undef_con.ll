@@ -1,1 +1,1 @@
-bad : Type = `bad.
+bad : Type = `bad

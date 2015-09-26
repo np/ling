@@ -6,4 +6,4 @@ wrong_order_seq2_seq2 (c : [: [: !Int,!Int :], [: !Int,!Int :] :]) =
   send i 4
   send f 1
   send g 2
-.
+

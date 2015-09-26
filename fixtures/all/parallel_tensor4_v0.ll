@@ -5,4 +5,4 @@ parallel_tensor4_v0 (cd : [!Int,!Int], ef : [!Int,!Int]) =
   ef[e,f]
   ( ( send c 1 | send e 2 )
   | ( send d 3 | send f 4 )
-  ).
+  )

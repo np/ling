@@ -1,1 +1,1 @@
-missingSend = new (c : ?Int, d) recv c (x : Int).
+missingSend = new (c : ?Int, d) recv c (x : Int)

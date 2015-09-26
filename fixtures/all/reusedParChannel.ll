@@ -1,1 +1,1 @@
-reusedParChannel (c : {}) = c{} c{}.
+reusedParChannel (c : {}) = c{} c{}

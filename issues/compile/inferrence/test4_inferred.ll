@@ -9,4 +9,4 @@ test4_inferred (r) =
     send d 1
     send d 2
     send d 3
-  ).
+  )

@@ -7,4 +7,4 @@ dead_lock_new_new =
   |
     recv e (y : Int)
     send d y
-  ).
+  )

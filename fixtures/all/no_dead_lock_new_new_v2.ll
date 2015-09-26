@@ -9,4 +9,4 @@ no_dead_lock_new_new_v2 =
       send f x
     | recv e (y : Int)
     )
-  ).
+  )

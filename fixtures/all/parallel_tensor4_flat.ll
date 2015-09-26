@@ -5,4 +5,4 @@ parallel_tensor4_flat (cd : [!Int,!Int], ef : [!Int,!Int]) =
   | send e 2
   | send d 3
   | send f 4
-  ).
+  )

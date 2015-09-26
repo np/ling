@@ -1,1 +1,1 @@
-Int : Type.
+Int : Type

@@ -3,4 +3,4 @@ seq3 (c : [: !Int, !Int, !Int :]) =
   send c0 0
   send c1 1
   send c2 2
-.
+

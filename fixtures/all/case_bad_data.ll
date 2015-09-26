@@ -1,4 +1,4 @@
-data T = `c | `d.
-data U = `e | `f.
+data T = `c | `d
+data U = `e | `f
 
-badTU : (t : T)-> U = \(t : T)-> case t of { `e -> `c, `f -> `d }.
+badTU : (t : T)-> U = \(t : T)-> case t of { `e -> `c, `f -> `d }

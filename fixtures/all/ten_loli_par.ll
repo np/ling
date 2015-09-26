@@ -4,4 +4,4 @@ ten_loli_par (c : [!Int,!Int] -o {!Int,!Int}) =
   o{o0,o1}
   ( fwd(?Int)(i0,o0)
   | fwd(?Int)(i1,o1)
-  ).
+  )

@@ -6,4 +6,4 @@ dead_lock_tensor2_tensor2 (cd : [?Int, !Int], ef : [?Int, !Int]) =
   |
     recv e (y : Int)
     send d y
-  ).
+  )

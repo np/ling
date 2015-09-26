@@ -6,4 +6,4 @@ wrong_order_par2_par2 (c : [: {!Int,!Int}, {!Int,!Int} :]) =
   send h 3
   send i 4
   send f 1
-.
+

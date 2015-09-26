@@ -4,4 +4,4 @@ cut_send_recv_recv_send = new (c : !Int.?Int, d : ?Int.!Int)
   | recv d (y : Int)
     send d 2
   )
-.
+

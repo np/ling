@@ -18,4 +18,4 @@ test2 =
       send d1 (z0 + 5)
       recv d1 (z1 : Int)
     )
-  ).
+  )

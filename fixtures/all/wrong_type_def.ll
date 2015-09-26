@@ -1,1 +1,1 @@
-wrong : Int = Type.
+wrong : Int = Type

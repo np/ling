@@ -1,5 +1,5 @@
-m : Int.
-n : Int.
+m : Int
+n : Int
 
 merger_seq ( c0 : ! Vec Int m. ? Vec Int m
            , c1 : ! Vec Int n. ? Vec Int n
@@ -12,4 +12,4 @@ merger_seq ( c0 : ! Vec Int m. ? Vec Int m
   recv c0 (v0 : Vec Int m)  -- Same here these two recv can commute
   recv c1 (v1 : Vec Int n)
   send co (merge m n v0 v1)
-.
+
