@@ -12,15 +12,16 @@ data Program = Prg [Dec]
   deriving (Eq, Ord, Show, Read)
 
 data Dec
-    = DDef Name OptChanDecs Proc
-    | DSig Name Term OptDef
+    = DPrc Name OptChanDecs Proc
+    | DDef Name OptSig Term
+    | DSig Name Term
     | DDat Name [ConName]
   deriving (Eq, Ord, Show, Read)
 
 data ConName = CN Name
   deriving (Eq, Ord, Show, Read)
 
-data OptDef = NoDef | SoDef Term
+data OptSig = NoSig | SoSig Term
   deriving (Eq, Ord, Show, Read)
 
 data VarDec = VD Name Term

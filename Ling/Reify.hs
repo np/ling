@@ -262,20 +262,24 @@ instance Norm Program where
 reifyProgram :: N.Program -> Program
 reifyProgram = reify
 
-instance Norm OptDef where
-  type Normalized OptDef = Maybe N.Term
-  reify Nothing          = NoDef
-  reify (Just t)         = SoDef (reify t)
-  norm NoDef             = Nothing
-  norm (SoDef t)         = Just (norm t)
+instance Norm OptSig where
+  type Normalized OptSig = Maybe N.Term
+  reify Nothing          = NoSig
+  reify (Just t)         = SoSig (reify t)
+  norm NoSig             = Nothing
+  norm (SoSig t)         = Just (norm t)
 
 instance Norm Dec where
   type Normalized Dec   = N.Dec
-  reify (N.Sig d ty tm) =  DSig d (reify ty) (reify tm)
-  reify (N.Dec d cs p)  =  DDef d (reify cs) (reify p)
-  reify (N.Dat d cs)    =  DDat d (reify cs)
-  norm  ( DSig d ty tm) = N.Sig d (norm ty) (norm tm)
-  norm  ( DDef d cs p)  = N.Dec d (norm cs) (norm p)
+
+  norm  ( DSig d ty)    = N.Sig d (Just $ norm ty) Nothing
+  norm  ( DDef d ty tm) = N.Sig d (norm ty) (Just $ norm tm)
+  norm  ( DPrc d cs p)  = dprc  d (norm cs) (norm p)
   norm  ( DDat d cs)    = N.Dat d (norm cs)
+
+  reify (N.Sig _ Nothing   Nothing)   = error "IMPOSSIBLE Norm Dec/reify: no def nor sig"
+  reify (N.Sig d (Just ty) Nothing)   = DSig d (reify ty)
+  reify (N.Sig d ty        (Just tm)) = DDef d (reify ty) (reify tm)
+  reify (N.Dat d cs)                  = DDat d (reify cs)
 
 -- -}

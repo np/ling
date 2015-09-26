@@ -10,8 +10,7 @@ data Program = Program [Dec]
   deriving (Eq,Ord,Show,Read)
 
 data Dec
-  = Dec Name [ChanDec] Proc
-  | Sig Name Typ (Maybe Term)
+  = Sig Name (Maybe Typ) (Maybe Term)
   | Dat Name [Name]
   deriving (Eq,Ord,Show,Read)
 

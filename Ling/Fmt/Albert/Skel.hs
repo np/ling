@@ -17,16 +17,17 @@ transProgram x = case x of
   Prg decs -> failure x
 transDec :: Dec -> Result
 transDec x = case x of
-  DDef name optchandecs proc -> failure x
-  DSig name term optdef -> failure x
+  DPrc name optchandecs proc -> failure x
+  DDef name optsig term -> failure x
+  DSig name term -> failure x
   DDat name connames -> failure x
 transConName :: ConName -> Result
 transConName x = case x of
   CN name -> failure x
-transOptDef :: OptDef -> Result
-transOptDef x = case x of
-  NoDef -> failure x
-  SoDef term -> failure x
+transOptSig :: OptSig -> Result
+transOptSig x = case x of
+  NoSig -> failure x
+  SoSig term -> failure x
 transVarDec :: VarDec -> Result
 transVarDec x = case x of
   VD name term -> failure x

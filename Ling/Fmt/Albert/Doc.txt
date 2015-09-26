@@ -53,14 +53,15 @@ All other symbols are terminals.
   |  |  **|**  | //Name// 
   |  |  **|**  | //Name// ``,`` //[Name]// 
   | //Dec// | -> | //Name// //OptChanDecs// ``=`` //Proc// ``.`` 
-  |  |  **|**  | //Name// ``:`` //Term// //OptDef// ``.`` 
+  |  |  **|**  | //Name// //OptSig// ``=`` //Term// ``.`` 
+  |  |  **|**  | //Name// ``:`` //Term// ``.`` 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// ``.`` 
   | //ConName// | -> | ````` //Name// 
   | //[ConName]// | -> | **eps**
   |  |  **|**  | //ConName// 
   |  |  **|**  | //ConName// ``|`` //[ConName]// 
-  | //OptDef// | -> | **eps**
-  |  |  **|**  | ``=`` //Term// 
+  | //OptSig// | -> | **eps**
+  |  |  **|**  | ``:`` //Term// 
   | //[Dec]// | -> | **eps**
   |  |  **|**  | //Dec// //[Dec]// 
   | //VarDec// | -> | ``(`` //Name// ``:`` //Term// ``)`` 

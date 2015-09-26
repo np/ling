@@ -135,6 +135,9 @@ splitAx :: (Show i, Integral i) => i -> Session -> Channel -> [Pref]
 splitAx n s c = [split' ParK c cs, ax s cs]
   where cs = suffChans n c
 
+dprc :: Name -> [ChanDec] -> Proc -> Dec
+dprc d cs proc = Sig d Nothing (Just $ Proc cs proc)
+
 replPref :: (Show i, Integral i) => i -> Name -> Pref -> Proc -> Proc
 replPref n x pref p =
   case pref of

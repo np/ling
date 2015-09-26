@@ -92,8 +92,9 @@ instance Print Program where
 
 instance Print Dec where
   prt i e = case e of
-    DDef name optchandecs proc -> prPrec i 0 (concatD [prt 0 name, prt 0 optchandecs, doc (showString "="), prt 0 proc, doc (showString ".")])
-    DSig name term optdef -> prPrec i 0 (concatD [prt 0 name, doc (showString ":"), prt 0 term, prt 0 optdef, doc (showString ".")])
+    DPrc name optchandecs proc -> prPrec i 0 (concatD [prt 0 name, prt 0 optchandecs, doc (showString "="), prt 0 proc, doc (showString ".")])
+    DDef name optsig term -> prPrec i 0 (concatD [prt 0 name, prt 0 optsig, doc (showString "="), prt 0 term, doc (showString ".")])
+    DSig name term -> prPrec i 0 (concatD [prt 0 name, doc (showString ":"), prt 0 term, doc (showString ".")])
     DDat name connames -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "="), prt 0 connames, doc (showString ".")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
@@ -103,10 +104,10 @@ instance Print ConName where
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "|"), prt 0 xs])
-instance Print OptDef where
+instance Print OptSig where
   prt i e = case e of
-    NoDef -> prPrec i 0 (concatD [])
-    SoDef term -> prPrec i 0 (concatD [doc (showString "="), prt 0 term])
+    NoSig -> prPrec i 0 (concatD [])
+    SoSig term -> prPrec i 0 (concatD [doc (showString ":"), prt 0 term])
 
 instance Print VarDec where
   prt i e = case e of

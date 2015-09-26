@@ -13,7 +13,7 @@ import Ling.Fmt.Albert.ErrM
 %name pDec Dec
 %name pConName ConName
 %name pListConName ListConName
-%name pOptDef OptDef
+%name pOptSig OptSig
 %name pListDec ListDec
 %name pVarDec VarDec
 %name pListVarDec ListVarDec
@@ -101,8 +101,9 @@ ListName : {- empty -} { [] }
          | Name { (:[]) $1 }
          | Name ',' ListName { (:) $1 $3 }
 Dec :: { Dec }
-Dec : Name OptChanDecs '=' Proc '.' { Ling.Fmt.Albert.Abs.DDef $1 $2 $4 }
-    | Name ':' Term OptDef '.' { Ling.Fmt.Albert.Abs.DSig $1 $3 $4 }
+Dec : Name OptChanDecs '=' Proc '.' { Ling.Fmt.Albert.Abs.DPrc $1 $2 $4 }
+    | Name OptSig '=' Term '.' { Ling.Fmt.Albert.Abs.DDef $1 $2 $4 }
+    | Name ':' Term '.' { Ling.Fmt.Albert.Abs.DSig $1 $3 }
     | 'data' Name '=' ListConName '.' { Ling.Fmt.Albert.Abs.DDat $2 $4 }
 ConName :: { ConName }
 ConName : '`' Name { Ling.Fmt.Albert.Abs.CN $2 }
@@ -110,9 +111,9 @@ ListConName :: { [ConName] }
 ListConName : {- empty -} { [] }
             | ConName { (:[]) $1 }
             | ConName '|' ListConName { (:) $1 $3 }
-OptDef :: { OptDef }
-OptDef : {- empty -} { Ling.Fmt.Albert.Abs.NoDef }
-       | '=' Term { Ling.Fmt.Albert.Abs.SoDef $2 }
+OptSig :: { OptSig }
+OptSig : {- empty -} { Ling.Fmt.Albert.Abs.NoSig }
+       | ':' Term { Ling.Fmt.Albert.Abs.SoSig $2 }
 ListDec :: { [Dec] }
 ListDec : {- empty -} { [] } | ListDec Dec { flip (:) $1 $2 }
 VarDec :: { VarDec }

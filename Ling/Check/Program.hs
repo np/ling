@@ -17,7 +17,7 @@ checkDecs :: [Dec] -> TC ()
 checkDecs = foldr checkDec (return ())
 
 checkDec :: Dec -> TC () -> TC ()
-checkDec (Sig d typ mt)   kont = checkVarDef d (Just typ) mt kont
+checkDec (Sig d typ mt)   kont = checkVarDef d typ mt kont
 checkDec (Dat d cs)       kont = do
   checkNoDups ("in the definition of " ++ pretty d) cs
   checkNotIn evars "name" d
@@ -25,13 +25,3 @@ checkDec (Dat d cs)       kont = do
   local ((ctyps %~ union (l2m [ (c,d) | c <- cs ]))
         .(evars . at d .~ Just TTyp)
         .(ddefs . at d .~ Just cs)) kont
-checkDec (Dec d cds proc) kont = do
-  checkNotIn pdefs "process" d
-  let cs  = map _argName cds
-  proto <- checkProc proc
-  checkChanDecs_ proto cds
-  let proto' = rmChans cs proto
-  assert (proto' ^. isEmptyProto)
-    [ "These channels have not been introduced:"
-    , prettyChanDecs proto']
-  local (pdefs . at d .~ Just (ProcDef d cds proc proto)) kont

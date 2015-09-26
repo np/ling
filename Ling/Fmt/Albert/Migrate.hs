@@ -13,18 +13,19 @@ transProgram x = case x of
 
 transDec :: Dec -> L.Dec
 transDec x = case x of
-  DDef name optchandecs proc -> L.DDef (transName name) (transOptChanDecs optchandecs) (transProc proc)
-  DSig name term optdef -> L.DSig (transName name) (transTerm term) (transOptDef optdef)
+  DPrc name optchandecs proc -> L.DPrc (transName name) (transOptChanDecs optchandecs) (transProc proc)
+  DDef name optsig term -> L.DDef (transName name) (transOptSig optsig) (transTerm term)
+  DSig name term -> L.DSig (transName name) (transTerm term)
   DDat name connames -> L.DDat (transName name) (map transConName connames)
 
 transConName :: ConName -> L.ConName
 transConName x = case x of
   CN name -> L.CN (transName name)
 
-transOptDef :: OptDef -> L.OptDef
-transOptDef x = case x of
-  NoDef -> L.NoDef
-  SoDef term -> L.SoDef (transTerm term)
+transOptSig :: OptSig -> L.OptSig
+transOptSig x = case x of
+  NoSig -> L.NoSig
+  SoSig term -> L.SoSig (transTerm term)
 
 transVarDec :: VarDec -> L.VarDec
 transVarDec x = case x of

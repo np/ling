@@ -211,9 +211,7 @@ transProcs env (p0:p0s) waiting k =
 
 transDec :: Dec -> Dec
 transDec x = case x of
-  Sig{} -> x
-  Dat{} -> x
-  Dec d cs proc -> transProc env proc (const $ Dec d cs)
+  Sig d oty (Just (Proc cs proc)) -> transProc env proc (const $ Sig d oty . Just . Proc cs)
     where
       decSt Snd{} = Empty
       decSt Rcv{} = Full
@@ -222,6 +220,8 @@ transDec x = case x of
       env = addLocs  [ ls          | Arg c (Just s) <- cs, ls <- rsessionStatus decSt (Root c) s ] $
             addChans [ (c, (l, s)) | Arg c (Just s) <- cs, let l = Root c ]
             emptyEnv
+  Dat{} -> x
+  Sig{} -> x
 
 transProgram :: Program -> Program
 transProgram (Program decs) = Program (map transDec decs)
