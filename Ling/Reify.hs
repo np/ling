@@ -2,10 +2,10 @@
 module Ling.Reify where
 
 import Prelude hiding (log)
-import Data.List as L
+import Data.List
 import Ling.Abs
 import Ling.Utils
-import Ling.Session as S
+import Ling.Session
 import Ling.Proc
 import qualified Ling.Norm as N
 
@@ -46,7 +46,7 @@ instance Norm Session where
     | otherwise           = error "Do you really want to blow the stack?"
   norm End        = N.End
   norm (Atm n)    = N.Atm N.Read n -- Read is abitrary here
-  norm (Sort a e) = S.sort (norm a) (norm e)
+  norm (Sort a e) = sortSession (norm a) (norm e)
 
 instance Norm CSession where
   type Normalized CSession = N.Session
@@ -205,7 +205,7 @@ instance Norm Term where
     N.Case t brs       -> Case (reify t) (reify brs)
 
   norm (RawApp e es)    = normRawApp (e:es)
-  norm (Case t brs)     = N.Case (norm t) (L.sort (norm brs))
+  norm (Case t brs)     = N.Case (norm t) (sort (norm brs))
   norm (TProc cs p)     = N.Proc (norm cs) (norm p)
   norm (Lam  xs xss t)  = normVarDec N.Lam  (xs:xss) (norm t)
   norm (TFun xs xss t)  = normVarDec N.TFun (xs:xss) (norm t)

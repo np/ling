@@ -28,8 +28,8 @@ fwds n s
 fwd :: Int -> Session -> Session
 fwd n s = Par $ fwds n s
 
-sort :: Typ -> Term -> Session
-sort a e = Rcv (vec a e) (Snd (vec a e) End)
+sortSession :: Typ -> Term -> Session
+sortSession a e = Rcv (vec a e) (Snd (vec a e) End)
 
 mapR :: (Session -> Session) -> RSession -> RSession
 mapR f (Repl s a) = Repl (f s) a
