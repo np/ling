@@ -17,7 +17,6 @@ import Ling.ErrM
 %name pListDec ListDec
 %name pVarDec VarDec
 %name pListVarDec ListVarDec
-%name pOptChanDecs OptChanDecs
 %name pChanDec ChanDec
 %name pListChanDec ListChanDec
 %name pBranch Branch
@@ -95,16 +94,16 @@ Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
 Name    :: { Name} : L_Name { Name ($1)}
 
 Program :: { Program }
-Program : ListDec { Ling.Abs.Prg (reverse $1) }
+Program : ListDec { Ling.Abs.Prg $1 }
 ListName :: { [Name] }
 ListName : {- empty -} { [] }
          | Name { (:[]) $1 }
          | Name ',' ListName { (:) $1 $3 }
 Dec :: { Dec }
-Dec : Name OptChanDecs '=' Proc '.' { Ling.Abs.DPrc $1 $2 $4 }
-    | Name OptSig '=' Term '.' { Ling.Abs.DDef $1 $2 $4 }
-    | Name ':' Term '.' { Ling.Abs.DSig $1 $3 }
-    | 'data' Name '=' ListConName '.' { Ling.Abs.DDat $2 $4 }
+Dec : Name '(' ListChanDec ')' '=' Proc { Ling.Abs.DPrc $1 $3 $6 }
+    | Name OptSig '=' Term { Ling.Abs.DDef $1 $2 $4 }
+    | Name ':' Term { Ling.Abs.DSig $1 $3 }
+    | 'data' Name '=' ListConName { Ling.Abs.DDat $2 $4 }
 ConName :: { ConName }
 ConName : '`' Name { Ling.Abs.CN $2 }
 ListConName :: { [ConName] }
@@ -115,15 +114,14 @@ OptSig :: { OptSig }
 OptSig : {- empty -} { Ling.Abs.NoSig }
        | ':' Term { Ling.Abs.SoSig $2 }
 ListDec :: { [Dec] }
-ListDec : {- empty -} { [] } | ListDec Dec { flip (:) $1 $2 }
+ListDec : {- empty -} { [] }
+        | Dec { (:[]) $1 }
+        | Dec ',' ListDec { (:) $1 $3 }
 VarDec :: { VarDec }
 VarDec : '(' Name ':' Term ')' { Ling.Abs.VD $2 $4 }
 ListVarDec :: { [VarDec] }
 ListVarDec : {- empty -} { [] }
            | ListVarDec VarDec { flip (:) $1 $2 }
-OptChanDecs :: { OptChanDecs }
-OptChanDecs : {- empty -} { Ling.Abs.NoChanDecs }
-            | '(' ListChanDec ')' { Ling.Abs.SoChanDecs $2 }
 ChanDec :: { ChanDec }
 ChanDec : Name OptSession { Ling.Abs.CD $1 $2 }
 ListChanDec :: { [ChanDec] }

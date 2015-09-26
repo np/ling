@@ -1,4 +1,4 @@
-test2 =
+test2 = proc()
   new (c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d)
   (
     c{c0,c1}

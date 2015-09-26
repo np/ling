@@ -7,6 +7,7 @@ import           System.IO            (hPutStrLn, stderr)
 
 import           Control.Lens
 import           Control.Monad        (when)
+import           Data.Monoid
 
 import qualified MiniC.Print          as C
 
@@ -16,6 +17,7 @@ import           Ling.Check.Base      (CheckOpts, debugChecker,
 import           Ling.Check.Program   (checkProgram)
 import qualified Ling.Compile.C       as Compile
 import           Ling.ErrM
+import           Ling.Layout          (resolveLayout)
 import           Ling.Lex             (Token)
 import qualified Ling.Norm            as N
 import           Ling.Par
@@ -36,35 +38,38 @@ $(makeLenses ''Opts)
 defaultOpts :: Opts
 defaultOpts = Opts False False False False False False False False False defaultCheckOpts
 
-prims :: String
-prims = unlines
-  ["Int   : Type."
-  ,"_+_   : (m : Int)(n : Int) -> Int."
-  ,"_-_   : (m : Int)(n : Int) -> Int."
-  ,"_*_   : (m : Int)(n : Int) -> Int."
-  ,"_/_   : (m : Int)(n : Int) -> Int."
-  ,"_%_   : (m : Int)(n : Int) -> Int."
-  ,"pow   : (m : Int)(n : Int) -> Int."
-  ,"Vec   : (A : Type)(n : Int) -> Type."
-  ,"take  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A m."
-  ,"drop  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A n."
-  ,"merge : (m : Int)(n : Int)(v0 : Vec Int m)(v1 : Vec Int n) -> Vec Int (m + n)."
-  ,"sort  : (n : Int)(v : Vec Int n) -> Vec Int n."
-  ,"Session : Type."
-  ,"Double : Type."
-  ,"Int2Double : (n : Int) -> Double."
-  ,"_+D_ : (m : Double)(n : Double) -> Double."
-  ,"_-D_ : (m : Double)(n : Double) -> Double."
-  ,"_*D_ : (m : Double)(n : Double) -> Double."
-  ,"_/D_ : (m : Double)(n : Double) -> Double."
-  ,"powD : (m : Double)(n : Double) -> Double."
-  ]
+layoutLexer :: String -> [Token]
+layoutLexer = resolveLayout True . myLexer
 
-primsN :: [N.Dec]
+prims :: String
+prims =
+  "Int   : Type\n\
+  \_+_   : (m : Int)(n : Int) -> Int\n\
+  \_-_   : (m : Int)(n : Int) -> Int\n\
+  \_*_   : (m : Int)(n : Int) -> Int\n\
+  \_/_   : (m : Int)(n : Int) -> Int\n\
+  \_%_   : (m : Int)(n : Int) -> Int\n\
+  \pow   : (m : Int)(n : Int) -> Int\n\
+  \Vec   : (A : Type)(n : Int) -> Type\n\
+  \take  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A m\n\
+  \drop  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A n\n\
+  \merge : (m : Int)(n : Int)(v0 : Vec Int m)(v1 : Vec Int n) -> Vec Int (m + n)\n\
+  \sort  : (n : Int)(v : Vec Int n) -> Vec Int n\n\
+  \Session : Type\n\
+  \Double : Type\n\
+  \Int2Double : (n : Int) -> Double\n\
+  \_+D_ : (m : Double)(n : Double) -> Double\n\
+  \_-D_ : (m : Double)(n : Double) -> Double\n\
+  \_*D_ : (m : Double)(n : Double) -> Double\n\
+  \_/D_ : (m : Double)(n : Double) -> Double\n\
+  \powD : (m : Double)(n : Double) -> Double\n\
+  \"
+
+primsN :: N.Program
 primsN =
-   case pListDec (myLexer prims) of
+   case pProgram (layoutLexer prims) of
      Bad e -> error $ "Bad prims\n" ++ e
-     Ok  t -> norm . reverse $ t
+     Ok  p -> norm p
 
 runFile :: (Print a, Show a) => Opts -> ParseFun a -> FilePath -> IO a
 runFile v p f = readFile f >>= run v p
@@ -81,12 +86,12 @@ run opts p s = do
      Bad e    -> failIO $ "Parse Failed: " ++ e
      Ok  tree -> do showTree opts tree
                     return tree
-  where ts = myLexer s
+  where ts = layoutLexer s
 
-addPrims :: Bool -> N.Program -> N.Program
-addPrims doAddPrims prg@(N.Program ds)
-  | doAddPrims = N.Program (primsN ++ ds)
-  | otherwise  = prg
+addPrims :: Bool -> Endom N.Program
+addPrims doAddPrims
+  | doAddPrims = (primsN <>)
+  | otherwise  = id
 
 failIO :: String -> IO a
 failIO s = hPutStrLn stderr s >> exitFailure

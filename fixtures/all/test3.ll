@@ -1,4 +1,4 @@
-test3 =
+test3 = proc()
   new (c : ?Int. [!Int, !Int], d)
   (
     recv c (x0 : Int)

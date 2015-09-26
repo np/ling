@@ -21,14 +21,11 @@ render d = rend 0 (map ($ "") $ d []) "" where
   rend i ss = case ss of
     "\n"     :ts -> new i . rend i ts
     [c]      :ts | c `elem` "{[(.?!" -> showChar c . rend i ts
-    "="      :ts -> showString " =" . new (i+1) . rend (i+1) ts
-    ".\n"    :ts -> new (i-1) . showChar '.' . new (i-1) . rend (i-1) ts
-{-
-    "{"      :ts -> showChar '{' . new (i+1) . rend (i+1) ts
-    "}" : ";":ts -> new (i-1) . space "}" . showChar ';' . new (i-1) . rend (i-1) ts
-    "}"      :ts -> new (i-1) . showChar '}' . new (i-1) . rend (i-1) ts
-    ";"      :ts -> showChar ';' . new i . rend i ts
--}
+    "=\n"    :ts -> showString " =" . new (i+1) . rend (i+1) ts
+    "{\n"    :ts -> showChar '{' . new (i+1) . rend (i+1) ts
+    "}\n":",":ts -> new (i-1) . space "}" . showChar ',' . new (i-1) . rend (i-1) ts
+    "}\n"    :ts -> new (i-1) . showChar '}' . new (i-1) . rend (i-1) ts
+    ","      :ts -> showChar ',' . new i . rend i ts
     t  : "," :ts -> showString t . space "," . rend i ts
     t  : [c] :ts | c `elem` "}])" -> showString t . showChar c . rend i ts
     t        :ts -> space t . rend i ts
@@ -60,9 +57,6 @@ instance Print a => Print [a] where
 instance Print Char where
   prt _ s = doc (showChar '\'' . mkEsc '\'' s . showChar '\'')
   prtList _ s = doc (showChar '"' . concatS (map (mkEsc '"') s) . showChar '"')
-
-nl :: Doc
-nl = doc $ showChar '\n'
 
 mkEsc :: Char -> Char -> ShowS
 mkEsc q s = case s of
@@ -98,12 +92,13 @@ instance Print Program where
 
 instance Print Dec where
   prt i e = case e of
-    DPrc name optchandecs proc -> prPrec i 0 (concatD [prt 0 name, prt 0 optchandecs, doc (showString "="), nl , prt 0 proc, doc (showString ".\n")])
-    DDef name optsig term -> prPrec i 0 (concatD [prt 0 name, prt 0 optsig, doc (showString "="), nl , prt 0 term, doc (showString ".\n")])
-    DSig name term -> prPrec i 0 (concatD [prt 0 name, doc (showString ":"), prt 0 term, doc (showString ".\n")])
-    DDat name connames -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "="), nl , prt 0 connames, doc (showString ".\n")])
+    DPrc name chandecs proc -> prPrec i 0 (concatD [prt 0 name, doc (showString "("), prt 0 chandecs, doc (showString ")"), doc (showString "=\n"), prt 0 proc])
+    DDef name optsig term -> prPrec i 0 (concatD [prt 0 name, prt 0 optsig, doc (showString "=\n"), prt 0 term])
+    DSig name term -> prPrec i 0 (concatD [prt 0 name, doc (showString ":"), prt 0 term])
+    DDat name connames -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "=\n"), prt 0 connames])
   prtList _ [] = (concatD [])
-  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "\n"), prt 0 xs])
 instance Print ConName where
   prt i e = case e of
     CN name -> prPrec i 0 (concatD [doc (showString "`"), prt 0 name])
@@ -120,11 +115,6 @@ instance Print VarDec where
     VD name term -> prPrec i 0 (concatD [doc (showString "("), prt 0 name, doc (showString ":"), prt 0 term, doc (showString ")")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
-instance Print OptChanDecs where
-  prt i e = case e of
-    NoChanDecs -> prPrec i 0 (concatD [])
-    SoChanDecs chandecs -> prPrec i 0 (concatD [doc (showString "("), prt 0 chandecs, doc (showString ")")])
-
 instance Print ChanDec where
   prt i e = case e of
     CD name optsession -> prPrec i 0 (concatD [prt 0 name, prt 0 optsession])
@@ -155,7 +145,7 @@ instance Print DTerm where
 instance Print Term where
   prt i e = case e of
     RawApp aterm aterms -> prPrec i 0 (concatD [prt 0 aterm, prt 0 aterms])
-    Case term branchs -> prPrec i 0 (concatD [doc (showString "case"), prt 0 term, doc (showString "of"), doc (showString "{"), prt 0 branchs, doc (showString "}")])
+    Case term branchs -> prPrec i 0 (concatD [doc (showString "case"), prt 0 term, doc (showString "of"), doc (showString "{\n"), prt 0 branchs, doc (showString "}\n")])
     TFun vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec, prt 0 vardecs, doc (showString "->"), prt 0 term])
     TSig vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec, prt 0 vardecs, doc (showString "**"), prt 0 term])
     Lam vardec vardecs term -> prPrec i 0 (concatD [doc (showString "\\"), prt 0 vardec, prt 0 vardecs, doc (showString "->"), prt 0 term])
@@ -221,5 +211,3 @@ instance Print CSession where
   prt i e = case e of
     Cont session -> prPrec i 0 (concatD [doc (showString "."), prt 2 session])
     Done -> prPrec i 0 (concatD [])
-
-

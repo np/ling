@@ -1,10 +1,10 @@
-cutEmptyParTensor = new (c : {}, d : []) (c{} | d[])
-cut_par_cut =
-  ( new (c  : !Int, d  : ?Int) ( send c 1  | recv d  (x  : Int) )
+cutEmptyParTensor = proc() new (c : {}, d : []) (c{} | d[])
+cut_par_cut = proc()
+  ( new (c  : !Int, d  : ?Int) ( send c  1 | recv d  (x  : Int) )
   | new (c' : !Int, d' : ?Int) ( send c' 1 | recv d' (x' : Int) )
   )
 
-cutSendRecv = new (c : !Int, d : ?Int) ( send c 1 | recv d (x : Int) )
+cutSendRecv = proc() new (c : !Int, d : ?Int) ( send c 1 | recv d (x : Int) )
 double (i : ?Int, r : !Int) =
   recv i(xi : Int)
   new (c : ?Int. ?Int. !Int, d)
@@ -13,10 +13,9 @@ double (i : ?Int, r : !Int) =
   |
     send d xi send d xi recv d(z : Int) send r z
   )
-fwd2_par2_ten2 (c : Fwd 2 {?Int,!Int.?Int}) = c{i,o} fwd{?Int,!Int.?Int}(i,o)
+fwd2_par2_ten2 (c : Fwd 2 {?Int,!Int.?Int}) = fwd 2 {?Int,!Int.?Int} c
 fwd3_par2_ten2_ten2 (c : Fwd 3 {?Int,!Int.?Int}) =
-  c{i,o,l}
-  fwd {?Int,!Int.?Int}(i,o,l)
+  fwd 3 {?Int,!Int.?Int} c
 fwd_par0_ten0 (i : {}, o : []) = fwd{}(i,o)
 fwd_par2_ten2 (i : {?Int,!Int.?Int}, o : [!Int,?Int.!Int]) = fwd{?Int,!Int.?Int}(i,o)
 fwd_par2_ten2_ten2 ( i : {?Int,!Int.?Int}
@@ -30,7 +29,7 @@ fwd_par2_ten2_ten2_ten2
   , l : {!Int,!Int.!Int}
   , m : {!Int,!Int.!Int}
   ) =
-  fwd {?Int,!Int.?Int}(i,o,l,m)
+  fwd{?Int,!Int.?Int}(i,o,l,m)
 fwd_send_recv (i : ?Int, o : !Int) = fwd(?Int)(i,o)
 fwd_send_recv_recv_send (i : ?Int. !Int, o : !Int. ?Int) = fwd(?Int.!Int)(i,o)
 fwd_ten2_par2 (i : [?Int,!Int.?Int], o : {!Int,?Int.!Int}) = fwd[?Int,!Int.?Int](i,o)
@@ -178,7 +177,7 @@ cd[c,d]c[]d[] : [cd : [[], []]]
 tensor2_tensor0_tensor0_sequence (cd : [[], []]) =
   cd[c,d] c[] d[]
 tensor2_using_dual (c : [!Int,~!Int]) = c[d,e](recv e (x : Int) | send d 42)
-test2 =
+test2 = proc()
   new (c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d)
   (
     c{c0,c1}

@@ -55,7 +55,6 @@ What we have now, implicit parallelism/sequencing:
 proc1 (c : ?Int.!Int, d : ?Int.!Int) =
   recv c (x : Int) recv d (y : Int)
   send c (x + y)   send d (x * y)
-.
 ```
 
 Equivalent version with explicit sequencing and implicit parallelism:
@@ -64,7 +63,6 @@ Equivalent version with explicit sequencing and implicit parallelism:
 proc2 (c : ?Int.!Int, d : ?Int.!Int) =
   recv c (x : Int) recv d (y : Int).
   send c (x + y)   send d (x * y)
-.
 ```
 
 Equivalent version with explicit sequencing and explicit parallelism (my favorite):
@@ -73,7 +71,6 @@ Equivalent version with explicit sequencing and explicit parallelism (my favorit
 proc3 (c : ?Int.!Int, d : ?Int.!Int) =
   (recv c (x : Int) | recv d (y : Int)).
   (send c (x + y)   | send d (x * y))
-.
 ```
 
 Additional sequencing which yields the same result but as a non-equivalent process:

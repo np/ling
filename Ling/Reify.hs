@@ -61,6 +61,9 @@ reifySession = reify
 reifySessions :: [N.Session] -> [Session]
 reifySessions = reify
 
+reifyDec :: N.Dec -> Dec
+reifyDec = reify
+
 instance Norm RSession where
   type Normalized RSession = N.RSession
   reify (N.Repl s (N.Lit 1)) = Repl (reify s) One
@@ -245,14 +248,6 @@ instance Norm OptSession where
 
 normVarDec :: (Arg N.Term -> N.Term -> N.Term) -> [VarDec] -> N.Term -> N.Term
 normVarDec f xs z = foldr (f . norm) z xs
-
-instance Norm OptChanDecs where
-  type Normalized OptChanDecs = [N.ChanDec]
-  reify []   = NoChanDecs
-  reify decs = SoChanDecs (reify decs)
-
-  norm NoChanDecs        = []
-  norm (SoChanDecs decs) = norm decs
 
 instance Norm Program where
   type Normalized Program = N.Program

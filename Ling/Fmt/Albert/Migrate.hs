@@ -31,10 +31,10 @@ transVarDec :: VarDec -> L.VarDec
 transVarDec x = case x of
   VD name term -> L.VD (transName name) (transTerm term)
 
-transOptChanDecs :: OptChanDecs -> L.OptChanDecs
+transOptChanDecs :: OptChanDecs -> [L.ChanDec]
 transOptChanDecs x = case x of
-  NoChanDecs -> L.NoChanDecs
-  SoChanDecs chandecs -> L.SoChanDecs (map transChanDec chandecs)
+  NoChanDecs -> []
+  SoChanDecs chandecs -> map transChanDec chandecs
 
 transChanDec :: ChanDec -> L.ChanDec
 transChanDec x = case x of

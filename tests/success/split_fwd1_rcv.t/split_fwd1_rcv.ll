@@ -1,1 +1,1 @@
-split_fwd1_rcv (c : Fwd 1 (?Int)) = c{d} fwd (?Int) (d)
+../../../fixtures/all/split_fwd1_rcv.ll

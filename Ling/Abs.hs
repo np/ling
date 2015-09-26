@@ -12,7 +12,7 @@ data Program = Prg [Dec]
   deriving (Eq, Ord, Show, Read)
 
 data Dec
-    = DPrc Name OptChanDecs Proc
+    = DPrc Name [ChanDec] Proc
     | DDef Name OptSig Term
     | DSig Name Term
     | DDat Name [ConName]
@@ -25,9 +25,6 @@ data OptSig = NoSig | SoSig Term
   deriving (Eq, Ord, Show, Read)
 
 data VarDec = VD Name Term
-  deriving (Eq, Ord, Show, Read)
-
-data OptChanDecs = NoChanDecs | SoChanDecs [ChanDec]
   deriving (Eq, Ord, Show, Read)
 
 data ChanDec = CD Name OptSession

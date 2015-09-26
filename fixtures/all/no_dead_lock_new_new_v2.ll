@@ -1,5 +1,5 @@
 -- Requires a mix
-no_dead_lock_new_new_v2 =
+no_dead_lock_new_new_v2 = proc()
   new (c : ?Int, d)
   new (e : ?Int, f)
   -- split [e] and [c,d],[f]

@@ -17,7 +17,7 @@ transProgram x = case x of
   Prg decs -> failure x
 transDec :: Dec -> Result
 transDec x = case x of
-  DPrc name optchandecs proc -> failure x
+  DPrc name chandecs proc -> failure x
   DDef name optsig term -> failure x
   DSig name term -> failure x
   DDat name connames -> failure x
@@ -31,10 +31,6 @@ transOptSig x = case x of
 transVarDec :: VarDec -> Result
 transVarDec x = case x of
   VD name term -> failure x
-transOptChanDecs :: OptChanDecs -> Result
-transOptChanDecs x = case x of
-  NoChanDecs -> failure x
-  SoChanDecs chandecs -> failure x
 transChanDec :: ChanDec -> Result
 transChanDec x = case x of
   CD name optsession -> failure x

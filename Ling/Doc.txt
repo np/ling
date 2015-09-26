@@ -31,13 +31,13 @@ The reserved words used in Ling are the following:
   | ``recv`` | ``send`` | ``slice`` | 
 
 The symbols used in Ling are the following:
-  | , | = | . | :
-  | ` | | | ( | )
-  | -> | < | > | {
-  | } | ** | \ | [
-  | ] | [: | :] | @
-  | ! | ? | ~ | -o
-  | ^ |  |  | 
+  | , | ( | ) | =
+  | : | ` | | | ->
+  | < | > | { | }
+  | ** | \ | [ | ]
+  | [: | :] | @ | !
+  | ? | ~ | -o | ^
+  | . |  |  | 
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {- and -}.
@@ -52,10 +52,10 @@ All other symbols are terminals.
   | //[Name]// | -> | **eps**
   |  |  **|**  | //Name// 
   |  |  **|**  | //Name// ``,`` //[Name]// 
-  | //Dec// | -> | //Name// //OptChanDecs// ``=`` //Proc// ``.`` 
-  |  |  **|**  | //Name// //OptSig// ``=`` //Term// ``.`` 
-  |  |  **|**  | //Name// ``:`` //Term// ``.`` 
-  |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// ``.`` 
+  | //Dec// | -> | //Name// ``(`` //[ChanDec]// ``)`` ``=`` //Proc// 
+  |  |  **|**  | //Name// //OptSig// ``=`` //Term// 
+  |  |  **|**  | //Name// ``:`` //Term// 
+  |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// 
   | //ConName// | -> | ````` //Name// 
   | //[ConName]// | -> | **eps**
   |  |  **|**  | //ConName// 
@@ -63,12 +63,11 @@ All other symbols are terminals.
   | //OptSig// | -> | **eps**
   |  |  **|**  | ``:`` //Term// 
   | //[Dec]// | -> | **eps**
-  |  |  **|**  | //Dec// //[Dec]// 
+  |  |  **|**  | //Dec// 
+  |  |  **|**  | //Dec// ``,`` //[Dec]// 
   | //VarDec// | -> | ``(`` //Name// ``:`` //Term// ``)`` 
   | //[VarDec]// | -> | **eps**
   |  |  **|**  | //VarDec// //[VarDec]// 
-  | //OptChanDecs// | -> | **eps**
-  |  |  **|**  | ``(`` //[ChanDec]// ``)`` 
   | //ChanDec// | -> | //Name// //OptSession// 
   | //[ChanDec]// | -> | **eps**
   |  |  **|**  | //ChanDec// 

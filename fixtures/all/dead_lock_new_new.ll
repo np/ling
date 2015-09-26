@@ -1,4 +1,4 @@
-dead_lock_new_new =
+dead_lock_new_new = proc()
   new (c : ?Int, d)
   new (e : ?Int, f)
   (

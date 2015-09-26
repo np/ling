@@ -11,7 +11,7 @@ import Ling.Par
 import Ling.Skel
 import Ling.Print
 import Ling.Abs
-
+import Ling.Layout
 
 
 
@@ -19,7 +19,7 @@ import Ling.ErrM
 
 type ParseFun a = [Token] -> Err a
 
-myLLexer = myLexer
+myLLexer = resolveLayout True . myLexer
 
 type Verbosity = Int
 

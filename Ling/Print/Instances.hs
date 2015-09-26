@@ -11,6 +11,9 @@ import           Ling.Utils
 txt :: String -> Doc
 txt = doc . showString
 
+nl :: Doc
+nl = txt "\n"
+
 prtSeq :: Doc -> Doc -> Doc -> [Doc] -> Doc
 prtSeq p b e []     = concatD [p, b, e]
 prtSeq p b e [x]    = concatD [p, b, x, e]
@@ -64,6 +67,10 @@ instance Print Pref where
 instance Print Proc where
   prt     i = prt i . reifyProc
   prtList i = prtList i . map reifyProc
+
+instance Print Dec where
+  prt     i = prt i . reifyDec
+  prtList i = prtList i . map reifyDec
 
 instance Print Program where
   prt     i = prt i . reifyProgram

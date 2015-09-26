@@ -48,10 +48,6 @@ debugTraceWhen :: Bool -> [Msg] -> a -> a
 debugTraceWhen b xs =
   if b then trace (unlines (map ("[DEBUG]  "++) xs)) else id
 
-optChanDecs :: OptChanDecs -> [ChanDec]
-optChanDecs NoChanDecs       = []
-optChanDecs (SoChanDecs cds) = cds
-
 unName :: Name -> String
 unName (Name x) = x
 

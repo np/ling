@@ -60,12 +60,12 @@ void fwd2_par2_ten2_lin (struct {
   f1 ;
   }
 * c_lin){
-  const int x__i0___lin = c_lin -> f0 . f0 ;
-  const int x__o1___lin = c_lin -> f1 . f1 ;
-  c_lin -> f1 . f0 = x__i0___lin ;
-  c_lin -> f0 . f1 = x__o1___lin ;
-  const int x__i1___lin = c_lin -> f0 . f1 ;
-  c_lin -> f1 . f1 = x__i1___lin ;
+  const int x__c0__0___lin = c_lin -> f0 . f0 ;
+  const int x__c1__1___lin = c_lin -> f1 . f1 ;
+  c_lin -> f1 . f0 = x__c0__0___lin ;
+  c_lin -> f0 . f1 = x__c1__1___lin ;
+  const int x__c0__1___lin = c_lin -> f0 . f1 ;
+  c_lin -> f1 . f1 = x__c0__1___lin ;
   }
 void fwd3_par2_ten2_ten2_lin (struct {
   struct {
@@ -85,15 +85,15 @@ void fwd3_par2_ten2_ten2_lin (struct {
   f2 ;
   }
 * c_lin){
-  const int x__i0___lin = c_lin -> f0 . f0 ;
-  const int x__o1___lin = c_lin -> f1 . f1 ;
-  c_lin -> f1 . f0 = x__i0___lin ;
-  c_lin -> f0 . f1 = x__o1___lin ;
-  c_lin -> f2 . f0 = x__i0___lin ;
-  c_lin -> f2 . f1 = x__o1___lin ;
-  const int x__i1___lin = c_lin -> f0 . f1 ;
-  c_lin -> f1 . f1 = x__i1___lin ;
-  c_lin -> f2 . f1 = x__i1___lin ;
+  const int x__c0__0___lin = c_lin -> f0 . f0 ;
+  const int x__c1__1___lin = c_lin -> f1 . f1 ;
+  c_lin -> f1 . f0 = x__c0__0___lin ;
+  c_lin -> f0 . f1 = x__c1__1___lin ;
+  c_lin -> f2 . f0 = x__c0__0___lin ;
+  c_lin -> f2 . f1 = x__c1__1___lin ;
+  const int x__c0__1___lin = c_lin -> f0 . f1 ;
+  c_lin -> f1 . f1 = x__c0__1___lin ;
+  c_lin -> f2 . f1 = x__c0__1___lin ;
   }
 void fwd_par0_ten0_lin (const struct {
   }
