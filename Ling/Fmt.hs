@@ -17,7 +17,7 @@ run s = let ts = resolveLayout True $ myLexer s in case pProgram ts of
   Bad err  -> do putStrLn "\nParse              Failed...\n"
                  putStrLn err
                  exitFailure
-  Ok  tree -> putStrLn . printTree . transProgram $ tree
+  Ok  tree -> putStrLn . pretty . transProgram $ tree
 
 usage :: IO ()
 usage = do

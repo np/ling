@@ -2,7 +2,6 @@
 module Ling.Utils where
 
 import Ling.Abs
-import Ling.Print (Print, Doc, prt)
 import qualified Data.Set as Set
 import Data.Set (Set)
 import qualified Data.Map as Map
@@ -41,9 +40,6 @@ suffName s n = n & nameString %~ (++ s)
 traceShow :: Show a => String -> a -> a
 traceShow msg x = trace (msg ++ " " ++ show x) x
 
-tracePretty :: Print a => String -> a -> a
-tracePretty msg x = trace (msg ++ " " ++ pretty x) x
-
 debugTraceWhen :: Bool -> [Msg] -> a -> a
 debugTraceWhen b xs =
   if b then trace (unlines (map ("[DEBUG]  "++) xs)) else id
@@ -65,33 +61,6 @@ countMap p = Map.size . Map.filter p
 
 singletons :: Ord a => [a] -> Set (Set a)
 singletons = l2s . map Set.singleton
-
--- the top-level printing method
-pretty :: Print a => a -> String
-pretty = render . prt 0
-
-render :: Doc -> String
-render d = rend 0 (map ($ "") $ d []) "" where
-  rend :: Int -> [String] -> ShowS
-  rend i ss = case ss of
-    "["      :ts -> showChar '[' . rend i ts
-    "("      :ts -> showChar '(' . rend i ts
-    "."      :ts -> showString ".\n" . rend i ts
-{-
-    "{"      :ts -> showChar '{' . new (i+1) . rend (i+1) ts
-    "}" : ";":ts -> new (i-1) . space "}" . showChar ';' . new (i-1) . rend (i-1) ts
-    "}"      :ts -> new (i-1) . showChar '}' . new (i-1) . rend (i-1) ts
-    ";"      :ts -> showChar ';' . new i . rend i ts
--}
-    "{"      :ts -> showChar '{' . rend i ts
-    t  : "," :ts -> showString t . space "," . rend i ts
-    t  : ")" :ts -> showString t . showChar ')' . rend i ts
-    t  : "]" :ts -> showString t . showChar ']' . rend i ts
-    t  : "}" :ts -> showString t . showChar '}' . rend i ts
-    t        :ts -> space t . rend i ts
-    _            -> id
-  -- new i   = showChar '\n' . replicateS (2*i) (showChar ' ') . dropWhile isSpace
-  space t = showString t . (\s -> if null s then "" else ' ':s)
 
 infixr 3 ||>
 (||>) :: Monad m => Bool -> m Bool -> m Bool

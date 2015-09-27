@@ -6,6 +6,7 @@ module Ling.Check.Core where
 import           Ling.Abs             (Name)
 import           Ling.Check.Base
 import           Ling.Norm
+import           Ling.Print
 import           Ling.Proc
 import           Ling.Proto
 import           Ling.Scoped

@@ -108,7 +108,7 @@ transP opts prg = do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not(opts^.noPrims)) $ nprg
     putStrLn "Checking Sucessful!"
   when (opts ^. sequential) $
-    putStrLn $ "\n{- Sequential process -}\n\n" ++ printTree sprg
+    putStrLn $ "\n{- Sequential process -}\n\n" ++ pretty sprg
   when (opts ^. compile) $
     putStrLn $ "\n/* Transformed tree */\n\n" ++ C.printTree cprg
 
@@ -121,7 +121,7 @@ showTree opts tree
  = do when (opts ^. showAST) $
         putStrLn $ "\n[Abstract Syntax]\n\n" ++ show tree
       when (opts ^. showPretty) $
-        putStrLn $ "\n-- Pretty-printed program\n\n" ++ printTree tree
+        putStrLn $ "\n-- Pretty-printed program\n\n" ++ pretty tree
 
 mainArgs :: Opts -> [String] -> IO ()
 mainArgs opts args0 = case args0 of

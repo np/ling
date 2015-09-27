@@ -19,7 +19,8 @@ import Control.Lens
 import Data.Set (Set, insert, union, empty, delete)
 import Data.Set.Lens (setmapped)
 
-import Ling.Utils (Channel,l2s,s2l,pretty)
+import Ling.Print (pretty)
+import Ling.Utils (Channel,l2s,s2l)
 
 type Constraint  = Set Channel
 

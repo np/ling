@@ -11,7 +11,7 @@ import           Ling.Constraint
 import           Ling.Equiv
 import           Ling.ErrM
 import           Ling.Norm
-import           Ling.Print                hiding (render)
+import           Ling.Print
 import           Ling.Proto
 import           Ling.Scoped
 import           Ling.Session

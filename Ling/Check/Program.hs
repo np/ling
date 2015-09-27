@@ -3,6 +3,7 @@ module Ling.Check.Program where
 import           Ling.Check.Base
 import           Ling.Check.Core
 import           Ling.Norm
+import           Ling.Print
 import           Ling.Utils
 
 import           Control.Lens
