@@ -1,1 +1,1 @@
-A : Type = Int , a : A = 42
+some_type : Type = Int , some_value : some_type = 42
