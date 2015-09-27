@@ -58,6 +58,8 @@ executable ling-fmt
    Ling.Print,
    Ling.Fmt.Albert.Abs,
    Ling.Fmt.Albert.Lex,
+   Ling.Fmt.Albert.Layout,
+   Ling.Fmt.Albert.Migrate,
    Ling.Fmt.Albert.Par
 
   -- other-extensions:

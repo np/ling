@@ -1,3 +1,6 @@
+layout toplevel ;
+layout "of" ;
+
 comment "--" ;
 comment "{-" "-}" ;
 
@@ -9,26 +12,29 @@ token Name ((letter | ["_-+*/'%^"] | digit)*
 
 separator Name "," ;
 
-DPrc. Dec ::= Name OptChanDecs "=" Proc "." ;
-DDef. Dec ::= Name OptSig "=" Term "." ;
-DSig. Dec ::= Name ":" Term "." ;
-DDat. Dec ::= "data" Name "=" [ConName] "." ;
+DPrc. Dec ::= Name "(" [ChanDec] ")" "=" Proc OptDot ;
+DDef. Dec ::= Name OptSig "=" TermProc OptDot ;
+DSig. Dec ::= Name ":" Term OptDot ;
+DDat. Dec ::= "data" Name "=" [ConName] OptDot ;
 
 CN. ConName ::= "`" Name ;
+
+NoDot. OptDot ::= ;
+SoDot. OptDot ::= "." ;
+
+SoTerm. TermProc ::= Term ;
+SoProc. TermProc ::= Proc ;
 
 separator ConName "|" ;
 
 NoSig. OptSig ::= ;
 SoSig. OptSig ::= ":" Term ;
 
-terminator Dec "" ;
+separator Dec "," ;
 
 VD. VarDec  ::= "(" Name ":" Term ")" ;
 
 separator VarDec "" ;
-
-NoChanDecs. OptChanDecs ::= ;
-SoChanDecs. OptChanDecs ::= "(" [ChanDec] ")" ;
 
 CD. ChanDec ::= Name OptSession ;
 

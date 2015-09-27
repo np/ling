@@ -11,7 +11,7 @@ import Ling.Fmt.Albert.Par
 import Ling.Fmt.Albert.Skel
 import Ling.Fmt.Albert.Print
 import Ling.Fmt.Albert.Abs
-
+import Ling.Fmt.Albert.Layout
 
 
 
@@ -19,7 +19,7 @@ import Ling.Fmt.Albert.ErrM
 
 type ParseFun a = [Token] -> Err a
 
-myLLexer = myLexer
+myLLexer = resolveLayout True . myLexer
 
 type Verbosity = Int
 

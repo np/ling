@@ -13,10 +13,14 @@ transProgram x = case x of
 
 transDec :: Dec -> L.Dec
 transDec x = case x of
-  DPrc name optchandecs proc -> L.DPrc (transName name) (transOptChanDecs optchandecs) (transProc proc)
-  DDef name optsig term -> L.DDef (transName name) (transOptSig optsig) (transTerm term)
-  DSig name term -> L.DSig (transName name) (transTerm term)
-  DDat name connames -> L.DDat (transName name) (map transConName connames)
+  DPrc name chandecs proc _ ->
+    L.DDef (transName name) L.NoSig (L.TProc (transChanDecs chandecs) (transProc proc))
+  DDef name optsig (SoProc proc) _ ->
+    L.DDef (transName name) (transOptSig optsig) (L.TProc [] (transProc proc))
+  DDef name optsig (SoTerm term) _ ->
+    L.DDef (transName name) (transOptSig optsig) (transTerm term)
+  DSig name term _ -> L.DSig (transName name) (transTerm term)
+  DDat name connames _ -> L.DDat (transName name) (map transConName connames)
 
 transConName :: ConName -> L.ConName
 transConName x = case x of
@@ -31,10 +35,8 @@ transVarDec :: VarDec -> L.VarDec
 transVarDec x = case x of
   VD name term -> L.VD (transName name) (transTerm term)
 
-transOptChanDecs :: OptChanDecs -> [L.ChanDec]
-transOptChanDecs x = case x of
-  NoChanDecs -> []
-  SoChanDecs chandecs -> map transChanDec chandecs
+transChanDecs :: [ChanDec] -> [L.ChanDec]
+transChanDecs = map transChanDec
 
 transChanDec :: ChanDec -> L.ChanDec
 transChanDec x = case x of

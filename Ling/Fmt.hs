@@ -1,22 +1,23 @@
-import System.Environment ( getArgs )
-import System.Exit ( exitFailure, exitSuccess )
+import           System.Environment      (getArgs)
+import           System.Exit             (exitFailure)
+import           System.IO
 
-import Ling.Fmt.Albert.ErrM
-import Ling.Fmt.Albert.Par
-import Ling.Fmt.Albert.Migrate
+import           Ling.Fmt.Albert.ErrM
+import           Ling.Fmt.Albert.Layout
+import           Ling.Fmt.Albert.Migrate
+import           Ling.Fmt.Albert.Par
 
-import Ling.Utils
+import           Ling.Print
 
 runFile :: FilePath -> IO ()
-runFile f = readFile f >>= run
+runFile f = hPutStrLn stderr f >> readFile f >>= run
 
 run :: String -> IO ()
-run s = let ts = myLexer s in case pProgram ts of
+run s = let ts = resolveLayout True $ myLexer s in case pProgram ts of
   Bad err  -> do putStrLn "\nParse              Failed...\n"
                  putStrLn err
                  exitFailure
-  Ok  tree -> do putStrLn . pretty . transProgram $ tree
-                 exitSuccess
+  Ok  tree -> putStrLn . printTree . transProgram $ tree
 
 usage :: IO ()
 usage = do

@@ -92,18 +92,29 @@ instance Print Program where
 
 instance Print Dec where
   prt i e = case e of
-    DPrc name optchandecs proc -> prPrec i 0 (concatD [prt 0 name, prt 0 optchandecs, doc (showString "="), prt 0 proc, doc (showString ".")])
-    DDef name optsig term -> prPrec i 0 (concatD [prt 0 name, prt 0 optsig, doc (showString "="), prt 0 term, doc (showString ".")])
-    DSig name term -> prPrec i 0 (concatD [prt 0 name, doc (showString ":"), prt 0 term, doc (showString ".")])
-    DDat name connames -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "="), prt 0 connames, doc (showString ".")])
+    DPrc name chandecs proc optdot -> prPrec i 0 (concatD [prt 0 name, doc (showString "("), prt 0 chandecs, doc (showString ")"), doc (showString "="), prt 0 proc, prt 0 optdot])
+    DDef name optsig termproc optdot -> prPrec i 0 (concatD [prt 0 name, prt 0 optsig, doc (showString "="), prt 0 termproc, prt 0 optdot])
+    DSig name term optdot -> prPrec i 0 (concatD [prt 0 name, doc (showString ":"), prt 0 term, prt 0 optdot])
+    DDat name connames optdot -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "="), prt 0 connames, prt 0 optdot])
   prtList _ [] = (concatD [])
-  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 instance Print ConName where
   prt i e = case e of
     CN name -> prPrec i 0 (concatD [doc (showString "`"), prt 0 name])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "|"), prt 0 xs])
+instance Print OptDot where
+  prt i e = case e of
+    NoDot -> prPrec i 0 (concatD [])
+    SoDot -> prPrec i 0 (concatD [doc (showString ".")])
+
+instance Print TermProc where
+  prt i e = case e of
+    SoTerm term -> prPrec i 0 (concatD [prt 0 term])
+    SoProc proc -> prPrec i 0 (concatD [prt 0 proc])
+
 instance Print OptSig where
   prt i e = case e of
     NoSig -> prPrec i 0 (concatD [])
@@ -114,11 +125,6 @@ instance Print VarDec where
     VD name term -> prPrec i 0 (concatD [doc (showString "("), prt 0 name, doc (showString ":"), prt 0 term, doc (showString ")")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
-instance Print OptChanDecs where
-  prt i e = case e of
-    NoChanDecs -> prPrec i 0 (concatD [])
-    SoChanDecs chandecs -> prPrec i 0 (concatD [doc (showString "("), prt 0 chandecs, doc (showString ")")])
-
 instance Print ChanDec where
   prt i e = case e of
     CD name optsession -> prPrec i 0 (concatD [prt 0 name, prt 0 optsession])

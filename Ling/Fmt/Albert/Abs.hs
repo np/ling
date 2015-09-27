@@ -12,22 +12,25 @@ data Program = Prg [Dec]
   deriving (Eq, Ord, Show, Read)
 
 data Dec
-    = DPrc Name OptChanDecs Proc
-    | DDef Name OptSig Term
-    | DSig Name Term
-    | DDat Name [ConName]
+    = DPrc Name [ChanDec] Proc OptDot
+    | DDef Name OptSig TermProc OptDot
+    | DSig Name Term OptDot
+    | DDat Name [ConName] OptDot
   deriving (Eq, Ord, Show, Read)
 
 data ConName = CN Name
+  deriving (Eq, Ord, Show, Read)
+
+data OptDot = NoDot | SoDot
+  deriving (Eq, Ord, Show, Read)
+
+data TermProc = SoTerm Term | SoProc Proc
   deriving (Eq, Ord, Show, Read)
 
 data OptSig = NoSig | SoSig Term
   deriving (Eq, Ord, Show, Read)
 
 data VarDec = VD Name Term
-  deriving (Eq, Ord, Show, Read)
-
-data OptChanDecs = NoChanDecs | SoChanDecs [ChanDec]
   deriving (Eq, Ord, Show, Read)
 
 data ChanDec = CD Name OptSession
