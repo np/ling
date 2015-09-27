@@ -1,4 +1,4 @@
-parallel_assoc_2tensor2_left (cde : [[!Int, !Int], !Int]) =
+parallel_assoc_2tensor2_left = proc(cde : [[!Int, !Int], !Int])
   cde[cd,e]
   cd[c,d]
   ( send c 1

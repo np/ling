@@ -1,1 +1,1 @@
-singleSend (c : !Int) = send c 42
+singleSend = proc(c : !Int) send c 42

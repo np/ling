@@ -100,7 +100,6 @@ instance Print Program where
 
 instance Print Dec where
   prt i e = case e of
-    DPrc name chandecs proc -> prPrec i 0 (concatD [prt 0 name, doc (showString "("), prt 0 chandecs, doc (showString ")"), doc (showString "=\n"), prt 0 proc])
     DDef name optsig term -> prPrec i 0 (concatD [prt 0 name, prt 0 optsig, doc (showString "=\n"), prt 0 term])
     DSig name term -> prPrec i 0 (concatD [prt 0 name, doc (showString ": "), prt 0 term])
     DDat name connames -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "="), prt 0 connames])

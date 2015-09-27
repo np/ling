@@ -1,4 +1,4 @@
-replicate_ten (c : [!Int ^ 10]) =
+replicate_ten = proc(c : [!Int ^ 10])
   c[d]
   slice (d) 10 as i
   send d i

@@ -1,4 +1,4 @@
-wrong_order_par2_par2 (c : [: {!Int,!Int}, {!Int,!Int} :]) =
+wrong_order_par2_par2 = proc(c : [: {!Int,!Int}, {!Int,!Int} :])
   c[:d,e:]
   d{f,g}
   e{h,i}

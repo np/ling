@@ -17,7 +17,6 @@ transProgram x = case x of
   Prg decs -> failure x
 transDec :: Dec -> Result
 transDec x = case x of
-  DPrc name chandecs proc -> failure x
   DDef name optsig term -> failure x
   DSig name term -> failure x
   DDat name connames -> failure x

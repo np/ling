@@ -31,8 +31,8 @@ The reserved words used in Ling are the following:
   | ``recv`` | ``send`` | ``slice`` | 
 
 The symbols used in Ling are the following:
-  | , | ( | ) | =
-  | : | ` | | | ->
+  | , | = | : | `
+  | | | ( | ) | ->
   | < | > | { | }
   | ** | \ | [ | ]
   | [: | :] | @ | !
@@ -52,8 +52,7 @@ All other symbols are terminals.
   | //[Name]// | -> | **eps**
   |  |  **|**  | //Name// 
   |  |  **|**  | //Name// ``,`` //[Name]// 
-  | //Dec// | -> | //Name// ``(`` //[ChanDec]// ``)`` ``=`` //Proc// 
-  |  |  **|**  | //Name// //OptSig// ``=`` //Term// 
+  | //Dec// | -> | //Name// //OptSig// ``=`` //Term// 
   |  |  **|**  | //Name// ``:`` //Term// 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// 
   | //ConName// | -> | ````` //Name// 

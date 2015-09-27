@@ -1,4 +1,4 @@
-ten_loli_par (c : [!Int,!Int] -o {!Int,!Int}) =
+ten_loli_par = proc(c : [!Int,!Int] -o {!Int,!Int})
   c{i,o}
   i{i0,i1}
   o{o0,o1}

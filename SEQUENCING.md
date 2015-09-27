@@ -52,7 +52,7 @@ Let's consider a concrete example, with the following protocol:
 What we have now, implicit parallelism/sequencing:
 
 ```
-proc1 (c : ?Int.!Int, d : ?Int.!Int) =
+proc1 = proc (c : ?Int.!Int, d : ?Int.!Int)
   recv c (x : Int) recv d (y : Int)
   send c (x + y)   send d (x * y)
 ```
@@ -60,7 +60,7 @@ proc1 (c : ?Int.!Int, d : ?Int.!Int) =
 Equivalent version with explicit sequencing and implicit parallelism:
 
 ```
-proc2 (c : ?Int.!Int, d : ?Int.!Int) =
+proc2 = proc (c : ?Int.!Int, d : ?Int.!Int)
   recv c (x : Int) recv d (y : Int).
   send c (x + y)   send d (x * y)
 ```
@@ -68,7 +68,7 @@ proc2 (c : ?Int.!Int, d : ?Int.!Int) =
 Equivalent version with explicit sequencing and explicit parallelism (my favorite):
 
 ```
-proc3 (c : ?Int.!Int, d : ?Int.!Int) =
+proc3 = proc (c : ?Int.!Int, d : ?Int.!Int)
   (recv c (x : Int) | recv d (y : Int)).
   (send c (x + y)   | send d (x * y))
 ```
@@ -76,7 +76,7 @@ proc3 (c : ?Int.!Int, d : ?Int.!Int) =
 Additional sequencing which yields the same result but as a non-equivalent process:
 
 ```
-proc4 (c : ?Int.!Int, d : ?Int.!Int) =
+proc4 = proc (c : ?Int.!Int, d : ?Int.!Int)
   recv c (x : Int). recv d (y : Int)
   send c (x + y)    send d (x * y).
 ```

@@ -1,1 +1,1 @@
-reusedTensorChannel (c : [?Int]) = c[d] recv d (x : Int) send c 1
+reusedTensorChannel = proc(c : [?Int]) c[d] recv d (x : Int) send c 1

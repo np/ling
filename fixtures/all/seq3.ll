@@ -1,4 +1,4 @@
-seq3 (c : [: !Int, !Int, !Int :]) =
+seq3 = proc(c : [: !Int, !Int, !Int :])
   c[: c0, c1, c2 :]
   send c0 0
   send c1 1

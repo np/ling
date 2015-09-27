@@ -12,7 +12,7 @@ introduced through a series of examples.
 This process is reading an array
 
 ```
-sum_int (a : {?Int ^ 10}, r : !Int) =
+sum_int = proc(a : {?Int ^ 10}, r : !Int)
   new (itmp : !Int.?Int, tmp)
   ( send itmp 0
     fwd(?Int)(itmp, r)
@@ -48,10 +48,9 @@ We start with a "doubling server" which receives one integer `n` on the channel
 (`s` stands for `send`).
 
 ```
-double_server(rn : ?Int, sdbl : !Int) =
+double_server = proc(rn : ?Int, sdbl : !Int)
   recv rn   (n : Int)
   send sdbl (n + n)
-.
 ```
 
 The *session* type for the channels indicates the protocol to follow on such
@@ -88,7 +87,7 @@ on `rn`, then bound as `n`, then the send command is ready to send `21 + 21`
 hence `42`.
 
 ~~~
-double_21(sdbl : !Int) =
+double_21 = proc(sdbl : !Int)
   new (rn : ?Int, sn : !Int)
   (
     @double_server(rn, sdbl)
@@ -102,7 +101,7 @@ definition in place of the reference, potentially renaming the channel names
 to match the ones in the reference. Here is the previous example, expanded:
 
 ```
-double_21_expanded (sdbl : !Int) =
+double_21_expanded = proc(sdbl : !Int)
   new (rn : ?Int, sn : !Int)
   (
     recv rn   (n : Int)
@@ -137,7 +136,7 @@ program where two addresses are given to write the two results instead of
 look like and enjoy similar properties.
 
 ```
-div_mod_server (rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int) =
+div_mod_server = proc(rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int)
   recv rm (m : Int)
   recv rn (n : Int)
   send sdiv (m / n)
@@ -151,7 +150,7 @@ Similarily with exchanging the `send` commands. One can even compose them in
 parallel:
 
 ```
-div_mod_server_explicit_prll (rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int) =
+div_mod_server_explicit_prll = proc(rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int)
   recv rn (n : Int)
   recv rm (m : Int)
   (send sdiv (m / n) | send smod (m % n))
@@ -160,7 +159,7 @@ div_mod_server_explicit_prll (rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int) =
 ## Continued sessions: imposing a strict processing order
 
 ```
-div_mod_server_cont (c : ?Int.?Int.!Int.!Int) =
+div_mod_server_cont = proc(c : ?Int.?Int.!Int.!Int)
   recv c (m : Int)
   recv c (n : Int)
   send c (m / n)
@@ -170,7 +169,7 @@ div_mod_server_cont (c : ?Int.?Int.!Int.!Int) =
 ## Sequences(`»`/`[::]`): Fixed, left-to-right processing order
 
 ```
-div_mod_server_seq4 (c : [: ?Int, ?Int, !Int, !Int :]) =
+div_mod_server_seq4 = proc(c : [: ?Int, ?Int, !Int, !Int :])
   c[:rm,rn,sdiv,smod:]
   recv rm (m : Int)
   recv rn (n : Int)
@@ -183,7 +182,7 @@ No flexibility. It has to be in this order.
 ## Par(`⅋`/`{}`): You control the processing order!
 
 ```
-div_mod_server_par4 (c : {?Int, ?Int, !Int, !Int}) =
+div_mod_server_par4 = proc(c : {?Int, ?Int, !Int, !Int})
   c{rm,rn,sdiv,smod}
   recv rm (m : Int)
   recv rn (n : Int)
@@ -195,9 +194,10 @@ Same flexibility as in `div_mod_server`
 
 ## Tensor(`⊗`/`[]`): You have to be ready for any processing order
 
+TODO remove
+
 ```
-div_mod_server_par3_ten2 (c : {?Int, ?Int, [!Int, !Int]}) =
-  c{rm,rn,s}
+div_mod_server_ten2 = proc(rm : ?Int, rn : ?Int, s : [!Int, !Int])
   s[sdiv,smod]
   recv rm (m : Int)
   recv rn (n : Int)
@@ -218,7 +218,7 @@ back and forth between `c` and `d`.
 For instance, let have the session `S` be `!Int.?Int.?Int`.
 
 ```
-fwd_send_recv_recv (c : !Int.?Int.?Int, d : ?Int.!Int.!Int) =
+fwd_send_recv_recv = proc(c : !Int.?Int.?Int, d : ?Int.!Int.!Int)
   recv d (x : Int)
   send c x
   recv c (y : Int)
@@ -231,7 +231,7 @@ Since forwarding works for any session and can easily be automated, the language
 has a built-in construct called `fwd`:
 
 ```
-fwd_send_recv_recv_auto (c : !Int.?Int.?Int, d : ?Int.!Int.!Int) =
+fwd_send_recv_recv_auto = proc(c : !Int.?Int.?Int, d : ?Int.!Int.!Int)
   fwd(!Int.?Int)(c,d)
 ```
 
@@ -240,9 +240,10 @@ forwarded back and forth but it can also be duplicated and forwarded to listener
 on the side. Consider the previous example where one adds one listener `e`:
 
 ```
-fwd_send_recv_recv_with_listener (c : !Int.?Int.?Int,
-                                  d : ?Int.!Int.!Int,
-                                  e : ?Int.?Int.?Int) =
+fwd_send_recv_recv_with_listener =
+  proc(c : !Int.?Int.?Int,
+       d : ?Int.!Int.!Int,
+       e : ?Int.?Int.?Int)
   recv d (x : Int)
   send c x
   send e x
@@ -257,9 +258,10 @@ fwd_send_recv_recv_with_listener (c : !Int.?Int.?Int,
 Or using the `fwd` construct:
 
 ```
-fwd_send_recv_recv_with_listener_auto (c : !Int.?Int.?Int,
-                                       d : ?Int.!Int.!Int,
-                                       e : ?Int.?Int.?Int) =
+fwd_send_recv_recv_with_listener_auto =
+  proc(c : !Int.?Int.?Int,
+       d : ?Int.!Int.!Int,
+       e : ?Int.?Int.?Int)
   fwd(!Int.?Int.?Int)(c,d,e)
 ```
 
@@ -313,57 +315,57 @@ A -o B -o C -o D
 A : Session
 B : Session
 C : Session
-ten_loli_par (c : [A,B] -o {A,B}) =
+ten_loli_par = proc(c : [A,B] -o {A,B})
   c{i,o}
   i{na,nb}
   o{a,b}
   (fwd(A)(a,na) | fwd(B)(b,nb))
 
-par_comm_core (i : ~{A,B}, o : {B,A}) =
+par_comm_core = proc(i : ~{A,B}, o : {B,A})
   i[na,nb]
   o{b,a}
   (fwd(A)(a,na) | fwd(B)(b,nb))
 
-par_comm (c : {A,B} -o {B,A}) =
+par_comm = proc(c : {A,B} -o {B,A})
   c{i,o}
   @par_comm_core(i,o)
 
-ten_comm (c : [~B,~A] -o [~A,~B]) =
+ten_comm = proc(c : [~B,~A] -o [~A,~B])
   c{i,o}
   @par_comm_core(o,i)
 
-par_assoc_core (i : ~{{A,B},C}, o : {A,{B,C}}) =
+par_assoc_core = proc(i : ~{{A,B},C}, o : {A,{B,C}})
   i[nab,nc] nab[na,nb] o{a,bc} bc{b,c}
   (fwd(A)(a,na) | fwd(B)(b,nb) | fwd(C)(c,nc))
 
-par_assoc (c : {{A,B},C} -o {A,{B,C}}) =
+par_assoc = proc(c : {{A,B},C} -o {A,{B,C}})
   c{i,o}
   @par_assoc_core(i,o)
 
-ten_assoc (c : [[~A,~B],~C] -o [~A,[~B,~C]]) =
+ten_assoc = proc(c : [[~A,~B],~C] -o [~A,[~B,~C]])
   c{i,o}
   @par_assoc_core(o,i)
 
-ten_loli_seq (c : [A,B] -o [:A,B:]) =
+ten_loli_seq = proc(c : [A,B] -o [:A,B:])
   c{i,o}
   i{na,nb}
   o[:a,b:]
   (fwd(A)(a,na) | fwd(B)(b,nb))
 
-par_loli_seq (c : {A,B} -o [:A,B:]) =
+par_loli_seq = proc(c : {A,B} -o [:A,B:])
   c{i,o}
   i[na,nb]
   o[:a,b:]
   (fwd(A)(a,na) | fwd(B)(b,nb))
 
-seq_assoc_core (i : ~[:[:A,B:],C:], o : [:A,[:B,C:]:]) =
+seq_assoc_core = proc(i : ~[:[:A,B:],C:], o : [:A,[:B,C:]:])
   i[:nab,nc:]
   nab[:na,nb:]
   o[:a,bc:]
   bc[:b,c:]
   (fwd(A)(a,na) | fwd(B)(b,nb) | fwd(C)(c,nc))
 
-seq_assoc (c : [:[:A,B:],C:] -o [:A,[:B,C:]:]) =
+seq_assoc = proc(c : [:[:A,B:],C:] -o [:A,[:B,C:]:])
   c{i,o}
   @seq_assoc_core(i,o)
 ```

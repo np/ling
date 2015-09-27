@@ -1,4 +1,4 @@
-double (i : ?Int, r : !Int) =
+double = proc(i : ?Int, r : !Int)
   recv i(xi : Int)
   new (c : ?Int. ?Int. !Int, d)
   (

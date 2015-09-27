@@ -269,7 +269,6 @@ instance Norm Dec where
 
   norm  ( DSig d ty)    = N.Sig d (Just $ norm ty) Nothing
   norm  ( DDef d ty tm) = N.Sig d (norm ty) (Just $ norm tm)
-  norm  ( DPrc d cs p)  = dprc  d (norm cs) (norm p)
   norm  ( DDat d cs)    = N.Dat d (norm cs)
 
   reify (N.Sig _ Nothing   Nothing)   = error "IMPOSSIBLE Norm Dec/reify: no def nor sig"

@@ -100,8 +100,7 @@ ListName : {- empty -} { [] }
          | Name { (:[]) $1 }
          | Name ',' ListName { (:) $1 $3 }
 Dec :: { Dec }
-Dec : Name '(' ListChanDec ')' '=' Proc { Ling.Abs.DPrc $1 $3 $6 }
-    | Name OptSig '=' Term { Ling.Abs.DDef $1 $2 $4 }
+Dec : Name OptSig '=' Term { Ling.Abs.DDef $1 $2 $4 }
     | Name ':' Term { Ling.Abs.DSig $1 $3 }
     | 'data' Name '=' ListConName { Ling.Abs.DDat $2 $4 }
 ConName :: { ConName }

@@ -10,13 +10,13 @@ Id : (A : Type)(x : A)(y : A)-> Type
 
 sym : (A : Type)(x : A)(y : A)(p : Id A x y)-> Id A y x
     = \(A : Type)(x : A)(y : A)(p : Id A x y)-> p
-badTensor2 = proc(c : [!Int,?Int]) c[d,e] recv e (x : Int) send d x
+badTensor2 (c : [!Int,?Int]) = c[d,e] recv e (x : Int) send d x
 data Bool = `false | `true
 
 not : (x : Bool)-> Bool
     = \(x : Bool)-> case x of { `false -> `true, `true -> `false }
 
-pnot = proc(c : ?Bool. !Bool)
+pnot (c : ?Bool. !Bool) =
   recv c (x : Bool)
   send c (case x of { `false -> `true, `true -> `false })
 
@@ -41,6 +41,7 @@ IF : (b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)-> A b
    = \(b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)->
       case b of { `true -> t, `false -> e }
 -}
+
 data T = `c | `d
 data U = `e | `f
 
@@ -91,12 +92,12 @@ dead_lock_new_new = proc()
     recv e (y : Int)
     send d y
   )
-dead_lock_par_ten_ten = proc(c : {[?Int, !Int], [!Int, ?Int]})
+dead_lock_par_ten_ten (c : {[?Int, !Int], [!Int, ?Int]}) =
   c{d,e} d[h,g] e[k,l]
   ( recv h (x : Int) send k x
   | recv l (y : Int) send g y
   )
-dead_lock_tensor2_tensor2 = proc(cd : [?Int, !Int], ef : [?Int, !Int])
+dead_lock_tensor2_tensor2 (cd : [?Int, !Int], ef : [?Int, !Int]) =
   cd[c,d] ef[e,f]
   (
     recv c (x : Int)
@@ -105,7 +106,7 @@ dead_lock_tensor2_tensor2 = proc(cd : [?Int, !Int], ef : [?Int, !Int])
     recv e (y : Int)
     send d y
   )
-double = proc(i : ?Int, r : !Int)
+double (i : ?Int, r : !Int) =
   recv i(xi : Int)
   new (c : ?Int. ?Int. !Int, d)
   (
@@ -114,40 +115,38 @@ double = proc(i : ?Int, r : !Int)
     send d xi send d xi recv d(z : Int) send r z
   )
 data MyZero =
-fwd0_snd0 = proc(c : Fwd 0 (!MyZero)) fwd 0 (!MyZero) c
-fwd1_rcv = proc(c : Fwd 1 (?Int)) fwd 1 (?Int) c
-fwd2_par2_ten2 = proc(c : Fwd 2 {?Int,!Int.?Int}) fwd 2 {?Int,!Int.?Int} c
-fwd3_par2_ten2_ten2 = proc(c : Fwd 3 {?Int,!Int.?Int})
+fwd0_snd0 (c : Fwd 0 (!MyZero)) = fwd 0 (!MyZero) c
+fwd1_rcv (c : Fwd 1 (?Int)) = fwd 1 (?Int) c
+fwd2_par2_ten2 (c : Fwd 2 {?Int,!Int.?Int}) = fwd 2 {?Int,!Int.?Int} c
+fwd3_par2_ten2_ten2 (c : Fwd 3 {?Int,!Int.?Int}) =
   fwd 3 {?Int,!Int.?Int} c
-fwd_par0_ten0 = proc(i : {}, o : []) fwd{}(i,o)
-fwd_par2_ten2_expanded =
-  proc(i : {?Int, !Int. ?Int}, o : [!Int, ?Int.!Int])
-    o[o0,o1]
+fwd_par0_ten0 (i : {}, o : []) = fwd{}(i,o)
+fwd_par2_ten2_expanded (i : {?Int, !Int. ?Int}, o : [!Int, ?Int.!Int])
+  = o[o0,o1]
     i{i0,i1}
     ( recv i0 (xi0 : Int) send o0 xi0
     | recv o1 (xo1 : Int) send i1 xo1
       recv i1 (yi1 : Int) send o1 yi1
     )
-fwd_par2_ten2 = proc(i : {?Int,!Int.?Int}, o : [!Int,?Int.!Int]) fwd{?Int,!Int.?Int}(i,o)
-fwd_par2_ten2_ten2 =
-  proc( i : {?Int,!Int.?Int}
-      , o : [!Int,?Int.!Int]
-      , l : {!Int,!Int.!Int}
-      )
+fwd_par2_ten2 (i : {?Int,!Int.?Int}, o : [!Int,?Int.!Int]) = fwd{?Int,!Int.?Int}(i,o)
+fwd_par2_ten2_ten2 ( i : {?Int,!Int.?Int}
+                   , o : [!Int,?Int.!Int]
+                   , l : {!Int,!Int.!Int}
+                   ) =
   fwd {?Int,!Int.?Int}(i,o,l)
-fwd_par2_ten2_ten2_ten2 =
-  proc( i : {?Int,!Int.?Int}
-      , o : [!Int,?Int.!Int]
-      , l : {!Int,!Int.!Int}
-      , m : {!Int,!Int.!Int}
-      )
+fwd_par2_ten2_ten2_ten2
+  ( i : {?Int,!Int.?Int}
+  , o : [!Int,?Int.!Int]
+  , l : {!Int,!Int.!Int}
+  , m : {!Int,!Int.!Int}
+  ) =
   fwd{?Int,!Int.?Int}(i,o,l,m)
-fwd_send_recv = proc(i : ?Int, o : !Int) fwd(?Int)(i,o)
-fwd_send_recv_recv_send = proc(i : ?Int. !Int, o : !Int. ?Int) fwd(?Int.!Int)(i,o)
-fwd_ten2_par2 = proc(i : [?Int,!Int.?Int], o : {!Int,?Int.!Int}) fwd[?Int,!Int.?Int](i,o)
+fwd_send_recv (i : ?Int, o : !Int) = fwd(?Int)(i,o)
+fwd_send_recv_recv_send (i : ?Int. !Int, o : !Int. ?Int) = fwd(?Int.!Int)(i,o)
+fwd_ten2_par2 (i : [?Int,!Int.?Int], o : {!Int,?Int.!Int}) = fwd[?Int,!Int.?Int](i,o)
 id : (A : Type)(x : A) -> A
 
-idproc = proc(c : ?Int, d : !Int)
+idproc (c : ?Int, d : !Int) =
   recv c (y : Int)
   send d (id Int y)
 i42 : Int = 42
@@ -166,9 +165,8 @@ rot : (x : T) -> T =
 
 rot2 : (x : T) -> T =
       \(x : T) -> rot (rot x)
-fwd_par2_ten2_expanded =
-  proc(i : {?Int, !Int. ?Int}, o : [!Int, ?Int.!Int])
-    o[o0,o1]
+fwd_par2_ten2_expanded (i : {?Int, !Int. ?Int}, o : [!Int, ?Int.!Int])
+  = o[o0,o1]
     i{i0,i1}
     ( recv i0 (x : Int) send o0 x
     | recv o1 (x : Int) send i1 x
@@ -257,7 +255,7 @@ merger_v2 =
     send io (merge m n v0 v1)
   )
 
-missing_one_seq3 = proc(c : [: !Int, !Int, !Int :])
+missing_one_seq3 (c : [: !Int, !Int, !Int :]) =
   c[: c0, c1, c2 :]
   send c1 1
   send c2 2
@@ -289,56 +287,56 @@ no_dead_lock_new_new_v2 = proc()
     )
   )
 some_type : Type = Int , some_value : some_type = 42
-not_sink_fwd1_snd = proc(c : Fwd 1 (!Int)) c{d} fwd (!Int) (d)
+not_sink_fwd1_snd (c : Fwd 1 (!Int)) = c{d} fwd (!Int) (d)
 over_application : Int = _+_ 1 2 3
-par0 = proc(c : {}) c{}
-par1 = proc(c : {!Int}) c{d} send d 42
-par2 = proc(c : {!Int,?Int}) c{d,e} recv e (x : Int) send d x
-par2mix = proc(c : {!Int,?Int}) c{d,e}(recv e (x : Int) | send d 42)
-par4_seq_send3 = proc(a : {[:!Int,!Int:],!Int,!Int,!Int})
+par0 (c : {}) = c{}
+par1 (c : {!Int}) = c{d} send d 42
+par2 (c : {!Int,?Int}) = c{d,e} recv e (x : Int) send d x
+par2mix (c : {!Int,?Int}) = c{d,e}(recv e (x : Int) | send d 42)
+par4_seq_send3 (a : {[:!Int,!Int:],!Int,!Int,!Int}) =
   a{b,e,f,g} b[:c,d:] send e 1 send c 2 send f 3 send d 4 send g 5
-parallel_assoc_2tensor2_left = proc(cde : [[!Int, !Int], !Int])
+parallel_assoc_2tensor2_left (cde : [[!Int, !Int], !Int]) =
   cde[cd,e]
   cd[c,d]
   ( send c 1
   | send d 2
   | send e 3
   )
-parallel_assoc_2tensor2_right = proc(cde : [[!Int, !Int], !Int])
+parallel_assoc_2tensor2_right (cde : [[!Int, !Int], !Int]) =
   cde[cd,e]
   ( cd[c,d] ( send c 1 | send d 2 )
   | send e 3
   )
-parallel_assoc_flat = proc(c : !Int, d : !Int, e : !Int)
+parallel_assoc_flat (c : !Int, d : !Int, e : !Int) =
   ( send c 1
   | send d 2
   | send e 3
   )
-parallel_assoc_left = proc(c : !Int, d : !Int, e : !Int)
+parallel_assoc_left (c : !Int, d : !Int, e : !Int) =
   ( ( send c 1 | send d 2 )
   | send e 3
   )
-parallel_assoc_right = proc(c : !Int, d : !Int, e : !Int)
+parallel_assoc_right (c : !Int, d : !Int, e : !Int) =
   ( send c 1
   | ( send d 2 | send e 3 )
   )
-parallel_assoc_tensor3_flat = proc(cde : [!Int, !Int, !Int])
+parallel_assoc_tensor3_flat (cde : [!Int, !Int, !Int]) =
   cde[c,d,e]
   ( send c 1
   | send d 2
   | send e 3
   )
-parallel_assoc_tensor3_left = proc(cde : [!Int, !Int, !Int])
+parallel_assoc_tensor3_left (cde : [!Int, !Int, !Int]) =
   cde[c,d,e]
   ( send c 1
   | ( send d 2 | send e 3 )
   )
-parallel_assoc_tensor3_right = proc(cde : [!Int, !Int, !Int])
+parallel_assoc_tensor3_right (cde : [!Int, !Int, !Int]) =
   cde[c,d,e]
   ( ( send c 1 | send d 2 )
   | send e 3
   )
-parallel_tensor4_flat = proc(cd : [!Int,!Int], ef : [!Int,!Int])
+parallel_tensor4_flat (cd : [!Int,!Int], ef : [!Int,!Int]) =
   cd[c,d]
   ef[e,f]
   ( send c 1
@@ -348,39 +346,39 @@ parallel_tensor4_flat = proc(cd : [!Int,!Int], ef : [!Int,!Int])
   )
 -- Needs mix
 -- [c,d],[e,f] <mix> [c,d,e,f] <split> [c,e],[d,f] <split/split> [c],[e] and [d],[f]
-parallel_tensor4_v0 = proc(cd : [!Int,!Int], ef : [!Int,!Int])
+parallel_tensor4_v0 (cd : [!Int,!Int], ef : [!Int,!Int]) =
   cd[c,d]
   ef[e,f]
   ( ( send c 1 | send e 2 )
   | ( send d 3 | send f 4 )
   )
-par_seq_back = proc(a : {[:!Int,!Int:],!Int})
+par_seq_back (a : {[:!Int,!Int:],!Int}) =
   a{b,e} b[:c,d:] send c 2 send d 3 send e 1
-par_seq_front = proc(a : {[:!Int,!Int:],!Int})
+par_seq_front (a : {[:!Int,!Int:],!Int}) =
   a{b,e} b[:c,d:] send e 1 send c 2 send d 3
-par_seq_middle = proc(a : {[:!Int,!Int:],!Int})
+par_seq_middle (a : {[:!Int,!Int:],!Int}) =
   a{b,e} b[:c,d:] send c 2 send e 1 send d 3
-par_seq_send3 = proc(a : {[:!Int,!Int:],!Int.!Int.!Int})
+par_seq_send3 (a : {[:!Int,!Int:],!Int.!Int.!Int}) =
   a{b,e} b[:c,d:] send e 1 send c 2 send e 3 send d 4 send e 5
-par_ten1_ten1 = proc(c : {[?Int], [!Int]})
+par_ten1_ten1 (c : {[?Int], [!Int]}) =
   c{e,d} d[l] e[h]
   recv h (x : Int) send l x
 -- Accepted by the checker, makes the compiler loop
-par_ten_ten_v0 = proc(c : {[?Int, !Int], [!Int, ?Int]})
+par_ten_ten_v0 (c : {[?Int, !Int], [!Int, ?Int]}) =
   c{e,d} d[k,l] e[h,g]
   ( ( recv h (x : Int)
     | ( send k 1 | recv l (y : Int) )
     )
   | send g 2
   )
-par_ten_ten_v1 = proc(c : {[?Int, !Int], [!Int, ?Int]})
+par_ten_ten_v1 (c : {[?Int, !Int], [!Int, ?Int]}) =
   c{e,d} d[k,l] e[h,g]
   ( recv h (x : Int)
   | send k 1
   | recv l (y : Int)
   | send g 2
   )
-par_ten_ten_v2 = proc(c : {[?Int, !Int], [!Int, ?Int]})
+par_ten_ten_v2 (c : {[?Int, !Int], [!Int, ?Int]}) =
   c{e,d} d[k,l] e[h,g]
   ( ( send k 1
     | ( recv h (x : Int) | recv l (y : Int) )
@@ -392,25 +390,25 @@ data T2 = `c3 | `c1
 data T1 = `c1
 data T1 = `c2
 Int : Type
-p1 = proc() ()
-p1 = proc(c : !Int) send c 1
-replicate_par = proc(c : {!Int ^ 10})
+p1 () = ()
+p1 (c : !Int) = send c 1
+replicate_par (c : {!Int ^ 10}) =
   c{d}
   slice (d) 10 as i
   send d i
-replicate_ten = proc(c : [!Int ^ 10])
+replicate_ten (c : [!Int ^ 10]) =
   c[d]
   slice (d) 10 as i
   send d i
-reusedParChannel = proc(c : {}) c{} c{}
-reusedTensorChannel = proc(c : [?Int]) c[d] recv d (x : Int) send c 1
-seq3 = proc(c : [: !Int, !Int, !Int :])
+reusedParChannel (c : {}) = c{} c{}
+reusedTensorChannel (c : [?Int]) = c[d] recv d (x : Int) send c 1
+seq3 (c : [: !Int, !Int, !Int :]) =
   c[: c0, c1, c2 :]
   send c0 0
   send c1 1
   send c2 2
 
-seq3_seq2 = proc(c : [: !Int, !Int, !Int :], d : [: !Int, !Int :])
+seq3_seq2 (c : [: !Int, !Int, !Int :], d : [: !Int, !Int :]) =
   c[: c0, c1, c2 :]
   d[: d0, d1 :]
   send c0 0
@@ -419,26 +417,26 @@ seq3_seq2 = proc(c : [: !Int, !Int, !Int :], d : [: !Int, !Int :])
   send c2 2
   send d1 1
 
-seq_par_back = proc(a : [:{!Int,!Int},!Int:])
+seq_par_back (a : [:{!Int,!Int},!Int:]) =
   a[:b,e:] b{c,d} send c 2 send d 3 send e 1
-seq_par_back_v2 = proc(a : [:{!Int,!Int},!Int:])
+seq_par_back_v2 (a : [:{!Int,!Int},!Int:]) =
   a[:b,e:] b{c,d} send d 3 send c 2 send e 1
-seq_seq = proc(a : [:[:!Int,!Int:],!Int:])
+seq_seq (a : [:[:!Int,!Int:],!Int:]) =
   a[:b,e:] b[:c,d:] send c 1 send d 2 send e 3
-seq_seq_send2 = proc(a : [:[:!Int.!Int,!Int.!Int:],!Int.!Int:])
+seq_seq_send2 (a : [:[:!Int.!Int,!Int.!Int:],!Int.!Int:]) =
   a[:b,e:] b[:c,d:] send c 1 send c 2 send d 3 send d 4 send e 5 send e 6
-seq_ten = proc(a : [:[!Int,!Int],!Int:])
+seq_ten (a : [:[!Int,!Int],!Int:]) =
   a[:b,e:] b[c,d] (send c 2 send e 1 | send d 3)
-singleRecv = proc(c : ?Int) recv c (x : Int)
-singleSend = proc(c : !Int) send c 42
+singleRecv (c : ?Int) = recv c (x : Int)
+singleSend (c : !Int) = send c 42
 sorter =
  \(n : Int)->
  proc(c : {? Vec Int n, ! Vec Int n})
   c{ci,co}
   recv ci (v : Vec Int n)
   send co (sort n v)
-split_fwd1_rcv = proc(c : Fwd 1 (?Int)) c{d} fwd (?Int) (d)
-sum_int = proc(a : {?Int ^ 10}, r : !Int)
+split_fwd1_rcv (c : Fwd 1 (?Int)) = c{d} fwd (?Int) (d)
+sum_int (a : {?Int ^ 10}, r : !Int) =
   new (itmp : !Int.?Int, tmp)
   (send itmp 0
    fwd(?Int)(itmp, r)
@@ -450,28 +448,28 @@ sum_int = proc(a : {?Int ^ 10}, r : !Int)
    send tmp (x + y)
   )
 
-ten_loli_par = proc(c : [!Int,!Int] -o {!Int,!Int})
+ten_loli_par (c : [!Int,!Int] -o {!Int,!Int}) =
   c{i,o}
   i{i0,i1}
   o{o0,o1}
   ( fwd(?Int)(i0,o0)
   | fwd(?Int)(i1,o1)
   )
-ten_par_par_seq = proc(c : [{},{}]) c[d,e] d{} e{}
-ten_par_par_split = proc(c : [{},{}]) c[d,e] (d{} | e{})
-tensor0 = proc(c : []) c[]
-tensor1 = proc(c : [!Int]) c[d] send d 42
-tensor2 = proc(c : [!Int,?Int]) c[d,e](recv e (x : Int) | send d 42)
-tensor2_tensor0_tensor0_parallel = proc(cd : [[], []])
+ten_par_par_seq (c : [{},{}]) = c[d,e] d{} e{}
+ten_par_par_split (c : [{},{}]) = c[d,e] (d{} | e{})
+tensor0 (c : []) = c[]
+tensor1 (c : [!Int]) = c[d] send d 42
+tensor2 (c : [!Int,?Int]) = c[d,e](recv e (x : Int) | send d 42)
+tensor2_tensor0_tensor0_parallel (cd : [[], []]) =
   cd[c,d] ( c[] | d[] )
 {-
           d[] : [d : []]
        c[]d[] : [c : [], d : []]
 cd[c,d]c[]d[] : [cd : [[], []]]
 -}
-tensor2_tensor0_tensor0_sequence = proc(cd : [[], []])
+tensor2_tensor0_tensor0_sequence (cd : [[], []]) =
   cd[c,d] c[] d[]
-tensor2_using_dual = proc(c : [!Int,~!Int]) c[d,e](recv e (x : Int) | send d 42)
+tensor2_using_dual (c : [!Int,~!Int]) = c[d,e](recv e (x : Int) | send d 42)
 test2 = proc()
   new (c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d)
   (
@@ -504,7 +502,7 @@ test3 = proc()
     d{d0,d1}
     ( recv d0 (y0 : Int) | recv d1 (z0 : Int) )
   )
-test4_inferred = proc(r)
+test4_inferred (r) =
   new (c, d)
   (
     recv c (x0 : Int)
@@ -516,7 +514,7 @@ test4_inferred = proc(r)
     send d 2
     send d 3
   )
-test4 = proc(r : !Int)
+test4 (r : !Int) =
   new (c : ?Int. ?Int. ?Int, d)
   (
     recv c (x0 : Int)
@@ -624,7 +622,7 @@ trans : (A : Type)(x' : A)(y' : A)(z' : A)(p : Id A x' y')(q : Id A y' z')-> Id 
 -- -}
 unboundChannel = proc() recv c (x : Int)
 bad : Type = `bad
-wrong_order_par2_par2 = proc(c : [: {!Int,!Int}, {!Int,!Int} :])
+wrong_order_par2_par2 (c : [: {!Int,!Int}, {!Int,!Int} :]) =
   c[:d,e:]
   d{f,g}
   e{h,i}
@@ -633,13 +631,13 @@ wrong_order_par2_par2 = proc(c : [: {!Int,!Int}, {!Int,!Int} :])
   send i 4
   send f 1
 
-wrong_order_par_seq_back = proc(a : {[:!Int,!Int:],!Int})
+wrong_order_par_seq_back (a : {[:!Int,!Int:],!Int}) =
   a{b,e} b[:c,d:] send d 3 send c 2 send e 1
-wrong_order_par_seq_front = proc(a : {[:!Int,!Int:],!Int})
+wrong_order_par_seq_front (a : {[:!Int,!Int:],!Int}) =
   a{b,e} b[:c,d:] send e 1 send d 3 send c 2
-wrong_order_par_seq_middle = proc(a : {[:!Int,!Int:],!Int})
+wrong_order_par_seq_middle (a : {[:!Int,!Int:],!Int}) =
   a{b,e} b[:c,d:] send d 3 send e 1 send c 2
-wrong_order_seq2_seq2 = proc(c : [: [: !Int,!Int :], [: !Int,!Int :] :])
+wrong_order_seq2_seq2 (c : [: [: !Int,!Int :], [: !Int,!Int :] :]) =
   c[:d,e:]
   d[:f,g:]
   e[:h,i:]
@@ -648,34 +646,34 @@ wrong_order_seq2_seq2 = proc(c : [: [: !Int,!Int :], [: !Int,!Int :] :])
   send f 1
   send g 2
 
-wrong_order_seq3 = proc(c : [: !Int, !Int, !Int :])
+wrong_order_seq3 (c : [: !Int, !Int, !Int :]) =
   c[: c0, c1, c2 :]
   send c0 0
   send c2 2
   send c1 1
 
-wrong_order_seq_par_front = proc(a : [:{!Int,!Int},!Int:])
+wrong_order_seq_par_front (a : [:{!Int,!Int},!Int:]) =
   a[:b,e:] b{c,d} send e 1 send c 2 send d 3
-wrong_order_seq_par_middle = proc(a : [:{!Int,!Int},!Int:])
+wrong_order_seq_par_middle (a : [:{!Int,!Int},!Int:]) =
   a[:b,e:] b{c,d} send c 2 send e 1 send d 3
-wrong_order_seq_seq = proc(a : [:[:!Int,!Int:],!Int:])
+wrong_order_seq_seq (a : [:[:!Int,!Int:],!Int:]) =
   a[:b,e:] b[:c,d:] send c 1 send e 3 send d 2
-wrong_order_seq_seq_send2 = proc(a : [:[:!Int.!Int,!Int.!Int:],!Int.!Int:])
+wrong_order_seq_seq_send2 (a : [:[:!Int.!Int,!Int.!Int:],!Int.!Int:]) =
   a[:b,e:] b[:c,d:] send c 1 send c 2 send d 3 send e 4 send d 5 send e 6
-wrong_order_seq_ten = proc(a : [:[!Int,!Int],!Int:])
+wrong_order_seq_ten (a : [:[!Int,!Int],!Int:]) =
   a[:b,e:] b[c,d] (send e 1 send c 2 | send d 3)
-wrong_par_seq3 = proc(c : [: !Int, !Int, !Int :])
+wrong_par_seq3 (c : [: !Int, !Int, !Int :]) =
   c[: c0, c1, c2 :]
   send c0 0
   (send c1 1 | send c2 2)
 
-wrong_repeat_par = proc(c : {!Int})
+wrong_repeat_par (c : {!Int}) =
   slice () 10 as i
   c{d}
   send d 1
 
 wrong : Int = Type
-zap_ten_fwd = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
+zap_ten_fwd (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
   cf{cfi}
   cn{cni}
   co[coi]
@@ -685,7 +683,7 @@ zap_ten_fwd = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10
   | fwd(?Int)(cfio,coi)
   )
 
-zap_ten_par = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
+zap_ten_par (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
   cf{cfi}
   cn{cni}
   co[coi]
@@ -697,7 +695,7 @@ zap_ten_par = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10
     send coi y
   )
 
-zap_ten_seq = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
+zap_ten_seq (cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10]) =
   cf{cfi}
   cn{cni}
   co[coi]
@@ -708,7 +706,7 @@ zap_ten_seq = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10
   recv cfio (y : Int)
   send coi y
 
-zip_add = proc(xs : {?Int ^ 10}, ys : {?Int ^ 10}, zs : [!Int ^ 10])
+zip_add (xs : {?Int ^ 10}, ys : {?Int ^ 10}, zs : [!Int ^ 10]) =
   xs{x}
   ys{y}
   zs[z]

@@ -1,2 +1,2 @@
-p1 () = ()
-p1 (c : !Int) = send c 1
+p1 = proc() ()
+p1 = proc(c : !Int) send c 1

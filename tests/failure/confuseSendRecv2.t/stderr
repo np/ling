@@ -1,6 +1,6 @@
 On channel d sessions are not equivalent.
 Given session (expanded):
-  ! Int
+  !Int
 Inferred session:
-  ? Int
+  ?Int
 

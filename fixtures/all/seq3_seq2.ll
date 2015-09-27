@@ -1,4 +1,4 @@
-seq3_seq2 (c : [: !Int, !Int, !Int :], d : [: !Int, !Int :]) =
+seq3_seq2 = proc(c : [: !Int, !Int, !Int :], d : [: !Int, !Int :])
   c[: c0, c1, c2 :]
   d[: d0, d1 :]
   send c0 0

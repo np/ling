@@ -1,1 +1,1 @@
-reusedParChannel (c : {}) = c{} c{}
+reusedParChannel = proc(c : {}) c{} c{}

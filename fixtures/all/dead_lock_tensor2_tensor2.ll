@@ -1,4 +1,4 @@
-dead_lock_tensor2_tensor2 (cd : [?Int, !Int], ef : [?Int, !Int]) =
+dead_lock_tensor2_tensor2 = proc(cd : [?Int, !Int], ef : [?Int, !Int])
   cd[c,d] ef[e,f]
   (
     recv c (x : Int)

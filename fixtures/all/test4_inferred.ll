@@ -1,4 +1,4 @@
-test4_inferred (r) =
+test4_inferred = proc(r)
   new (c, d)
   (
     recv c (x0 : Int)

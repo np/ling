@@ -12,7 +12,6 @@ token Name ((letter | ["_-+*/'%^"] | digit)*
 
 separator Name "," ;
 
-DPrc. Dec ::= Name "(" [ChanDec] ")" "=" Proc ;
 DDef. Dec ::= Name OptSig "=" Term ;
 DSig. Dec ::= Name ":" Term ;
 DDat. Dec ::= "data" Name "=" [ConName] ;
