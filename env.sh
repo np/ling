@@ -19,4 +19,8 @@ cmdrfailure(){
 }
 alias cmdrseq='cmdrecord tests/sequence/all.t --env empty -- Ling --seq < fixtures/sequence/*.ll'
 alias cmdrcom='cmdrecord tests/compile/all.t  --env empty -- Ling --compile-prims --compile < fixtures/compile/*.ll'
+alias cmdrfmt='cmdrecord tests/fmt/all.t  --env empty -- ling-fmt < fixtures/all/*.ll'
+alias cmdrpretty='cmdrecord tests/pretty/all.t  --env empty -- Ling --pretty < fixtures/all/*.ll'
+current_nixpkgs=$HOME/hub/np/nixpkgs
+[ ! -d "$current_nixpkgs" ] || export NIX_PATH=nixpkgs=$current_nixpkgs
 export PATH=`pwd`/dist/build/Ling:`pwd`/dist/build/ling-fmt:`pwd`/env/bin:$PATH
