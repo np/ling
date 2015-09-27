@@ -29,7 +29,7 @@ import           Ling.Utils
 
 type ParseFun a = [Token] -> Err a
 
-data Opts = Opts { _tokens, _abstree, _lintree, _normtree, _check, _sequential
+data Opts = Opts { _tokens, _showAST, _showPretty, _doNorm, _check, _sequential
                  , _compile, _compilePrims, _noPrims :: Bool
                  , _checkOpts :: CheckOpts }
 
@@ -102,7 +102,7 @@ runErr (Bad s) = failIO s
 
 transP :: Opts -> Program -> IO ()
 transP opts prg = do
-  when (opts ^. normtree) $
+  when (opts ^. doNorm) $
     putStrLn (pretty nprg)
   when (opts ^. check) $ do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not(opts^.noPrims)) $ nprg
@@ -118,18 +118,18 @@ transP opts prg = do
 
 showTree :: (Show a, Print a) => Opts -> a -> IO ()
 showTree opts tree
- = do when (opts ^. abstree) $
+ = do when (opts ^. showAST) $
         putStrLn $ "\n[Abstract Syntax]\n\n" ++ show tree
-      when (opts ^. lintree) $
-        putStrLn $ "\n[Linearized tree]\n\n" ++ printTree tree
+      when (opts ^. showPretty) $
+        putStrLn $ "\n-- Pretty-printed program\n\n" ++ printTree tree
 
 mainArgs :: Opts -> [String] -> IO ()
 mainArgs opts args0 = case args0 of
   [] -> getContents >>= run opts pProgram >>= transP opts
   "--tokens":args -> mainArgs (opts & tokens .~ True) args
-  "--abstree":args -> mainArgs (opts & abstree .~ True) args
-  "--lintree":args -> mainArgs (opts & lintree .~ True) args
-  "--normtree":args -> mainArgs (opts & normtree .~ True) args
+  "--ast":args -> mainArgs (opts & showAST .~ True) args
+  "--pretty":args -> mainArgs (opts & showPretty .~ True) args
+  "--norm":args -> mainArgs (opts & doNorm .~ True) args
   "--check":args -> mainArgs (opts & check .~ True) args
   "--debug-check":args -> mainArgs (opts & check .~ True & checkOpts . debugChecker .~ True) args
   "--compile":args -> mainArgs (opts & compile .~ True) args
