@@ -72,8 +72,8 @@ SeqSplit. Pref ::= Name "[:" [ChanDec] ":]" ;
 Send.     Pref ::= "send" Name ATerm ;
 Recv.     Pref ::= "recv" Name VarDec ;
 NewSlice. Pref ::= "slice" "(" [Name] ")" ATerm "as" Name ;
-Ax.       Pref ::= "fwd" Session "(" [Name] ")" ;
-SplitAx.  Pref ::= "fwd" Integer Session Name ;
+Ax.       Pref ::= "fwd" Session4 "(" [Name] ")" ;
+SplitAx.  Pref ::= "fwd" Integer Session4 Name ;
 At.       Pref ::= "@" ATerm "(" [Name] ")" ;
 
 separator Pref  ""  ;

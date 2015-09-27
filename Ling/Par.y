@@ -170,8 +170,8 @@ Pref : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Abs.Nu $3 $5 }
      | 'send' Name ATerm { Ling.Abs.Send $2 $3 }
      | 'recv' Name VarDec { Ling.Abs.Recv $2 $3 }
      | 'slice' '(' ListName ')' ATerm 'as' Name { Ling.Abs.NewSlice $3 $5 $7 }
-     | 'fwd' Session '(' ListName ')' { Ling.Abs.Ax $2 $4 }
-     | 'fwd' Integer Session Name { Ling.Abs.SplitAx $2 $3 $4 }
+     | 'fwd' Session4 '(' ListName ')' { Ling.Abs.Ax $2 $4 }
+     | 'fwd' Integer Session4 Name { Ling.Abs.SplitAx $2 $3 $4 }
      | '@' ATerm '(' ListName ')' { Ling.Abs.At $2 $4 }
 ListPref :: { [Pref] }
 ListPref : {- empty -} { [] } | ListPref Pref { flip (:) $1 $2 }

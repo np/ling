@@ -105,8 +105,8 @@ All other symbols are terminals.
   |  |  **|**  | ``send`` //Name// //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
   |  |  **|**  | ``slice`` ``(`` //[Name]// ``)`` //ATerm// ``as`` //Name// 
-  |  |  **|**  | ``fwd`` //Session// ``(`` //[Name]// ``)`` 
-  |  |  **|**  | ``fwd`` //Integer// //Session// //Name// 
+  |  |  **|**  | ``fwd`` //Session4// ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``fwd`` //Integer// //Session4// //Name// 
   |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
   | //[Pref]// | -> | **eps**
   |  |  **|**  | //Pref// //[Pref]// 
