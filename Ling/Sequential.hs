@@ -15,7 +15,7 @@ module Ling.Sequential where
     Read then write
 -}
 
-import Control.Lens hiding (op)
+import Control.Lens hiding (op,Empty)
 
 import Data.Maybe
 import Data.Functor
