@@ -1,8 +1,8 @@
 module Ling.Proc where
 
 import Ling.Abs (Name)
-import qualified Data.Set as Set
-import Data.Set (Set)
+--import qualified Data.Set as Set
+--import Data.Set (Set)
 import Data.List
 
 import Ling.Utils
@@ -10,6 +10,7 @@ import Ling.Norm
 import Ling.Subst (substi)
 import Ling.Session
 
+{-
 type FreeChans a = a -> Set Channel
 
 freeChans :: FreeChans Proc
@@ -21,9 +22,8 @@ bndChans = l2s . map _argName
 fcProcs :: FreeChans Procs
 fcProcs = Set.unions . map freeChans
 
-fcAct :: [Pref] -> FreeChans Procs
-fcAct []           procs = fcProcs procs
-fcAct (pref:prefs) procs =
+fcPref :: Pref -> Endom (Set Channel)
+fcPref pref cs =
   case pref of
     Nu c d         -> cs `Set.difference` bndChans [c,d]
     Split _ c ds   -> c  `Set.insert` (cs `Set.difference` bndChans ds)
@@ -32,7 +32,10 @@ fcAct (pref:prefs) procs =
     NewSlice{}     -> error "fcAct/NewSlice undefined"
     Ax _ ds        -> l2s ds `Set.union` cs
     At _ ds        -> l2s ds `Set.union` cs
-  where cs = fcAct prefs procs
+
+fcAct :: [Pref] -> FreeChans Procs
+fcAct prefs procs = foldr fcPref (fcProcs procs) prefs
+-}
 
 zeroP :: Proc
 zeroP = [] `Act` []
