@@ -21,6 +21,13 @@ double __sub_D__lin (const double m_lin, const double n_lin);
 double __times_D__lin (const double m_lin, const double n_lin);
 double __div_D__lin (const double m_lin, const double n_lin);
 double powD_lin (const double m_lin, const double n_lin);
+int Char_lin ;
+int String_lin ;
+char * showInt_lin (const int n_lin);
+char * showDouble_lin (const double n_lin);
+char * showChar_lin (const char c_lin);
+char * showString_lin (const char * s_lin);
+char * __plus__plus_S__lin (const char * s0_lin, const char * s1_lin);
 void cutEmptyParTensor_lin () {
   }
 void cut_par_cut_lin () {

@@ -123,6 +123,16 @@ rot : (x : T)-> T =
   } 
 rot2 : (x : T)-> T =
   \ (x : T)-> rot (rot x)
+showMult =
+  \ (m : Int)(n : Int)-> (showInt m)++S " * " ++S (showInt n)++S " = " ++S showInt (m * n)
+showDiv =
+  \ (m : Double)(n : Double)-> (showDouble m)++S " / " ++S (showDouble n)++S " = " ++S showDouble (m /D n)
+my42 : String =
+  showMult 2 21 
+my3_14 : String =
+  showDiv 6.28 2.0 
+myNewline : Char =
+  '\n' 
 fwd_par2_ten2_expanded =
   proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int]) o [o0, o1]i {i0, i1}(recv i0 (x : Int)send o0 x | recv o1 (x : Int)send i1 x recv i1 (x : Int)send o1 x)
 Id : (A : Type)(x : A)(y : A)-> Type 
@@ -335,6 +345,12 @@ unboundChannel =
   proc () recv c (x : Int)
 bad : Type =
   `bad 
+wrong_char_literal : Double =
+  '\n' 
+wrong_double_literal : Char =
+  2.0 
+wrong_integer_literal : Double =
+  42 
 wrong_order_par2_par2 =
   proc (c : [: {!Int, !Int},{!Int, !Int}:])c [: d, e :] d {f, g}e {h, i}send g 2 send h 3 send i 4 send f 1 
 wrong_order_par_seq_back =
@@ -361,6 +377,8 @@ wrong_par_seq3 =
   proc (c : [: !Int, !Int, !Int :])c [: c0, c1, c2 :] send c0 0 (send c1 1 | send c2 2)
 wrong_repeat_par =
   proc (c : {!Int}) slice () 10 as i c {d}send d 1 
+wrong_string_literal : Double =
+  "Hello!" 
 wrong : Int =
   Type 
 zap_ten_fwd =
