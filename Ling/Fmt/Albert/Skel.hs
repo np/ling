@@ -45,10 +45,16 @@ transChanDec x = case x of
 transBranch :: Branch -> Result
 transBranch x = case x of
   Br conname term -> failure x
+transLiteral :: Literal -> Result
+transLiteral x = case x of
+  LInteger integer -> failure x
+  LDouble double -> failure x
+  LString string -> failure x
+  LChar char -> failure x
 transATerm :: ATerm -> Result
 transATerm x = case x of
   Var name -> failure x
-  Lit integer -> failure x
+  Lit literal -> failure x
   Con conname -> failure x
   TTyp -> failure x
   TProto rsessions -> failure x

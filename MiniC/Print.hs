@@ -104,6 +104,7 @@ instance Print Typ where
   prt i e = case e of
     TInt -> prPrec i 0 (concatD [doc (showString "int")])
     TDouble -> prPrec i 0 (concatD [doc (showString "double")])
+    TChar -> prPrec i 0 (concatD [doc (showString "char")])
     TStr flds -> prPrec i 0 (concatD [doc (showString "struct"), doc (showString "{"), prt 0 flds, doc (showString "}")])
     TUni flds -> prPrec i 0 (concatD [doc (showString "union"), doc (showString "{"), prt 0 flds, doc (showString "}")])
     TEnum enms -> prPrec i 0 (concatD [doc (showString "enum"), doc (showString "{"), prt 0 enms, doc (showString "}")])
@@ -156,6 +157,13 @@ instance Print Init where
     NoInit -> prPrec i 0 (concatD [])
     SoInit exp -> prPrec i 0 (concatD [doc (showString "="), prt 0 exp])
 
+instance Print Literal where
+  prt i e = case e of
+    LInteger n -> prPrec i 0 (concatD [prt 0 n])
+    LDouble d -> prPrec i 0 (concatD [prt 0 d])
+    LString str -> prPrec i 0 (concatD [prt 0 str])
+    LChar c -> prPrec i 0 (concatD [prt 0 c])
+
 instance Print UOp where
   prt i e = case e of
     UAmp -> prPrec i 0 (concatD [doc (showString "&")])
@@ -168,7 +176,7 @@ instance Print UOp where
 instance Print Exp where
   prt i e = case e of
     EVar id -> prPrec i 16 (concatD [prt 0 id])
-    ELit n -> prPrec i 16 (concatD [prt 0 n])
+    ELit literal -> prPrec i 16 (concatD [prt 0 literal])
     EArw exp id -> prPrec i 15 (concatD [prt 15 exp, doc (showString "->"), prt 0 id])
     EFld exp id -> prPrec i 15 (concatD [prt 15 exp, doc (showString "."), prt 0 id])
     EArr exp1 exp2 -> prPrec i 15 (concatD [prt 15 exp1, doc (showString "["), prt 0 exp2, doc (showString "]")])

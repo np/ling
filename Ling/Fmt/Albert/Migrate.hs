@@ -46,10 +46,17 @@ transBranch :: Branch -> L.Branch
 transBranch x = case x of
   Br conname term -> L.Br (transConName conname) (transTerm term)
 
+transLiteral :: Literal -> L.Literal
+transLiteral x = case x of
+  LInteger i -> L.LInteger i
+  LDouble  d -> L.LDouble  d
+  LChar    c -> L.LChar    c
+  LString  s -> L.LString  s
+
 transATerm :: ATerm -> L.ATerm
 transATerm x = case x of
   Var name -> L.Var (transName name)
-  Lit integer -> L.Lit integer
+  Lit literal -> L.Lit (transLiteral literal)
   Con conname -> L.Con (transConName conname)
   TTyp -> L.TTyp
   TProto rsessions -> L.TProto (map transRSession rsessions)

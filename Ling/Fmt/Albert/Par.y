@@ -23,6 +23,7 @@ import Ling.Fmt.Albert.ErrM
 %name pListChanDec ListChanDec
 %name pBranch Branch
 %name pListBranch ListBranch
+%name pLiteral Literal
 %name pATerm ATerm
 %name pListATerm ListATerm
 %name pDTerm DTerm
@@ -87,12 +88,18 @@ import Ling.Fmt.Albert.ErrM
   '~' { PT _ (TS _ 40) }
 
 L_integ  { PT _ (TI $$) }
+L_doubl  { PT _ (TD $$) }
+L_quoted { PT _ (TL $$) }
+L_charac { PT _ (TC $$) }
 L_Name { PT _ (T_Name $$) }
 
 
 %%
 
 Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
+Double  :: { Double }  : L_doubl  { (read ( $1)) :: Double }
+String  :: { String }  : L_quoted {  $1 }
+Char    :: { Char }    : L_charac { (read ( $1)) :: Char }
 Name    :: { Name} : L_Name { Name ($1)}
 
 Program :: { Program }
@@ -142,9 +149,14 @@ ListBranch :: { [Branch] }
 ListBranch : {- empty -} { [] }
            | Branch { (:[]) $1 }
            | Branch ',' ListBranch { (:) $1 $3 }
+Literal :: { Literal }
+Literal : Integer { Ling.Fmt.Albert.Abs.LInteger $1 }
+        | Double { Ling.Fmt.Albert.Abs.LDouble $1 }
+        | String { Ling.Fmt.Albert.Abs.LString $1 }
+        | Char { Ling.Fmt.Albert.Abs.LChar $1 }
 ATerm :: { ATerm }
 ATerm : Name { Ling.Fmt.Albert.Abs.Var $1 }
-      | Integer { Ling.Fmt.Albert.Abs.Lit $1 }
+      | Literal { Ling.Fmt.Albert.Abs.Lit $1 }
       | ConName { Ling.Fmt.Albert.Abs.Con $1 }
       | 'Type' { Ling.Fmt.Albert.Abs.TTyp }
       | '<' ListRSession '>' { Ling.Fmt.Albert.Abs.TProto $2 }

@@ -6,7 +6,6 @@
 {-# LANGUAGE TemplateHaskell            #-}
 module Ling.Check.Base where
 
-import           Ling.Abs                  (Name)
 import           Ling.Constraint
 import           Ling.Equiv
 import           Ling.ErrM

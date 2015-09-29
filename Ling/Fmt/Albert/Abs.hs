@@ -39,9 +39,13 @@ data ChanDec = CD Name OptSession
 data Branch = Br ConName Term
   deriving (Eq, Ord, Show, Read)
 
+data Literal
+    = LInteger Integer | LDouble Double | LString String | LChar Char
+  deriving (Eq, Ord, Show, Read)
+
 data ATerm
     = Var Name
-    | Lit Integer
+    | Lit Literal
     | Con ConName
     | TTyp
     | TProto [RSession]

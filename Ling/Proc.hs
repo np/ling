@@ -1,6 +1,5 @@
 module Ling.Proc where
 
-import Ling.Abs (Name)
 --import qualified Data.Set as Set
 --import Data.Set (Set)
 import Data.List
@@ -74,8 +73,8 @@ split' :: TraverseKind -> Channel -> [Channel] -> Pref
 split' k c = Split k c . map noSession
 
 unRSession :: RSession -> Session
-unRSession (Repl s (Lit 1)) = s
-unRSession _                = error "unRSession"
+unRSession (Repl s (Lit (LInteger 1))) = s
+unRSession _                           = error "unRSession"
 
 -- One could generate the session annotations on the splits
 fwdParTen :: [RSession] -> [Channel] -> Proc

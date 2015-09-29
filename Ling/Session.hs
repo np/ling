@@ -10,7 +10,7 @@ array TenK = Ten
 array SeqK = Seq
 
 one :: Session -> RSession
-one s = Repl s (Lit 1)
+one s = Repl s (Lit (LInteger 1))
 
 list :: [Session] -> Sessions
 list = map one
@@ -29,7 +29,7 @@ fwd :: Int -> Session -> Session
 fwd n s = Par $ fwds n s
 
 sortSession :: Typ -> Term -> Session
-sortSession a e = Rcv (vec a e) (Snd (vec a e) End)
+sortSession a e = Rcv (vecTyp a e) (Snd (vecTyp a e) End)
 
 mapR :: (Session -> Session) -> RSession -> RSession
 mapR f (Repl s a) = Repl (f s) a
@@ -114,8 +114,8 @@ extractSession l =
     _   -> error "Missing type signature in `new`"
 
 flatRSession :: RSession -> [Session]
-flatRSession (Repl s (Lit n)) = replicate (fromInteger n) s
-flatRSession _ = error "flatRSession"
+flatRSession (Repl s (Lit (LInteger n))) = replicate (fromInteger n) s
+flatRSession _                           = error "flatRSession"
 
 flatSessions :: Sessions -> [Session]
 flatSessions = concatMap flatRSession
@@ -125,7 +125,7 @@ projRSessions _ []
   = error "projRSessions: out of bound"
 projRSessions n (Repl s a:ss)
   = case a of
-      Lit i
+      Lit (LInteger i)
         | n < i     -> s
         | otherwise -> projRSessions (n-i) ss
       _ -> error "projRSessions/Repl: only integer literals are supported"
@@ -136,13 +136,18 @@ projSession n (Ten ss) = projRSessions n ss
 projSession n (Seq ss) = projRSessions n ss
 projSession _ _        = error "projSession: not a par/tensor/seq session"
 
+int0, int1 :: Term
+int0 = Lit (LInteger 0)
+int1 = Lit (LInteger 1)
+
 multTerm :: Term -> Term -> Term
-multTerm x@(Lit 0) _         = x
-multTerm (Lit 1)   x         = x
-multTerm _         x@(Lit 0) = x
-multTerm x         (Lit 1)   = x
-multTerm (Lit x)   (Lit y)   = Lit (x * y)
-multTerm x         y         = Def multName [x,y]
+multTerm x y
+  | x == int0 || y == int0 = int0
+  | x == int1              = y
+  | y == int1              = x
+  | Lit (LInteger i) <- x
+  , Lit (LInteger j) <- y  = Lit (LInteger $ i * j)
+  | otherwise              = Def multName [x,y]
 
 replRSession :: Term -> RSession -> RSession
 replRSession r (Repl s t) = Repl s (multTerm r t)

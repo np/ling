@@ -21,15 +21,30 @@ reserved words excluded.
 Integer literals //Integer// are nonempty sequences of digits.
 
 
+Double-precision float literals //Double// have the structure
+indicated by the regular expression ``digit+ '.' digit+ ('e' ('-')? digit+)?`` i.e.\
+two sequences of digits separated by a decimal point, optionally
+followed by an unsigned or negative exponent.
+
+
+String literals //String// have the form
+``"``//x//``"``}, where //x// is any sequence of any characters
+except ``"`` unless preceded by ``\``.
+
+
+Character literals //Char// have the form
+``'``//c//``'``, where //c// is any single character.
+
+
 
 
 ===Reserved words and symbols===
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
 The reserved words used in MiniC are the following:
-  | ``break`` | ``case`` | ``const`` | ``double``
-  | ``enum`` | ``for`` | ``int`` | ``struct``
-  | ``switch`` | ``union`` | ``void`` | 
+  | ``break`` | ``case`` | ``char`` | ``const``
+  | ``double`` | ``enum`` | ``for`` | ``int``
+  | ``struct`` | ``switch`` | ``union`` | ``void``
 
 The symbols used in MiniC are the following:
   | , | ( | ) | {
@@ -63,6 +78,7 @@ All other symbols are terminals.
   |  |  **|**  | //Def// //[Def]// 
   | //Typ// | -> | ``int`` 
   |  |  **|**  | ``double`` 
+  |  |  **|**  | ``char`` 
   |  |  **|**  | ``struct`` ``{`` //[Fld]// ``}`` 
   |  |  **|**  | ``union`` ``{`` //[Fld]// ``}`` 
   |  |  **|**  | ``enum`` ``{`` //[Enm]// ``}`` 
@@ -96,8 +112,12 @@ All other symbols are terminals.
   |  |  **|**  | ``=`` //Exp// 
   | //[Stm]// | -> | **eps**
   |  |  **|**  | //Stm// ``;`` //[Stm]// 
+  | //Literal// | -> | //Integer// 
+  |  |  **|**  | //Double// 
+  |  |  **|**  | //String// 
+  |  |  **|**  | //Char// 
   | //Exp16// | -> | //Ident// 
-  |  |  **|**  | //Integer// 
+  |  |  **|**  | //Literal// 
   |  |  **|**  | ``(`` //Exp// ``)`` 
   | //Exp15// | -> | //Exp15// ``->`` //Ident// 
   |  |  **|**  | //Exp15// ``.`` //Ident// 

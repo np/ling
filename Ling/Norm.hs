@@ -114,7 +114,7 @@ actVarDecs :: Pref -> [VarDec]
 actVarDecs pref =
   case pref of
     Recv _ a       -> [a]
-    NewSlice _ _ x -> [Arg x int]
+    NewSlice _ _ x -> [Arg x intTyp]
     _              -> []
 
 kindLabel :: TraverseKind -> String

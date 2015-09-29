@@ -31,10 +31,10 @@ $white+ ;
 ($l | [\_ \- \+ \* \/ \' \% \^]| $d)* ($l | [\_ \- \+ \* \/ \' \% \^]) ($l | [\_ \- \+ \* \/ \' \% \^]| $d)* { tok (\p s -> PT p (eitherResIdent (T_Name . share) s)) }
 
 $l $i*   { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
-
-
+\" ([$u # [\" \\ \n]] | (\\ (\" | \\ | \' | n | t)))* \"{ tok (\p s -> PT p (TL $ share $ unescapeInitTail s)) }
+\' ($u # [\' \\] | \\ [\\ \' n t]) \'  { tok (\p s -> PT p (TC $ share s))  }
 $d+      { tok (\p s -> PT p (TI $ share s))    }
-
+$d+ \. $d+ (e (\-)? $d+)? { tok (\p s -> PT p (TD $ share s)) }
 
 {
 

@@ -62,6 +62,13 @@ prims =
   \_*D_ : (m : Double)(n : Double) -> Double\n\
   \_/D_ : (m : Double)(n : Double) -> Double\n\
   \powD : (m : Double)(n : Double) -> Double\n\
+  \Char : Type\n\
+  \String : Type\n\
+  \showInt : (n : Int) -> String\n\
+  \showDouble : (n : Double) -> String\n\
+  \showChar : (c : Char) -> String\n\
+  \showString : (s : String) -> String\n\
+  \_++S_ : (s0 : String)(s1 : String) -> String\n\
   \"
 
 primsN :: N.Program

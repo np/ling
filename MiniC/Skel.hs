@@ -27,6 +27,7 @@ transTyp :: Typ -> Result
 transTyp x = case x of
   TInt -> failure x
   TDouble -> failure x
+  TChar -> failure x
   TStr flds -> failure x
   TUni flds -> failure x
   TEnum enms -> failure x
@@ -62,6 +63,12 @@ transInit :: Init -> Result
 transInit x = case x of
   NoInit -> failure x
   SoInit exp -> failure x
+transLiteral :: Literal -> Result
+transLiteral x = case x of
+  LInteger integer -> failure x
+  LDouble double -> failure x
+  LString string -> failure x
+  LChar char -> failure x
 transUOp :: UOp -> Result
 transUOp x = case x of
   UAmp -> failure x
@@ -73,7 +80,7 @@ transUOp x = case x of
 transExp :: Exp -> Result
 transExp x = case x of
   EVar ident -> failure x
-  ELit integer -> failure x
+  ELit literal -> failure x
   EArw exp ident -> failure x
   EFld exp ident -> failure x
   EArr exp1 exp2 -> failure x

@@ -7,7 +7,6 @@ import           Data.List            (elemIndex)
 import           Data.Map             (Map)
 import qualified Data.Map             as Map
 
-import           Ling.Abs             (Name)
 import           Ling.Norm
 import           Ling.Scoped          (Defs, Scoped (..), ldefs, scoped, unDef)
 import           Ling.Utils           (Abs (..), Arg (..), Telescope (..))

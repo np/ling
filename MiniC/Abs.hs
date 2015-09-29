@@ -20,6 +20,7 @@ data Def = DDef Dec [Dec] [Stm] | DSig Dec [Dec] | DDec Dec
 data Typ
     = TInt
     | TDouble
+    | TChar
     | TStr [Fld]
     | TUni [Fld]
     | TEnum [Enm]
@@ -55,12 +56,16 @@ data Branch = Case Exp [Stm]
 data Init = NoInit | SoInit Exp
   deriving (Eq, Ord, Show, Read)
 
+data Literal
+    = LInteger Integer | LDouble Double | LString String | LChar Char
+  deriving (Eq, Ord, Show, Read)
+
 data UOp = UAmp | UPtr | UPlus | UMinus | UTilde | UBang
   deriving (Eq, Ord, Show, Read)
 
 data Exp
     = EVar Ident
-    | ELit Integer
+    | ELit Literal
     | EArw Exp Ident
     | EFld Exp Ident
     | EArr Exp Exp

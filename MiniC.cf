@@ -15,6 +15,7 @@ separator Def "" ;
 
 TInt.    Typ ::= "int" ;
 TDouble. Typ ::= "double" ;
+TChar.   Typ ::= "char" ;
 TStr.    Typ ::= "struct" "{" [Fld] "}" ;
 TUni.    Typ ::= "union"  "{" [Fld] "}" ;
 TEnum.   Typ ::= "enum"   "{" [Enm] "}" ;
@@ -55,9 +56,14 @@ SoInit. Init ::= "=" Exp ;
 
 terminator Stm ";" ;
 
+LInteger. Literal ::= Integer ;
+LDouble.  Literal ::= Double  ;
+LString.  Literal ::= String  ;
+LChar.    Literal ::= Char    ;
+
 -- primary-expression
 EVar. Exp16 ::= Ident ;
-ELit. Exp16 ::= Integer ;
+ELit. Exp16 ::= Literal ;
 _.    Exp16 ::= "(" Exp ")" ;
 
 -- postfix-expression

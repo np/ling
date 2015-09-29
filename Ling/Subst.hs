@@ -5,7 +5,6 @@ import           Data.Bifunctor
 import qualified Data.Map       as Map
 import           Data.Maybe     (fromMaybe)
 
-import           Ling.Abs       (Name)
 import           Ling.Norm
 import           Ling.Scoped    hiding (subst1)
 import           Ling.Utils     hiding (subst1)
@@ -17,7 +16,7 @@ subst1 :: Subst a => (Name, Term) -> a -> a
 subst1 = subst . l2m . pure
 
 substi :: (Integral i, Subst a) => (Name, i) -> a -> a
-substi (x, i) = subst1 (x, Lit(fromIntegral i))
+substi (x, i) = subst1 (x, Lit(LInteger(fromIntegral i)))
 
 appG :: (Term -> Term) -> Term -> [Term] -> Term
 appG g t []     = g t

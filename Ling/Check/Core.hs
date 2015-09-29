@@ -3,7 +3,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 module Ling.Check.Core where
 
-import           Ling.Abs             (Name)
 import           Ling.Check.Base
 import           Ling.Norm
 import           Ling.Print
@@ -31,7 +30,7 @@ checkUnused _ (Just _) _ = return ()
 checkUnused c Nothing  s = assertEqual s (one End) ["Unused channel " ++ pretty c]
 
 checkDual :: RSession -> RSession -> TC ()
-checkDual (Repl s0 (Lit 1)) (Repl s1 (Lit 1)) =
+checkDual (Repl s0 (Lit (LInteger 1))) (Repl s1 (Lit (LInteger 1))) =
   assertEqual s0 (dual s1)
     ["Sessions are not dual."
     ,"Given session (expanded):"
@@ -56,7 +55,7 @@ isSendRecv _         = False
 checkSlice :: (Channel -> Bool) -> (Channel, RSession) -> TC ()
 checkSlice cond (c, rs) = when (cond c) $
   case rs of
-    Repl s (Lit 1) ->
+    Repl s (Lit (LInteger 1)) ->
       assert (isSendRecv s) ["checkSlice: non send/recv session"]
     _ -> throwError "checkSlice: Replicated session"
 
@@ -172,7 +171,7 @@ checkPref pref proto =
       let cSession = defaultEndR $ proto ^. chanSession c
       return $ addChanWithOrder (c, mapR (Rcv typ) cSession) proto
     NewSlice cs t _i -> do
-      checkTerm int t
+      checkTerm intTyp t
       mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
       return $ replProtoWhen (`elem` cs) t proto
     Ax s cs -> return $ proto <> protoAx (one s) cs
@@ -195,12 +194,19 @@ checkAct (pref : prefs) procs = do
 inferBranch :: (Name,Term) -> TC (Name,Scoped Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
 
+literalType :: Literal -> Typ
+literalType l = case l of
+  LInteger{} -> intTyp
+  LDouble{}  -> doubleTyp
+  LChar{}    -> charTyp
+  LString{}  -> stringTyp
+
 inferTerm' :: Term -> TC Typ
 inferTerm' = fmap unScoped . inferTerm
 
 inferTerm :: Term -> TC (Scoped Typ)
 inferTerm e0 = debug ["Inferring type of " ++ pretty e0] >> case e0 of
-  Lit _           -> return $ emptyScope int
+  Lit l           -> return . emptyScope $ literalType l
   TTyp            -> return sTyp -- type-in-type
   Def x es        -> inferDef x es
   Lam arg t       -> sFun arg <$> checkVarDec arg (inferTerm t)
@@ -291,11 +297,11 @@ checkSessions :: [RSession] -> TC ()
 checkSessions = mapM_ checkRSession
 
 checkRSession :: RSession -> TC ()
-checkRSession (Repl s t) = checkSession s >> checkTerm int t
+checkRSession (Repl s t) = checkSession s >> checkTerm intTyp t
 
 checkSession :: Session -> TC ()
 checkSession s0 = case s0 of
-  Atm _ n -> checkTerm tSession (Def n [])
+  Atm _ n -> checkTerm sessionTyp (Def n [])
   End -> return ()
   Snd t s -> checkTyp t >> checkSession s
   Rcv t s -> checkTyp t >> checkSession s

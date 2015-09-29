@@ -17,7 +17,6 @@ import           Control.Lens
 import           Data.Map     (Map, empty, insert, member)
 import           Data.Maybe   (fromMaybe)
 
-import           Ling.Abs     (Name)
 import           Ling.Norm
 import           Ling.Rename
 import           Ling.Utils   hiding (subst1)

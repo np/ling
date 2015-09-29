@@ -106,8 +106,8 @@ sessionStatus dflt l x = case x of
 rsessionStatus :: (Session -> Status) -> Location -> RSession -> [(Location,Status)]
 rsessionStatus dflt l r@(Repl s t) =
   case t of
-    Lit 1 -> sessionStatus  dflt l  s
-    _     -> sessionsStatus dflt l [r]
+    Lit (LInteger 1) -> sessionStatus  dflt l  s
+    _                -> sessionsStatus dflt l [r]
 
 statusAt :: Channel -> Env -> Maybe Status
 statusAt c env
@@ -147,8 +147,7 @@ transSplit c dOSs env =
         ds = map _argName dOSs
 
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
-transProc env (prefs `Act` procs) k =
-  transAct env prefs procs k
+transProc env (prefs `Act` procs) = transAct env prefs procs
 
 -- prefixes about different channels can be reordered
 transAct :: Env -> [Pref] -> [Proc] -> (Env -> Proc -> r) -> r
@@ -159,8 +158,8 @@ transAct env prefs0 procs k =
                   k env' ([pref] `actP` [proc'])
 
 unRepl :: RSession -> Session
-unRepl (Repl s (Lit 1)) = s
-unRepl r                = transErr "unRepl: unexpected replicated session" r
+unRepl (Repl s (Lit (LInteger 1))) = s
+unRepl r                           = transErr "unRepl: unexpected replicated session" r
 
 transPref :: Pref -> Env -> Env
 transPref pref =

@@ -30,10 +30,10 @@ $white+ ;
 @rsyms { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
 
 $l $i*   { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
-
-
+\" ([$u # [\" \\ \n]] | (\\ (\" | \\ | \' | n | t)))* \"{ tok (\p s -> PT p (TL $ share $ unescapeInitTail s)) }
+\' ($u # [\' \\] | \\ [\\ \' n t]) \'  { tok (\p s -> PT p (TC $ share s))  }
 $d+      { tok (\p s -> PT p (TI $ share s))    }
-
+$d+ \. $d+ (e (\-)? $d+)? { tok (\p s -> PT p (TD $ share s)) }
 
 {
 
@@ -97,7 +97,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b ">=" 23 (b "->" 12 (b "(" 6 (b "%" 3 (b "!=" 2 (b "!" 1 N N) N) (b "&&" 5 (b "&" 4 N N) N)) (b "+" 9 (b "*" 8 (b ")" 7 N N) N) (b "-" 11 (b "," 10 N N) N))) (b "<<" 18 (b ":" 15 (b "/" 14 (b "." 13 N N) N) (b "<" 17 (b ";" 16 N N) N)) (b "==" 21 (b "=" 20 (b "<=" 19 N N) N) (b ">" 22 N N)))) (b "for" 34 (b "break" 29 (b "[" 26 (b "?" 25 (b ">>" 24 N N) N) (b "^" 28 (b "]" 27 N N) N)) (b "double" 32 (b "const" 31 (b "case" 30 N N) N) (b "enum" 33 N N))) (b "{" 40 (b "switch" 37 (b "struct" 36 (b "int" 35 N N) N) (b "void" 39 (b "union" 38 N N) N)) (b "}" 43 (b "||" 42 (b "|" 41 N N) N) (b "~" 44 N N))))
+resWords = b ">=" 23 (b "->" 12 (b "(" 6 (b "%" 3 (b "!=" 2 (b "!" 1 N N) N) (b "&&" 5 (b "&" 4 N N) N)) (b "+" 9 (b "*" 8 (b ")" 7 N N) N) (b "-" 11 (b "," 10 N N) N))) (b "<<" 18 (b ":" 15 (b "/" 14 (b "." 13 N N) N) (b "<" 17 (b ";" 16 N N) N)) (b "==" 21 (b "=" 20 (b "<=" 19 N N) N) (b ">" 22 N N)))) (b "for" 35 (b "break" 29 (b "[" 26 (b "?" 25 (b ">>" 24 N N) N) (b "^" 28 (b "]" 27 N N) N)) (b "const" 32 (b "char" 31 (b "case" 30 N N) N) (b "enum" 34 (b "double" 33 N N) N))) (b "{" 41 (b "switch" 38 (b "struct" 37 (b "int" 36 N N) N) (b "void" 40 (b "union" 39 N N) N)) (b "}" 44 (b "||" 43 (b "|" 42 N N) N) (b "~" 45 N N))))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 

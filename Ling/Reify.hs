@@ -66,8 +66,8 @@ reifyDec = reify
 
 instance Norm RSession where
   type Normalized RSession = N.RSession
-  reify (N.Repl s (N.Lit 1)) = Repl (reify s) One
-  reify (N.Repl s t)         = Repl (reify s) (Some (reify t))
+  reify (N.Repl s (N.Lit (LInteger 1))) = Repl (reify s) One
+  reify (N.Repl s t)                    = Repl (reify s) (Some (reify t))
   norm  (Repl s One)         = one (norm s)
   norm  (Repl s (Some a))    = N.Repl (norm s) (norm a)
 
@@ -146,10 +146,13 @@ isInfix _ = Nothing
 -- Really naive rawApp parsing
 -- Next step is to carry an environment with
 -- the operators and their fixity.
+-- TODO:
+--   * this only supports naive right-infix
+--   * this currently fails to parse: `f x + y`
 normRawApp :: [ATerm] -> N.Term
 normRawApp [e] = norm e
 normRawApp (e0 : Var (Name op) : es)
-  | op `elem` ["-","+","*","/","-D","+D","*D","/D"]
+  | op `elem` ["-","+","*","/","-D","+D","*D","/D","++S"]
   = N.Def (Name ("_" ++ op ++ "_")) [norm e0, normRawApp es]
 normRawApp (Var x : es) = N.Def x (norm es)
 normRawApp [] = error "normRawApp: IMPOSSIBLE"
@@ -177,14 +180,14 @@ instance Norm ATerm where
 
   reify e0 = case e0 of
     N.Def x []         -> Var x
-    N.Lit n            -> Lit n
+    N.Lit l            -> Lit l
     N.Con n            -> Con (reify n)
     N.TTyp             -> TTyp
     N.TProto ss        -> TProto (reify ss)
     _                  -> Paren (reify e0)
 
   norm (Var x)          = N.Def x []
-  norm (Lit n)          = N.Lit n
+  norm (Lit l)          = N.Lit l
   norm (Con n)          = N.Con (norm n)
   norm TTyp             = N.TTyp
   norm (TProto ss)      = N.TProto (norm ss)
@@ -197,7 +200,7 @@ instance Norm Term where
     N.Def x [e1,e2]     | Just op <- isInfix x
                        -> RawApp (reify e1) (Var op : reifyRawApp e2)
     N.Def x es         -> RawApp (Var x) (reify es)
-    N.Lit n            -> RawApp (Lit n) []
+    N.Lit l            -> RawApp (Lit l) []
     N.Con n            -> RawApp (Con (reify n)) []
     N.TTyp             -> RawApp  TTyp   []
     N.TProto ss        -> RawApp (TProto (reify ss)) []

@@ -2,7 +2,6 @@ module Ling.Rename where
 
 import           Control.Lens
 
-import           Ling.Abs            (Name)
 import           Ling.Norm
 import           Ling.Utils
 

@@ -137,10 +137,17 @@ instance Print Branch where
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
+instance Print Literal where
+  prt i e = case e of
+    LInteger n -> prPrec i 0 (concatD [prt 0 n])
+    LDouble d -> prPrec i 0 (concatD [prt 0 d])
+    LString str -> prPrec i 0 (concatD [prt 0 str])
+    LChar c -> prPrec i 0 (concatD [prt 0 c])
+
 instance Print ATerm where
   prt i e = case e of
     Var name -> prPrec i 0 (concatD [prt 0 name])
-    Lit n -> prPrec i 0 (concatD [prt 0 n])
+    Lit literal -> prPrec i 0 (concatD [prt 0 literal])
     Con conname -> prPrec i 0 (concatD [prt 0 conname])
     TTyp -> prPrec i 0 (concatD [doc (showString "Type")])
     TProto rsessions -> prPrec i 0 (concatD [doc (showString "<"), prt 0 rsessions, doc (showString ">")])

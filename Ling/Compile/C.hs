@@ -42,7 +42,6 @@ import Data.Maybe
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Set (Set)
-import Ling.Abs (Name(Name))
 import Ling.Utils
 import Ling.Print
 import Ling.Session
@@ -112,7 +111,10 @@ $(makeLenses ''Env)
 
 basicTypes :: Map Name C.Typ
 basicTypes = l2m [ (Name n, t) | (n,t) <-
-  [("Int", C.TInt),("Double", C.TDouble)] ]
+  [("Int", C.TInt)
+  ,("Double", C.TDouble)
+  ,("String", C.TPtr C.TChar)
+  ,("Char", C.TChar)] ]
 
 primTypes :: Set Name
 primTypes = l2s (Name "Vec" : Map.keys basicTypes)
@@ -186,6 +188,13 @@ switchE e brs
   -- This could be replaced by a warning instead
       transErrC "switchE" e
 
+transLiteral :: Literal -> C.Literal
+transLiteral l = case l of
+  LInteger n -> C.LInteger n
+  LDouble  d -> C.LDouble  d
+  LString  s -> C.LString  s
+  LChar    c -> C.LChar    c
+
 transTerm :: Env -> Term -> C.Exp
 transTerm env x = case x of
   Def f es0
@@ -195,7 +204,7 @@ transTerm env x = case x of
        []                             -> C.EVar (transEVar env f)
        [e0,e1] | Just op <- transOp f -> op e0 e1
        es                             -> C.EApp (C.EVar (transName f)) es
-  Lit n          -> C.ELit n
+  Lit l          -> C.ELit (transLiteral l)
   Lam{}          -> transErr "transTerm/Lam"  x
   Con n          -> C.EVar (transCon n)
   Case t brs     -> switchE (transTerm env t)
@@ -208,7 +217,7 @@ transTerm env x = case x of
 
 -- Types are erased to 0
 dummyTyp :: C.Exp
-dummyTyp = C.ELit 0
+dummyTyp = C.ELit (C.LInteger 0)
 
 transProc :: Env -> Proc -> [C.Stm]
 transProc env (prefs `Act` procs) = transAct env prefs procs
@@ -274,9 +283,9 @@ transAct env (pref:prefs) procs =
 {- stdFor i t body ~~~> for (int i = 0; i < t; i = i + 1) { body } -}
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm
 stdFor i t =
-  C.SFor (C.SDec (C.Dec (C.QTyp C.NoQual C.TInt) i []) (C.SoInit (C.ELit 0)))
+  C.SFor (C.SDec (C.Dec (C.QTyp C.NoQual C.TInt) i []) (C.SoInit (C.ELit (C.LInteger 0))))
          (C.Lt (C.EVar i) t)
-         (C.SPut (C.LVar i) (C.Add (C.EVar i) (C.ELit 1)))
+         (C.SPut (C.LVar i) (C.Add (C.EVar i) (C.ELit (C.LInteger 1))))
 
 {- Special case:
    {S}/[S] has the same implementation as S.
@@ -370,8 +379,8 @@ transSession env x = case x of
 
 transRSession :: Env -> RSession -> AQTyp
 transRSession env (Repl s a) = case a of
-  Lit 1 -> transSession env s
-  _     -> mapAQTyp (\t -> tArr t (transTerm env a)) (transSession env s)
+  Lit (LInteger 1) -> transSession env s
+  _                -> mapAQTyp (\t -> tArr t (transTerm env a)) (transSession env s)
 
 transSessions :: Env -> Sessions -> [AQTyp]
 transSessions = map . transRSession

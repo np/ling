@@ -28,6 +28,7 @@ import MiniC.ErrM
 %name pListBranch ListBranch
 %name pInit Init
 %name pListStm ListStm
+%name pLiteral Literal
 %name pExp16 Exp16
 %name pExp15 Exp15
 %name pUOp UOp
@@ -84,29 +85,36 @@ import MiniC.ErrM
   '^' { PT _ (TS _ 28) }
   'break' { PT _ (TS _ 29) }
   'case' { PT _ (TS _ 30) }
-  'const' { PT _ (TS _ 31) }
-  'double' { PT _ (TS _ 32) }
-  'enum' { PT _ (TS _ 33) }
-  'for' { PT _ (TS _ 34) }
-  'int' { PT _ (TS _ 35) }
-  'struct' { PT _ (TS _ 36) }
-  'switch' { PT _ (TS _ 37) }
-  'union' { PT _ (TS _ 38) }
-  'void' { PT _ (TS _ 39) }
-  '{' { PT _ (TS _ 40) }
-  '|' { PT _ (TS _ 41) }
-  '||' { PT _ (TS _ 42) }
-  '}' { PT _ (TS _ 43) }
-  '~' { PT _ (TS _ 44) }
+  'char' { PT _ (TS _ 31) }
+  'const' { PT _ (TS _ 32) }
+  'double' { PT _ (TS _ 33) }
+  'enum' { PT _ (TS _ 34) }
+  'for' { PT _ (TS _ 35) }
+  'int' { PT _ (TS _ 36) }
+  'struct' { PT _ (TS _ 37) }
+  'switch' { PT _ (TS _ 38) }
+  'union' { PT _ (TS _ 39) }
+  'void' { PT _ (TS _ 40) }
+  '{' { PT _ (TS _ 41) }
+  '|' { PT _ (TS _ 42) }
+  '||' { PT _ (TS _ 43) }
+  '}' { PT _ (TS _ 44) }
+  '~' { PT _ (TS _ 45) }
 
 L_ident  { PT _ (TV $$) }
 L_integ  { PT _ (TI $$) }
+L_doubl  { PT _ (TD $$) }
+L_quoted { PT _ (TL $$) }
+L_charac { PT _ (TC $$) }
 
 
 %%
 
 Ident   :: { Ident }   : L_ident  { Ident $1 }
 Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
+Double  :: { Double }  : L_doubl  { (read ( $1)) :: Double }
+String  :: { String }  : L_quoted {  $1 }
+Char    :: { Char }    : L_charac { (read ( $1)) :: Char }
 
 Prg :: { Prg }
 Prg : ListDef { MiniC.Abs.PPrg (reverse $1) }
@@ -125,6 +133,7 @@ ListDef : {- empty -} { [] } | ListDef Def { flip (:) $1 $2 }
 Typ :: { Typ }
 Typ : 'int' { MiniC.Abs.TInt }
     | 'double' { MiniC.Abs.TDouble }
+    | 'char' { MiniC.Abs.TChar }
     | 'struct' '{' ListFld '}' { MiniC.Abs.TStr (reverse $3) }
     | 'union' '{' ListFld '}' { MiniC.Abs.TUni (reverse $3) }
     | 'enum' '{' ListEnm '}' { MiniC.Abs.TEnum $3 }
@@ -169,9 +178,14 @@ Init : {- empty -} { MiniC.Abs.NoInit }
      | '=' Exp { MiniC.Abs.SoInit $2 }
 ListStm :: { [Stm] }
 ListStm : {- empty -} { [] } | ListStm Stm ';' { flip (:) $1 $2 }
+Literal :: { Literal }
+Literal : Integer { MiniC.Abs.LInteger $1 }
+        | Double { MiniC.Abs.LDouble $1 }
+        | String { MiniC.Abs.LString $1 }
+        | Char { MiniC.Abs.LChar $1 }
 Exp16 :: { Exp }
 Exp16 : Ident { MiniC.Abs.EVar $1 }
-      | Integer { MiniC.Abs.ELit $1 }
+      | Literal { MiniC.Abs.ELit $1 }
       | '(' Exp ')' { $2 }
 Exp15 :: { Exp }
 Exp15 : Exp15 '->' Ident { MiniC.Abs.EArw $1 $3 }
