@@ -17,7 +17,7 @@ import           Prelude              hiding (log)
 
 import           Control.Lens
 import           Control.Monad        (join)
-import           Control.Monad.Error  (throwError)
+import           Control.Monad.Except (throwError)
 import           Control.Monad.Reader (local, unless, when)
 
 checkOptSession :: Name -> Maybe RSession -> Maybe RSession -> TC ()

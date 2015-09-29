@@ -19,7 +19,7 @@ import           Ling.Subst                (Subst, unScoped)
 import           Ling.Utils                hiding (subst1)
 
 import           Control.Lens
-import           Control.Monad.Error.Class
+import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Data.List                 (sort)
 import           Data.Map                  (Map, empty)
