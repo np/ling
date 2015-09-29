@@ -73,8 +73,8 @@ instance Monoid Proto where
                                 (proto1^.chans)
 
 -- Not used
-chanPresent :: Channel -> Getter Proto Bool
-chanPresent c = chans . hasKey c
+-- chanPresent :: Channel -> Getter Proto Bool
+-- chanPresent c = chans . hasKey c
 
 isEmptyProto :: Getter Proto Bool
 isEmptyProto = chans . to Map.null
