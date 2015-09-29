@@ -18,7 +18,6 @@ import           Ling.Session
 import           Ling.Subst                (Subst, unScoped)
 import           Ling.Utils                hiding (subst1)
 
-import           Control.Applicative       hiding (empty)
 import           Control.Lens
 import           Control.Monad.Error.Class
 import           Control.Monad.Reader

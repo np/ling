@@ -18,7 +18,6 @@ module Ling.Sequential where
 import Control.Lens hiding (op,Empty)
 
 import Data.Maybe
-import Data.Functor
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Ling.Utils

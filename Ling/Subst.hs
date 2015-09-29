@@ -1,16 +1,14 @@
 module Ling.Subst where
 
-import qualified Data.Map as Map
-import Data.Maybe (fromMaybe)
-import Data.Bifunctor
-import Control.Applicative
-import Control.Lens
+import           Control.Lens
+import           Data.Bifunctor
+import qualified Data.Map       as Map
+import           Data.Maybe     (fromMaybe)
 
-import Ling.Abs (Name)
-import Ling.Utils hiding (subst1)
-import Ling.Norm
-import Ling.Scoped hiding (subst1)
--- import Ling.Print.Instances ()
+import           Ling.Abs       (Name)
+import           Ling.Norm
+import           Ling.Scoped    hiding (subst1)
+import           Ling.Utils     hiding (subst1)
 
 class Subst a where
   subst :: Sub -> a -> a

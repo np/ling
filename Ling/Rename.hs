@@ -1,12 +1,10 @@
 module Ling.Rename where
 
-import           Control.Applicative
 import           Control.Lens
 
 import           Ling.Abs            (Name)
 import           Ling.Norm
 import           Ling.Utils
--- import        Ling.Print.Instances ()
 
 type Ren = Name -> Name
 

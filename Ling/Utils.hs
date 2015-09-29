@@ -1,13 +1,24 @@
-{-# LANGUAGE TemplateHaskell, Rank2Types #-}
-module Ling.Utils where
+{-# LANGUAGE CPP             #-}
+{-# LANGUAGE Rank2Types      #-}
+{-# LANGUAGE TemplateHaskell #-}
+module Ling.Utils
+  ( module Ling.Utils
+  , (<>)
+  , pure
+  , (<$>)
+  , (<*>)) where
 
-import Ling.Abs
-import qualified Data.Set as Set
-import Data.Set (Set)
-import qualified Data.Map as Map
-import Data.Map (Map)
-import Control.Lens
-import Debug.Trace
+#if !(MIN_VERSION_base(4,8,0))
+import           Control.Applicative
+#endif
+import           Control.Lens
+import           Data.Map            (Map)
+import qualified Data.Map            as Map
+import           Data.Monoid
+import           Data.Set            (Set)
+import qualified Data.Set            as Set
+import           Debug.Trace
+import           Ling.Abs
 
 type Endom a = a -> a
 type Msg = String
