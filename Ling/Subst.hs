@@ -83,7 +83,7 @@ hideArgs :: [Arg a] -> Endom Sub
 hideArgs = flip (foldr hideArg)
 
 hidePrefs :: [Pref] -> Endom Sub
-hidePrefs = hideArgs . concatMap prefVarDecs
+hidePrefs = hideArgs . concatMap actVarDecs
 
 instance Subst Pref where
   subst f pref = case pref of
