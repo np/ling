@@ -29,6 +29,9 @@ link(){
     rm "$src"
   elif [ -e "$src" ]; then
     if [ -e "$dst" ]; then
+      until cmp "$src" "$dst"; do
+        vimdiff "$src" "$dst"
+      done
       if cmp "$src" "$dst"; then
         if [ -L "$dst" ]; then
           rm "$dst"
@@ -36,9 +39,6 @@ link(){
         else
           rm "$src"
         fi
-      else
-        vimdiff "$src" "$dst"
-        error 1 "$src already exists, fix this and relaunch"
       fi
     else
       echo "moving $src to $dst" >>/dev/stderr
@@ -62,7 +62,7 @@ for d in fixtures/*; do
   fi
 done
 
-for t in tests/**/*.t/*.ll; do
+for t in tests/**/*.t/*.ll issues/**/*.ll; do
   f=fixtures/all/"$(basename "$t")"
   if [ -e "$f" ]; then
     link "$f" "$t"
