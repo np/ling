@@ -37,9 +37,14 @@ Br. Branch ::= ConName "->" Term ;
 
 separator Branch "," ;
 
+LInteger. Literal ::= Integer ;
+LDouble.  Literal ::= Double  ;
+LString.  Literal ::= String  ;
+LChar.    Literal ::= Char    ;
+
 -- Atomic terms
 Var.     ATerm ::= Name ;
-Lit.     ATerm ::= Integer ;
+Lit.     ATerm ::= Literal ;
 Con.     ATerm ::= ConName ;
 TTyp.    ATerm ::= "Type" ;
 TProto.  ATerm ::= "<" [RSession] ">" ;

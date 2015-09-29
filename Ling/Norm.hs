@@ -1,7 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
-module Ling.Norm where
+module Ling.Norm
+  ( module Ling.Norm
+  , Name(..)
+  , Literal(..)
+  ) where
 
-import           Ling.Abs     (Name (Name))
+import           Ling.Abs     (Literal (..), Name (Name))
 import           Ling.Utils
 
 import           Control.Lens
@@ -42,7 +46,7 @@ data Pref
 type Typ = Term
 data Term
   = Def Name [Term]
-  | Lit Integer
+  | Lit Literal
   | Lam VarDec Term
   | Con Name
   | Case Term [(Name,Term)]
@@ -85,14 +89,23 @@ instance Monoid Program where
   mempty        = Program []
   mappend p0 p1 = Program $ p0^.prgDecs ++ p1^.prgDecs
 
-vec :: Typ -> Term -> Typ
-vec t e = Def (Name "Vec") [t,e]
+vecTyp :: Typ -> Term -> Typ
+vecTyp t e = Def (Name "Vec") [t,e]
 
-int :: Typ
-int = Def (Name "Int") []
+intTyp :: Typ
+intTyp = Def (Name "Int") []
 
-tSession :: Typ
-tSession = Def (Name "Session") []
+doubleTyp :: Typ
+doubleTyp = Def (Name "Double") []
+
+stringTyp :: Typ
+stringTyp = Def (Name "String") []
+
+charTyp :: Typ
+charTyp = Def (Name "Char") []
+
+sessionTyp :: Typ
+sessionTyp = Def (Name "Session") []
 
 multName :: Name
 multName = Name "_*_"
