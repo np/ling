@@ -51,12 +51,11 @@ hideName x f y | x == y    = y
 hideArg :: Arg a -> Endom Ren
 hideArg (Arg x _) = hideName x
 
-hidePref :: Pref -> Endom Ren
-hidePref (Recv _ arg)   = hideArg arg
-hidePref _              = id
+hideArgs :: [Arg a] -> Endom Ren
+hideArgs = flip (foldr hideArg)
 
 hidePrefs :: [Pref] -> Endom Ren
-hidePrefs = flip (foldr hidePref)
+hidePrefs = hideArgs . concatMap prefVarDecs
 
 instance Rename Pref where
   rename f pref = case pref of

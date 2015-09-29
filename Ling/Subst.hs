@@ -79,13 +79,11 @@ instance Subst a => Subst (Maybe a) where
 hideArg :: Arg a -> Endom Sub
 hideArg (Arg x _) = Map.delete x
 
-hidePref :: Pref -> Endom Sub
-hidePref (Recv _ arg)     = hideArg arg
-hidePref (NewSlice _ _ x) = Map.delete x
-hidePref _                = id
+hideArgs :: [Arg a] -> Endom Sub
+hideArgs = flip (foldr hideArg)
 
 hidePrefs :: [Pref] -> Endom Sub
-hidePrefs = flip (foldr hidePref)
+hidePrefs = hideArgs . concatMap prefVarDecs
 
 instance Subst Pref where
   subst f pref = case pref of

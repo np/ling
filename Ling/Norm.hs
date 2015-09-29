@@ -117,3 +117,8 @@ actLabel Recv{}        = "recv"
 actLabel NewSlice{}    = "slice"
 actLabel Ax{}          = "fwd"
 actLabel At{}          = "@"
+
+prefVarDecs :: Pref -> [VarDec]
+prefVarDecs (Recv _     arg) = [arg]
+prefVarDecs (NewSlice _ _ x) = [Arg x int]
+prefVarDecs _                = []
