@@ -1,0 +1,161 @@
+#!/bin/bash -e
+# Copyright (c) 2010-2015, Nicolas Pouillard
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+#
+#     * Neither the name of the copyright holders nor the names of other
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+. "$(which cmdcheck)"
+me=$(basename "$0")
+
+assert_non_dirs(){
+  for assert_non_dirs_file; do
+    local file="$assert_non_dirs_file"
+    [ ! -d "$file" ] || error "\`$file' is a directory, list each files of the directory instead"
+    # Excluding all non-regular files also excludes /dev/null
+    # [ -f "$file" ] || error "\`$file' should be a regular file"
+  done
+}
+
+usage(){
+  cat_info <<EOF
+Usage: $me <testname>.t <option>* -- <cmd> <cmd-arg>*
+
+  option ::= --batch
+           | -f | --force
+           | --no-stdin
+           | --env <env-option>
+           | --source <file>
+           | --product <file>
+
+  env-option ::= ''
+               | <env-option>,<env-option>
+               | empty
+               | copy:<VAR>
+               | pass:<VAR>
+               | <VAR>=<VAL>
+               | copy
+               | pass
+
+EOF
+  echo error: "$@" >>"$log_file"
+  exit 1
+}
+
+parse_env_option(){
+  # *,* and *=* can interacts badly
+  case "$1" in
+    '')     : ;;
+    *,*)    parse_env_option "$(echo "$1" | cut -d, -f1)"
+            parse_env_option "$(echo "$1" | cut -d, -f2-)";;
+    empty)  env_vars=( );;
+    copy:*) local var=$(check_valid_var "$(echo "$1" | cut -d: -f2-)")
+            env_vars=("${env_vars[@]}" $var);;
+    pass:*) local var=$(check_valid_var "$(echo "$1" | cut -d: -f2-)")
+            member $var "${env_vars[@]}" || env_vars=("${env_vars[@]}" $var)
+            eval pass_env_var_$var=1;;
+    *=*)    local var=$(check_valid_var "$(echo "$1" | cut -d= -f1)")
+            member $var "${env_vars[@]}" || env_vars=("${env_vars[@]}" $var)
+            eval env_var_"$1";;
+    copy)   for var in ${all_env_vars[@]}; do
+              member $var "${env_vars[@]}" || env_vars=("${env_vars[@]}" $var)
+              eval env_var_$var=$(show_string_var $var)
+            done;;
+    pass)   for var in ${all_env_vars[@]}; do
+              member $var "${env_vars[@]}" || env_vars=("${env_vars[@]}" $var)
+              eval pass_env_var_$var=1
+            done;;
+    *)      usage Unexpected env-option \`$1\';;
+  esac
+}
+
+record_verbose(){
+  record >TESTRECIPE <"$stdin"
+  info Exit code: "$exit_code"
+  info Standard output:
+  nest2_info "$stdout_file"
+  echo | cat_info
+  info Standard error output:
+  nest2_info "$stderr_file"
+  echo | cat_info
+  display_files Source  "${sources[@]}"
+  display_files Product "${products[@]}"
+  info Generated test recipe:
+  nest2_info TESTRECIPE
+}
+
+record_action(){
+  stdin=/dev/stdin
+  local eed_opts=( )
+  local all_env_vars=( )
+  for var in $(env | cut -d= -f1); do
+    all_env_vars=("${all_env_vars[@]}" $(check_valid_var "$var"))
+  done
+  env_vars=( )
+  for var in ${all_env_vars[@]}; do
+    member $var "${env_vars[@]}" || env_vars=("${env_vars[@]}" $var)
+    eval env_var_$var=$(show_string_var $var)
+  done
+  stdin_file=stdin
+  stdout_file=stdout
+  stderr_file=stderr
+  sources=( )
+  products=( )
+  exit_code=0
+
+  [ "$#" -gt 0 ] || usage The test name was expected
+  case "$1" in
+    *.t) dir="$1";;
+    *) usage The test name was expected to end with \`.t\'
+  esac
+  shift
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --)         shift; break;;
+      --batch)    shift; batch_mode=1;;
+      -f|--force) shift; eed_opts=(-f);;
+      --no-stdin) shift; stdin=/dev/null; stdin_file=/dev/null;;
+      --env)      shift; parse_env_option "$1"; shift;;
+      --source)   shift; sources=("${sources[@]}" "$1"); shift;;
+      --product)  shift; products=("${products[@]}" "$1"); shift;;
+      *)          usage Unexpected record-option \`$1\'
+    esac
+  done
+  [ "$#" -gt 0 ] || usage A command was expected
+  command="$1"
+  shift
+  args=("$@")
+  testname="$(basename "$dir")"
+  ensure_empty_dir "${eed_opts[@]}" "$dir"
+  copy_products . "$dir"
+  copy_sources  . "$dir"
+  [ "$stdin" = /dev/null ] || info Reading from stdin...
+  within_dir "$dir" record_verbose
+}
+
+[ "$me" != cmdrecord ] || record_action "$@"

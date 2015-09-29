@@ -1,0 +1,792 @@
+#!/bin/bash -e
+# Copyright (c) 2010-2015, Nicolas Pouillard
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+#
+#     * Neither the name of the copyright holders nor the names of other
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Current bashisms are:
+# a=(foo bar baz)
+# ${foo[@]}
+# $(bar)
+# local
+# (( bar ))
+
+# for i; do; ...; done is not a bashism, right?
+
+### The record command takes as arguments a name for the test
+### and a command to run.
+### The test name will serve as the destination directory where
+### files will be stored.
+### Then it inspects its running environment and stores it.
+### Then it runs the command in a similar but possibly
+### isolated environment.
+### Then it store the outputs.
+### Finally it produce a shell script that looks like:
+###
+### testname='foobar1'
+### command='/usr/bin/foobar'
+### args=('--foo' 'bar' 'baz')
+### exit_code=0
+### stdin_file='stdin'
+### stdout_file='stdout'
+### stderr_file='stderr'
+###
+### # Environment variables:
+### env_vars=('PATH' 'USER') # ...
+### env_var_PATH='/usr/bin/...'
+### env_var_USER='me'
+
+### Exit codes of cmdcheck itself:
+# 1 means an error from the user of this script
+# 2 means an failure from the tested program
+# 3 means an internal error from the author of this script
+
+## TODO
+## add an update action
+## more tests of the tool itself including details like:
+## * testing the check of several tests at once
+
+## HOW TO
+## have a precise handling of env and $PATH
+## * if you use --env pass:PATH, then it will always use the current one
+## * you can use --env empty to start with an empty env
+## * expands the path to the command to an absolute path
+
+## LIMITATIONS
+## Since currently any command is expanded using `which' in the checking mode,
+## one cannot easily test that a command when called non absolutely.
+## A workaround is to test env cmd args instead of cmd args, then only env
+## will be expanded.
+
+## NOTES on the explain function hook
+## This function and the functions it calls are supposed to write on the
+## standard output.
+
+me=$(basename "$0")
+batch_mode=0
+print_directory=0
+log_level=0
+log_file=/dev/stderr
+chroot_args=( ) #/usr/sbin/chroot .)
+
+info(){
+  echo "$me: $@" >>"$log_file"
+}
+
+cat_info(){
+  cat "$@" >>"$log_file"
+}
+
+nest2_info(){
+  cat "$@" | nest2 >>"$log_file"
+}
+
+log(){
+  lvl="$1"; shift
+  [ "$lvl" -gt "$log_level" ] || info "$@"
+}
+
+log_w(){
+  (( ! print_directory )) || info "$@"
+}
+
+if tty -s; then
+  CR='\r'
+  color(){
+    col="$1"
+    shift
+    printf "\e[${col}m$@\e[m"
+  }
+else
+  CR='\n'
+  color(){
+    shift
+    echo -n "$@"
+  }
+fi
+
+red(){    color '1;31' "$@"; }
+green(){  color '1;32' "$@"; }
+yellow(){ color '1;33' "$@"; }
+
+nest2(){
+  sed -e 's/^/  /'
+}
+
+get_var(){
+  eval 'echo $'"$1"
+}
+
+show_list(){
+  printf '('
+  for var_show_list_i; do
+    printf ' %q' "$var_show_list_i"
+  done
+  echo ' )'
+}
+
+# Expect a valid variable name
+show_string_var(){
+  eval 'printf %q "$'$1\"
+}
+
+# Expect valid variable names
+patch_filename_vars(){
+  local file=
+  for var; do
+    file="$(get_var $var)"
+    if [ ! -s "$file" ]; then
+      [ ! -f ./"$file" ] || rm ./"$file"
+      eval $var=/dev/null
+    fi
+  done
+}
+
+# Expect a valid variable name
+show_env_var(){
+  if (( "$(get_var pass_$1$2)" )); then
+    echo '"$'$2\"
+  else
+    show_string_var $1$2
+  fi
+}
+
+show_vars(){
+  prefix="$1"
+  shift
+  for var; do
+    echo $prefix$var=$(show_env_var $prefix $var)
+  done
+}
+
+error(){
+  echo >>"$log_file"
+  info "$@"
+  exit 1
+}
+
+internal_error(){
+  info "$@"
+  exit 3
+}
+
+# asking() @ https://gist.github.com/np/5107721#file-asking-sh {{{
+# Dependencies:
+#   error() @ https://gist.github.com/np/3736727#file-error-sh
+# Options:
+#   --default=no  Makes No being the default (--default=yes is the default)
+#   --no-slmenu   Do no use slmenu even if available
+# Examples:
+#   asking 'Something failed, do you still want to continue?'
+#   asking --default=yes 'Next step?'
+asking(){
+  local default_no=0
+  local fzf=1
+  local slmenu=1
+  while true; do
+    case "$1" in
+      --default=yes) shift;;
+      --default=no)  shift; default=1;;
+      --no-slmenu)   shift; slmenu=0;;
+      --no-fzf)      shift; fzf=0;;
+      --*)           error 1 "asking: unexpected option argument $1";;
+      *)             break;;
+    esac
+  done
+  if (( default_no )); then
+    local prompt_answer='y/N'
+    local prompt_answer_lines="$(printf 'No\nYes\n')"
+  else
+    local prompt_answer='Y/n'
+    local prompt_answer_lines="$(printf 'Yes\nNo\n')"
+  fi
+  printf '\a'
+  if (( slmenu )) && which slmenu >/dev/null 2>/dev/null; then
+    answer="$(slmenu -i -l 2 -p "$*" <<<"$prompt_answer_lines")"
+  elif (( fzf )) && which fzf >/dev/null 2>/dev/null; then
+    answer="$(fzf -1 --prompt="$* " <<<"$prompt_answer_lines")"
+  else
+    read -p "$* ($prompt_answer)" answer
+  fi
+
+  case "$answer" in
+    n|N|no|NO|No|nO) return 1;;
+    y|Y|yes|YES|Yes|YEs|YeS|yES|yeS|yEs) return 0;;
+    *) return $default;;
+  esac
+}
+
+check-positive-asking(){
+  while asking "$@"; do
+    echo "Good you can try another option or hit the opposite to leave this loop"
+  done
+  echo "You left the loop by typing the opposite, right?"
+}
+
+check-negative-asking(){
+  while true; do
+    if asking "$@"; then
+      break
+    else
+      echo "Good you can try another option or hit the opposite to leave this loop"
+    fi
+  done
+  echo "You left the loop by typing the opposite, right?"
+}
+
+check-asking(){
+  check-positive-asking 'hit y|Y|yes|YES|Yes|YEs|YeS|yES|yeS|yEs|nothing|garbage and hit RETURN'
+  check-negative-asking 'hit n|N|no|NO|No|nO and hit RETURN'
+
+  check-positive-asking --default=no 'hit y|Y|yes|YES|Yes|YEs|YeS|yES|yeS|yEs and hit RETURN'
+  check-negative-asking --default=no 'hit n|N|no|NO|No|nO|nothing|garbage and hit RETURN'
+}
+# }}}
+
+ensure_empty_dir(){
+  local force=0
+  case "$1" in
+    -f) shift; force=1;;
+    *) ;;
+  esac
+  dir="$1"
+  if [ -d "$dir" ]; then
+    if [ -n "$(ls "$dir")" ]; then
+      if (( ! force )); then
+        info "$(printf %q "$dir")" is not empty
+        (( ! batch_mode )) && asking "Do you want to overwrite it?" || exit 1
+      fi
+      rm -r "$dir"
+      mkdir "$dir"
+    fi
+  elif [ -e "$dir" ]; then
+    error "$(printf %q "$dir")" already exists and is not a directory
+  else
+    mkdir "$dir"
+  fi
+}
+
+print_function(){
+  name="$1"
+  shift
+  echo "$name(){"
+  if [ "$#" = 0 ]; then
+    echo "true"
+  else
+    echo -n " "
+    for word; do
+      if [ "$word" = \; ]; then
+        echo
+        echo -n " "
+      else
+        echo -n " $word"
+      fi
+    done
+  fi
+  echo
+  echo "}"
+}
+
+print_test_recipe(){
+  echo "#!/bin/bash"
+  echo
+  echo testname="$(show_string_var testname)"
+  echo command="$(show_string_var command)"
+  echo args="$(show_list "${args[@]}")"
+  echo exit_code="$(show_string_var exit_code)"
+  patch_filename_vars stdin_file stdout_file stderr_file
+  echo stdin_file="$(show_string_var stdin_file)"
+  echo stdout_file="$(show_string_var stdout_file)"
+  echo stderr_file="$(show_string_var stderr_file)"
+  echo sources="$(show_list "${sources[@]}")"
+  echo products="$(show_list "${products[@]}")"
+  echo
+  echo "# Environment variables:"
+  echo env_vars="$(show_list "${env_vars[@]}")"
+  show_vars env_var_ "${env_vars[@]}"
+  echo
+  print_function setup \
+    : Perform here actions to be run before the tested program
+  echo
+  print_function munge \
+    : Munge here the results of the tested program to ease the check
+  echo
+  print_function check     \
+    check_exit_code \&\& \;\
+    check_stderr    \&\& \;\
+    check_stdout    \&\& \;\
+    check_products  \&\& \;\
+    : Perform here extra checks on the tested program
+  echo
+  print_function explain \
+    explain_exit_code  \;\
+    explain_stdout     \;\
+    explain_stderr     \;\
+    explain_products   \;\
+    : Explain here more potential differences
+  echo
+  print_function teardown \
+    : Undo here the actions of setup
+}
+
+clear_recipe_scope(){
+  unset testname command args exit_code stdin_file stdout_file stderr_file \
+        env_vars sources products
+  # here one does clear the env_var_...
+  unset -f setup munge check explain teardown
+}
+
+# NO LONGER USED
+# export_env env_var_ PATH USER ...
+#
+# expands to:
+#
+# export PATH=$env_var_PATH
+# export USER=$env_var_USER
+# ...
+#export_env(){
+#  prefix="$1"
+#  shift
+#  for var; do
+#    export $var="$(get_var $prefix$var)"
+#  done
+#}
+
+with_env_vars(){
+  prefix="$1"
+  shift
+  env_defs=( )
+  while [ "$#" -gt 0 ]; do
+    var="$1"
+    [ $var != -- ] || break
+    shift
+    env_defs=("${env_defs[@]}" $var="$(get_var $prefix$var)")
+  done
+  [ "$1" = -- ] || internal_error with_env_vars: -- was expected
+  shift
+  # NOTE
+  # * That's too sad that env does not support `--'
+  # * There seems to be a special case for PATH, that this leading PATH= is
+  #   fixing.
+  log 1 "Running:" "$@"
+  env -i PATH= "${env_defs[@]}" "$@"
+}
+
+record(){
+  # NOTE Should we check that std{in,err,out}_file are paths
+  # for the current directory (no / in there)?
+  local full_command=$(which "$command")
+
+  tee "$stdin_file" |
+    with_env_vars '' "${env_vars[@]}" -- \
+      "${chroot_args[@]}" \
+      "$full_command" "${args[@]}" \
+      >"$stdout_file" 2>"$stderr_file"
+
+  # Here it is important that the exit code we get is the
+  # of the command and not the one of tee, but shells (Zsh and
+  # bash) seems to behave this way.
+  exit_code="$?"
+
+  print_test_recipe
+}
+
+assert_non_dirs(){
+  for assert_non_dirs_file; do
+    local file="$assert_non_dirs_file"
+    [ ! -d "$file" ] || error "\`$file' is a directory, list each files of the directory instead"
+    # Excluding all non-regular files also excludes /dev/null
+    # [ -f "$file" ] || error "\`$file' should be a regular file"
+  done
+}
+
+cmp_files(){
+  assert_non_dirs "$1" "$2"
+  cmp -s "$1" "$2"
+}
+
+diff_files(){
+  if cmp_files "$2" "$3"; then
+    :
+  else
+    echo "$1"
+    # | colordiff
+    diff -u --label 'ACTUAL' --label 'REFERENCE' "$2" "$3" | nest2
+  fi
+}
+
+diff_strings(){
+  if [ "$2" != "$3" ]; then
+    echo "$1"
+    {
+      echo "-$2"
+      echo "+$3"
+    } | nest2 # | colordiff
+  fi
+}
+
+check_stderr(){
+  cmp -s "$stderr_file" "$my_stderr_file"
+}
+
+check_stdout(){
+  cmp -s "$stdout_file" "$my_stdout_file"
+}
+
+#iter2(){
+#  local i=0
+#  local f=$(eval '$'$1)
+#  local xs=$(eval '$'$2)
+#  local ys=$(eval '$'$3)
+#  for x in "${xs[@]}"; do
+#    f "$x" "${ys[$i]}"
+#  done
+#}
+#
+#check_product(){
+#  if cmp -s "$ref_prod" "${my_products[$i]}"; then
+#    :
+#  else
+#    res=0
+#    break
+#  fi
+#}
+
+check_products(){
+  local i=0
+  local res=1
+  # iter2 products my_products check_product
+  for ref_prod in "${products[@]}"; do
+    if cmp_files "$ref_prod" "${my_products[$i]}"; then
+      :
+    else
+      res=0
+      break
+    fi
+    i=$((i + 1))
+  done
+  (( res ))
+}
+
+check_exit_code(){
+  [ "$exit_code" = "$my_exit_code" ]
+}
+
+explain_stderr(){
+  diff_files "$testname: Standard error output" "$my_stderr_file" "$stderr_file"
+}
+
+explain_stdout(){
+  diff_files "$testname: Standard output" "$my_stdout_file" "$stdout_file"
+}
+
+explain_exit_code(){
+  diff_strings "$testname: Exit code" "$my_exit_code" "$exit_code"
+}
+
+explain_products(){
+  local i=0
+  for ref_prod in "${products[@]}"; do
+    diff_files "$testname: Product file \`$ref_prod'" "${my_products[$i]}" "$ref_prod"
+    i=$((i + 1))
+  done
+  (( res ))
+}
+
+cmp_recipes_ref_part(){
+  clear_recipe_scope
+  . TESTRECIPE
+  if check; then
+    echo -e "$CR$(green PASS): $testname            " >>"$log_file"
+  else
+    echo -e "$CR$(red   FAIL): $testname            " >>"$log_file"
+    false
+  fi
+}
+
+#destpath(){
+#}
+
+cmp_recipes_my_part(){
+  clear_recipe_scope
+  . TESTRECIPE
+  my_exit_code="$exit_code"
+  my_stdout_file="$(readlink -f "$stdout_file")"
+  my_stderr_file="$(readlink -f "$stderr_file")"
+  my_products=( )
+  my_dir="$(pwd)"
+  for p in "${products[@]}"; do
+    p="$(readlink -f "$my_dir/$p")"
+    my_products=("${my_products[@]}" "$p")
+  done
+}
+
+cmp_recipes(){
+  ref_recipe="$1"
+  my_recipe="$2"
+  # One loads 'my' before 'ref', to avoid 'my' being able to overwrite
+  # the work done by 'ref'
+  within_dir "$my_recipe"  cmp_recipes_my_part
+  within_dir "$ref_recipe" cmp_recipes_ref_part
+}
+
+usage(){
+  cat_info <<EOF
+Usage: $me [<option>*]  <testname>.t*
+
+  option ::= --batch
+
+EOF
+  echo error: "$@" >>"$log_file"
+  exit 1
+}
+
+check_valid_var(){
+  case "$1" in
+    *[^a-zA-Z0-9_]*) internal_error "Illegal variable: \`$1'";;
+  esac
+  echo -n "$1"
+}
+
+member(){
+  local x="$1"
+  shift
+  mem=0
+  for y; do
+    if [ "$x" = "$y" ]; then
+      mem=1
+      break
+    fi
+  done
+  (( mem ))
+}
+
+length(){
+  echo $#
+}
+
+null(){
+  [ $# = 0 ]
+}
+
+within_dir(){
+  pushd "$1" >/dev/null
+  shift
+  local cur="$(pwd)"
+  log_w "Entering directory \`$cur'"
+  if "$@"; then
+    log_w "Leaving directory \`$cur'"
+    popd >/dev/null
+  else
+    log_w "Leaving directory \`$cur'"
+    popd >/dev/null
+    false
+  fi
+}
+
+display_files(){
+  local title="$1"
+  shift
+  for display_files_file; do
+    local file="$display_files_file"
+    info "$title file \`$file':"
+    nest2_info "$file"
+    echo | cat_info
+  done
+}
+
+copy_file(){
+  local src="$1"
+  local dst="$2"
+  assert_non_dirs "$src"
+  if [ -e "$dst" ]; then
+    assert_non_dirs "$dst"
+    if cmp -s "$src" "$dst"; then
+      : Nothing to do
+    else
+      if (( ! batch_mode )) && asking "\`$dst' already exists, overwrite?"; then
+        cp -aL "$src" "$dst"
+      else
+        error "\`$dst' already exists"
+      fi
+    fi
+  else
+    mkdir -p "$(dirname "$dst")"
+    cp -aL "$src" "$dst"
+  fi
+}
+
+check_action_mydir(){
+  local full_command=$(which "$command")
+  stdout_file=stdout
+  stderr_file=stderr
+  setup
+  set +e
+  with_env_vars env_var_ "${env_vars[@]}" -- \
+    "${chroot_args[@]}" \
+    "$full_command" "${args[@]}" \
+    <"$stdin_file" >"$stdout_file" 2>"$stderr_file"
+  exit_code="$?"
+  set -e
+  copy_file "$stdin_file" "$raw_stdin_file"
+  stdin_file="$raw_stdin_file"
+  print_test_recipe >TESTRECIPE
+  munge
+}
+
+copy_source_or_product(){
+  local raw_file="$1"
+  local src="$(readlink -f "$2")/"
+  local dst="$3"
+  if [ -e "$raw_file" ]; then
+    local abs_file="$(readlink -f "$raw_file")"
+    local file="${abs_file#$src}"
+    if [ "$file" = "$abs_file" ]; then
+      # $file is an absolute path outside of the current directory.
+      #
+      # CHROOT: issue or solution
+      # If the program is gonna use this file with this absolute path
+      # we can't do anything without a chroot. In the mean time we
+      # could backup it and restore it later.
+
+      if [ -L "$raw_file" ]; then
+        # This case was added such that when a source is a symlink to
+        # file outside the directory we simply replace it by a copy of
+        # the file.
+        local dstfile="$dst/$raw_file"
+        copy_file "$raw_file" "$dstfile"
+        echo "$file"
+      else
+        echo "$abs_file"
+      fi
+    else
+      # OK, just a relative path, let's simply import it
+      local dstfile="$dst/$file"
+      copy_file "$abs_file" "$dstfile"
+      echo "$file"
+    fi
+  else
+    case "$raw_file" in
+      *://*)
+        error "URLs are not supported yet in sources";;
+      *)
+        error "The source file \`$raw_file' does not exist";;
+    esac
+  fi
+}
+
+copy_sources(){
+  local cwd="$1"
+  local dstdir="$2"
+  local tmp_sources=("${sources[@]}")
+  sources=( )
+  for copy_sources_file in "${tmp_sources[@]}"; do
+    sources=("${sources[@]}"
+             "$(copy_source_or_product "$copy_sources_file" "$cwd" "$dstdir")")
+  done
+}
+
+copy_products(){
+  local cwd="$1"
+  local dstdir="$2"
+  local tmp_products=("${products[@]}")
+  products=( )
+  for copy_products_file in "${tmp_products[@]}"; do
+    products=("${products[@]}"
+              "$(copy_source_or_product "$copy_products_file" "$cwd" "$dstdir")")
+  done
+}
+
+check_action_refdir(){
+  local mydir="$1"
+  local cwd="$(pwd)"
+  [ -e TESTRECIPE ] || usage "$cwd" is not a valid test directory, no TESTRECIPE found
+  clear_recipe_scope
+  . TESTRECIPE
+  [ -n "$testname" ] || usage bad TESTRECIPE, no testname variable
+  local cmdtestbasename="$(basename "$cwd")"
+  if [ "$cmdtestbasename" != "$testname" ]; then
+    info "wrong TESTRECIPE, expected \`$cmdtestbasename' found \`$testname'"
+    if (( ! batch_mode )) && asking "Update the testname variable in TESTRECIPE to \`$cmdtestbasename'?"; then
+      sed -i -e "s/^testname=.*/testname=$(printf '%q' "$(show_string_var cmdtestbasename)")/" TESTRECIPE
+      check_action_refdir "$1"
+    else
+      exit 1
+    fi
+  fi
+  raw_stdin_file="$stdin_file"
+  stdin_file="$(readlink -f "$stdin_file")"
+  copy_sources "$cwd" "$mydir"
+}
+
+check_action(){
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --batch) shift; batch_mode=1;;
+      *) break
+    esac
+  done
+  [ "$#" -gt 0 ] || usage The test name was expected
+  local failed_tests=( )
+  local testcount=$#
+  for var_check_action_refdir; do
+    local refdir="$var_check_action_refdir"
+    echo -n "$refdir..." >>"$log_file"
+    local mydir="${refdir%.t}".my
+    ensure_empty_dir -f "$mydir"
+    within_dir "$refdir" check_action_refdir "$(readlink -f "$mydir")"
+    within_dir "$mydir"  check_action_mydir
+    if cmp_recipes "$refdir" "$mydir"; then
+      within_dir "$mydir" teardown
+    else
+      failed_tests=("${failed_tests[@]}" "$testname")
+      within_dir "$refdir" explain >>"$log_file"
+      within_dir "$mydir" teardown
+    fi
+    # Even if in basic cases refdir is equivalent to mydir, in
+    # general this is not the case. For instance functions like
+    # setup, check and teardown are reset to their default version.
+    # Dynamic variables definition will be in-lined:
+    # env_var_PATH="$PATH"
+    # becomes:
+    # env_var_PATH='/usr/bin:...'
+    # bakdir="$(dirname "$testname")/${testname%.t}".bak
+    # [ ! -d "$bakdir" ] || rm -r "$bakdir"
+    # mv "$refdir" "$bakdir"
+    # mv "$mydir" "$refdir"
+  done
+  if null "${failed_tests[@]}"; then
+    echo "All $testcount tests $(green PASSED)" >>"$log_file"
+  else
+    echo "$(length "${failed_tests[@]}") out of $testcount tests $(red FAILED)" >>"$log_file"
+    exit 2
+  fi
+}
+
+[ "$me" != cmdcheck ] || check_action "$@"
