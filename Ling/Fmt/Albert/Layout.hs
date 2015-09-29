@@ -23,7 +23,7 @@ layoutStopWords = []
 layoutOpen, layoutClose, layoutSep :: String
 layoutOpen  = "{"
 layoutClose = "}"
-layoutSep   = ";"
+layoutSep   = ","
 
 -- | Replace layout syntax with explicit layout tokens.
 resolveLayout :: Bool    -- ^ Whether to use top-level layout.
