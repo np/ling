@@ -45,7 +45,6 @@ import Data.Set (Set)
 import Ling.Abs (Name(Name))
 import Ling.Utils
 import Ling.Print
-import Ling.Print.Instances ()
 import Ling.Session
 import Ling.Norm
 import qualified MiniC.Abs as C

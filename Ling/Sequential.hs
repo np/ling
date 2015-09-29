@@ -22,7 +22,6 @@ import qualified Data.Map as Map
 import Data.Map (Map)
 import Ling.Utils
 import Ling.Print
-import Ling.Print.Instances ()
 import Ling.Session
 import Ling.Proc
 import Ling.Norm

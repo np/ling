@@ -9,7 +9,6 @@ import qualified Data.Map             as Map
 
 import           Ling.Abs             (Name)
 import           Ling.Norm
-import           Ling.Print.Instances ()
 import           Ling.Scoped          (Defs, Scoped (..), ldefs, scoped, unDef)
 import           Ling.Utils           (Abs (..), Arg (..), Telescope (..))
 

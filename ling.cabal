@@ -28,7 +28,6 @@ executable Ling
    Ling.Norm,
    Ling.Par,
    Ling.Print,
-   Ling.Print.Instances,
    Ling.Proc,
    Ling.Proto,
    Ling.Reify,

@@ -27,8 +27,7 @@ import Ling.Utils
 import Ling.Constraint
 import Ling.Session
 import Ling.Norm
-import Ling.Print (render)
-import Ling.Print.Instances (prtLst)
+import Ling.Print (render,prtLst)
 
 import qualified Data.Map as Map
 import Data.Map (Map)

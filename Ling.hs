@@ -22,7 +22,6 @@ import           Ling.Lex             (Token)
 import qualified Ling.Norm            as N
 import           Ling.Par
 import           Ling.Print
-import           Ling.Print.Instances ()
 import           Ling.Reify
 import qualified Ling.Sequential      as Sequential
 import           Ling.Utils
