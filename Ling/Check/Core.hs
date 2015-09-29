@@ -64,12 +64,7 @@ checkProc :: Proc -> TC Proto
 checkProc (prefs `Act` procs) = checkAct prefs procs
 
 checkProcs :: [Proc] -> TC Proto
-checkProcs [] = return emptyProto
-checkProcs (proc : procs) = do
-  proto0 <- checkProc  proc
-  proto1 <- checkProcs procs
-  v      <- view verbosity
-  return $ parallelProtos v proto0 proto1
+checkProcs procs = mconcat <$> traverse checkProc procs
 
 checkChanDec :: Proto -> ChanDec -> TC RSession
 checkChanDec proto (Arg c s) = checkOptSession c s s' >> return (defaultEndR s')
@@ -180,20 +175,14 @@ checkPref pref proto =
       checkTerm int t
       mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
       return $ replProtoWhen (`elem` cs) t proto
-    Ax s cs -> do
-      v <- view verbosity
-      -- TODO: we want to do here the same check as parallelProtos
-      -- but with potentially different error message as they are not
-      -- actually in parallel
-      return $ parallelProtos v proto (protoAx (one s) cs)
+    Ax s cs -> return $ proto <> protoAx (one s) cs
     At e cs -> do
       t <- inferTerm' e
-      v <- view verbosity
       case t of
         TProto ss -> do
           assertEqual (length cs) (length ss)
              ["Expected " ++ show (length ss) ++ " channels, not " ++ show (length cs)]
-          return $ parallelProtos v proto (mkProto $ zip cs ss)
+          return $ proto <> mkProto (zip cs ss)
         _ ->
           throwError . unlines $ ["Expected a protocol type, not:", pretty t]
 

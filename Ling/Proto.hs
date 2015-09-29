@@ -11,7 +11,6 @@ module Ling.Proto
   , prettyProto
   , prettyChanDecs
   , isEmptyProto
-  , emptyProto
   , addChanWithOrder
   , rmChan
   , rmChans
@@ -20,8 +19,7 @@ module Ling.Proto
   , chanSessions
   , mkProto
   , protoAx
-  , replProtoWhen
-  , parallelProtos)
+  , replProtoWhen)
   where
 
 import Prelude hiding (log)
@@ -63,8 +61,17 @@ chanDecs = chans . to m2l . each . to (uncurry Arg)
 prettyChanDecs :: Proto -> String
 prettyChanDecs = render . prtLst . toListOf chanDecs
 
-emptyProto :: Proto
-emptyProto = MkProto Map.empty emptyConstraints []
+instance Monoid Proto where
+  mempty                = MkProto Map.empty emptyConstraints []
+  mappend proto0 proto1 =
+      MkProto mchans ks (proto0^.orders ++ proto1^.orders)
+    where
+      ks0    = proto0^.constraints
+      ks1    = proto1^.constraints
+      ks     = mergeConstraints ks0 ks1
+      mchans = Map.mergeWithKey (error "mergeSession") id id
+                                (proto0^.chans)
+                                (proto1^.chans)
 
 -- Not used
 chanPresent :: Channel -> Getter Proto Bool
@@ -125,7 +132,7 @@ mkProto css = MkProto (l2m css) (singleConstraint (l2s cs))
   where cs = map fst css
 
 protoAx :: RSession -> [Channel] -> Proto
-protoAx _ []             = emptyProto
+protoAx _ []             = mempty
 protoAx s [c] | isSink s = mkProto [(c,s)]
 protoAx s (c:d:es)       = mkProto ((c,s):(d,dual s):map (\e -> (e, log s)) es)
 protoAx _ _              = error "protoAx: Not enough channels given to forward"
@@ -134,21 +141,4 @@ replProtoWhen :: (Channel -> Bool) -> Term -> Endom Proto
 replProtoWhen cond n = chans . imapped %@~ replRSessionWhen where
   replRSessionWhen c s | cond c    = replRSession n s
                        | otherwise = s
-
-parallelProtos :: Verbosity -> Proto -> Proto -> Proto
-parallelProtos v proto0 proto1 =
-  debugTraceWhen (v && noConstraints ks0 && noConstraints ks1)
-    (concat
-      [["Merge constraints:"]
-      ,prettyConstraints ks0
-      ,["******************"]
-      ,prettyConstraints ks1
-      ]) $
-    MkProto mchans ks (proto0 ^. orders ++ proto1 ^. orders)
-  where
-    ks0    = proto0 ^. constraints
-    ks1    = proto1 ^. constraints
-    ks     = mergeConstraints ks0 ks1
-    mchans = Map.mergeWithKey (error "mergeSession") id id
-                              (proto0 ^. chans) (proto1 ^. chans)
 -- -}
