@@ -25,16 +25,12 @@ import           Data.List                 (sort)
 import           Data.Map                  (Map, empty)
 import qualified Data.Set                  as Set
 
-data ProcDef = ProcDef Name [ChanDec] Proc Proto
-
 data TCEnv = TCEnv
   { _verbosity :: Verbosity
   , _evars     :: Map Name Typ
   -- ^ Term types
   , _edefs     :: Map Name Term
   -- ^ Term definitions
-  , _pdefs     :: Map Name ProcDef
-  -- ^ Processes definitions
   , _ddefs     :: Map Name [Name]
   -- ^ Datatypes definitions
   , _ctyps     :: Map Name Name
@@ -44,7 +40,7 @@ data TCEnv = TCEnv
 $(makeLenses ''TCEnv)
 
 emptyTCEnv :: TCEnv
-emptyTCEnv = TCEnv False empty empty empty empty empty
+emptyTCEnv = TCEnv False empty empty empty empty
 
 newtype TC a = MkTC { unTC :: ReaderT TCEnv Err a }
   deriving (Functor, Applicative, Monad, MonadReader TCEnv)
