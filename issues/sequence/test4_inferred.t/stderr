@@ -1,0 +1,2 @@
+Ling: Ling/Sequential.hs:170:11-54: Irrefutable pattern failed for pattern Just (c0S, c1S)
+

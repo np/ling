@@ -1,0 +1,10 @@
+test4_inferred =
+  proc (r : !Int)
+  new (c : ?Int .?Int .?Int, d)
+  send d 1
+  recv c (x0 : Int)
+  send d 2
+  recv c (x1 : Int)
+  send d 3
+  recv c (x2 : Int)
+  send r (x0 + x1 + x2)
