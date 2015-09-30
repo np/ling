@@ -14,7 +14,7 @@ cabal-version:       >=1.10
 
 executable Ling
   main-is: Ling.hs
-  ghc-options:       -Wall
+  ghc-options:       -Wall -O0
   other-modules:
    Ling.Abs,
    Ling.Check.Base,
@@ -51,7 +51,7 @@ executable Ling
 
 executable ling-fmt
   main-is: Ling/Fmt.hs
-  ghc-options: -Wall
+  ghc-options: -Wall -O0
   other-modules:
    Ling.Abs,
    Ling.Print,
