@@ -20,7 +20,7 @@ cut_par_cut =
 
 cut_recv_send_send_recv =
   proc ()
-  new (d : ?Int .!Int, c : !Int .?Int)
+  new (d : ?Int.!Int, c : !Int.?Int)
   send c 1
   recv d (y : Int)
   send d 2
@@ -36,7 +36,7 @@ cutSendRecv =
 
 cut_send_recv_recv_send =
   proc ()
-  new (c : !Int .?Int, d : ?Int .!Int)
+  new (c : !Int.?Int, d : ?Int.!Int)
   send c 1
   recv d (y : Int)
   send d 2
@@ -45,7 +45,7 @@ cut_send_recv_recv_send =
 
 cut_send_recv_recv_send_v2 =
   proc ()
-  new (c : !Int .?Int, d : ?Int .!Int)
+  new (c : !Int.?Int, d : ?Int.!Int)
   send c 1
   recv d (y : Int)
   send d 2
@@ -55,7 +55,7 @@ cut_send_recv_recv_send_v2 =
 double =
   proc (i : ?Int, r : !Int)
   recv i (xi : Int)
-  new (c : ?Int .?Int .!Int, d)
+  new (c : ?Int.?Int.!Int, d)
   send d xi
   recv c (x : Int)
   send d xi
@@ -66,7 +66,7 @@ double =
 
 
 fwd2_par2_ten2 =
-  proc (c : {{?Int, !Int .?Int},[!Int, ?Int .!Int]})
+  proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int]})
   c {c0#, c1#}
   c1# [c1#0#, c1#1#]
   c0# {c0#0#, c0#1#}
@@ -79,7 +79,7 @@ fwd2_par2_ten2 =
 
 
 fwd3_par2_ten2_ten2 =
-  proc (c : {{?Int, !Int .?Int},[!Int, ?Int .!Int],{!Int, !Int .!Int}})
+  proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int],{!Int, !Int.!Int}})
   c {c0#, c1#, c2#}
   c1# [c1#0#, c1#1#]
   c0# {c0#0#, c0#1#}
@@ -102,7 +102,7 @@ fwd_par0_ten0 =
 
 
 fwd_par2_ten2_expanded =
-  proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int])
+  proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
   o [o0, o1]
   i {i0, i1}
   recv i0 (xi0 : Int)
@@ -114,7 +114,7 @@ fwd_par2_ten2_expanded =
 
 
 fwd_par2_ten2 =
-  proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int])
+  proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
   o [o0#, o1#]
   i {i0#, i1#}
   recv i0# (x#i0# : Int)
@@ -126,7 +126,7 @@ fwd_par2_ten2 =
 
 
 fwd_par2_ten2_ten2 =
-  proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int],l : {!Int, !Int .!Int})
+  proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int})
   o [o0#, o1#]
   i {i0#, i1#}
   l {l0#, l1#}
@@ -142,7 +142,7 @@ fwd_par2_ten2_ten2 =
 
 
 fwd_par2_ten2_ten2_ten2 =
-  proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int],l : {!Int, !Int .!Int},m : {!Int, !Int .!Int})
+  proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int},m : {!Int, !Int.!Int})
   o [o0#, o1#]
   i {i0#, i1#}
   l {l0#, l1#}
@@ -168,7 +168,7 @@ fwd_send_recv =
 
 
 fwd_send_recv_recv_send =
-  proc (i : ?Int .!Int, o : !Int .?Int)
+  proc (i : ?Int.!Int, o : !Int.?Int)
   recv i (x#i : Int)
   send o x#i
   recv o (x#o : Int)
@@ -176,7 +176,7 @@ fwd_send_recv_recv_send =
 
 
 fwd_ten2_par2 =
-  proc (i : [?Int, !Int .?Int],o : {!Int, ?Int .!Int})
+  proc (i : [?Int, !Int.?Int],o : {!Int, ?Int.!Int})
   i [i0#, i1#]
   o {o0#, o1#}
   recv i0# (x#i0# : Int)
@@ -206,7 +206,7 @@ merger_seq_inferred =
 
 
 merger_seq =
-  \ (m : Int)-> \ (n : Int)-> proc (c0 : !Vec Int m .?Vec Int m, c1 : !Vec Int n .?Vec Int n, ci : ?Vec Int (m + n),co : !Vec Int (m + n))
+  \ (m : Int)-> \ (n : Int)-> proc (c0 : !Vec Int m.?Vec Int m, c1 : !Vec Int n.?Vec Int n, ci : ?Vec Int (m + n),co : !Vec Int (m + n))
   recv ci (vi : Vec Int (m + n))
   send c0 (take Int m n vi)
   send c1 (drop Int m n vi)
@@ -216,7 +216,7 @@ merger_seq =
 
 
 merger_seq_Sort =
-  \ (m : Int)-> \ (n : Int)-> proc (c : {{!Vec Int m .?Vec Int m, !Vec Int n .?Vec Int n},?Vec Int (m + n).!Vec Int (m + n)})
+  \ (m : Int)-> \ (n : Int)-> proc (c : {{!Vec Int m.?Vec Int m, !Vec Int n.?Vec Int n},?Vec Int (m + n).!Vec Int (m + n)})
   c {d, io}
   d {d0, d1}
   recv io (vi : Vec Int (m + n))
@@ -429,7 +429,7 @@ sorter =
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new (itmp : !Int .?Int, tmp)
+  new (itmp : !Int.?Int, tmp)
   send itmp 0
   a {ai}
   (slice (ai)10 as i
@@ -499,7 +499,7 @@ tensor2_using_dual =
 
 test2 =
   proc ()
-  new (c : {?Int .!Int .?Int, !Int .?Int .!Int},d)
+  new (c : {?Int.!Int.?Int, !Int.?Int.!Int},d)
   c {c0, c1}
   d [d0, d1]
   send d0 1
@@ -518,7 +518,7 @@ test2 =
 
 test3 =
   proc ()
-  new (c : ?Int .[!Int, !Int],d)
+  new (c : ?Int.[!Int, !Int],d)
   send d 1
   recv c (x0 : Int)
   d {d0, d1}
@@ -531,7 +531,7 @@ test3 =
 
 test4 =
   proc (r : !Int)
-  new (c : ?Int .?Int .?Int, d)
+  new (c : ?Int.?Int.?Int, d)
   send d 1
   recv c (x0 : Int)
   send d 2

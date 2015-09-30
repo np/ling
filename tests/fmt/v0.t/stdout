@@ -36,7 +36,7 @@ not : (x : Bool)-> Bool =
   }
 
 pnot =
-  proc (c : ?Bool .!Bool)
+  proc (c : ?Bool.!Bool)
   recv c (x : Bool)
   send c (case x of {
     `false -> `true ,
@@ -120,7 +120,7 @@ cut_par_cut =
 
 cut_recv_send_send_recv =
   proc ()
-  new (d : ?Int .!Int, c : !Int .?Int)
+  new (d : ?Int.!Int, c : !Int.?Int)
   (send c 1
   recv c (x : Int)
   | recv d (y : Int)
@@ -136,7 +136,7 @@ cutSendRecv =
 
 cut_send_recv_recv_send =
   proc ()
-  new (c : !Int .?Int, d : ?Int .!Int)
+  new (c : !Int.?Int, d : ?Int.!Int)
   (send c 1
   recv c (x : Int)
   | recv d (y : Int)
@@ -145,7 +145,7 @@ cut_send_recv_recv_send =
 
 cut_send_recv_recv_send_v2 =
   proc ()
-  new (c : !Int .?Int, d : ?Int .!Int)
+  new (c : !Int.?Int, d : ?Int.!Int)
   (recv d (y : Int)
   send d 2
   | send c 1
@@ -188,7 +188,7 @@ dead_lock_tensor2_tensor2 =
 double =
   proc (i : ?Int, r : !Int)
   recv i (xi : Int)
-  new (c : ?Int .?Int .!Int, d)
+  new (c : ?Int.?Int.!Int, d)
   (recv c (x : Int)
   recv c (y : Int)
   send c (x + y)
@@ -211,13 +211,13 @@ fwd1_rcv =
 
 
 fwd2_par2_ten2 =
-  proc (c : Fwd 2 {?Int, !Int .?Int})
-  fwd 2 {?Int, !Int .?Int}c
+  proc (c : Fwd 2 {?Int, !Int.?Int})
+  fwd 2 {?Int, !Int.?Int}c
 
 
 fwd3_par2_ten2_ten2 =
-  proc (c : Fwd 3 {?Int, !Int .?Int})
-  fwd 3 {?Int, !Int .?Int}c
+  proc (c : Fwd 3 {?Int, !Int.?Int})
+  fwd 3 {?Int, !Int.?Int}c
 
 
 fwd_par0_ten0 =
@@ -226,7 +226,7 @@ fwd_par0_ten0 =
 
 
 fwd_par2_ten2_expanded =
-  proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int])
+  proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
   o [o0, o1]
   i {i0, i1}
   (recv i0 (xi0 : Int)
@@ -238,18 +238,18 @@ fwd_par2_ten2_expanded =
   )
 
 fwd_par2_ten2 =
-  proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int])
-  fwd {?Int, !Int .?Int}(i, o)
+  proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
+  fwd {?Int, !Int.?Int}(i, o)
 
 
 fwd_par2_ten2_ten2 =
-  proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int],l : {!Int, !Int .!Int})
-  fwd {?Int, !Int .?Int}(i, o, l)
+  proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int})
+  fwd {?Int, !Int.?Int}(i, o, l)
 
 
 fwd_par2_ten2_ten2_ten2 =
-  proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int],l : {!Int, !Int .!Int},m : {!Int, !Int .!Int})
-  fwd {?Int, !Int .?Int}(i, o, l, m)
+  proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int},m : {!Int, !Int.!Int})
+  fwd {?Int, !Int.?Int}(i, o, l, m)
 
 
 fwd_send_recv =
@@ -258,13 +258,13 @@ fwd_send_recv =
 
 
 fwd_send_recv_recv_send =
-  proc (i : ?Int .!Int, o : !Int .?Int)
-  fwd (?Int .!Int)(i, o)
+  proc (i : ?Int.!Int, o : !Int.?Int)
+  fwd (?Int.!Int)(i, o)
 
 
 fwd_ten2_par2 =
-  proc (i : [?Int, !Int .?Int],o : {!Int, ?Int .!Int})
-  fwd [?Int, !Int .?Int](i, o)
+  proc (i : [?Int, !Int.?Int],o : {!Int, ?Int.!Int})
+  fwd [?Int, !Int.?Int](i, o)
 
 
 id : (A : Type)(x : A)-> A
@@ -300,7 +300,7 @@ rot2 : (x : T)-> T =
   \ (x : T)-> rot (rot x)
 
 fwd_par2_ten2_expanded =
-  proc (i : {?Int, !Int .?Int},o : [!Int, ?Int .!Int])
+  proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
   o [o0, o1]
   i {i0, i1}
   (recv i0 (x : Int)
@@ -352,7 +352,7 @@ merger_seq_inferred =
 
 
 merger_seq =
-  \ (m : Int)(n : Int)-> proc (c0 : !Vec Int m .?Vec Int m, c1 : !Vec Int n .?Vec Int n, ci : ?Vec Int (m + n),co : !Vec Int (m + n))
+  \ (m : Int)(n : Int)-> proc (c0 : !Vec Int m.?Vec Int m, c1 : !Vec Int n.?Vec Int n, ci : ?Vec Int (m + n),co : !Vec Int (m + n))
   recv ci (vi : Vec Int (m + n))
   send c0 (take Int m n vi)
   send c1 (drop Int m n vi)
@@ -586,7 +586,7 @@ par_seq_middle =
 
 
 par_seq_send3 =
-  proc (a : {[: !Int, !Int :], !Int .!Int .!Int})
+  proc (a : {[: !Int, !Int :], !Int.!Int.!Int})
   a {b, e}
   b [: c, d :]
   send e 1
@@ -731,7 +731,7 @@ seq_seq =
 
 
 seq_seq_send2 =
-  proc (a : [: [: !Int .!Int, !Int .!Int :], !Int .!Int :])
+  proc (a : [: [: !Int.!Int, !Int.!Int :], !Int.!Int :])
   a [: b, e :]
   b [: c, d :]
   send c 1
@@ -776,7 +776,7 @@ split_fwd1_rcv =
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new (itmp : !Int .?Int, tmp)
+  new (itmp : !Int.?Int, tmp)
   (send itmp 0
   fwd (?Int)(itmp, r)
   | a {ai}
@@ -850,7 +850,7 @@ tensor2_using_dual =
 
 test2 =
   proc ()
-  new (c : {?Int .!Int .?Int, !Int .?Int .!Int},d)
+  new (c : {?Int.!Int.?Int, !Int.?Int.!Int},d)
   (c {c0, c1}
   recv c0 (x0 : Int)
   send c1 (x0 + 1)
@@ -869,7 +869,7 @@ test2 =
 
 test3 =
   proc ()
-  new (c : ?Int .[!Int, !Int],d)
+  new (c : ?Int.[!Int, !Int],d)
   (recv c (x0 : Int)
   c [c0, c1]
   (send c0 x0
@@ -894,7 +894,7 @@ test4_inferred =
 
 test4 =
   proc (r : !Int)
-  new (c : ?Int .?Int .?Int, d)
+  new (c : ?Int.?Int.?Int, d)
   (recv c (x0 : Int)
   recv c (x1 : Int)
   recv c (x2 : Int)
@@ -1080,7 +1080,7 @@ wrong_order_seq_seq =
 
 
 wrong_order_seq_seq_send2 =
-  proc (a : [: [: !Int .!Int, !Int .!Int :], !Int .!Int :])
+  proc (a : [: [: !Int.!Int, !Int.!Int :], !Int.!Int :])
   a [: b, e :]
   b [: c, d :]
   send c 1

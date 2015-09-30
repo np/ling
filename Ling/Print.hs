@@ -48,11 +48,11 @@ render d = rend 0 (map ($ "") $ d []) "" where
     t        :ts -> space t . rend i ts
     _            -> id
   new    i = showChar '\n' . indent i
-  indent i = unlessEOL (replicateS (2*i) (showChar ' '))
-  space  t = showString t . unlessEOL (showChar ' ')
-  unlessEOL f s
-    | null s || head s == '\n' = s
-    | otherwise                = f s
+  indent i = ifSpacesAllowed (replicateS (2*i) (showChar ' '))
+  space  t = showString t . ifSpacesAllowed (showChar ' ')
+  ifSpacesAllowed f s
+    | null s || head s `elem` ".\n" = s
+    | otherwise                     = f s
 
 parenth :: Doc -> Doc
 parenth ss = doc (showChar '(') . ss . doc (showChar ')')
