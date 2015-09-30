@@ -1,4 +1,20 @@
-module Ling.Proc where
+module Ling.Proc
+  ( actP
+  , actPs
+  , actsP
+  , actsPs
+  , prllActP
+  , prllActPs
+  , filter0s
+  , filter0
+  , suffChan
+  , suffChans
+  , split'
+  , fwdP
+  , fwdProc
+  , ax
+  , splitAx
+  ) where
 
 --import qualified Data.Set as Set
 --import Data.Set (Set)
@@ -6,14 +22,14 @@ import Data.List
 
 import Ling.Utils
 import Ling.Norm
-import Ling.Subst (substi)
+--import Ling.Subst (substi)
 import Ling.Session
 
 {-
 type FreeChans a = a -> Set Channel
 
 freeChans :: FreeChans Proc
-freeChans (pref `Act` procs) = fcAct pref procs
+freeChans (act `Act` procs) = fcAct act procs
 
 bndChans :: FreeChans [ChanDec]
 bndChans = l2s . map _argName
@@ -22,8 +38,8 @@ fcProcs :: FreeChans Procs
 fcProcs = Set.unions . map freeChans
 
 fcPref :: Act -> Endom (Set Channel)
-fcPref pref cs =
-  case pref of
+fcPref act cs =
+  case act of
     Nu c d         -> cs `Set.difference` bndChans [c,d]
     Split _ c ds   -> c  `Set.insert` (cs `Set.difference` bndChans ds)
     Send c _e      -> c  `Set.insert` cs
@@ -33,32 +49,51 @@ fcPref pref cs =
     At _ ds        -> l2s ds `Set.union` cs
 
 fcAct :: Pref -> FreeChans Procs
-fcAct pref procs = foldr fcPref (fcProcs procs) pref
+fcAct act procs = foldr fcPref (fcProcs procs) pref
 -}
 
-zeroP :: Proc
-zeroP = [] `Act` []
+infixr 4 `prllActP`
 
-parP :: Proc -> Proc -> Proc
-([] `Act` ps) `parP` ([] `Act` ps') = [] `Act` (ps ++ ps')
-p0            `parP` p1             = [] `Act` [p0,p1]
+prllActP :: [Act] -> Procs -> Proc
+[]   `prllActP` procs = mconcat procs
+acts `prllActP` procs = acts `Act` procs
 
-actP :: Pref -> Procs -> Proc
-pref `actP` [pref' `Act` procs] = (pref ++ pref') `Act` procs
-pref `actP` procs               = pref            `Act` procs
+infixr 4 `prllActPs`
 
-actPs :: Pref -> Procs -> Procs
-[]   `actPs` procs = procs
-pref `actPs` procs = [pref `actP` procs]
+prllActPs :: [Act] -> Procs -> Procs
+[]   `prllActPs` procs = procs
+acts `prllActPs` procs = [acts `Act` procs]
 
+infixr 4 `actP`
+
+actP :: Act -> Procs -> Proc
+act `actP` procs = [act] `Act` procs
+
+infixr 4 `actsP`
+
+actsP :: [Act] -> Procs -> Proc
+[]       `actsP` procs = mconcat procs
+act:acts `actsP` procs = act `actP` [acts `actsP` procs]
+
+infixr 4 `actPs`
+
+actPs :: Act -> Procs -> Procs
+act `actPs` procs = [act `actP` procs]
+
+infixr 4 `actsPs`
+
+actsPs :: [Act] -> Procs -> Procs
+[]   `actsPs` procs = procs
+acts `actsPs` procs = [acts `actsP` procs]
+
+-- TODO: filtering 0-processes should not be necessary they should
+-- not be part of the normal form.
 filter0s :: Endom Procs
 filter0s = concatMap filter0
 
-actP0s :: Pref -> Procs -> Procs
-actP0s pref procs = pref `actPs` filter0s procs
-
 filter0 :: Proc -> Procs
-filter0 (pref `Act` procs) = pref `actP0s` procs
+filter0 ([]   `Act` procs) = filter0s procs
+filter0 (acts `Act` procs) = acts `prllActPs` filter0s procs
 
 suffChan :: String -> Endom Channel
 suffChan s = suffName $ s ++ "#"
@@ -78,8 +113,10 @@ unRSession _                           = error "unRSession"
 
 -- One could generate the session annotations on the splits
 fwdParTen :: [RSession] -> [Channel] -> Proc
-fwdParTen _   []     = zeroP
-fwdParTen rss (c:cs) = pref `actP` ps
+fwdParTen _   []     = ø
+fwdParTen rss (c:cs) = pref `actsP` ps
+  -- These splits are independant, they are put in sequence because
+  -- splitting always commutes anyway.
   where
     ss     = map unRSession rss
     n      = length ss
@@ -88,8 +125,8 @@ fwdParTen rss (c:cs) = pref `actP` ps
     pref   = split' TenK c ds : zipWith (split' ParK) cs dss
 
 fwdRcvSnd :: Typ -> Session -> [Channel] -> Proc
-fwdRcvSnd _ _ []     = zeroP
-fwdRcvSnd t s (c:cs) = pref `actP` [fwdP s (c:cs)]
+fwdRcvSnd _ _ []     = ø
+fwdRcvSnd t s (c:cs) = pref `actsP` [fwdP s (c:cs)]
   where x    = prefName "x#" c
         vx   = Def x []
         pref = Recv c (Arg x t) : map (`Send` vx) cs
@@ -101,23 +138,32 @@ fwdDual f s (c:d:es) = f (dual s) (d:c:es)
 fwdDual _ _ _        = error "fwdDual: Not enough channels for this forwarder (or the session is not a sink)"
 
 fwdP :: Session -> [Channel] -> Proc
-fwdP _  [] = zeroP
+fwdP _  [] = ø
 fwdP s0 cs =
   case s0 of
     Ten ss  ->         fwdParTen     ss cs
     Rcv t s ->         fwdRcvSnd t   s  cs
     Par ss  -> fwdDual fwdParTen     ss cs
     Snd t s -> fwdDual (fwdRcvSnd t) s  cs
-    End     -> zeroP
+    End     -> ø
     Atm{}   -> [ax s0 cs] `Act` []
     Seq _ss -> error "fwdP/Seq TODO"
 
 -- The session 'Fwd n session' is a par.
 -- This function builds a process which first splits this par.
 fwdProc :: (Show i, Integral i) => i -> Session -> Channel -> Proc
-fwdProc n s c = [split' ParK c cs] `actP` [fwdP s cs]
+fwdProc n s c = split' ParK c cs `actP` [fwdP s cs]
   where cs = suffChans n c
 
+ax :: Session -> [Channel] -> Act
+ax s cs | validAx s cs = Ax s cs
+        | otherwise    = error "ax: Not enough channels given for this forwarder (or the session is not a sink)"
+
+splitAx :: (Show i, Integral i) => i -> Session -> Channel -> [Act]
+splitAx n s c = [split' ParK c cs, ax s cs]
+  where cs = suffChans n c
+
+{-
 replProcs :: (Show i, Integral i) => i -> Name -> Procs -> Procs
 replProcs n = concatMap . replProc n
 
@@ -128,14 +174,6 @@ replArg n x (Arg d s) = map go [0..n-1] where
 replProc' :: Integral i => i -> Name -> Proc -> Procs
 replProc' n x p = map go [0..n-1] where
   go i = substi (x, i) p
-
-ax :: Session -> [Channel] -> Act
-ax s cs | validAx s cs = Ax s cs
-        | otherwise    = error "ax: Not enough channels given for this forwarder (or the session is not a sink)"
-
-splitAx :: (Show i, Integral i) => i -> Session -> Channel -> Pref
-splitAx n s c = [split' ParK c cs, ax s cs]
-  where cs = suffChans n c
 
 replPref :: (Show i, Integral i) => i -> Name -> Act -> Proc -> Proc
 replPref n x pref p =
@@ -156,5 +194,7 @@ replPref n x pref p =
 replProc :: (Show i, Integral i) => i -> Name -> Proc -> Procs
 replProc n x (pref0 `Act` procs) =
   case pref0 of
-    []         -> replProcs n x procs
-    act : pref -> [replPref n x act (pref `actP` procs)]
+    []    -> replProcs n x procs
+    [act] -> [replPref n x act procs]
+  --  act : pref -> [replPref n x act (pref `actP` procs)]
+-}

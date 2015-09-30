@@ -39,6 +39,9 @@ $(makeLenses ''Telescope)
 
 type Channel = Name
 
+ø :: Monoid a => a
+ø = mempty
+
 nameString :: Iso' Name String
 nameString = iso unName Name
 

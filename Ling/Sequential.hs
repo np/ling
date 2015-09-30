@@ -149,13 +149,13 @@ transSplit c dOSs env =
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
 transProc env (pref `Act` procs) = transPref env pref procs
 
--- prefixes about different channels can be reordered
+-- All these prefixes can be reordered as they are in parallel
 transPref :: Env -> Pref -> [Proc] -> (Env -> Proc -> r) -> r
 transPref env pref0 procs k =
   case pref0 of
     []       -> transProcs env (filter0s procs) [] k
     act:pref -> transPref (transAct act env) pref procs $ \env' proc' ->
-                  k env' ([act] `actP` [proc'])
+                  k env' (act `actP` [proc'])
 
 unRepl :: RSession -> Session
 unRepl (Repl s (Lit (LInteger 1))) = s
@@ -187,7 +187,7 @@ transAct act =
 
 -- Assumption input processes should not have zeros (filter0s)
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
-transProcs env []       []      k = k env zeroP
+transProcs env []       []      k = k env ø
 transProcs _   []       waiting _ = transErr "transProcs: impossible all the processes are stuck:" waiting
 transProcs env [p]      []      k = transProc env p k
 transProcs env (p0:p0s) waiting k =
@@ -197,13 +197,13 @@ transProcs env (p0:p0s) waiting k =
         _ | NewSlice{} <- act ->
           transPref env pref procs0 $ \env' p' ->
             transProcs env' (p0s ++ reverse waiting) [] $ \env'' ps' ->
-              k env'' (p' `parP` ps')
+              k env'' (p' <> ps')
         _ | Just (readyPis,restPis) <- isReady env pref ->
-          transPref env readyPis (p0s ++ reverse waiting ++ [restPis `actP` procs0]) k
+          transPref env readyPis (p0s ++ reverse waiting ++ [restPis `prllActP` procs0]) k
         _ ->
           transProcs env p0s (p0 : waiting) k
 
-    Act [] _procs0 ->
+    [] `Act` _procs0 ->
       error "transProcs: impossible" -- filter0s prevents that
 
 transDec :: Dec -> Dec

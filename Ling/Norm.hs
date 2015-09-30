@@ -22,6 +22,8 @@ data Dec
   | Dat Name [Name]
   deriving (Eq,Ord,Show,Read)
 
+infixr 4 `Act`
+
 data Proc = Act { _procPref :: Pref, _procProcs :: Procs }
   deriving (Eq,Ord,Show,Read)
 
@@ -89,6 +91,17 @@ makeLenses ''RSession
 instance Monoid Program where
   mempty        = Program []
   mappend p0 p1 = Program $ p0^.prgDecs ++ p1^.prgDecs
+
+instance Monoid Proc where
+  mempty         = [] `Act` []
+  mappend        = parP
+    where
+      ([] `Act` ps) `parP` ([] `Act` qs) = [] `Act` (ps ++ qs)
+      (ps `Act` []) `parP` (qs `Act` []) = (ps ++ qs) `Act` []
+      p0            `parP` p1            = [] `Act` [p0,p1]
+  mconcat []     = mempty
+  mconcat [proc] = proc
+  mconcat procs  = [] `Act` procs
 
 vecTyp :: Typ -> Term -> Typ
 vecTyp t e = Def (Name "Vec") [t,e]

@@ -220,7 +220,7 @@ dummyTyp :: C.Exp
 dummyTyp = C.ELit (C.LInteger 0)
 
 transProc :: Env -> Proc -> [C.Stm]
-transProc env (prefs `Act` procs) = transAct env prefs procs
+transProc env (pref `Act` procs) = transPref env pref procs
 
 transLVal :: C.LVal -> C.Exp
 transLVal (C.LVar x)   = C.EVar x
@@ -242,12 +242,12 @@ transProcs :: Env -> [Proc] -> [C.Stm]
 transProcs = concatMap . transProc
 
 -- prefixes about different channels can be reordered
-transAct :: Env -> Pref -> [Proc] -> [C.Stm]
-transAct env []           procs = transProcs env procs
-transAct env (pref:prefs) procs =
+transPref :: Env -> Pref -> [Proc] -> [C.Stm]
+transPref env []           procs = transProcs env procs
+transPref env (pref:prefs) procs =
   case pref of
     Nu (Arg c0 c0OS) (Arg c1 c1OS) ->
-      sDec typ cid C.NoInit ++ transAct env' prefs procs
+      sDec typ cid C.NoInit ++ transPref env' prefs procs
       where
         s    = log $ extractSession [c0OS, c1OS]
         cid  = transName c0
@@ -255,13 +255,13 @@ transAct env (pref:prefs) procs =
         typ  = transRSession env s
         env' = addChans [(c0,l),(c1,l)] env
     Split _ c ds ->
-      transAct (transSplit c ds env) prefs procs
+      transPref (transSplit c ds env) prefs procs
     Send c expr ->
       C.SPut (env ! c) (transTerm env expr) :
-      transAct env prefs procs
+      transPref env prefs procs
     Recv c (Arg x typ) ->
       sDec ctyp y (C.SoInit (transLVal l)) ++
-      transAct (addEVar x y env) prefs procs
+      transPref (addEVar x y env) prefs procs
       where
         l    = env ! c
         ctyp = transCTyp env C.QConst typ
@@ -274,11 +274,11 @@ transAct env (pref:prefs) procs =
                     | otherwise   = l
         env' = env & locs . imapped %@~ sliceIf
                    & addEVar xi i
-        p = transAct env' prefs procs
+        p = transPref env' prefs procs
     Ax{} ->
-      transErr "transAct/Ax" pref
+      transErr "transPref/Ax" pref
     At{} ->
-      transErr "transAct/At" pref
+      transErr "transPref/At" pref
 
 {- stdFor i t body ~~~> for (int i = 0; i < t; i = i + 1) { body } -}
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm

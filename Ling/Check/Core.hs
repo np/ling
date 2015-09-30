@@ -60,7 +60,9 @@ checkSlice cond (c, rs) = when (cond c) $
     _ -> throwError "checkSlice: Replicated session"
 
 checkProc :: Proc -> TC Proto
-checkProc (pref `Act` procs) = checkPref pref procs
+checkProc ([]    `Act` procs) = checkProcs      procs
+checkProc ([act] `Act` procs) = checkPref [act] procs
+checkProc _                   = error "checkProc: TODO: support for parallel prefixes"
 
 checkProcs :: [Proc] -> TC Proto
 checkProcs procs = mconcat <$> traverse checkProc procs
@@ -87,7 +89,7 @@ debugCheckAct proto act pref procs m = do
   return proto'
 
   where proc  = " `" ++ pretty act ++ " " ++ proc' ++ "`"
-        proc' = pretty (actP pref procs)
+        proc' = pretty (pref `actsP` procs)
 
 {-
 Γ(P) is the protocol, namely mapping from channel to sessions of the process P

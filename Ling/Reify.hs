@@ -79,8 +79,17 @@ reifyRSessions = reify
 
 instance Norm Proc where
   type Normalized Proc        = N.Proc
-  reify (N.Act prefs procs)   = Act (map reifyPref prefs) (reify procs)
-  norm  (Act prefs procs)     = [] `actP` normPrefs prefs (norm procs)
+  reify (N.Act prefs procs)   = reifyPrllPrefs prefs `actsR` reify procs
+  norm  (Act prefs procs)     = mconcat $ normPrefs prefs (norm procs)
+
+reifyPrllPrefs :: N.Pref -> [Pref]
+reifyPrllPrefs []  = []
+reifyPrllPrefs [p] = [reifyPref p]
+reifyPrllPrefs _   = error "reifyPrllPrefs: No supports for parallel prefs in the concrete syntax yet"
+
+actsR :: [Pref] -> Procs -> Proc
+prefs `actsR` Prll [prefs' `Act` proc] = (prefs ++ prefs') `Act` proc
+prefs `actsR` procs                    = prefs `Act` procs
 
 normPrefs :: [Pref] -> Endom [N.Proc]
 normPrefs = composeMap normPref
@@ -106,13 +115,14 @@ normPref pref procs =
     Recv     c a      -> go [N.Recv         c (norm a)]
     NewSlice cs t x   -> go [N.NewSlice    cs (norm t) x]
     At       t cs     -> go [N.At             (norm t) cs]
-  where go = (`actPs` procs)
+  where go = (`actsPs` procs)
 
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
 
 reifyProcs :: N.Procs -> Procs
 reifyProcs ps = case reify ps of
+  []           -> ZeroP
   [Act [] ps'] -> ps'
   ps'          -> Prll ps'
 
