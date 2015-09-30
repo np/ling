@@ -123,7 +123,7 @@ instance Norm Procs where
   norm ZeroP               = []
   norm (Prll procs)        = norm procs
 
-reifyPref :: N.Pref -> Pref
+reifyPref :: N.Act -> Pref
 reifyPref pref = case pref of
   N.Nu c d            -> Nu (reify c) (reify d)
   N.Split N.ParK c ds -> ParSplit c (reify ds)

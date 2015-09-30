@@ -242,7 +242,7 @@ transProcs :: Env -> [Proc] -> [C.Stm]
 transProcs = concatMap . transProc
 
 -- prefixes about different channels can be reordered
-transAct :: Env -> [Pref] -> [Proc] -> [C.Stm]
+transAct :: Env -> Pref -> [Proc] -> [C.Stm]
 transAct env []           procs = transProcs env procs
 transAct env (pref:prefs) procs =
   case pref of

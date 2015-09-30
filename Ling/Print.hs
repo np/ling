@@ -286,7 +286,7 @@ instance Print N.RSession where
   prt     i = prt i . reifyRSession
   prtList i = prtList i . reifyRSessions
 
-instance Print N.Pref where
+instance Print N.Act where
   prt     i = prt i . reifyPref
   prtList i = prtList i . map reifyPref
 

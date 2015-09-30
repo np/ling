@@ -60,7 +60,7 @@ checkSlice cond (c, rs) = when (cond c) $
     _ -> throwError "checkSlice: Replicated session"
 
 checkProc :: Proc -> TC Proto
-checkProc (prefs `Act` procs) = checkAct prefs procs
+checkProc (pref `Act` procs) = checkPref pref procs
 
 checkProcs :: [Proc] -> TC Proto
 checkProcs procs = mconcat <$> traverse checkProc procs
@@ -75,10 +75,10 @@ checkChanDecs_ = mapM_ . checkChanDec
 checkChanDecs :: Proto -> [ChanDec] -> TC [RSession]
 checkChanDecs = mapM . checkChanDec
 
-debugCheckAct :: Proto -> Pref -> [Pref] -> Procs -> Endom (TC Proto)
-debugCheckAct proto pref prefs procs m = do
-  unless (null prefs && null procs) $
-    debug $ [ "Checking " ++ actLabel pref ++ proc
+debugCheckAct :: Proto -> Act -> Pref -> Procs -> Endom (TC Proto)
+debugCheckAct proto act pref procs m = do
+  unless (null pref && null procs) $
+    debug $ [ "Checking " ++ actLabel act ++ proc
             , "Inferred protocol for `" ++ proc' ++ "`:"
             ] ++ prettyProto proto
   proto' <- m
@@ -86,8 +86,8 @@ debugCheckAct proto pref prefs procs m = do
           : prettyProto proto'
   return proto'
 
-  where proc  = " `" ++ pretty pref ++ " " ++ proc' ++ "`"
-        proc' = pretty (actP prefs procs)
+  where proc  = " `" ++ pretty act ++ " " ++ proc' ++ "`"
+        proc' = pretty (actP pref procs)
 
 {-
 Γ(P) is the protocol, namely mapping from channel to sessions of the process P
@@ -130,9 +130,9 @@ or classically:
 Γ(c{c0,...,cN} P)(d) = (Γ(P)/(c0,...,cN))(d)
 
 -}
-checkPref :: Pref -> Proto -> TC Proto
-checkPref pref proto =
-  case pref of
+checkAct :: Act -> Proto -> TC Proto
+checkAct act proto =
+  case act of
     Nu (Arg c cOS) (Arg d dOS) -> do
       let ds = [c,d]
           [cSession,dSession] = chanSessions ds proto
@@ -185,11 +185,11 @@ checkPref pref proto =
         _ ->
           throwError . unlines $ ["Expected a protocol type, not:", pretty t]
 
-checkAct :: [Pref] -> Procs -> TC Proto
-checkAct []             procs = checkProcs procs
-checkAct (pref : prefs) procs = do
-  proto <- checkVarDecs (actVarDecs pref) $ checkAct  prefs procs
-  debugCheckAct proto pref prefs procs    $ checkPref pref  proto
+checkPref :: Pref -> Procs -> TC Proto
+checkPref []           procs = checkProcs procs
+checkPref (act : pref) procs = do
+  proto <- checkVarDecs (actVarDecs act) $ checkPref pref procs
+  debugCheckAct proto act pref procs     $ checkAct  act  proto
 
 inferBranch :: (Name,Term) -> TC (Name,Scoped Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t

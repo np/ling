@@ -119,14 +119,14 @@ statusAt c env
     d = env ^. writers . at l
 
 -- TODO generalize by looking deeper at what is ready now
-isReady :: Env -> [Pref] -> Maybe ([Pref], [Pref])
+isReady :: Env -> Pref -> Maybe (Pref, Pref)
 isReady _ [] = error "isReady: impossible"
-isReady env (pref : prefs)
-  | isReadyPref env pref = Just ([pref], prefs)
-  | otherwise            = Nothing
+isReady env (act : pref)
+  | actIsReady env act = Just ([act], pref)
+  | otherwise          = Nothing
 
-isReadyPref :: Env -> Pref -> Bool
-isReadyPref env pref =
+actIsReady :: Env -> Act -> Bool
+actIsReady env pref =
   case pref of
     Split{}    -> True
     Nu{}       -> True
@@ -136,7 +136,7 @@ isReadyPref env pref =
     At{}       -> False
     Send c _   -> statusAt c env == Just Empty
     Recv c _   -> statusAt c env == Just Full
-    NewSlice{} -> error "isReadyPref: IMPOSSIBLE"
+    NewSlice{} -> error "actIsReady: IMPOSSIBLE"
 
 transSplit :: Channel -> [ChanDec] -> Env -> Env
 transSplit c dOSs env =
@@ -147,23 +147,23 @@ transSplit c dOSs env =
         ds = map _argName dOSs
 
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
-transProc env (prefs `Act` procs) = transAct env prefs procs
+transProc env (pref `Act` procs) = transPref env pref procs
 
 -- prefixes about different channels can be reordered
-transAct :: Env -> [Pref] -> [Proc] -> (Env -> Proc -> r) -> r
-transAct env prefs0 procs k =
-  case prefs0 of
-    []         -> transProcs env (filter0s procs) [] k
-    pref:prefs -> transAct (transPref pref env) prefs procs $ \env' proc' ->
-                  k env' ([pref] `actP` [proc'])
+transPref :: Env -> Pref -> [Proc] -> (Env -> Proc -> r) -> r
+transPref env pref0 procs k =
+  case pref0 of
+    []       -> transProcs env (filter0s procs) [] k
+    act:pref -> transPref (transAct act env) pref procs $ \env' proc' ->
+                  k env' ([act] `actP` [proc'])
 
 unRepl :: RSession -> Session
 unRepl (Repl s (Lit (LInteger 1))) = s
 unRepl r                           = transErr "unRepl: unexpected replicated session" r
 
-transPref :: Pref -> Env -> Env
-transPref pref =
-  case pref of
+transAct :: Act -> Env -> Env
+transAct act =
+  case act of
     Nu (Arg c0 c0ORS) (Arg c1 c1ORS) ->
       let c0OS = unRepl <$> c0ORS
           c1OS = unRepl <$> c1ORS
@@ -192,14 +192,14 @@ transProcs _   []       waiting _ = transErr "transProcs: impossible all the pro
 transProcs env [p]      []      k = transProc env p k
 transProcs env (p0:p0s) waiting k =
   case p0 of
-    prefs@(pref:_) `Act` procs0 ->
+    pref@(act:_) `Act` procs0 ->
       case () of
-        _ | NewSlice{} <- pref ->
-          transAct env prefs procs0 $ \env' p' ->
+        _ | NewSlice{} <- act ->
+          transPref env pref procs0 $ \env' p' ->
             transProcs env' (p0s ++ reverse waiting) [] $ \env'' ps' ->
               k env'' (p' `parP` ps')
-        _ | Just (readyPis,restPis) <- isReady env prefs ->
-          transAct env readyPis (p0s ++ reverse waiting ++ [restPis `actP` procs0]) k
+        _ | Just (readyPis,restPis) <- isReady env pref ->
+          transPref env readyPis (p0s ++ reverse waiting ++ [restPis `actP` procs0]) k
         _ ->
           transProcs env p0s (p0 : waiting) k
 

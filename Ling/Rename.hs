@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Ling.Rename where
 
 import           Control.Lens
@@ -53,11 +54,11 @@ hideArg (Arg x _) = hideName x
 hideArgs :: [Arg a] -> Endom Ren
 hideArgs = flip (foldr hideArg)
 
-hidePrefs :: [Pref] -> Endom Ren
-hidePrefs = hideArgs . concatMap actVarDecs
+hidePref :: Pref -> Endom Ren
+hidePref = hideArgs . concatMap actVarDecs
 
-instance Rename Pref where
-  rename f pref = case pref of
+instance Rename Act where
+  rename f = \case
     Split k c ds    -> Split k (rename f c) (rename f ds)
     Send c e        -> Send (rename f c) (rename f e)
     Recv c arg      -> Recv (rename f c) (rename f arg)
@@ -67,8 +68,8 @@ instance Rename Pref where
     At t cs         -> At (rename f t) (rename f cs)
 
 instance Rename Proc where
-  rename f (Act prefs procs) =
-    Act (rename f prefs) (rename (hidePrefs prefs f) procs)
+  rename f (Act pref procs) =
+    Act (rename f pref) (rename (hidePref pref f) procs)
 
 instance Rename Session where
   rename f s0 = case s0 of

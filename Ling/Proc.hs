@@ -13,7 +13,7 @@ import Ling.Session
 type FreeChans a = a -> Set Channel
 
 freeChans :: FreeChans Proc
-freeChans (prefs `Act` procs) = fcAct prefs procs
+freeChans (pref `Act` procs) = fcAct pref procs
 
 bndChans :: FreeChans [ChanDec]
 bndChans = l2s . map _argName
@@ -21,7 +21,7 @@ bndChans = l2s . map _argName
 fcProcs :: FreeChans Procs
 fcProcs = Set.unions . map freeChans
 
-fcPref :: Pref -> Endom (Set Channel)
+fcPref :: Act -> Endom (Set Channel)
 fcPref pref cs =
   case pref of
     Nu c d         -> cs `Set.difference` bndChans [c,d]
@@ -32,8 +32,8 @@ fcPref pref cs =
     Ax _ ds        -> l2s ds `Set.union` cs
     At _ ds        -> l2s ds `Set.union` cs
 
-fcAct :: [Pref] -> FreeChans Procs
-fcAct prefs procs = foldr fcPref (fcProcs procs) prefs
+fcAct :: Pref -> FreeChans Procs
+fcAct pref procs = foldr fcPref (fcProcs procs) pref
 -}
 
 zeroP :: Proc
@@ -43,22 +43,22 @@ parP :: Proc -> Proc -> Proc
 ([] `Act` ps) `parP` ([] `Act` ps') = [] `Act` (ps ++ ps')
 p0            `parP` p1             = [] `Act` [p0,p1]
 
-actP :: [Pref] -> Procs -> Proc
-prefs `actP` [prefs' `Act` procs] = (prefs ++ prefs') `Act` procs
-prefs `actP` procs                = prefs             `Act` procs
+actP :: Pref -> Procs -> Proc
+pref `actP` [pref' `Act` procs] = (pref ++ pref') `Act` procs
+pref `actP` procs               = pref            `Act` procs
 
-actPs :: [Pref] -> Procs -> Procs
-[]    `actPs` procs = procs
-prefs `actPs` procs = [prefs `actP` procs]
+actPs :: Pref -> Procs -> Procs
+[]   `actPs` procs = procs
+pref `actPs` procs = [pref `actP` procs]
 
 filter0s :: Endom Procs
 filter0s = concatMap filter0
 
-actP0s :: [Pref] -> Procs -> Procs
-actP0s prefs procs = prefs `actPs` filter0s procs
+actP0s :: Pref -> Procs -> Procs
+actP0s pref procs = pref `actPs` filter0s procs
 
 filter0 :: Proc -> Procs
-filter0 (prefs `Act` procs) = prefs `actP0s` procs
+filter0 (pref `Act` procs) = pref `actP0s` procs
 
 suffChan :: String -> Endom Channel
 suffChan s = suffName $ s ++ "#"
@@ -69,7 +69,7 @@ suffChans n c = map ((`suffChan` c) . show) [0..n-1]
 noSession :: Channel -> ChanDec
 noSession c = Arg c Nothing
 
-split' :: TraverseKind -> Channel -> [Channel] -> Pref
+split' :: TraverseKind -> Channel -> [Channel] -> Act
 split' k c = Split k c . map noSession
 
 unRSession :: RSession -> Session
@@ -129,15 +129,15 @@ replProc' :: Integral i => i -> Name -> Proc -> Procs
 replProc' n x p = map go [0..n-1] where
   go i = substi (x, i) p
 
-ax :: Session -> [Channel] -> Pref
+ax :: Session -> [Channel] -> Act
 ax s cs | validAx s cs = Ax s cs
         | otherwise    = error "ax: Not enough channels given for this forwarder (or the session is not a sink)"
 
-splitAx :: (Show i, Integral i) => i -> Session -> Channel -> [Pref]
+splitAx :: (Show i, Integral i) => i -> Session -> Channel -> Pref
 splitAx n s c = [split' ParK c cs, ax s cs]
   where cs = suffChans n c
 
-replPref :: (Show i, Integral i) => i -> Name -> Pref -> Proc -> Proc
+replPref :: (Show i, Integral i) => i -> Name -> Act -> Proc -> Proc
 replPref n x pref p =
   case pref of
     Split k c [a]  -> [Split k c (replArg n x a)] `actP` replProc' n x p
@@ -154,7 +154,7 @@ replPref n x pref p =
     At{}           -> error "replProc/At"
 
 replProc :: (Show i, Integral i) => i -> Name -> Proc -> Procs
-replProc n x (prefs0 `Act` procs) =
-  case prefs0 of
-    []           -> replProcs n x procs
-    pref : prefs -> [replPref n x pref (prefs `actP` procs)]
+replProc n x (pref0 `Act` procs) =
+  case pref0 of
+    []         -> replProcs n x procs
+    act : pref -> [replPref n x act (pref `actP` procs)]

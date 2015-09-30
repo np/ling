@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 module Ling.Norm
   ( module Ling.Norm
   , Name(..)
@@ -21,9 +22,10 @@ data Dec
   | Dat Name [Name]
   deriving (Eq,Ord,Show,Read)
 
-data Proc = Act { _procPrefs :: [Pref], _procProcs :: Procs }
+data Proc = Act { _procPref :: Pref, _procProcs :: Procs }
   deriving (Eq,Ord,Show,Read)
 
+type Pref  = [Act]
 type Procs = [Proc]
 
 data TraverseKind
@@ -32,8 +34,7 @@ data TraverseKind
   | SeqK
   deriving (Eq,Ord,Show,Read)
 
-type Act = Pref
-data Pref
+data Act
   = Nu       ChanDec ChanDec
   | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term
@@ -110,23 +111,23 @@ sessionTyp = Def (Name "Session") []
 multName :: Name
 multName = Name "_*_"
 
-actVarDecs :: Pref -> [VarDec]
-actVarDecs pref =
-  case pref of
-    Recv _ a       -> [a]
-    NewSlice _ _ x -> [Arg x intTyp]
-    _              -> []
+actVarDecs :: Act -> [VarDec]
+actVarDecs = \case
+  Recv _ a       -> [a]
+  NewSlice _ _ x -> [Arg x intTyp]
+  _              -> []
 
 kindLabel :: TraverseKind -> String
 kindLabel ParK = "par/⅋"
 kindLabel TenK = "tensor/⊗"
 kindLabel SeqK = "sequence/»"
 
-actLabel :: Pref -> String
-actLabel Nu{}          = "new"
-actLabel (Split k _ _) = "split:" ++ kindLabel k
-actLabel Send{}        = "send"
-actLabel Recv{}        = "recv"
-actLabel NewSlice{}    = "slice"
-actLabel Ax{}          = "fwd"
-actLabel At{}          = "@"
+actLabel :: Act -> String
+actLabel = \case
+  Nu{}        -> "new"
+  Split k _ _ -> "split:" ++ kindLabel k
+  Send{}      -> "send"
+  Recv{}      -> "recv"
+  NewSlice{}  -> "slice"
+  Ax{}        -> "fwd"
+  At{}        -> "@"

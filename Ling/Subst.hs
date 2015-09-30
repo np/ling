@@ -81,22 +81,22 @@ hideArg (Arg x _) = Map.delete x
 hideArgs :: [Arg a] -> Endom Sub
 hideArgs = flip (foldr hideArg)
 
-hidePrefs :: [Pref] -> Endom Sub
-hidePrefs = hideArgs . concatMap actVarDecs
+hidePref :: Pref -> Endom Sub
+hidePref = hideArgs . concatMap actVarDecs
 
-instance Subst Pref where
-  subst f pref = case pref of
+instance Subst Act where
+  subst f act = case act of
     Split k c ds      -> Split k c (subst f ds)
     Send c e          -> Send c (subst f e)
     Recv c arg        -> Recv c (subst f arg)
     Nu c d            -> Nu (subst f c) (subst f d)
     NewSlice cs t x   -> NewSlice cs (subst f t) x
-    Ax{}              -> pref
+    Ax{}              -> act
     At t cs           -> At (subst f t) cs
 
 instance Subst Proc where
-  subst f (Act prefs procs) =
-    Act (subst f prefs) (subst (hidePrefs prefs f) procs)
+  subst f (Act pref procs) =
+    Act (subst f pref) (subst (hidePref pref f) procs)
 
 instance Subst Session where
   subst f s0 = case s0 of

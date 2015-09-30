@@ -151,4 +151,4 @@ instance Equiv Session where
 instance Equiv Proc where
   equiv _ = (==)
   -- TODO
-  -- equiv env (prefs0 `Act` procs0) (prefs1 `Act` procs1) =
+  -- equiv env (pref0 `Act` procs0) (pref1 `Act` procs1) =
