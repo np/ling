@@ -3,6 +3,8 @@ echo "== EXPECTED FAILURES =="
 cmdcheck tests/failure/*.t
 echo "== EXPECTED SUCCESSES =="
 cmdcheck tests/success/*.t
+echo "== EXPECTED SEQUENCE =="
+cmdcheck tests/sequence/*.t
 echo "== EXPECTED COMPILATION =="
 cmdcheck tests/compile/*.t
 echo "== EXPECTED PRETTY-PRINTER =="

@@ -35,20 +35,24 @@ render d = rend 0 (map ($ "") $ d []) "" where
   rend i ss = case ss of
     "\n"     :ts -> new i . rend i ts
     [c]      :ts | c `elem` "{[(.?!`" -> showChar c . dropWhile isSpace . rend i ts
-    ": "     :ts -> showString ": " . rend (i+1) ts
+    ": "     :ts -> space ":" . rend (i+1) ts
     "=\n"    :ts -> showString "=" . new 1 . rend 1 ts
     "{\n"    :ts -> showChar '{' . new (i+1) . rend (i+1) ts
     "\n}":",":ts -> new (i-1) . space "}" . showChar ',' . new (i-1) . rend (i-1) ts
-    "\n}"    :ts -> new (i-1) . showString "} " . rend (i-1) ts
-    ",\n"    :ts -> new 0 . rend 0 ts
+    "\n}"    :ts -> new (i-1) . space "}" . rend (i-1) ts
+    ",\n\n"  :ts -> new 0 . new 0 . rend 0 ts
     ", "     :ts -> showChar ',' . new i . rend i ts
     t:","    :ts -> showString t . space "," . rend i ts
     ","      :ts -> showChar ',' . rend i ts
     t  : [c] :ts | c `elem` "}])" -> showString t . showChar c . rend i ts
     t        :ts -> space t . rend i ts
     _            -> id
-  new i   = showChar '\n' . replicateS (2*i) (showChar ' ') . dropWhile isSpace
-  space t = showString t . (\s -> if null s then "" else ' ':s)
+  new    i = showChar '\n' . indent i
+  indent i = unlessEOL (replicateS (2*i) (showChar ' '))
+  space  t = showString t . unlessEOL (showChar ' ')
+  unlessEOL f s
+    | null s || head s == '\n' = s
+    | otherwise                = f s
 
 parenth :: Doc -> Doc
 parenth ss = doc (showChar '(') . ss . doc (showChar ')')
@@ -114,7 +118,7 @@ instance Print Dec where
     DDat name connames -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "="), prt 0 connames])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
-  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ",\n"), prt 0 xs])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ",\n\n"), prt 0 xs])
 instance Print ConName where
   prt i e = case e of
     CN name -> prPrec i 0 (concatD [doc (showString "`"), prt 0 name])
@@ -172,7 +176,7 @@ instance Print Term where
     TFun vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec, prt 0 vardecs, doc (showString "->"), prt 0 term])
     TSig vardec vardecs term -> prPrec i 0 (concatD [prt 0 vardec, prt 0 vardecs, doc (showString "**"), prt 0 term])
     Lam vardec vardecs term -> prPrec i 0 (concatD [doc (showString "\\"), prt 0 vardec, prt 0 vardecs, doc (showString "->"), prt 0 term])
-    TProc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc"), doc (showString "("), prt 0 chandecs, doc (showString ")"), prt 0 proc])
+    TProc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc"), doc (showString "("), prt 0 chandecs, doc (showString ")"), nl, prt 0 proc])
 
 instance Print Proc where
   prt i e = case e of
@@ -198,7 +202,7 @@ instance Print Pref where
     SplitAx n session name -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 n, prt 4 session, prt 0 name])
     At aterm names -> prPrec i 0 (concatD [doc (showString "@"), prt 0 aterm, doc (showString "("), prt 0 names, doc (showString ")")])
   prtList _ [] = (concatD [])
-  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+  prtList _ (x:xs) = (concatD [prt 0 x, nl, prt 0 xs])
 instance Print OptSession where
   prt i e = case e of
     NoSession -> prPrec i 0 (concatD [])
