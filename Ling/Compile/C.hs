@@ -241,13 +241,14 @@ transErrC msg v = error $ msg ++ "\n" ++ C.render (C.prt 0 v)
 transProcs :: Env -> [Proc] -> [C.Stm]
 transProcs = concatMap . transProc
 
--- prefixes about different channels can be reordered
-transPref :: Env -> Pref -> [Proc] -> [C.Stm]
-transPref env []           procs = transProcs env procs
-transPref env (pref:prefs) procs =
-  case pref of
+-- Implement the effect of an action over:
+-- * an environment
+-- * a list of statements
+transAct :: Env -> Act -> (Env, Endom [C.Stm])
+transAct env act =
+  case act of
     Nu (Arg c0 c0OS) (Arg c1 c1OS) ->
-      sDec typ cid C.NoInit ++ transPref env' prefs procs
+      (env', (sDec typ cid C.NoInit ++))
       where
         s    = log $ extractSession [c0OS, c1OS]
         cid  = transName c0
@@ -255,30 +256,33 @@ transPref env (pref:prefs) procs =
         typ  = transRSession env s
         env' = addChans [(c0,l),(c1,l)] env
     Split _ c ds ->
-      transPref (transSplit c ds env) prefs procs
+      (transSplit c ds env, id)
     Send c expr ->
-      C.SPut (env ! c) (transTerm env expr) :
-      transPref env prefs procs
+      (env, (C.SPut (env ! c) (transTerm env expr) :))
     Recv c (Arg x typ) ->
-      sDec ctyp y (C.SoInit (transLVal l)) ++
-      transPref (addEVar x y env) prefs procs
+      (addEVar x (transName x) env, (sDec ctyp y cinit ++))
       where
-        l    = env ! c
-        ctyp = transCTyp env C.QConst typ
-        y    = transName x
+        ctyp  = transCTyp env C.QConst typ
+        y     = transName x
+        cinit = C.SoInit (transLVal (env!c))
     NewSlice cs t xi ->
-      [stdFor i (transTerm env t) p]
+      (env', pure . stdFor (transName xi) (transTerm env t))
       where
         i = transName xi
         sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
                     | otherwise   = l
         env' = env & locs . imapped %@~ sliceIf
                    & addEVar xi i
-        p = transPref env' prefs procs
     Ax{} ->
-      transErr "transPref/Ax" pref
+      transErr "transAct/Ax" act
     At{} ->
-      transErr "transPref/At" pref
+      transErr "transAct/At" act
+
+-- The actions in this prefix are in parallel and thus can be reordered
+transPref :: Env -> Pref -> [Proc] -> [C.Stm]
+transPref env []         = transProcs env
+transPref env (act:pref) = actStm . transPref env' pref
+    where (env', actStm) = transAct env act
 
 {- stdFor i t body ~~~> for (int i = 0; i < t; i = i + 1) { body } -}
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm
@@ -385,10 +389,9 @@ transRSession env (Repl s a) = case a of
 transSessions :: Env -> Sessions -> [AQTyp]
 transSessions = map . transRSession
 
--- We
 isPtrTyp :: C.Typ -> Bool
 isPtrTyp (C.TPtr _) = True
-isPtrTyp _           = False
+isPtrTyp _          = False
 
 isPtrQTyp :: AQTyp -> Bool
 isPtrQTyp (C.QTyp _ t, []) = isPtrTyp t
@@ -409,7 +412,6 @@ transChanDec env (Arg c (Just session)) =
 transChanDec _   (Arg c Nothing)
   = transErr "transChanDec: TODO No Session for channel:" c
 
--- Of course this does not properlly handle dependent types
 transSig :: Env -> Name -> Maybe Typ -> Maybe Term -> C.Def
 transSig env0 f _ty0 (Just t) =
   case t of
@@ -421,6 +423,7 @@ transSig env0 f _ty0 (Just t) =
         news = map (transChanDec env0) cs
         env  = addChans (map snd news) env0
     _ -> transErr "transSig: TODO unsupported def" t
+-- Of course this does not properly handle dependent types
 transSig env0 f (Just ty0) Nothing = case ty0 of
   TFun{} -> go env0 [] ty0 where
     go env args t1 = case t1 of
