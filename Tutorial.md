@@ -14,15 +14,13 @@ This process is reading an array
 ```
 sum_int = proc(a : {?Int ^ 10}, r : !Int)
   new (itmp : !Int.?Int, tmp)
-  ( send itmp 0
+  ( send itmp 0.
     fwd(?Int)(itmp, r)
-  |
-    a{ai}
-    slice (ai) 10 as i
-    recv ai  (x : Int)
-    recv tmp (y : Int)
-    send tmp (x + y)
-  )
+  | a{ai}
+    slice (ai) 10 as i.
+    recv ai  (x : Int).
+    recv tmp (y : Int).
+    send tmp (x + y))
 ```
 
 ```{.c}
@@ -49,7 +47,7 @@ We start with a "doubling server" which receives one integer `n` on the channel
 
 ```
 double_server = proc(rn : ?Int, sdbl : !Int)
-  recv rn   (n : Int)
+  recv rn   (n : Int).
   send sdbl (n + n)
 ```
 
@@ -89,11 +87,8 @@ hence `42`.
 ~~~
 double_21 = proc(sdbl : !Int)
   new (rn : ?Int, sn : !Int)
-  (
-    @double_server(rn, sdbl)
-  |
-    send sn 21
-  )
+  ( @double_server(rn, sdbl)
+  | send sn 21)
 ~~~
 
 The reference to a previous defined process is equivalent to substituting the
@@ -103,12 +98,9 @@ to match the ones in the reference. Here is the previous example, expanded:
 ```
 double_21_expanded = proc(sdbl : !Int)
   new (rn : ?Int, sn : !Int)
-  (
-    recv rn   (n : Int)
+  ( recv rn   (n : Int).
     send sdbl (n + n)
-  |
-    send sn 21
-  )
+  | send sn 21)
 ```
 
 The semantics of `double_21(s)` is equivalent to `send s 42`.
@@ -137,32 +129,35 @@ look like and enjoy similar properties.
 
 ```
 div_mod_server = proc(rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int)
-  recv rm (m : Int)
-  recv rn (n : Int)
-  send sdiv (m / n)
+  recv rm (m : Int).
+  recv rn (n : Int).
+  send sdiv (m / n).
   send smod (m % n)
 ```
 
-## Sending two results (in parallel)
+## Receiving and sending in parallel
 
-Exchanging the order of the two `recv` commands yields to an equivalent process.
-Similarily with exchanging the `send` commands. One can even compose them in
-parallel:
+(not yet fully supported in the prototype, see [Issue #2](https://github.com/np/ling/issues/2))
+
+Exchanging the order of the two `recv` commands yields to a different process.
+Similarly with exchanging the `send` commands.
+However here one can compose them in parallel:
 
 ```
 div_mod_server_explicit_prll = proc(rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int)
-  recv rn (n : Int)
-  recv rm (m : Int)
-  (send sdiv (m / n) | send smod (m % n))
+  ( recv rn (n : Int)
+  | recv rm (m : Int)).
+  ( send sdiv (m / n)
+  | send smod (m % n))
 ```
 
 ## Continued sessions: imposing a strict processing order
 
 ```
 div_mod_server_cont = proc(c : ?Int.?Int.!Int.!Int)
-  recv c (m : Int)
-  recv c (n : Int)
-  send c (m / n)
+  recv c (m : Int).
+  recv c (n : Int).
+  send c (m / n).
   send c (m % n)
 ```
 
@@ -171,9 +166,9 @@ div_mod_server_cont = proc(c : ?Int.?Int.!Int.!Int)
 ```
 div_mod_server_seq4 = proc(c : [: ?Int, ?Int, !Int, !Int :])
   c[:rm,rn,sdiv,smod:]
-  recv rm (m : Int)
-  recv rn (n : Int)
-  send sdiv (m / n)
+  recv rm (m : Int).
+  recv rn (n : Int).
+  send sdiv (m / n).
   send smod (m % n)
 ```
 
@@ -184,28 +179,27 @@ No flexibility. It has to be in this order.
 ```
 div_mod_server_par4 = proc(c : {?Int, ?Int, !Int, !Int})
   c{rm,rn,sdiv,smod}
-  recv rm (m : Int)
-  recv rn (n : Int)
-  send sdiv (m / n)
+  recv rm (m : Int).
+  recv rn (n : Int).
+  send sdiv (m / n).
   send smod (m % n)
 ```
 
-Same flexibility as in `div_mod_server`
+Same flexibility and possible variations as in `div_mod_server`
 
 ## Tensor(`⊗`/`[]`): You have to be ready for any processing order
 
-TODO remove
-
 ```
-div_mod_server_ten2 = proc(rm : ?Int, rn : ?Int, s : [!Int, !Int])
+div_mod_server_ten2 = proc(r : [?Int, ?Int], s : [!Int, !Int])
+  r[rm,rn]
   s[sdiv,smod]
-  recv rm (m : Int)
-  recv rn (n : Int)
+  ( recv rm (m : Int)
+  | recv rn (n : Int)).
   ( send sdiv (m / n)
-  | send smod (m % n) )
+  | send smod (m % n))
 ```
 
-* `s[sdiv,smod]` and the `recv` can commute.
+* The two `recv` must be in parallel.
 * The two `send` must be in parallel.
 
 ## Forwarders
@@ -219,11 +213,11 @@ For instance, let have the session `S` be `!Int.?Int.?Int`.
 
 ```
 fwd_send_recv_recv = proc(c : !Int.?Int.?Int, d : ?Int.!Int.!Int)
-  recv d (x : Int)
-  send c x
-  recv c (y : Int)
-  send d y
-  recv c (z : Int)
+  recv d (x : Int).
+  send c x.
+  recv c (y : Int).
+  send d y.
+  recv c (z : Int).
   send d z
 ```
 
@@ -239,19 +233,21 @@ The forwarders are actually more flexible than this, not only data can be
 forwarded back and forth but it can also be duplicated and forwarded to listeners
 on the side. Consider the previous example where one adds one listener `e`:
 
+TODO: the `send`s could be in parallel
+
 ```
 fwd_send_recv_recv_with_listener =
   proc(c : !Int.?Int.?Int,
        d : ?Int.!Int.!Int,
        e : ?Int.?Int.?Int)
-  recv d (x : Int)
-  send c x
-  send e x
-  recv c (y : Int)
-  send d y
-  send e y
-  recv c (z : Int)
-  send d z
+  recv d (x : Int).
+  send c x.
+  send e x.
+  recv c (y : Int).
+  send d y.
+  send e y.
+  recv c (z : Int).
+  send d z.
   send e z
 ```
 
@@ -264,6 +260,8 @@ fwd_send_recv_recv_with_listener_auto =
        e : ?Int.?Int.?Int)
   fwd(!Int.?Int.?Int)(c,d,e)
 ```
+
+TODO explain the `Fwd <Nat>` type and `fwd <Nat>` construct
 
 ## Additives
 
