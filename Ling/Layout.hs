@@ -201,10 +201,13 @@ incrGlobal :: Position -- ^ If the token is on the same line
                        --   as this position, update the column position.
            -> Int      -- ^ Number of characters to add to the position.
            -> Token -> Token
-incrGlobal (Pn _ l0 _) i (PT (Pn g l c) t) =
-  if l /= l0 then PT (Pn (g + i) l c) t
-             else PT (Pn (g + i) l (c + i)) t
-incrGlobal _ _ p = error $ "cannot add token at " ++ show p
+incrGlobal p0 i (PT  p1 t) = PT  (incrGlobalP p0 i p1) t
+incrGlobal p0 i (Err p1)   = Err (incrGlobalP p0 i p1)
+
+incrGlobalP :: Position -> Int -> Position -> Position
+incrGlobalP (Pn _ l0 _) i (Pn g l c) =
+  if l /= l0 then Pn (g + i) l c
+             else Pn (g + i) l (c + i)
 
 -- | Create a symbol token.
 sToken :: Position -> String -> Token
