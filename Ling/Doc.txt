@@ -49,10 +49,10 @@ The symbols used in Ling are the following:
   | , | = | : | `
   | | | ( | ) | ->
   | < | > | { | }
-  | ** | \ | [ | ]
-  | [: | :] | @ | !
-  | ? | ~ | -o | ^
-  | . |  |  | 
+  | ** | \ | . | [
+  | ] | [: | :] | @
+  | ! | ? | ~ | -o
+  | ^ |  |  | 
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {- and -}.
@@ -110,13 +110,15 @@ All other symbols are terminals.
   |  |  **|**  | //VarDec// //[VarDec]// ``**`` //Term// 
   |  |  **|**  | ``\`` //VarDec// //[VarDec]// ``->`` //Term// 
   |  |  **|**  | ``proc`` ``(`` //[ChanDec]// ``)`` //Proc// 
-  | //Proc// | -> | //[Pref]// //Procs// 
+  | //Proc1// | -> | //Act// 
+  |  |  **|**  | ``(`` //[Proc]// ``)`` 
+  | //Proc// | -> | //Proc1// //Proc// 
+  |  |  **|**  | //Proc1// ``.`` //Proc// 
+  |  |  **|**  | //Proc1// 
   | //[Proc]// | -> | **eps**
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
-  | //Procs// | -> | **eps**
-  |  |  **|**  | ``(`` //[Proc]// ``)`` 
-  | //Pref// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
+  | //Act// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
   |  |  **|**  | //Name// ``{`` //[ChanDec]// ``}`` 
   |  |  **|**  | //Name// ``[`` //[ChanDec]// ``]`` 
   |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 
@@ -126,8 +128,6 @@ All other symbols are terminals.
   |  |  **|**  | ``fwd`` //Session4// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``fwd`` //Integer// //Session4// //Name// 
   |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
-  | //[Pref]// | -> | **eps**
-  |  |  **|**  | //Pref// //[Pref]// 
   | //OptSession// | -> | **eps**
   |  |  **|**  | ``:`` //RSession// 
   | //Session4// | -> | //Name// 

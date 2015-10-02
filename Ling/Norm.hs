@@ -144,3 +144,13 @@ actLabel = \case
   NewSlice{}  -> "slice"
   Ax{}        -> "fwd"
   At{}        -> "@"
+
+actNeedsDot :: Act -> Bool
+actNeedsDot = \case
+  Nu{}       -> False
+  Split{}    -> False
+  Send{}     -> True
+  Recv{}     -> True
+  NewSlice{} -> True
+  Ax{}       -> True
+  At{}       -> True

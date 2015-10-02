@@ -115,13 +115,15 @@ All other symbols are terminals.
   |  |  **|**  | //VarDec// //[VarDec]// ``**`` //Term// 
   |  |  **|**  | ``\`` //VarDec// //[VarDec]// ``->`` //Term// 
   |  |  **|**  | ``proc`` ``(`` //[ChanDec]// ``)`` //Proc// 
-  | //Proc// | -> | //[Pref]// //Procs// 
+  | //Proc1// | -> | //Act// 
+  |  |  **|**  | ``(`` //[Proc]// ``)`` 
+  | //Proc// | -> | //Proc1// //Proc// 
+  |  |  **|**  | //Proc1// ``.`` //Proc// 
+  |  |  **|**  | //Proc1// 
   | //[Proc]// | -> | **eps**
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
-  | //Procs// | -> | **eps**
-  |  |  **|**  | ``(`` //[Proc]// ``)`` 
-  | //Pref// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
+  | //Act// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
   |  |  **|**  | //Name// ``{`` //[ChanDec]// ``}`` 
   |  |  **|**  | //Name// ``[`` //[ChanDec]// ``]`` 
   |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 
@@ -131,8 +133,6 @@ All other symbols are terminals.
   |  |  **|**  | ``fwd`` //Session// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``fwd`` //Integer// //Session// //Name// 
   |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
-  | //[Pref]// | -> | **eps**
-  |  |  **|**  | //Pref// //[Pref]// 
   | //OptSession// | -> | **eps**
   |  |  **|**  | ``:`` //RSession// 
   | //Session4// | -> | //Name// 

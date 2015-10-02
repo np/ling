@@ -62,25 +62,24 @@ TSig.    Term  ::= VarDec [VarDec] "**" Term ;
 Lam.     Term  ::= "\\" VarDec [VarDec] "->" Term ;
 TProc.   Term  ::= "proc" "(" [ChanDec] ")" Proc ;
 
-Act.        Proc ::= [Pref] Procs ;
+PAct.     Proc1 ::= Act ;
+PPrll.    Proc1 ::= "(" [Proc] ")" ;
 
+PNxt.     Proc ::= Proc1 Proc ;
+PDot.     Proc ::= Proc1 "." Proc ;
+_.        Proc ::= Proc1 ;
 separator Proc "|" ;
 
-ZeroP.    Procs ::= ;
-Prll.     Procs ::= "(" [Proc] ")" ;
-
-Nu.       Pref ::= "new" "(" ChanDec "," ChanDec ")" ;
-ParSplit. Pref ::= Name "{" [ChanDec] "}" ;
-TenSplit. Pref ::= Name "[" [ChanDec] "]" ;
-SeqSplit. Pref ::= Name "[:" [ChanDec] ":]" ;
-Send.     Pref ::= "send" Name ATerm ;
-Recv.     Pref ::= "recv" Name VarDec ;
-NewSlice. Pref ::= "slice" "(" [Name] ")" ATerm "as" Name ;
-Ax.       Pref ::= "fwd" Session4 "(" [Name] ")" ;
-SplitAx.  Pref ::= "fwd" Integer Session4 Name ;
-At.       Pref ::= "@" ATerm "(" [Name] ")" ;
-
-separator Pref  ""  ;
+Nu.       Act ::= "new" "(" ChanDec "," ChanDec ")" ;
+ParSplit. Act ::= Name "{" [ChanDec] "}" ;
+TenSplit. Act ::= Name "[" [ChanDec] "]" ;
+SeqSplit. Act ::= Name "[:" [ChanDec] ":]" ;
+Send.     Act ::= "send" Name ATerm ;
+Recv.     Act ::= "recv" Name VarDec ;
+NewSlice. Act ::= "slice" "(" [Name] ")" ATerm "as" Name ;
+Ax.       Act ::= "fwd" Session4 "(" [Name] ")" ;
+SplitAx.  Act ::= "fwd" Integer Session4 Name ;
+At.       Act ::= "@" ATerm "(" [Name] ")" ;
 
 NoSession. OptSession ::= ;
 SoSession. OptSession ::= ":" RSession ;

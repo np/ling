@@ -33,26 +33,29 @@ doc = (:)
 render :: Doc -> String
 render d = rend 0 (map ($ "") $ d []) "" where
   rend i ss = case ss of
-    "\n"     :ts -> new i . rend i ts
-    [c]      :ts | c `elem` "{[(.?!`" -> showChar c . dropWhile isSpace . rend i ts
-    ": "     :ts -> space ":" . rend (i+1) ts
-    "=\n"    :ts -> showString "=" . new 1 . rend 1 ts
-    "{\n"    :ts -> showChar '{' . new (i+1) . rend (i+1) ts
-    "\n}":",":ts -> new (i-1) . space "}" . showChar ',' . new (i-1) . rend (i-1) ts
-    "\n}"    :ts -> new (i-1) . space "}" . rend (i-1) ts
-    ",\n\n"  :ts -> new 0 . new 0 . rend 0 ts
-    ", "     :ts -> showChar ',' . new i . rend i ts
-    t:","    :ts -> showString t . space "," . rend i ts
-    ","      :ts -> showChar ',' . rend i ts
-    t  : [c] :ts | c `elem` "}])" -> showString t . showChar c . rend i ts
-    t        :ts -> space t . rend i ts
+    "\n"        :ts -> new i . rend i ts
+    [c]         :ts | c `elem` "{[(.?!`" -> showChar c . dropWhile isSpace . rend i ts
+    ": "        :ts -> space ":" . rend (i+1) ts
+    "=\n"       :ts -> showString "=" . new 1 . rend 1 ts
+    [c,'\n']    :ts | c `elem` "{[" -> showChar c . new (i+1) . rend (i+1) ts
+    [c,'\n']    :ts | c `elem` "("  -> space [c] . rend (i+1) ts
+    ['\n',c]:",":ts | c `elem` "}]" -> new (i-1) . showChar c . new (i-1) . rend (i-1) ts
+    ['\n',c]    :ts | c `elem` "}]" -> new (i-1) . space [c] . rend (i-1) ts
+    ['\n',c]    :ts | c `elem` ")"  -> {-unlessElem " " (showChar ' ') .-} showChar c . rend (i-1) ts
+    ",\n\n"     :ts -> new 0 . new 0 . rend 0 ts
+    [c,'\n']    :ts | c `elem` ",."  -> showChar c . new i . rend i ts
+    ['\n',c]    :ts | c `elem` "|"  -> new (i-1) . space [c] . rend i ts
+    t:","       :ts -> showString t . space "," . rend i ts
+    ","         :ts -> showChar ',' . rend i ts
+    t  : [c]    :ts | c `elem` "}])" -> showString t . showChar c . rend i ts
+    t           :ts -> space t . rend i ts
     _            -> id
   new    i = showChar '\n' . indent i
-  indent i = ifSpacesAllowed (replicateS (2*i) (showChar ' '))
-  space  t = showString t . ifSpacesAllowed (showChar ' ')
-  ifSpacesAllowed f s
-    | null s || head s `elem` ".\n" = s
-    | otherwise                     = f s
+  indent i = unlessElem "\n" (replicateS (2*i) (showChar ' '))
+  space  t = showString t . unlessElem ".\n" (showChar ' ')
+  unlessElem set f s
+    | null s || head s `elem` set = s
+    | otherwise                   = f s
 
 parenth :: Doc -> Doc
 parenth ss = doc (showChar '(') . ss . doc (showChar ')')
@@ -146,7 +149,7 @@ instance Print Branch where
     Br conname term -> prPrec i 0 (concatD [prt 0 conname, doc (showString "->"), prt 0 term])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
-  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ", "), prt 0 xs])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ",\n"), prt 0 xs])
 instance Print Literal where
   prt i e = case e of
     LInteger n -> prPrec i 0 (concatD [prt 0 n])
@@ -180,16 +183,14 @@ instance Print Term where
 
 instance Print Proc where
   prt i e = case e of
-    Act prefs procs -> prPrec i 0 (concatD [prt 0 prefs, prt 0 procs])
+    PAct act -> prPrec i 1 (concatD [prt 0 act])
+    PPrll procs -> prPrec i 1 (concatD [doc (showString "(\n"), prt 0 procs, doc (showString "\n)")])
+    PNxt proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, doc (showString "\n"), prt 0 proc2])
+    PDot proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, doc (showString ".\n"), prt 0 proc2])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
-  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "|"), prt 0 xs])
-instance Print Procs where
-  prt i e = case e of
-    ZeroP -> prPrec i 0 (concatD [])
-    Prll procs -> prPrec i 0 (concatD [doc (showString "("), prt 0 procs, doc (showString ")")])
-
-instance Print Pref where
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "\n|"), prt 0 xs])
+instance Print Act where
   prt i e = case e of
     Nu chandec1 chandec2 -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandec1, doc (showString ","), prt 0 chandec2, doc (showString ")")])
     ParSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "{"), prt 0 chandecs, doc (showString "}")])
@@ -201,8 +202,7 @@ instance Print Pref where
     Ax session names -> prPrec i 0 (concatD [doc (showString "fwd"), prt 4 session, doc (showString "("), prt 0 names, doc (showString ")")])
     SplitAx n session name -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 n, prt 4 session, prt 0 name])
     At aterm names -> prPrec i 0 (concatD [doc (showString "@"), prt 0 aterm, doc (showString "("), prt 0 names, doc (showString ")")])
-  prtList _ [] = (concatD [])
-  prtList _ (x:xs) = (concatD [prt 0 x, nl, prt 0 xs])
+
 instance Print OptSession where
   prt i e = case e of
     NoSession -> prPrec i 0 (concatD [])
@@ -291,8 +291,8 @@ instance Print N.RSession where
   prtList i = prtList i . reifyRSessions
 
 instance Print N.Act where
-  prt     i = prt i . reifyPref
-  prtList i = prtList i . map reifyPref
+  prt     i = prt i . reifyAct
+  prtList i = prtList i . map reifyAct
 
 instance Print N.Proc where
   prt     i = prt i . reifyProc

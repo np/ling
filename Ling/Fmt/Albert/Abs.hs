@@ -64,13 +64,11 @@ data Term
     | TProc [ChanDec] Proc
   deriving (Eq, Ord, Show, Read)
 
-data Proc = Act [Pref] Procs
+data Proc
+    = PAct Act | PPrll [Proc] | PNxt Proc Proc | PDot Proc Proc
   deriving (Eq, Ord, Show, Read)
 
-data Procs = ZeroP | Prll [Proc]
-  deriving (Eq, Ord, Show, Read)
-
-data Pref
+data Act
     = Nu ChanDec ChanDec
     | ParSplit Name [ChanDec]
     | TenSplit Name [ChanDec]

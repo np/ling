@@ -28,11 +28,10 @@ import Ling.Fmt.Albert.ErrM
 %name pListATerm ListATerm
 %name pDTerm DTerm
 %name pTerm Term
+%name pProc1 Proc1
 %name pProc Proc
 %name pListProc ListProc
-%name pProcs Procs
-%name pPref Pref
-%name pListPref ListPref
+%name pAct Act
 %name pOptSession OptSession
 %name pSession4 Session4
 %name pSession3 Session3
@@ -173,28 +172,28 @@ Term : ATerm ListATerm { Ling.Fmt.Albert.Abs.RawApp $1 (reverse $2) }
      | VarDec ListVarDec '**' Term { Ling.Fmt.Albert.Abs.TSig $1 (reverse $2) $4 }
      | '\\' VarDec ListVarDec '->' Term { Ling.Fmt.Albert.Abs.Lam $2 (reverse $3) $5 }
      | 'proc' '(' ListChanDec ')' Proc { Ling.Fmt.Albert.Abs.TProc $3 $5 }
+Proc1 :: { Proc }
+Proc1 : Act { Ling.Fmt.Albert.Abs.PAct $1 }
+      | '(' ListProc ')' { Ling.Fmt.Albert.Abs.PPrll $2 }
 Proc :: { Proc }
-Proc : ListPref Procs { Ling.Fmt.Albert.Abs.Act (reverse $1) $2 }
+Proc : Proc1 Proc { Ling.Fmt.Albert.Abs.PNxt $1 $2 }
+     | Proc1 '.' Proc { Ling.Fmt.Albert.Abs.PDot $1 $3 }
+     | Proc1 { $1 }
 ListProc :: { [Proc] }
 ListProc : {- empty -} { [] }
          | Proc { (:[]) $1 }
          | Proc '|' ListProc { (:) $1 $3 }
-Procs :: { Procs }
-Procs : {- empty -} { Ling.Fmt.Albert.Abs.ZeroP }
-      | '(' ListProc ')' { Ling.Fmt.Albert.Abs.Prll $2 }
-Pref :: { Pref }
-Pref : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Fmt.Albert.Abs.Nu $3 $5 }
-     | Name '{' ListChanDec '}' { Ling.Fmt.Albert.Abs.ParSplit $1 $3 }
-     | Name '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.TenSplit $1 $3 }
-     | Name '[:' ListChanDec ':]' { Ling.Fmt.Albert.Abs.SeqSplit $1 $3 }
-     | 'send' Name ATerm { Ling.Fmt.Albert.Abs.Send $2 $3 }
-     | 'recv' Name VarDec { Ling.Fmt.Albert.Abs.Recv $2 $3 }
-     | 'slice' '(' ListName ')' ATerm 'as' Name { Ling.Fmt.Albert.Abs.NewSlice $3 $5 $7 }
-     | 'fwd' Session '(' ListName ')' { Ling.Fmt.Albert.Abs.Ax $2 $4 }
-     | 'fwd' Integer Session Name { Ling.Fmt.Albert.Abs.SplitAx $2 $3 $4 }
-     | '@' ATerm '(' ListName ')' { Ling.Fmt.Albert.Abs.At $2 $4 }
-ListPref :: { [Pref] }
-ListPref : {- empty -} { [] } | ListPref Pref { flip (:) $1 $2 }
+Act :: { Act }
+Act : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Fmt.Albert.Abs.Nu $3 $5 }
+    | Name '{' ListChanDec '}' { Ling.Fmt.Albert.Abs.ParSplit $1 $3 }
+    | Name '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.TenSplit $1 $3 }
+    | Name '[:' ListChanDec ':]' { Ling.Fmt.Albert.Abs.SeqSplit $1 $3 }
+    | 'send' Name ATerm { Ling.Fmt.Albert.Abs.Send $2 $3 }
+    | 'recv' Name VarDec { Ling.Fmt.Albert.Abs.Recv $2 $3 }
+    | 'slice' '(' ListName ')' ATerm 'as' Name { Ling.Fmt.Albert.Abs.NewSlice $3 $5 $7 }
+    | 'fwd' Session '(' ListName ')' { Ling.Fmt.Albert.Abs.Ax $2 $4 }
+    | 'fwd' Integer Session Name { Ling.Fmt.Albert.Abs.SplitAx $2 $3 $4 }
+    | '@' ATerm '(' ListName ')' { Ling.Fmt.Albert.Abs.At $2 $4 }
 OptSession :: { OptSession }
 OptSession : {- empty -} { Ling.Fmt.Albert.Abs.NoSession }
            | ':' RSession { Ling.Fmt.Albert.Abs.SoSession $2 }

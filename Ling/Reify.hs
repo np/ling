@@ -1,18 +1,22 @@
+{-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE TypeFamilies #-}
 module Ling.Reify where
 
-import Prelude hiding (log)
-import Data.List
-import Ling.Abs
-import Ling.Utils
-import Ling.Session
-import Ling.Proc
-import qualified Ling.Norm as N
+import           Data.List
+import           Ling.Abs
+import qualified Ling.Norm    as N
+import           Ling.Proc
+import           Ling.Session
+import           Ling.Utils
+import           Prelude      hiding (log)
 
 class Norm a where
   type Normalized a
   norm  :: a -> Normalized a
   reify :: Normalized a -> a
+
+  normalize :: a -> a
+  normalize = reify . norm
 
 instance Norm a => Norm [a] where
   type Normalized [a] = [Normalized a]
@@ -79,24 +83,44 @@ reifyRSessions = reify
 
 instance Norm Proc where
   type Normalized Proc        = N.Proc
-  reify (N.Act prefs procs)   = reifyPrllPrefs prefs `actsR` reify procs
-  norm  (Act prefs procs)     = mconcat $ normPrefs prefs (norm procs)
+  reify (N.Act pref procs)    = reifyPref pref (mkProcs $ reify procs)
+  norm = \case
+    PAct act        -> mconcat $ normAct act []
+    PNxt proc proc' -> norm proc `nxtP` norm proc'
+    PDot proc proc' -> norm proc `dotP` norm proc'
+    PPrll procs     -> mconcat $ norm procs
 
-reifyPrllPrefs :: N.Pref -> [Pref]
-reifyPrllPrefs []  = []
-reifyPrllPrefs [p] = [reifyPref p]
-reifyPrllPrefs _   = error "reifyPrllPrefs: No supports for parallel prefs in the concrete syntax yet"
+mkProcs :: [Proc] -> Proc
+mkProcs = \case
+  []  -> PPrll []
+  [p] -> p
+  ps  -> PPrll ps
 
-actsR :: [Pref] -> Procs -> Proc
-prefs `actsR` Prll [prefs' `Act` proc] = (prefs ++ prefs') `Act` proc
-prefs `actsR` procs                    = prefs `Act` procs
+pAct :: N.Act -> Proc
+pAct = PAct . reifyAct
 
-normPrefs :: [Pref] -> Endom [N.Proc]
-normPrefs = composeMap normPref
+pNxt :: Proc -> Proc -> Proc
+pNxt proc0 (PPrll []) = proc0
+pNxt proc0 proc1      = proc0 `PNxt` proc1
 
-normPref :: Pref -> Endom [N.Proc]
-normPref pref procs =
-  case pref of
+pDot :: Proc -> Proc -> Proc
+pDot proc0 (PPrll []) = proc0
+pDot proc0 proc1      = proc0 `PDot` proc1
+
+actR :: N.Act -> Proc -> Proc
+actR act proc
+  | N.actNeedsDot act = pAct act `pDot` proc
+  | otherwise         = pAct act `pNxt` proc
+
+reifyPref :: N.Pref -> Proc -> Proc
+reifyPref pref proc = case pref of
+  []    -> proc
+  [act] -> act `actR` proc
+  acts  -> PPrll (map pAct acts) `pDot` proc
+
+normAct :: Act -> Endom [N.Proc]
+normAct act procs =
+  case act of
     -- These two clauses expand the forwarders
     Ax        s cs    -> fwdP      (norm s) cs : procs
     SplitAx n s c     -> fwdProc n (norm s) c  : procs
@@ -120,21 +144,8 @@ normPref pref procs =
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
 
-reifyProcs :: N.Procs -> Procs
-reifyProcs ps = case reify ps of
-  []           -> ZeroP
-  [Act [] ps'] -> ps'
-  ps'          -> Prll ps'
-
-instance Norm Procs where
-  type Normalized Procs    = N.Procs
-  reify []                 = ZeroP
-  reify procs              = reifyProcs procs
-  norm ZeroP               = []
-  norm (Prll procs)        = norm procs
-
-reifyPref :: N.Act -> Pref
-reifyPref pref = case pref of
+reifyAct :: N.Act -> Act
+reifyAct = \case
   N.Nu c d            -> Nu (reify c) (reify d)
   N.Split N.ParK c ds -> ParSplit c (reify ds)
   N.Split N.TenK c ds -> TenSplit c (reify ds)

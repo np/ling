@@ -73,13 +73,12 @@ transTerm x = case x of
   TProc chandecs proc -> failure x
 transProc :: Proc -> Result
 transProc x = case x of
-  Act prefs procs -> failure x
-transProcs :: Procs -> Result
-transProcs x = case x of
-  ZeroP -> failure x
-  Prll procs -> failure x
-transPref :: Pref -> Result
-transPref x = case x of
+  PAct act -> failure x
+  PPrll procs -> failure x
+  PNxt proc1 proc2 -> failure x
+  PDot proc1 proc2 -> failure x
+transAct :: Act -> Result
+transAct x = case x of
   Nu chandec1 chandec2 -> failure x
   ParSplit name chandecs -> failure x
   TenSplit name chandecs -> failure x

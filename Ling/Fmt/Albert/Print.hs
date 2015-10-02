@@ -170,16 +170,14 @@ instance Print Term where
 
 instance Print Proc where
   prt i e = case e of
-    Act prefs procs -> prPrec i 0 (concatD [prt 0 prefs, prt 0 procs])
+    PAct act -> prPrec i 1 (concatD [prt 0 act])
+    PPrll procs -> prPrec i 1 (concatD [doc (showString "("), prt 0 procs, doc (showString ")")])
+    PNxt proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, prt 0 proc2])
+    PDot proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, doc (showString "."), prt 0 proc2])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "|"), prt 0 xs])
-instance Print Procs where
-  prt i e = case e of
-    ZeroP -> prPrec i 0 (concatD [])
-    Prll procs -> prPrec i 0 (concatD [doc (showString "("), prt 0 procs, doc (showString ")")])
-
-instance Print Pref where
+instance Print Act where
   prt i e = case e of
     Nu chandec1 chandec2 -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandec1, doc (showString ","), prt 0 chandec2, doc (showString ")")])
     ParSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "{"), prt 0 chandecs, doc (showString "}")])
@@ -191,8 +189,7 @@ instance Print Pref where
     Ax session names -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 session, doc (showString "("), prt 0 names, doc (showString ")")])
     SplitAx n session name -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 n, prt 0 session, prt 0 name])
     At aterm names -> prPrec i 0 (concatD [doc (showString "@"), prt 0 aterm, doc (showString "("), prt 0 names, doc (showString ")")])
-  prtList _ [] = (concatD [])
-  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+
 instance Print OptSession where
   prt i e = case e of
     NoSession -> prPrec i 0 (concatD [])

@@ -5,6 +5,10 @@ module Ling.Proc
   , actsPs
   , prllActP
   , prllActPs
+  , dotP
+  , prllDotP
+  , nxtP
+  , prllNxtP
   , filter0s
   , filter0
   , suffChan
@@ -85,6 +89,32 @@ infixr 4 `actsPs`
 actsPs :: [Act] -> Procs -> Procs
 []   `actsPs` procs = procs
 acts `actsPs` procs = [acts `actsP` procs]
+
+infixr 4 `dotP`
+
+dotP :: Proc -> Proc -> Proc
+(pref0 `Act` procs0) `dotP` p1 = pref0 `Act` [procs0 `prllDotP` p1]
+
+infixr 4 `prllDotP`
+
+prllDotP :: Procs -> Proc -> Proc
+prllDotP ps p = case ps of
+  []   -> p
+  [p0] -> p0 `dotP` p
+  _    -> error "prllDotP: Cannot sequence parallel processes"
+
+infixr 4 `nxtP`
+
+nxtP :: Proc -> Proc -> Proc
+(pref0 `Act` procs0) `nxtP` p1 = pref0 `Act` [procs0 `prllNxtP` p1]
+
+infixr 4 `prllNxtP`
+
+prllNxtP :: Procs -> Proc -> Proc
+prllNxtP ps p = case ps of
+  []   -> p
+  [p0] -> p0 `nxtP` p
+  _    -> error "prllNxtP: Cannot sequence parallel processes"
 
 -- TODO: filtering 0-processes should not be necessary they should
 -- not be part of the normal form.

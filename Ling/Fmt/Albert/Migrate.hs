@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Ling.Fmt.Albert.Migrate where
 
 import qualified Ling.Abs            as L
@@ -77,16 +78,14 @@ transTerm x = case x of
   TProc chandecs proc -> L.TProc (map transChanDec chandecs) (transProc proc)
 
 transProc :: Proc -> L.Proc
-transProc x = case x of
-  Act prefs procs -> L.Act (map transPref prefs) (transProcs procs)
+transProc = \case
+  PAct act        -> L.PAct (transAct act)
+  PNxt proc proc' -> transProc proc `L.PNxt` transProc proc'
+  PDot proc proc' -> transProc proc `L.PDot` transProc proc'
+  PPrll procs     -> L.PPrll $ map transProc procs
 
-transProcs :: Procs -> L.Procs
-transProcs x = case x of
-  ZeroP -> L.ZeroP
-  Prll procs -> L.Prll (map transProc procs)
-
-transPref :: Pref -> L.Pref
-transPref x = case x of
+transAct :: Act -> L.Act
+transAct = \case
   Nu chandec1 chandec2 -> L.Nu (transChanDec chandec1) (transChanDec chandec2)
   ParSplit name chandecs -> L.ParSplit (transName name) (map transChanDec chandecs)
   TenSplit name chandecs -> L.TenSplit (transName name) (map transChanDec chandecs)
