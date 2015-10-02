@@ -127,6 +127,12 @@ hasKey k = at k . to (isn't _Nothing)
 hasNoKey :: At m => Index m -> Getter m Bool
 hasNoKey k = at k . to (isn't _Just)
 
+mergeSetters :: (Profunctor p, Settable f)
+             => Setting p s t a b
+             -> Setting p t u a b
+             -> Over p f s u a b
+mergeSetters l0 l1 = sets $ \f -> over l1 f . over l0 f
+
 -- There must be something equivalent in lens
 composeMap :: (a -> Endom b) -> [a] -> Endom b
 composeMap f = foldr ((.) . f) id

@@ -37,6 +37,9 @@ $(makeLenses ''Opts)
 defaultOpts :: Opts
 defaultOpts = Opts False False False False False False False False False defaultCheckOpts
 
+debugCheck :: Setter' Opts Bool
+debugCheck = mergeSetters check (checkOpts.debugChecker)
+
 layoutLexer :: String -> [Token]
 layoutLexer = resolveLayout True . myLexer
 
@@ -132,17 +135,20 @@ showTree opts tree
 mainArgs :: Opts -> [String] -> IO ()
 mainArgs opts args0 = case args0 of
   [] -> getContents >>= run opts pProgram >>= transP opts
-  "--tokens":args -> mainArgs (opts & tokens .~ True) args
-  "--ast":args -> mainArgs (opts & showAST .~ True) args
-  "--pretty":args -> mainArgs (opts & showPretty .~ True) args
-  "--norm":args -> mainArgs (opts & doNorm .~ True) args
-  "--check":args -> mainArgs (opts & check .~ True) args
-  "--debug-check":args -> mainArgs (opts & check .~ True & checkOpts . debugChecker .~ True) args
-  "--compile":args -> mainArgs (opts & compile .~ True) args
-  "--compile-prims":args -> mainArgs (opts & compilePrims .~ True) args
-  "--seq":args -> mainArgs (opts & sequential .~ True) args
-  "--no-prims":args -> mainArgs (opts & noPrims .~ True) args
-  arg@('-':'-':_:_):_ -> failIO $ "Unexpected argument " ++ arg
+  ('-':'-':arg@(_:_)):args ->
+    case arg of
+      "tokens" -> add tokens
+      "ast" -> add showAST
+      "pretty" -> add showPretty
+      "norm" -> add doNorm
+      "check" -> add check
+      "debug-check" -> add debugCheck
+      "compile" -> add compile
+      "compile-prims" -> add compilePrims
+      "seq" -> add sequential
+      "no-prims" -> add noPrims
+      _ -> failIO $ "Unexpected flag --" ++ arg
+    where add opt = mainArgs (opts & opt .~ True) args
   [f] -> runProgram opts f
   fs  -> mapM_ (\f -> putStrLn f >> runProgram opts f) fs
 
