@@ -21,7 +21,6 @@ executable Ling
    Ling.Check.Core,
    Ling.Check.Program,
    Ling.Compile.C,
-   Ling.Constraint,
    Ling.Equiv,
    Ling.ErrM,
    Ling.Lex,

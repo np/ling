@@ -128,25 +128,21 @@ checkAct act proto =
       checkOptSession c cOS cSession
       checkOptSession d dOS dSession
       checkDual cNSession dNSession
-      proto' <- checkConflictingChans proto ds
-      return $ rmChans ds proto'
+      rmChans ds <$> checkConflictingChans proto (Name "#new") ds
     Split k c dOSs -> do
       assertAbsent c proto
       let ds         = dOSs^..each.argName
           dsSessions = map defaultEndR $ chanSessions ds proto
           s          = array k dsSessions
       checkChanDecs_ proto dOSs
-      (proto', flag) <-
+      proto' <-
         case k of
-          TenK -> do
-            proto' <- checkConflictingChans proto ds
-            return (proto', WithoutConstraints)
-          ParK ->
-            return (proto,  WithConstraint)
+          TenK -> checkConflictingChans proto c ds
+          ParK -> return proto
           SeqK -> do
             checkOrderedChans proto ds
-            return (proto,  WithConstraint)
-      return $ substChans flag (ds, (c,one s)) proto'
+            return proto
+      return $ substChans (ds, (c,one s)) proto'
     Send c e -> do
       typ <- inferTerm' e
       return $ protoSendRecv [(c, Snd typ)] proto

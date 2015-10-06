@@ -1,13 +1,13 @@
 #!/bin/bash
 
-testname=ten_par_par_seq.t
+testname=dup_send.t
 command=Ling
-args=( --check ten_par_par_seq.ll )
+args=( --check dup_send.ll )
 exit_code=1
 stdin_file=/dev/null
 stdout_file=/dev/null
 stderr_file=stderr
-sources=( ten_par_par_seq.ll )
+sources=( dup_send.ll )
 products=( )
 
 # Environment variables:
