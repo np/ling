@@ -38,7 +38,8 @@ defaultOpts :: Opts
 defaultOpts = Opts False False False False False False False False False defaultTCOpts
 
 debugCheck :: Setter' Opts Bool
-debugCheck = mergeSetters check (checkOpts.debugChecker)
+-- debugCheck = mergeSetters check (checkOpts.debugChecker)
+debugCheck = sets $ \f -> over (checkOpts.debugChecker) f . over check f
 
 layoutLexer :: String -> [Token]
 layoutLexer = resolveLayout True . myLexer

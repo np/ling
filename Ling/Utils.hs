@@ -149,11 +149,11 @@ hasNoKey k = at k . to (isn't _Just)
 -- l %~ f.g.f.g
 -- ==
 -- ll %~ (f.g)
-mergeSetters :: (Profunctor p, Settable f)
-             => Setting p s t a b
-             -> Setting p t u a b
-             -> Over p f s u a b
-mergeSetters l0 l1 = sets $ \f -> over l1 f . over l0 f
+-- mergeSetters :: (Profunctor p, Settable f)
+--              => Setting p s t a b
+--              -> Setting p t u a b
+--              -> Over p f s u a b
+-- mergeSetters l0 l1 = sets $ \f -> over l1 f . over l0 f
 
 -- There must be something equivalent in lens
 composeMap :: (a -> Endom b) -> [a] -> Endom b
