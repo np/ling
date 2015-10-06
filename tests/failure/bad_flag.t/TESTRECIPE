@@ -1,13 +1,13 @@
 #!/bin/bash
 
-testname=sum_int.t
+testname=bad_flag.t
 command=Ling
-args=( --check sum_int.ll )
-exit_code=0
+args=( --typo )
+exit_code=1
 stdin_file=/dev/null
-stdout_file=stdout
-stderr_file=/dev/null
-sources=( sum_int.ll )
+stdout_file=/dev/null
+stderr_file=stderr
+sources=( )
 products=( )
 
 # Environment variables:

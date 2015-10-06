@@ -95,8 +95,8 @@ instance Subst Act where
     At t cs           -> At (subst f t) cs
 
 instance Subst Proc where
-  subst f (Act pref procs) =
-    Act (subst f pref) (subst (hidePref pref f) procs)
+  subst f (pref `Dot` procs) =
+    subst f pref `Dot` subst (hidePref pref f) procs
 
 instance Subst Session where
   subst f s0 = case s0 of

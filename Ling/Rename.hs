@@ -68,8 +68,8 @@ instance Rename Act where
     At t cs         -> At (rename f t) (rename f cs)
 
 instance Rename Proc where
-  rename f (Act pref procs) =
-    Act (rename f pref) (rename (hidePref pref f) procs)
+  rename f (pref `Dot` procs) =
+    rename f pref `Dot` rename (hidePref pref f) procs
 
 instance Rename Session where
   rename f s0 = case s0 of

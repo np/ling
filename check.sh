@@ -1,17 +1,17 @@
 #!/bin/sh
 echo "== EXPECTED FAILURES =="
-cmdcheck tests/failure/*.t
+cmdcheck "$@" tests/failure/*.t
 echo "== EXPECTED SUCCESSES =="
-cmdcheck tests/success/*.t
+cmdcheck "$@" tests/success/*.t
 echo "== EXPECTED SEQUENCE =="
-cmdcheck tests/sequence/*.t
+cmdcheck "$@" tests/sequence/*.t
 echo "== EXPECTED COMPILATION =="
-cmdcheck tests/compile/*.t
+cmdcheck "$@" tests/compile/*.t
 echo "== EXPECTED PRETTY-PRINTER =="
-cmdcheck tests/pretty/*.t
+cmdcheck "$@" tests/pretty/*.t
 echo "== EXPECTED FMT =="
-cmdcheck tests/fmt/*.t
+cmdcheck "$@" tests/fmt/*.t
 echo "== ISSUES CHECK =="
-cmdcheck issues/check/*.t
+cmdcheck "$@" issues/check/*.t
 echo "== ISSUES COMPILATION =="
-cmdcheck issues/compile/*.t
+cmdcheck "$@" issues/compile/*.t

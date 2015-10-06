@@ -12,8 +12,8 @@ import           Data.Monoid
 import qualified MiniC.Print          as C
 
 import           Ling.Abs
-import           Ling.Check.Base      (CheckOpts, debugChecker,
-                                       defaultCheckOpts, runTC)
+import           Ling.Check.Base      (TCOpts, debugChecker,
+                                       defaultTCOpts, runTC)
 import           Ling.Check.Program   (checkProgram)
 import qualified Ling.Compile.C       as Compile
 import           Ling.ErrM
@@ -30,12 +30,12 @@ type ParseFun a = [Token] -> Err a
 
 data Opts = Opts { _tokens, _showAST, _showPretty, _doNorm, _check, _sequential
                  , _compile, _compilePrims, _noPrims :: Bool
-                 , _checkOpts :: CheckOpts }
+                 , _checkOpts :: TCOpts }
 
 $(makeLenses ''Opts)
 
 defaultOpts :: Opts
-defaultOpts = Opts False False False False False False False False False defaultCheckOpts
+defaultOpts = Opts False False False False False False False False False defaultTCOpts
 
 debugCheck :: Setter' Opts Bool
 debugCheck = mergeSetters check (checkOpts.debugChecker)

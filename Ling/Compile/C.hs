@@ -220,7 +220,7 @@ dummyTyp :: C.Exp
 dummyTyp = C.ELit (C.LInteger 0)
 
 transProc :: Env -> Proc -> [C.Stm]
-transProc env (pref `Act` procs) = transPref env pref procs
+transProc env (pref `Dot` procs) = transPref env pref procs
 
 transLVal :: C.LVal -> C.Exp
 transLVal (C.LVar x)   = C.EVar x

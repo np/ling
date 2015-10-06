@@ -1,28 +1,34 @@
+{-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
 module Ling.Check.Base where
 
-import           Ling.Constraint
 import           Ling.Equiv
 import           Ling.ErrM
+import           Ling.Free
 import           Ling.Norm
 import           Ling.Print
-import           Ling.Proto
 import           Ling.Scoped
 import           Ling.Session
-import           Ling.Subst                (Subst, unScoped)
-import           Ling.Utils                hiding (subst1)
+import           Ling.Subst           (Subst, unScoped)
+import           Ling.Utils           hiding (subst1)
 
 import           Control.Lens
 import           Control.Monad.Except
 import           Control.Monad.Reader
-import           Data.List                 (sort)
-import           Data.Map                  (Map, empty)
-import qualified Data.Set                  as Set
+import           Data.List            (sort)
+import           Data.Map             (Map, empty)
+import           Data.Set             (Set)
+import qualified Data.Set             as Set
+
+-----------
+-- TCEnv --
+-----------
 
 data TCEnv = TCEnv
   { _verbosity :: Verbosity
@@ -41,14 +47,40 @@ $(makeLenses ''TCEnv)
 emptyTCEnv :: TCEnv
 emptyTCEnv = TCEnv False empty empty empty empty
 
-newtype TC a = MkTC { unTC :: ReaderT TCEnv Err a }
-  deriving (Functor, Applicative, Monad, MonadReader TCEnv)
+tcEqEnv :: MonadReader TCEnv m => m EqEnv
+tcEqEnv = emptyEqEnv <$> view edefs
 
-instance MonadError String TC where
-  throwError = MkTC . lift . Bad
-  catchError = error "catchError: not implemented for TC"
+whenDebug :: MonadReader TCEnv m => m () -> m ()
+whenDebug f = do
+  v <- view verbosity
+  when v f
 
-checkEquality :: (Print a, Eq a) => String -> a -> a -> TC ()
+debug :: MonadReader TCEnv m => Msg -> m ()
+debug s = do
+  v <- view verbosity
+  debugTraceWhen v s (return ())
+
+-----------
+-- TCErr --
+-----------
+
+type TCErr = String
+
+tcError :: MonadError TCErr m => String -> m a
+tcError = throwError -- . TCErr
+
+assert :: MonadError TCErr m => Bool -> [Msg] -> m ()
+assert True  _    = return ()
+assert False msgs = tcError (unlines msgs)
+
+assertDoc :: MonadError TCErr m => Bool -> Doc -> m ()
+assertDoc True  _ = return ()
+assertDoc False d = tcError (render d)
+
+assertEqual :: (MonadError TCErr m, Eq a) => a -> a -> [Msg] -> m ()
+assertEqual x y = assert (x == y)
+
+checkEquality :: (Print a, Eq a, MonadError TCErr m) => String -> a -> a -> m ()
 checkEquality msg t0 t1 = assertEqual t0 t1
   [msg
   ,"Expected:"
@@ -57,21 +89,80 @@ checkEquality msg t0 t1 = assertEqual t0 t1
   ,"  " ++ pretty t1
   ]
 
-tcEqEnv :: TC EqEnv
-tcEqEnv = emptyEqEnv <$> view edefs
+checkNoDups :: (Print a, Eq a, MonadError TCErr m) => String -> [a] -> m ()
+checkNoDups _   [] = return ()
+checkNoDups msg (x:xs)
+  | x `elem` xs    = tcError $ pretty x ++ " appears twice " ++ msg
+  | otherwise      = checkNoDups msg xs
 
-checkEquivalence :: (Print a, Eq a, Equiv a, Subst a)
-                 => String -> Scoped a -> Scoped a -> TC ()
+checkDisjointness :: (MonadError TCErr m, Ord a) => String -> [Set a] -> m ()
+checkDisjointness k ss =
+  assert (Set.null rs)
+    ["These " ++ k ++ " should not be used in different parallel parts" ]
+  where rs = redundant ss
+
+checkPrefWellFormness :: MonadError TCErr m => Pref -> m ()
+checkPrefWellFormness pref = do
+  checkDisjointness "free channels"  $ map fcAct pref
+  checkDisjointness "bound channels" $ map bcAct pref
+  checkDisjointness "bound names"    $ map bvAct pref
+
+checkEqSessions :: MonadError TCErr m =>
+                   Name -> RSession -> Maybe RSession -> m ()
+checkEqSessions c s0 Nothing   = assertEqual s0 (one End) ["Unused channel: " ++ pretty c]
+checkEqSessions c s0 (Just s1) =
+  assertEqual s0 s1
+    ["On channel " ++ pretty c ++ " sessions are not equivalent."
+    ,"Given session (expanded):"
+    ,"  " ++ pretty s0
+    ,"Inferred session:"
+    ,"  " ++ pretty s1
+    ]
+
+-- checkUnused c ms s: Check if the channel c is used given the
+-- inferred session ms, and its dual ds.
+checkUnused :: MonadError TCErr m =>
+               Name -> Maybe RSession -> RSession -> m ()
+checkUnused _ (Just _) _ = return ()
+checkUnused c Nothing  s = assertEqual s (one End) ["Unused channel " ++ pretty c]
+
+checkDual :: MonadError TCErr m => RSession -> RSession -> m ()
+checkDual (Repl s0 (Lit (LInteger 1))) (Repl s1 (Lit (LInteger 1))) =
+  assertEqual s0 (dual s1)
+    ["Sessions are not dual."
+    ,"Given session (expanded):"
+    ,"  " ++ pretty s0
+    ,"Inferred dual session:"
+    ,"  " ++ pretty s1
+    ]
+checkDual _ _ =
+  tcError "Unexpected session replication in 'new'."
+
+checkSlice :: MonadError TCErr m => (Channel -> Bool) -> (Channel, RSession) -> m ()
+checkSlice cond (c, rs) = when (cond c) $
+  case rs of
+    Repl s (Lit (LInteger 1)) ->
+      assert (allSndRcv s) ["checkSlice: non send/recv session"]
+    _ -> tcError "checkSlice: Replicated session"
+
+-------------
+-- MonadTC --
+-------------
+
+type MonadTC m = (MonadReader TCEnv m, MonadError TCErr m)
+
+checkEquivalence :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
+                 => String -> Scoped a -> Scoped a -> m ()
 checkEquivalence msg t0 t1 = do
   env <- tcEqEnv
   whenDebug $ do
-    when (t0 /= t1) . debug $
+    when (t0 /= t1) . debug . unlines $
       ["checkEquivalence:"
       ,"  " ++ pretty t0
       ,"against"
       ,"  " ++ pretty t1
       ]
-    when (ut0 == ut1) . debug $
+    when (ut0 == ut1) . debug . unlines $
       ["Once expanded they are equal"]
   assert (equiv env t0 t1)
     [msg
@@ -83,52 +174,39 @@ checkEquivalence msg t0 t1 = do
   where ut0 = unScoped t0
         ut1 = unScoped t1
 
-checkTypeEquivalence :: Scoped Typ -> Scoped Typ -> TC ()
+checkTypeEquivalence :: MonadTC m => Scoped Typ -> Scoped Typ -> m ()
 checkTypeEquivalence = checkEquivalence "Types are not equivalent."
 
-checkNotIn :: Lens' TCEnv (Map Name v) -> String -> Name -> TC ()
+checkNotIn :: MonadTC m => Lens' TCEnv (Map Name v) -> String -> Name -> m ()
 checkNotIn l msg c = do
   b <- view $ l . hasKey c
   assert (not b) ["Already defined " ++ msg ++ ": ", pretty c]
 
-checkNoDups :: (Print a, Eq a) => String -> [a] -> TC ()
-checkNoDups _   [] = return ()
-checkNoDups msg (x:xs)
-  | x `elem` xs    = throwError $ pretty x ++ " appears twice " ++ msg
-  | otherwise      = checkNoDups msg xs
+conTypeName :: MonadTC m => Name -> m Name
+conTypeName c =
+  maybe (tcError $ "No such constructor " ++ pretty c) return =<< view (ctyps . at c)
 
-checkConflictingChans :: Proto -> [Channel] -> TC Proto
-checkConflictingChans proto cs =
-   mapM_ check iss >>
-   return (proto & constraints . constraintSet .~ Set.insert com1 mix)
-  where
-    scs = l2s cs
-    iss = map (Set.intersection scs) (s2l ss)
-    ss  = proto ^. constraints . constraintSet
-    (mix, com) = Set.partition (Set.null . Set.intersection scs) ss
-    com1 = Set.unions (s2l com)
-    check cc = assert (Set.size cc < 2)
-      ["These channels should be used independently:", pretty (s2l cc)]
+debugCheck :: MonadTC m => (Err a -> String) -> Endom (m a)
+debugCheck fmt k =
+  (do x <- k
+      debug (fmt (Ok x))
+      return x
+  ) `catchError` \err ->
+   do debug (fmt (Bad err))
+      throwError err
 
-checkOrderedChans :: Proto -> [Channel] -> TC ()
-checkOrderedChans proto cs =
-  assert (or [ cs == sub os | os <- proto ^. orders ])
-    ["These channels should be used in-order:", pretty cs]
-  where
-    sub = rmDups . filter (`Set.member` l2s cs)
+-------------------------
+-- Basic type checking --
+-------------------------
 
-checkEqSessions :: Name -> RSession -> Maybe RSession -> TC ()
-checkEqSessions c s0 Nothing   = assertEqual s0 (one End) ["Unused channel: " ++ pretty c]
-checkEqSessions c s0 (Just s1) =
-  assertEqual s0 s1
-    ["On channel " ++ pretty c ++ " sessions are not equivalent."
-    ,"Given session (expanded):"
-    ,"  " ++ pretty s0
-    ,"Inferred session:"
-    ,"  " ++ pretty s1
-    ]
+literalType :: Literal -> Typ
+literalType l = case l of
+  LInteger{} -> intTyp
+  LDouble{}  -> doubleTyp
+  LChar{}    -> charTyp
+  LString{}  -> stringTyp
 
-caseType :: Term -> Scoped Typ -> [(Name,Scoped Typ)] -> TC (Scoped Typ)
+caseType :: MonadTC m => Term -> Scoped Typ -> [(Name,Scoped Typ)] -> m (Scoped Typ)
 caseType t ty brs =
   case unDef ty ^. scoped of
     Def d [] -> do
@@ -139,17 +217,13 @@ caseType t ty brs =
           env <- tcEqEnv
           return $ if allEquiv env (snd <$> brs) then snd (head brs)
                    else emptyScope (Case t (brs & mapped . _2 %~ unScoped))
-        _ -> throwError $ "Case on a non data type: " ++ pretty d
-    _ -> throwError $ "Case on a non data type: " ++ pretty (ty^.scoped)
-
-conTypeName :: Name -> TC Name
-conTypeName c =
-  maybe (throwError $ "No such constructor " ++ pretty c) return =<< view (ctyps . at c)
+        _ -> tcError $ "Case on a non data type: " ++ pretty d
+    _ -> tcError $ "Case on a non data type: " ++ pretty (ty^.scoped)
 
 def0 :: Name -> Term
 def0 x = Def x []
 
-conType :: Name -> TC (Scoped Typ)
+conType :: MonadTC m => Name -> m (Scoped Typ)
 conType = fmap (emptyScope . def0) . conTypeName
 
 sTyp :: Scoped Typ
@@ -160,33 +234,26 @@ sFun arg s
   | s^.ldefs.hasKey(arg^.argName) = error "sFun: IMPOSSIBLE"
   | otherwise                     = TFun arg <$> s
 
-whenDebug :: MonadReader TCEnv m => m () -> m ()
-whenDebug f = do
-  v <- view verbosity
-  when v f
+------------
+-- TCOpts --
+------------
 
-debug :: [Msg] -> TC ()
-debug xs = do
-  v <- view verbosity
-  debugTraceWhen v xs (return ())
+data TCOpts = TCOpts { _debugChecker :: Bool }
 
-assert :: Bool -> [Msg] -> TC ()
-assert True  _    = return ()
-assert False msgs = throwError (unlines msgs)
+$(makeLenses ''TCOpts)
 
-assertDoc :: Bool -> Doc -> TC ()
-assertDoc True  _ = return ()
-assertDoc False d = throwError (render d)
+defaultTCOpts :: TCOpts
+defaultTCOpts = TCOpts False
 
-assertEqual :: Eq a => a -> a -> [Msg] -> TC ()
-assertEqual x y = assert (x == y)
+--------
+-- TC --
+--------
 
-data CheckOpts = CheckOpts { _debugChecker :: Bool }
+newtype TC a = MkTC { unTC :: ReaderT TCEnv (Except TCErr) a }
+  deriving (Functor, Applicative, Monad, MonadReader TCEnv, MonadError TCErr)
 
-$(makeLenses ''CheckOpts)
-
-defaultCheckOpts :: CheckOpts
-defaultCheckOpts = CheckOpts False
-
-runTC :: CheckOpts -> TC a -> Err a
-runTC opts tc = runReaderT (unTC tc) (emptyTCEnv & verbosity .~ (opts ^. debugChecker))
+runTC :: TCOpts -> TC a -> Err a
+runTC opts tc = either Bad Ok
+              . runExcept
+              . runReaderT (unTC tc)
+              $ emptyTCEnv & verbosity .~ (opts ^. debugChecker)

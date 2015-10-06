@@ -22,9 +22,10 @@ data Dec
   | Dat Name [Name]
   deriving (Eq,Ord,Show,Read)
 
-infixr 4 `Act`
+infixr 4 `Dot`
 
-data Proc = Act { _procPref :: Pref, _procProcs :: Procs }
+-- See `Ling.WellFormed` for the conditions on Proc
+data Proc = Dot { _procPref :: Pref, _procProcs :: Procs }
   deriving (Eq,Ord,Show,Read)
 
 type Pref  = [Act]
@@ -46,13 +47,15 @@ data Act
   | At       Term [Channel]
   deriving (Eq,Ord,Show,Read)
 
+type Branch = (Name,Term)
+
 type Typ = Term
 data Term
   = Def Name [Term]
   | Lit Literal
   | Lam VarDec Term
   | Con Name
-  | Case Term [(Name,Term)]
+  | Case Term [Branch]
   --          ^ Sorted
   | Proc [ChanDec] Proc
   | TTyp
@@ -93,15 +96,17 @@ instance Monoid Program where
   mappend p0 p1 = Program $ p0^.prgDecs ++ p1^.prgDecs
 
 instance Monoid Proc where
-  mempty         = [] `Act` []
+  mempty         = [] `Dot` []
   mappend        = parP
     where
-      ([] `Act` ps) `parP` ([] `Act` qs) = [] `Act` (ps ++ qs)
-      (ps `Act` []) `parP` (qs `Act` []) = (ps ++ qs) `Act` []
-      p0            `parP` p1            = [] `Act` [p0,p1]
+      ([] `Dot` ps) `parP` ([] `Dot` qs) = mconcat $ ps ++ qs
+      ([] `Dot` ps) `parP` q             = mconcat $ ps ++ [q]
+      p             `parP` ([] `Dot` qs) = mconcat $ p : qs
+      (ps `Dot` []) `parP` (qs `Dot` []) = (ps ++ qs) `Dot` []
+      p0            `parP` p1            = mconcat   [p0,p1]
   mconcat []     = mempty
   mconcat [proc] = proc
-  mconcat procs  = [] `Act` procs
+  mconcat procs  = [] `Dot` procs
 
 vecTyp :: Typ -> Term -> Typ
 vecTyp t e = Def (Name "Vec") [t,e]
@@ -154,3 +159,20 @@ actNeedsDot = \case
   NewSlice{} -> True
   Ax{}       -> True
   At{}       -> True
+
+isSendRecv :: Act -> Bool
+isSendRecv = \case
+  Recv{}     -> True
+  Send{}     -> True
+  Split{}    -> False
+  NewSlice{} -> False
+  Nu{}       -> False
+  Ax{}       -> False
+  At{}       -> False
+
+allSndRcv :: Session -> Bool
+allSndRcv = \case
+  Snd _ s -> allSndRcv s
+  Rcv _ s -> allSndRcv s
+  End     -> True
+  _       -> False

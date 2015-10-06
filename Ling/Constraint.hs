@@ -4,23 +4,21 @@ module Ling.Constraint
   , constraintSet
   , eachConstraint
   , noConstraints
-  , emptyConstraints
   , constrainChan
   , unconstrainChan
   , singleConstraint
-  , mergeConstraints
-  , prettyConstraint
   , prettyConstraints
+  , constrainPrllChans
   ) where
 
 import Prelude hiding (null)
 
 import Control.Lens
-import Data.Set (Set, insert, union, empty, delete)
+import Data.Set (Set, null, insert, union, unions, empty, delete)
 import Data.Set.Lens (setmapped)
 
-import Ling.Print (pretty)
-import Ling.Utils (Channel,l2s,s2l)
+import Ling.Print
+import Ling.Utils
 
 type Constraint  = Set Channel
 
@@ -28,33 +26,37 @@ type Constraint  = Set Channel
 newtype Constraints = MkConstraints { _constraintSet :: Set Constraint }
   deriving (Eq)
 
+mkConstraints :: Set Constraint -> Constraints
+mkConstraints cs | null cs   = ø
+                 | otherwise = MkConstraints $ delete empty cs
+
+instance Monoid Constraints where
+  mempty = MkConstraints $ l2s [empty]
+  mappend (MkConstraints s0) (MkConstraints s1) =
+    mkConstraints $ s0 `union` s1
+  mconcat = mkConstraints . unions . map _constraintSet
+
 constraintSet :: Lens' Constraints (Set Constraint)
-constraintSet f (MkConstraints xs) = MkConstraints . insert empty <$> f xs
+constraintSet f (MkConstraints xs) = mkConstraints <$> f xs
 
 eachConstraint :: Setter' Constraints Constraint
 eachConstraint = constraintSet . setmapped
 
-prettyConstraint :: Constraint -> String
-prettyConstraint cs = "⦃" ++ pretty (s2l cs) ++ "⦄"
-
 prettyConstraints :: Constraints -> [String]
-prettyConstraints = toListOf $ constraintSet . folded . to s2l . to pretty
+prettyConstraints = toListOf $ constraintSet . folded . to pretty
 
-emptyConstraints :: Constraints
-emptyConstraints = MkConstraints $ l2s [empty]
-
-singleConstraint :: Set Channel -> Constraints
-singleConstraint cs = MkConstraints $ l2s [empty, cs]
+singleConstraint :: Constraint -> Constraints
+singleConstraint = MkConstraints . l2s . pure
 
 noConstraints :: Constraints -> Bool
-noConstraints = (== emptyConstraints)
-
-mergeConstraints :: Constraints -> Constraints -> Constraints
-mergeConstraints (MkConstraints c0) (MkConstraints c1) =
-  MkConstraints $ c0 `union` c1
+noConstraints = (== ø)
 
 constrainChan :: Channel -> Constraints -> Constraints
-constrainChan c = over eachConstraint (insert c)
+constrainChan c = eachConstraint %~ insert c
 
 unconstrainChan :: Channel -> Constraints -> Constraints
-unconstrainChan c = over eachConstraint (delete c)
+unconstrainChan c = eachConstraint %~ delete c
+
+constrainPrllChans :: [Channel] -> Constraints -> Constraints
+constrainPrllChans cs constraints =
+  mconcat $ map (`constrainChan` constraints) cs

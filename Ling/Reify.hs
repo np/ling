@@ -83,11 +83,11 @@ reifyRSessions = reify
 
 instance Norm Proc where
   type Normalized Proc        = N.Proc
-  reify (N.Act pref procs)    = reifyPref pref (mkProcs $ reify procs)
+  reify (N.Dot pref procs)    = reifyPref pref (mkProcs $ reify procs)
   norm = \case
-    PAct act        -> mconcat $ normAct act []
+    PAct act        -> normAct act
     PNxt proc proc' -> norm proc `nxtP` norm proc'
-    PDot proc proc' -> norm proc `dotP` norm proc'
+    PDot proc proc' -> norm proc `dotP` asProcs (norm proc')
     PPrll procs     -> mconcat $ norm procs
 
 mkProcs :: [Proc] -> Proc
@@ -118,12 +118,11 @@ reifyPref pref proc = case pref of
   [act] -> act `actR` proc
   acts  -> PPrll (map pAct acts) `pDot` proc
 
-normAct :: Act -> Endom [N.Proc]
-normAct act procs =
-  case act of
+normAct :: Act -> N.Proc
+normAct = \case
     -- These two clauses expand the forwarders
-    Ax        s cs    -> fwdP      (norm s) cs : procs
-    SplitAx n s c     -> fwdProc n (norm s) c  : procs
+    Ax        s cs    -> fwdP      (norm s) cs
+    SplitAx n s c     -> fwdProc n (norm s) c
 
     -- TODO make a flag to turn these on
 {-
@@ -139,7 +138,7 @@ normAct act procs =
     Recv     c a      -> go [N.Recv         c (norm a)]
     NewSlice cs t x   -> go [N.NewSlice    cs (norm t) x]
     At       t cs     -> go [N.At             (norm t) cs]
-  where go = (`actsPs` procs)
+  where go = (`actsP` [])
 
 reifyProc :: N.Proc -> Proc
 reifyProc = reify

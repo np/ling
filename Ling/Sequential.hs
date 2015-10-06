@@ -147,7 +147,7 @@ transSplit c dOSs env =
         ds = map _argName dOSs
 
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
-transProc env (pref `Act` procs) = transPref env pref procs
+transProc env (pref `Dot` procs) = transPref env pref procs
 
 -- All these prefixes can be reordered as they are in parallel
 transPref :: Env -> Pref -> [Proc] -> (Env -> Proc -> r) -> r
@@ -192,7 +192,7 @@ transProcs _   []       waiting _ = transErr "transProcs: impossible all the pro
 transProcs env [p]      []      k = transProc env p k
 transProcs env (p0:p0s) waiting k =
   case p0 of
-    pref@(act:_) `Act` procs0 ->
+    pref@(act:_) `Dot` procs0 ->
       case () of
         _ | NewSlice{} <- act ->
           transPref env pref procs0 $ \env' p' ->
@@ -203,7 +203,7 @@ transProcs env (p0:p0s) waiting k =
         _ ->
           transProcs env p0s (p0 : waiting) k
 
-    [] `Act` _procs0 ->
+    [] `Dot` _procs0 ->
       error "transProcs: impossible" -- filter0s prevents that
 
 transDec :: Dec -> Dec

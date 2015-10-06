@@ -1,5 +1,6 @@
 module Ling.Proc
-  ( actP
+  ( asProcs
+  , actP
   , actPs
   , actsP
   , actsPs
@@ -20,64 +21,38 @@ module Ling.Proc
   , splitAx
   ) where
 
---import qualified Data.Set as Set
---import Data.Set (Set)
 import Data.List
 
 import Ling.Utils
 import Ling.Norm
---import Ling.Subst (substi)
 import Ling.Session
 
-{-
-type FreeChans a = a -> Set Channel
-
-freeChans :: FreeChans Proc
-freeChans (act `Act` procs) = fcAct act procs
-
-bndChans :: FreeChans [ChanDec]
-bndChans = l2s . map _argName
-
-fcProcs :: FreeChans Procs
-fcProcs = Set.unions . map freeChans
-
-fcPref :: Act -> Endom (Set Channel)
-fcPref act cs =
-  case act of
-    Nu c d         -> cs `Set.difference` bndChans [c,d]
-    Split _ c ds   -> c  `Set.insert` (cs `Set.difference` bndChans ds)
-    Send c _e      -> c  `Set.insert` cs
-    Recv c _xt     -> c  `Set.insert` cs
-    NewSlice{}     -> error "fcAct/NewSlice undefined"
-    Ax _ ds        -> l2s ds `Set.union` cs
-    At _ ds        -> l2s ds `Set.union` cs
-
-fcAct :: Pref -> FreeChans Procs
-fcAct act procs = foldr fcPref (fcProcs procs) pref
--}
+asProcs :: Proc -> [Proc]
+asProcs ([] `Dot` procs) = procs
+asProcs proc             = [proc]
 
 infixr 4 `prllActP`
 
 prllActP :: [Act] -> Procs -> Proc
 []   `prllActP` procs = mconcat procs
-acts `prllActP` procs = acts `Act` procs
+acts `prllActP` procs = acts `Dot` procs
 
 infixr 4 `prllActPs`
 
 prllActPs :: [Act] -> Procs -> Procs
 []   `prllActPs` procs = procs
-acts `prllActPs` procs = [acts `Act` procs]
+acts `prllActPs` procs = [acts `prllActP` procs]
 
 infixr 4 `actP`
 
 actP :: Act -> Procs -> Proc
-act `actP` procs = [act] `Act` procs
+act `actP` procs = [act] `Dot` procs
 
 infixr 4 `actsP`
 
 actsP :: [Act] -> Procs -> Proc
 []       `actsP` procs = mconcat procs
-act:acts `actsP` procs = act `actP` [acts `actsP` procs]
+act:acts `actsP` procs = act `actP` asProcs (acts `actsP` procs)
 
 infixr 4 `actPs`
 
@@ -92,21 +67,34 @@ acts `actsPs` procs = [acts `actsP` procs]
 
 infixr 4 `dotP`
 
-dotP :: Proc -> Proc -> Proc
-(pref0 `Act` procs0) `dotP` p1 = pref0 `Act` [procs0 `prllDotP` p1]
+dotP :: Proc -> Procs -> Proc
+(pref0 `Dot` procs0) `dotP` procs1 = pref0 `prllActP` (procs0 `prllDotP` procs1)
 
 infixr 4 `prllDotP`
 
-prllDotP :: Procs -> Proc -> Proc
-prllDotP ps p = case ps of
-  []   -> p
-  [p0] -> p0 `dotP` p
-  _    -> error "prllDotP: Cannot sequence parallel processes"
+prllDotP :: Procs -> Procs -> Procs
+prllDotP []  ps = ps
+prllDotP ps  [] = ps
+prllDotP [p] ps = [p `dotP` ps]
+prllDotP ps  ps'
+  | Just prefs <- mapM justPref ps
+      = [concat prefs `prllActP` ps']
+prllDotP ps ps' =
+  error . unlines $
+    ["Unsupported sequencing of parallel processes"
+    ,show ps
+    ,show ps'
+    ]
+
+-- Is a given process only a prefix?
+justPref :: Proc -> Maybe Pref
+justPref (pref `Dot` []) = Just pref
+justPref _               = Nothing
 
 infixr 4 `nxtP`
 
 nxtP :: Proc -> Proc -> Proc
-(pref0 `Act` procs0) `nxtP` p1 = pref0 `Act` [procs0 `prllNxtP` p1]
+(pref0 `Dot` procs0) `nxtP` p1 = pref0 `prllActP` [procs0 `prllNxtP` p1]
 
 infixr 4 `prllNxtP`
 
@@ -122,8 +110,8 @@ filter0s :: Endom Procs
 filter0s = concatMap filter0
 
 filter0 :: Proc -> Procs
-filter0 ([]   `Act` procs) = filter0s procs
-filter0 (acts `Act` procs) = acts `prllActPs` filter0s procs
+filter0 ([]   `Dot` procs) = filter0s procs
+filter0 (acts `Dot` procs) = acts `prllActPs` filter0s procs
 
 suffChan :: String -> Endom Channel
 suffChan s = suffName $ s ++ "#"
@@ -176,7 +164,7 @@ fwdP s0 cs =
     Par ss  -> fwdDual fwdParTen     ss cs
     Snd t s -> fwdDual (fwdRcvSnd t) s  cs
     End     -> ø
-    Atm{}   -> [ax s0 cs] `Act` []
+    Atm{}   -> [ax s0 cs] `Dot` []
     Seq _ss -> error "fwdP/Seq TODO"
 
 -- The session 'Fwd n session' is a par.
@@ -222,7 +210,7 @@ replPref n x pref p =
     At{}           -> error "replProc/At"
 
 replProc :: (Show i, Integral i) => i -> Name -> Proc -> Procs
-replProc n x (pref0 `Act` procs) =
+replProc n x (pref0 `Dot` procs) =
   case pref0 of
     []    -> replProcs n x procs
     [act] -> [replPref n x act procs]

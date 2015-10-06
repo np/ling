@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -6,7 +7,6 @@ module Ling.Check.Core where
 import           Ling.Check.Base
 import           Ling.Norm
 import           Ling.Print
-import           Ling.Proc
 import           Ling.Proto
 import           Ling.Scoped
 import           Ling.Session
@@ -16,53 +16,42 @@ import           Prelude              hiding (log)
 
 import           Control.Lens
 import           Control.Monad        (join)
-import           Control.Monad.Except (throwError)
-import           Control.Monad.Reader (local, unless, when)
+import           Control.Monad.Reader (local)
 
 checkOptSession :: Name -> Maybe RSession -> Maybe RSession -> TC ()
 checkOptSession _ Nothing   _   = return ()
 checkOptSession c (Just s0) ms1 = checkRSession s0 >> checkEqSessions c s0 ms1
 
--- checkUnused c ms s: Check if the channel c is used given the
--- inferred session ms, and its dual ds.
-checkUnused :: Name -> Maybe RSession -> RSession -> TC ()
-checkUnused _ (Just _) _ = return ()
-checkUnused c Nothing  s = assertEqual s (one End) ["Unused channel " ++ pretty c]
-
-checkDual :: RSession -> RSession -> TC ()
-checkDual (Repl s0 (Lit (LInteger 1))) (Repl s1 (Lit (LInteger 1))) =
-  assertEqual s0 (dual s1)
-    ["Sessions are not dual."
-    ,"Given session (expanded):"
-    ,"  " ++ pretty s0
-    ,"Inferred dual session:"
-    ,"  " ++ pretty s1
-    ]
-checkDual _ _ =
-  throwError "Unexpected session replication in 'new'."
-
-assertAbsent :: Channel -> Proto -> TC ()
-assertAbsent c p =
-  assert (p ^. chans . hasNoKey c)
-    ["The channel " ++ pretty c ++ " has been re-used"]
-
-isSendRecv :: Session -> Bool
-isSendRecv (Snd _ s) = isSendRecv s
-isSendRecv (Rcv _ s) = isSendRecv s
-isSendRecv End       = True
-isSendRecv _         = False
-
-checkSlice :: (Channel -> Bool) -> (Channel, RSession) -> TC ()
-checkSlice cond (c, rs) = when (cond c) $
-  case rs of
-    Repl s (Lit (LInteger 1)) ->
-      assert (isSendRecv s) ["checkSlice: non send/recv session"]
-    _ -> throwError "checkSlice: Replicated session"
-
 checkProc :: Proc -> TC Proto
-checkProc ([]    `Act` procs) = checkProcs      procs
-checkProc ([act] `Act` procs) = checkPref [act] procs
-checkProc _                   = error "checkProc: TODO: support for parallel prefixes"
+checkProc (pref `Dot` procs) = do
+  checkPrefWellFormness pref
+  proto <- checkVarDecs (concatMap actVarDecs pref) $ checkProcs procs
+  checkPref pref proto
+
+sendRecvSession :: Act -> TC (Channel, Session -> Session)
+sendRecvSession = \case
+  Send c e -> (,) c . Snd <$> inferTerm' e
+  Recv c (Arg _ typ) -> checkTyp typ >> return (c, Rcv typ)
+  _ -> tcError "typeSendRecv: Not Send/Recv"
+
+checkPref :: Pref -> Proto -> TC Proto
+checkPref pref proto
+  | null pref =
+      return proto
+  | [act] <- pref =
+      checkAct act proto
+  | all isSendRecv pref = do
+      css <- mapM sendRecvSession pref
+      let proto' = protoSendRecv css proto
+      debug . unlines $
+        [ "Checking parallel prefix: `" ++ pretty (pref `Dot` []) ++ "`"
+        , "Inferred protocol for the sub-process:"
+        ] ++ prettyProto proto ++
+        [ "Inferred protocol for the whole process:"
+        ] ++ prettyProto proto'
+      return proto'
+  | otherwise =
+      tcError $ "Unsupported parallel prefix " ++ pretty pref
 
 checkProcs :: [Proc] -> TC Proto
 checkProcs procs = mconcat <$> traverse checkProc procs
@@ -77,19 +66,7 @@ checkChanDecs_ = mapM_ . checkChanDec
 checkChanDecs :: Proto -> [ChanDec] -> TC [RSession]
 checkChanDecs = mapM . checkChanDec
 
-debugCheckAct :: Proto -> Act -> Pref -> Procs -> Endom (TC Proto)
-debugCheckAct proto act pref procs m = do
-  unless (null pref && null procs) $
-    debug $ [ "Checking " ++ actLabel act ++ proc
-            , "Inferred protocol for `" ++ proc' ++ "`:"
-            ] ++ prettyProto proto
-  proto' <- m
-  debug $ ("Inferred protocol for" ++ proc ++ ":")
-          : prettyProto proto'
-  return proto'
 
-  where proc  = " `" ++ pretty act ++ " " ++ proc' ++ "`"
-        proc' = pretty (pref `actsP` procs)
 
 {-
 Γ(P) is the protocol, namely mapping from channel to sessions of the process P
@@ -134,6 +111,12 @@ or classically:
 -}
 checkAct :: Act -> Proto -> TC Proto
 checkAct act proto =
+  debugCheck (\proto' -> unlines $
+              [ "Checking act `" ++ pretty act ++ "`"
+              , "Inferred protocol for the sub-process:"
+              ] ++ prettyProto proto ++
+              [ "Inferred protocol for the whole process:"
+              ] ++ prettyError prettyProto proto') $
   case act of
     Nu (Arg c cOS) (Arg d dOS) -> do
       let ds = [c,d]
@@ -165,13 +148,11 @@ checkAct act proto =
             return (proto,  WithConstraint)
       return $ substChans flag (ds, (c,one s)) proto'
     Send c e -> do
-      let cSession = defaultEndR $ proto ^. chanSession c
       typ <- inferTerm' e
-      return $ addChanWithOrder (c, mapR (Snd typ) cSession) proto
+      return $ protoSendRecv [(c, Snd typ)] proto
     Recv c (Arg _x typ) -> do
       checkTyp typ
-      let cSession = defaultEndR $ proto ^. chanSession c
-      return $ addChanWithOrder (c, mapR (Rcv typ) cSession) proto
+      return $ protoSendRecv [(c, Rcv typ)] proto
     NewSlice cs t _i -> do
       checkTerm intTyp t
       mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
@@ -185,29 +166,16 @@ checkAct act proto =
              ["Expected " ++ show (length ss) ++ " channels, not " ++ show (length cs)]
           return $ proto <> mkProto (zip cs ss)
         _ ->
-          throwError . unlines $ ["Expected a protocol type, not:", pretty t]
-
-checkPref :: Pref -> Procs -> TC Proto
-checkPref []           procs = checkProcs procs
-checkPref (act : pref) procs = do
-  proto <- checkVarDecs (actVarDecs act) $ checkPref pref procs
-  debugCheckAct proto act pref procs     $ checkAct  act  proto
+          tcError . unlines $ ["Expected a protocol type, not:", pretty t]
 
 inferBranch :: (Name,Term) -> TC (Name,Scoped Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
-
-literalType :: Literal -> Typ
-literalType l = case l of
-  LInteger{} -> intTyp
-  LDouble{}  -> doubleTyp
-  LChar{}    -> charTyp
-  LString{}  -> stringTyp
 
 inferTerm' :: Term -> TC Typ
 inferTerm' = fmap unScoped . inferTerm
 
 inferTerm :: Term -> TC (Scoped Typ)
-inferTerm e0 = debug ["Inferring type of " ++ pretty e0] >> case e0 of
+inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
   Lit l           -> return . emptyScope $ literalType l
   TTyp            -> return sTyp -- type-in-type
   Def x es        -> inferDef x es
@@ -225,9 +193,9 @@ inferProcTyp cds proc = do
   proto <- checkProc proc
   rs <- checkChanDecs proto cds
   let proto' = rmChans cs proto
-  assert (proto' ^. isEmptyProto)
-    [ "These channels have not been introduced:"
-    , prettyChanDecs proto']
+  assert (proto' ^. isEmptyProto) $
+    "These channels have not been introduced:" :
+    prettyChanDecs proto'
   return . emptyScope $ TProto rs
 
 checkTerm :: Typ -> Term -> TC ()
@@ -239,11 +207,12 @@ checkTyp = checkTerm TTyp
 checkTerm' :: Scoped Typ -> Term -> TC ()
 checkTerm' expectedTyp e = do
   inferredTyp <- inferTerm e
-  debug ["Checking term"
-        ,"exp:      " ++ pretty e
-        ,"expected: " ++ pretty expectedTyp
-        ,"inferred: " ++ pretty inferredTyp
-        ]
+  debug . unlines $
+    ["Checking term"
+    ,"exp:      " ++ pretty e
+    ,"expected: " ++ pretty expectedTyp
+    ,"inferred: " ++ pretty inferredTyp
+    ]
   checkTypeEquivalence expectedTyp inferredTyp
 
 checkMaybeTerm :: Typ -> Maybe Term -> TC ()
@@ -255,7 +224,7 @@ checkSig (Just typ) mtm = checkTyp typ >> checkMaybeTerm typ mtm >> return typ
 checkSig Nothing    mtm =
   case mtm of
     Just tm -> inferTerm' tm
-    Nothing -> throwError "IMPOSSIBLE signature with no type nor definition"
+    Nothing -> tcError "IMPOSSIBLE signature with no type nor definition"
 
 inferDef :: Name -> [Term] -> TC (Scoped Typ)
 inferDef f es = do
@@ -263,7 +232,7 @@ inferDef f es = do
   defs  <- view edefs
   case mtyp of
     Just typ -> checkApp f 0 (Scoped defs typ) es
-    Nothing  -> throwError $ "unknown definition " ++ unName f
+    Nothing  -> tcError $ "unknown definition " ++ unName f
 
 -- `checkApp f n typ es`
 -- `f`   is the name of the definition currently checked
@@ -275,23 +244,24 @@ checkApp _ _ typ []     = return typ
 checkApp f n typ (e:es) =
   case unDef typ of
     (Scoped defs typ'@(TFun (Arg x ty) s)) -> do
-      debug ["Check application:"
-            ,"f:      " ++ pretty f
-            ,"ldefs:  " ++ pretty (typ ^. ldefs)
-            ,"ldefs': " ++ pretty defs
-            ,"typ:    " ++ pretty (typ ^. scoped)
-            ,"typ':   " ++ pretty typ'
-            ,"e:      " ++ pretty e
-            ,"es:     " ++ pretty es
-            {-
-            ,"x:    " ++ pretty x
-            ,"ty:   " ++ pretty ty
-            ,"s:    " ++ pretty s
-            -}
-            ]
+      debug . unlines $
+        ["Check application:"
+        ,"f:      " ++ pretty f
+        ,"ldefs:  " ++ pretty (typ ^. ldefs)
+        ,"ldefs': " ++ pretty defs
+        ,"typ:    " ++ pretty (typ ^. scoped)
+        ,"typ':   " ++ pretty typ'
+        ,"e:      " ++ pretty e
+        ,"es:     " ++ pretty es
+        {-
+        ,"x:    " ++ pretty x
+        ,"ty:   " ++ pretty ty
+        ,"s:    " ++ pretty s
+        -}
+        ]
       checkTerm' (Scoped defs ty) e
       checkApp f (n + 1) (subst1 f (x, e) (Scoped defs s)) es
-    _ -> throwError ("Too many arguments given to " ++ pretty f ++ ", " ++
+    _ -> tcError ("Too many arguments given to " ++ pretty f ++ ", " ++
                      show n ++ " arguments expected and " ++
                      show (n + 1 + length es) ++ " were given.")
 
