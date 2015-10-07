@@ -201,13 +201,10 @@ incrGlobal :: Position -- ^ If the token is on the same line
                        --   as this position, update the column position.
            -> Int      -- ^ Number of characters to add to the position.
            -> Token -> Token
-incrGlobal p0 i (PT  p1 t) = PT  (incrGlobalP p0 i p1) t
-incrGlobal p0 i (Err p1)   = Err (incrGlobalP p0 i p1)
-
-incrGlobalP :: Position -> Int -> Position -> Position
-incrGlobalP (Pn _ l0 _) i (Pn g l c) =
-  if l /= l0 then Pn (g + i) l c
-             else Pn (g + i) l (c + i)
+incrGlobal (Pn _ l0 _) i (PT (Pn g l c) t) =
+  if l /= l0 then PT (Pn (g + i) l c) t
+             else PT (Pn (g + i) l (c + i)) t
+incrGlobal _ _ p = error $ "cannot add token at " ++ show p
 
 -- | Create a symbol token.
 sToken :: Position -> String -> Token
@@ -215,45 +212,46 @@ sToken p s = PT p (TS s i)
   where
     i = case s of
       "!" -> 1
-      "(" -> 2
-      ")" -> 3
-      "**" -> 4
-      "," -> 5
-      "->" -> 6
-      "-o" -> 7
-      "." -> 8
-      ":" -> 9
-      ":]" -> 10
-      "<" -> 11
-      "=" -> 12
-      ">" -> 13
-      "?" -> 14
-      "@" -> 15
-      "Fwd" -> 16
-      "Log" -> 17
-      "Sort" -> 18
-      "Type" -> 19
-      "[" -> 20
-      "[:" -> 21
-      "\\" -> 22
-      "]" -> 23
-      "^" -> 24
-      "`" -> 25
-      "as" -> 26
-      "case" -> 27
-      "data" -> 28
-      "end" -> 29
-      "fwd" -> 30
-      "new" -> 31
-      "of" -> 32
-      "proc" -> 33
-      "recv" -> 34
-      "send" -> 35
-      "slice" -> 36
-      "{" -> 37
-      "|" -> 38
-      "}" -> 39
-      "~" -> 40
+      "%equal" -> 2
+      "(" -> 3
+      ")" -> 4
+      "**" -> 5
+      "," -> 6
+      "->" -> 7
+      "-o" -> 8
+      "." -> 9
+      ":" -> 10
+      ":]" -> 11
+      "<" -> 12
+      "=" -> 13
+      ">" -> 14
+      "?" -> 15
+      "@" -> 16
+      "Fwd" -> 17
+      "Log" -> 18
+      "Sort" -> 19
+      "Type" -> 20
+      "[" -> 21
+      "[:" -> 22
+      "\\" -> 23
+      "]" -> 24
+      "^" -> 25
+      "`" -> 26
+      "as" -> 27
+      "case" -> 28
+      "data" -> 29
+      "end" -> 30
+      "fwd" -> 31
+      "new" -> 32
+      "of" -> 33
+      "proc" -> 34
+      "recv" -> 35
+      "send" -> 36
+      "slice" -> 37
+      "{" -> 38
+      "|" -> 39
+      "}" -> 40
+      "~" -> 41
       _ -> error $ "not a reserved word: " ++ show s
 
 -- | Get the position of a token.

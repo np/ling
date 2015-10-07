@@ -25,3 +25,12 @@ checkDec (Dat d cs)       kont = do
   local ((ctyps %~ union (l2m [ (c,d) | c <- cs ]))
         .(evars . at d .~ Just TTyp)
         .(ddefs . at d .~ Just cs)) kont
+checkDec (Equal t1 t2 ty) kont = do
+  checkTyp ty
+  checkTerm ty t1
+  checkTerm ty t2
+  -- This should probably be a better check
+  when (t1 /= t2) $
+    tcError ("The term " ++ pretty t1
+            ++ " is not equal to " ++ pretty t2)
+  kont
