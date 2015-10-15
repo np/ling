@@ -7,6 +7,8 @@ echo "== EXPECTED SEQUENCE =="
 cmdcheck "$@" tests/sequence/*.t
 echo "== EXPECTED COMPILATION =="
 cmdcheck "$@" tests/compile/*.t
+echo "== EXPECTED NORMALIZED =="
+cmdcheck "$@" tests/norm/*.t
 echo "== EXPECTED PRETTY-PRINTER =="
 cmdcheck "$@" tests/pretty/*.t
 echo "== EXPECTED FMT =="

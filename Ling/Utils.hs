@@ -16,7 +16,7 @@ import           Control.Lens
 import           Data.Map            (Map)
 import qualified Data.Map            as Map
 import           Data.Monoid
-import           Data.Set            (Set, intersection, union)
+import           Data.Set            (Set, member, notMember, intersection, union)
 import qualified Data.Set            as Set
 import           Debug.Trace
 import           Ling.Abs
@@ -75,9 +75,6 @@ m2l = Map.toList
 countMap :: (a -> Bool) -> Map k a -> Int
 countMap p = Map.size . Map.filter p
 
-singletons :: Ord a => [a] -> Set (Set a)
-singletons = l2s . map Set.singleton
-
 infixr 3 ||>
 (||>) :: Monad m => Bool -> m Bool -> m Bool
 True  ||> _  = return True
@@ -106,7 +103,7 @@ mx <&&> my = do x <- mx
 -- Indeed if the result is empty all the sets are disjoint,
 -- a non-empty result can be used to report errors.
 redundant :: Ord a => [Set a] -> Set a
-redundant = snd . foldr f (Set.empty, Set.empty)
+redundant = snd . foldr f ø
   where
     f xs (acc, res) =
       (acc `union` xs, (acc `intersection` xs) `union` res)
@@ -118,19 +115,30 @@ subList (x:xs) (y:ys)
   | x == y    = xs     `subList` ys
   | otherwise = (x:xs) `subList` ys
 
+-- TODO: What is the best threshold between repeatdly deleting
+-- elements from a map and filtering the whole map?
+deleteList :: Ord k => [k] -> Endom (Map k a)
+deleteList ks = case ks of
+  []  -> id
+  [k] -> Map.delete k
+  _   -> Map.filterWithKey (\k _ -> k `notMember` sks)
+  where sks = l2s ks
+
 rmDups :: Eq a => [a] -> [a]
 rmDups (x1:x2:xs)
   | x1 == x2  = rmDups (x1:xs)
   | otherwise = x1 : rmDups (x2:xs)
 rmDups xs = xs
 
-substMember :: Ord a => (Set a,a) -> Endom a
-substMember (xs,y) z | z `Set.member` xs = y
-                     | otherwise         = z
+substPred :: (a -> Bool, s) -> Endom (a -> s)
+substPred (p, t) var v | p v       = t
+                       | otherwise = var v
 
-subst1 :: Eq a => (a,a) -> Endom a
-subst1 (x,y) z | x == z    = y
-               | otherwise = z
+substMember :: Ord a => (Set a, s) -> Endom (a -> s)
+substMember (xs, t) = substPred ((`member` xs), t)
+
+subst1 :: Eq a => (a, s) -> Endom (a -> s)
+subst1 (x, y) = substPred ((==) x, y)
 
 hasKey :: At m => Index m -> Getter m Bool
 hasKey k = at k . to (isn't _Nothing)

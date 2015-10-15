@@ -1,0 +1,6 @@
+On channel l sessions are not equivalent.
+Given session (expanded):
+  {!Int, !Int.!Int}
+Inferred session:
+  [: !Int, !Int.!Int :]
+

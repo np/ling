@@ -1,6 +1,30 @@
 How to deal with arbitrary sequencing?
 ======================================
 
+This document is now outdated as Ling now supports both explicit sequencing
+and parallelism of actions. Still this is informative on the design decisions.
+
+## Past situtation
+
+### Sequencing is implicit and minimal
+
+Any `send` can depend on any `recv` based on the variables used in the `send`
+In the example below the two `send`s depends on the two `recv`s:
+
+```
+recv c (x : Int) recv d (y : Int) send e (x + y) send f (x * y)
+```
+
+Sequencing is also implied when interacting multiple times on the same
+channel.
+In this example, the `send` will happen before the `recv` because they
+operate on the same channel `c`:
+
+```
+send c 4 recv c (x : Int)
+```
+
+
 ## Motivation
 
 An example where this comes up in practice is when

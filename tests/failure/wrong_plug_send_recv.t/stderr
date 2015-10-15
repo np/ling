@@ -1,0 +1,6 @@
+On channel c sessions are not equivalent.
+Given session (expanded):
+  !Int
+Inferred session:
+  ?Int
+

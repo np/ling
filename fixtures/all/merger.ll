@@ -1,3 +1,4 @@
+-- Should be renamed merge_ParSort_seq_recv
 merger =
  \(m : Int)(n : Int)->
  proc( c0 : [! Vec Int m, ? Vec Int m]

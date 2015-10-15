@@ -87,7 +87,7 @@ instance Norm Proc where
   norm = \case
     PAct act        -> normAct act
     PNxt proc proc' -> norm proc `nxtP` norm proc'
-    PDot proc proc' -> norm proc `dotP` asProcs (norm proc')
+    PDot proc proc' -> norm proc `dotP` norm proc'
     PPrll procs     -> mconcat $ norm procs
 
 mkProcs :: [Proc] -> Proc
@@ -121,7 +121,7 @@ reifyPref pref proc = case pref of
 normAct :: Act -> N.Proc
 normAct = \case
     -- These two clauses expand the forwarders
-    Ax        s cs    -> fwdP      (norm s) cs
+    Ax        s cs    -> fwdP    ø (norm s) cs
     SplitAx n s c     -> fwdProc n (norm s) c
 
     -- TODO make a flag to turn these on
@@ -172,7 +172,7 @@ isInfix _ = Nothing
 normRawApp :: [ATerm] -> N.Term
 normRawApp [e] = norm e
 normRawApp (e0 : Var (Name op) : es)
-  | op `elem` ["-","+","*","/","-D","+D","*D","/D","++S"]
+  | op `elem` ["-","+","*","/","%","-D","+D","*D","/D","++S"]
   = N.Def (Name ("_" ++ op ++ "_")) [norm e0, normRawApp es]
 normRawApp (Var x : es) = N.Def x (norm es)
 normRawApp [] = error "normRawApp: IMPOSSIBLE"

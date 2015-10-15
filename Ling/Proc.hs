@@ -21,7 +21,8 @@ module Ling.Proc
   , splitAx
   ) where
 
-import Data.List
+import Data.List (transpose)
+import Data.Set (Set, member, insert)
 
 import Ling.Utils
 import Ling.Norm
@@ -67,23 +68,27 @@ acts `actsPs` procs = [acts `actsP` procs]
 
 infixr 4 `dotP`
 
-dotP :: Proc -> Procs -> Proc
-(pref0 `Dot` procs0) `dotP` procs1 = pref0 `prllActP` (procs0 `prllDotP` procs1)
+dotP :: Proc -> Proc -> Proc
+(pref0 `Dot` procs0) `dotP` proc1 = pref0 `prllActP` (procs0 `prllDotP` proc1)
+
+infixr 4 `dotsP`
+
+dotsP :: [Proc] -> Proc
+dotsP = foldr dotP ø
 
 infixr 4 `prllDotP`
 
-prllDotP :: Procs -> Procs -> Procs
-prllDotP []  ps = ps
-prllDotP ps  [] = ps
-prllDotP [p] ps = [p `dotP` ps]
-prllDotP ps  ps'
+prllDotP :: Procs -> Proc -> Procs
+prllDotP []  p  = asProcs p
+prllDotP [p] p' = [p `dotP` p']
+prllDotP ps  p'
   | Just prefs <- mapM justPref ps
-      = [concat prefs `prllActP` ps']
-prllDotP ps ps' =
+      = [concat prefs `prllActP` asProcs p']
+prllDotP ps p' =
   error . unlines $
     ["Unsupported sequencing of parallel processes"
     ,show ps
-    ,show ps'
+    ,show p'
     ]
 
 -- Is a given process only a prefix?
@@ -129,25 +134,39 @@ unRSession :: RSession -> Session
 unRSession (Repl s (Lit (LInteger 1))) = s
 unRSession _                           = error "unRSession"
 
+type UsedNames = Set Name
+
+avoidUsed :: Name -> UsedNames -> (Name, UsedNames)
+avoidUsed basename used = go allPrefixes where
+  allPrefixes = ["x#", "y#", "z#"] ++ map ((++"#") . ("x"++) . show) [0 :: Int ..]
+  go prefixes | x `member` used = go (tail prefixes)
+              | otherwise       = (x, insert x used)
+    where x = prefName (head prefixes) basename
+
 -- One could generate the session annotations on the splits
-fwdParTen :: [RSession] -> [Channel] -> Proc
-fwdParTen _   []     = ø
-fwdParTen rss (c:cs) = pref `actsP` ps
+fwdSplit :: [TraverseKind] -> Endom Procs -> UsedNames -> [RSession] -> [Channel] -> Proc
+fwdSplit ks fprocs used rss cs
+  | null cs   = ø
+  | otherwise = pref `actsP` fprocs ps
   -- These splits are independant, they are put in sequence because
   -- splitting always commutes anyway.
   where
-    ss     = map unRSession rss
-    n      = length ss
-    ds:dss = map (suffChans n) (c:cs)
-    ps     = zipWith fwdP ss (transpose (ds:dss))
-    pref   = split' TenK c ds : zipWith (split' ParK) cs dss
+    ss   = map unRSession rss
+    dss  = map (suffChans (length ss)) cs
+    ps   = zipWith     (fwdP used) ss (transpose dss)
+    pref = zipWith3 id (map split' ks) cs dss
 
-fwdRcvSnd :: Typ -> Session -> [Channel] -> Proc
-fwdRcvSnd _ _ []     = ø
-fwdRcvSnd t s (c:cs) = pref `actsP` [fwdP s (c:cs)]
-  where x    = prefName "x#" c
-        vx   = Def x []
-        pref = Recv c (Arg x t) : map (`Send` vx) cs
+fwdParTen, fwdSeqSeq :: UsedNames -> [RSession] -> [Channel] -> Proc
+fwdParTen = fwdSplit (TenK : repeat ParK) id
+fwdSeqSeq = fwdSplit (repeat SeqK) (asProcs . dotsP)
+
+fwdRcvSnd :: UsedNames -> Typ -> Session -> [Channel] -> Proc
+fwdRcvSnd _    _ _ []     = ø
+fwdRcvSnd used t s (c:ds) = recv `actP` sends `prllActPs` [fwdP used' s (c:ds)]
+  where (x, used') = avoidUsed c used
+        vx         = Def x []
+        recv       = Recv c (Arg x t)
+        sends      = [ Send d vx | d <- ds ]
 
 fwdDual :: Dual session
         => (session -> [channel] -> proc)
@@ -155,22 +174,22 @@ fwdDual :: Dual session
 fwdDual f s (c:d:es) = f (dual s) (d:c:es)
 fwdDual _ _ _        = error "fwdDual: Not enough channels for this forwarder (or the session is not a sink)"
 
-fwdP :: Session -> [Channel] -> Proc
-fwdP _  [] = ø
-fwdP s0 cs =
+fwdP :: UsedNames -> Session -> [Channel] -> Proc
+fwdP _    _  [] = ø
+fwdP used s0 cs =
   case s0 of
-    Ten ss  ->         fwdParTen     ss cs
-    Rcv t s ->         fwdRcvSnd t   s  cs
-    Par ss  -> fwdDual fwdParTen     ss cs
-    Snd t s -> fwdDual (fwdRcvSnd t) s  cs
+    Seq ss  ->         fwdSeqSeq used     ss cs
+    Ten ss  ->         fwdParTen used     ss cs
+    Rcv t s ->         fwdRcvSnd used t   s  cs
+    Par ss  -> fwdDual (fwdParTen used)   ss cs
+    Snd t s -> fwdDual (fwdRcvSnd used t) s  cs
     End     -> ø
     Atm{}   -> [ax s0 cs] `Dot` []
-    Seq _ss -> error "fwdP/Seq TODO"
 
 -- The session 'Fwd n session' is a par.
 -- This function builds a process which first splits this par.
 fwdProc :: (Show i, Integral i) => i -> Session -> Channel -> Proc
-fwdProc n s c = split' ParK c cs `actP` [fwdP s cs]
+fwdProc n s c = split' ParK c cs `actP` [fwdP ø s cs]
   where cs = suffChans n c
 
 ax :: Session -> [Channel] -> Act

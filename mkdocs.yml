@@ -1,0 +1,7 @@
+site_name: Ling User Manual
+pages:
+  - Home: index.md
+  - Tutorial: tutorial.md
+  - Left-overs: left-overs.md
+  - Sequencing: sequencing.md
+theme: readthedocs

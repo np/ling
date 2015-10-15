@@ -73,7 +73,7 @@ instance Dual Session where
 
   log (Par s)    = Par (mapSessions log s)
   log (Ten s)    = Par (mapSessions log s)
-  log (Seq s)    = Par (mapSessions log s)
+  log (Seq s)    = Seq (mapSessions log s)
   log (Snd a s)  = Snd a (log s)
   log (Rcv a s)  = Snd a (log s)
   log (Atm _ n)  = Atm Write n

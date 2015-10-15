@@ -1,7 +1,9 @@
-ten_loli_par = proc(c : [!Int,!Int] -o {!Int,!Int})
+ten_loli_par =
+ \(A : Session)
+  (B : Session)->
+ proc(c : [A,B] -o {A,B})
   c{i,o}
-  i{i0,i1}
-  o{o0,o1}
-  ( fwd(?Int)(i0,o0)
-  | fwd(?Int)(i1,o1)
-  )
+  i{na,nb}
+  o{a,b}
+  ( fwd(A)(a,na)
+  | fwd(B)(b,nb))

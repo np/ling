@@ -1,0 +1,1 @@
+../all/wrong_ten2_par2.ll

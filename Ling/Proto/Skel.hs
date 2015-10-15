@@ -3,46 +3,82 @@
 module Ling.Proto.Skel
   ( Skel(Act)
   , dotS
+  , unknownS
   , prllActS
+  , dotActS
   , actS
   , prune
+  , select
   , subst
-  , checkSkel
+  , check
   ) where
 
 import           Control.Monad.Except
-import           Data.Set
+import           Data.Set   hiding (foldr)
 import           Prelude    hiding (null)
 
 import           Ling.Print hiding (Prll)
 import           Ling.Utils
 
--- TODO Functor, Applicative, Monad, subst as a wrapper over >>=
-data Op a = Dot | Prll | Ten a [a]
+-- A way to deal with Unknown would be to stick an identifier
+-- on each of them. Then the normal equality could be used
+-- safely. One way would be to use an `IORef ()`
+data Op = Dot | Prll !Bool | Unknown
   deriving (Eq, Ord, Read, Show)
+
+-- Use compat instead of (==) to avoid treating two unknowns
+-- as the same.
+compat :: Op -> Op -> Bool
+Dot    `compat` Dot     = True
+Prll b `compat` Prll b' = b == b'
+_      `compat` _       = False -- Yes Unknown /= Unknown
 
 data Skel a
   = Act a
   | Zero
-  | Op (Op a) (Skel a) (Skel a)
+  | Op !Op (Skel a) (Skel a)
   deriving (Eq, Ord, Read, Show)
 
-mkOp :: Eq a => Op a -> Skel a -> Skel a -> Skel a
-mkOp op = f where
-  Zero `f` p    = p
-  p    `f` Zero = p
-  p    `f` q    =
-    case op of
-      Dot | p == q -> q
-          | Op Dot r _ <- q, p == r -> q
-      _   -> Op op p q
+mkOp :: Eq a => Op -> Skel a -> Skel a -> Skel a
+mkOp op = go where
+  Zero  `go` p     = p
+  p     `go` Zero  = p
+
+  Act c `go` p
+    | Prll _ <- op,
+      c `elemS` p  = p
+
+    -- Avoid redundancies on the left: c * (c * sk) --> c * sk
+    | Op op' (Act d) _ <- p,
+      op `compat` op',
+      c == d       = p
+
+  p     `go` Act c
+    | Prll _ <- op,
+      c `elemS` p  = p
+
+  Act c `go` Act d
+    | c == d       = Act d
+
+  p     `go` q
+
+    -- Right nesting: (x * y) * z --> x * (y * z)
+    | Op op' p0 p1 <- p,
+      op `compat` op'     = mkOp op p0 (mkOp op p1 q)
+
+    | otherwise           = Op op p q
+
+infixr 4 `dotS`
 
 dotS :: Eq a => Skel a -> Skel a -> Skel a
 dotS = mkOp Dot
 
+unknownS :: Eq a => [Skel a] -> Skel a
+unknownS = foldr (mkOp Unknown) ø
+
 instance Eq a => Monoid (Skel a) where
   mempty = Zero
-  mappend = mkOp Prll
+  mappend = mkOp (Prll True)
   mconcat [] = Zero
   mconcat xs = foldr1 mappend xs
 
@@ -52,43 +88,66 @@ instance Print a => Print (Skel a) where
     Act act -> prPrec i 2 (prt 0 act)
     Op op proc1 proc2 ->
       case op of
-        Ten c cs -> prPrec i 1 (concatD [prt 0 c, txt "[", prt 0 cs, txt "]", nl,
-                                         txt "(\n",
-                                         prt 0 [proc1,proc2],
-                                         txt "\n)"])
-        Prll     -> prPrec i 1 (concatD [doc (showString "(\n"), prt 0 [proc1,proc2], doc (showString "\n)")])
+        Prll b   -> prPrec i 1 (concatD [ doc (showString "(\n")
+                                        , prt 0 proc1
+                                        , doc (showString (if b then "\n|" else "\nX"))
+                                        , prt 0 proc2
+                                        , doc (showString "\n)")])
         Dot      -> prPrec i 0 (concatD [prt 1 proc1, doc (showString ".\n"), prt 0 proc2])
+        Unknown  -> prPrec i 0 (concatD [prt 1 proc1, doc (showString "⁇\n"), prt 0 proc2])
   prtList _ [] = concatD []
   prtList _ [x] = prt 0 x
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString "\n|"), prt 0 xs]
 
+infixr 4 `actS`
+
 actS :: Eq a => a -> Skel a -> Skel a
 actS act sk = Act act `dotS` sk
+
+infixr 4 `prllActS`
 
 prllActS :: Eq a => [a] -> Skel a -> Skel a
 prllActS [act] sk = act `actS` sk
 prllActS acts  sk = mconcat (Act <$> acts) `dotS` sk
 
-subst :: Ord a => (Set a, Skel a) -> Endom (Skel a)
-subst (cs, sk) = go where
+infixr 4 `dotActS`
+
+dotActS :: Eq a => [a] -> Skel a -> Skel a
+dotActS []         sk = sk
+dotActS (act:acts) sk = act `actS` acts `dotActS` sk
+
+elemS :: Eq a => a -> Skel a -> Bool
+elemS c0 = go where
+  go = \case
+    Zero         -> False
+    Act c        -> c == c0
+    Op _ sk0 sk1 -> go sk0 || go sk1
+
+subst :: Eq b => (a -> Skel b) -> Skel a -> Skel b
+subst act = go where
   go = \case
     Zero -> Zero
-    Act c
-      | c `member` cs -> sk
-      | otherwise     -> Act c
-    Op op sk0 sk1 ->
-      mkOp op (go sk0) (go sk1)
+    Act c -> act c
+    Op op sk0 sk1 -> mkOp op (go sk0) (go sk1)
 
 prune :: Ord a => Set a -> Endom (Skel a)
-prune cs = subst (cs, Zero)
+prune cs = subst (substMember (cs, Zero) Act)
 
-ten :: Ord a => a -> [a] -> Skel a -> Skel a -> Skel a
-ten c cs sk0 sk1 = mkOp (Ten c cs) (prune scs sk0) (prune scs sk1)
-  where scs = l2s cs
+select :: Ord a => Set a -> Endom (Skel a)
+select cs = subst (substPred ((`notMember` cs), Zero) Act)
 
-checkSkel :: (MonadError String m, Ord channel) =>
-             channel -> [channel] -> EndoM m (Skel channel)
-checkSkel c cs = fmap final . go where
+mAct :: Maybe channel -> Skel channel
+mAct Nothing  = Zero
+mAct (Just c) = Act c
+
+prllFalse :: Ord a => Maybe a -> [a] -> Skel a -> Skel a -> Skel a
+prllFalse c cs sk0 sk1 = mkOp (Prll False) (go sk0) (go sk1)
+  where scs  = l2s cs
+        go   = subst (substMember (scs, mAct c) Act)
+
+check :: (MonadError String m, Ord channel) =>
+         Maybe channel -> [channel] -> EndoM m (Skel channel)
+check c cs = fmap final . go where
   scs = l2s cs
   final (_, sk', sk'') = sk' <> sk''
   go = \case
@@ -99,31 +158,30 @@ checkSkel c cs = fmap final . go where
     Op op sk0 sk1 -> do
       (cs0, sk0', sk0'') <- go sk0
       (cs1, sk1', sk1'') <- go sk1
-      let
-        ics = cs0 `intersection` cs1
-        ucs = cs0 `union`        cs1
-      unless (null ics) $ throwError "checkSkel: non null intersection"
+      -- We could throw an error when the intersection of cs0 and cs1
+      -- is not null, however these errors are also caught elsewhere
+      -- (when merging parallel protocols for instance)
+      -- One case we want to let pass is when the same channel is used
+      -- twice on one side:
+      -- c[d,e] (send d 1 | send e 2. send a 3. send e 4)
+      -- Here the skeleton is: `(d | e.a.e)`, the channel `e` appear twice
+      -- and we chose to keep the ordering. We need the reconstruction of:
+      -- `e.a.e` not to raise an error.
       (sk', sk'') <-
         case op of
           _   | null cs0 && null cs1 ->
             return (Zero, mkOp op (sk0' <> sk0'') (sk1' <> sk1''))
 
-          Dot  | not (null cs1) && not (null cs0) ->
-            throwError "checkSel: Dot"
-
-          Dot | not (null cs0 && null cs1) ->
-            return ((sk0' <> sk0'') `dotS` (sk1' <> sk1''), Zero)
-
-          Prll | not (null cs1) && not (null cs0) ->
-            return (ten c cs sk0' sk1', sk0'' <> sk1'')
-          Prll | null cs0 && not (null cs1) ->
+          Prll True | not (null cs1) && not (null cs0) ->
+            return (prllFalse c cs sk0' sk1', sk0'' <> sk1'')
+          Prll True | null cs0 && not (null cs1) ->
             return (sk1', sk0' <> sk0'' <> sk1'')
-          Prll | null cs1 && not (null cs0) ->
+          Prll True | null cs1 && not (null cs0) ->
             return (sk0', sk0'' <> sk1' <> sk1'')
 
-          Ten{} ->
-            throwError "checkSkel: Ten"
+          _ | not (null cs1) && not (null cs0) && cs0 /= cs1 ->
+            throwError $ "checkSel: " ++ show op
 
           _ ->
-            throwError "checkSkel: IMPOSSIBLE"
-      return (ucs, sk', sk'')
+            return (mkOp op (sk0' <> sk0'') (sk1' <> sk1''), Zero)
+      return (cs0 `union` cs1, sk', sk'')

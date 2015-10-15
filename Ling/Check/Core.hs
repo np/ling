@@ -128,7 +128,9 @@ checkAct act proto =
       checkOptSession c cOS cSession
       checkOptSession d dOS dSession
       checkDual cNSession dNSession
-      rmChans ds <$> checkConflictingChans proto (Name "#new") ds
+      -- This rmChans is potentially partly redundant.
+      -- We might `assert` that `ds` is no longer in the `skel`
+      rmChans ds <$> checkConflictingChans proto Nothing ds
     Split k c dOSs -> do
       assertAbsent c proto
       let ds         = dOSs^..each.argName
@@ -137,7 +139,7 @@ checkAct act proto =
       checkChanDecs_ proto dOSs
       proto' <-
         case k of
-          TenK -> checkConflictingChans proto c ds
+          TenK -> checkConflictingChans proto (Just c) ds
           ParK -> return proto
           SeqK -> do
             checkOrderedChans proto ds
@@ -153,14 +155,14 @@ checkAct act proto =
       checkTerm intTyp t
       mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
       return $ replProtoWhen (`elem` cs) t proto
-    Ax s cs -> return $ proto <> protoAx (one s) cs
+    Ax s cs -> return $ protoAx (one s) cs `dotProto` proto
     At e cs -> do
       t <- inferTerm' e
       case t of
         TProto ss -> do
           assertEqual (length cs) (length ss)
              ["Expected " ++ show (length ss) ++ " channels, not " ++ show (length cs)]
-          return $ proto <> mkProto (zip cs ss)
+          return $ mkProto (zip cs ss) `dotProto` proto
         _ ->
           tcError . unlines $ ["Expected a protocol type, not:", pretty t]
 
@@ -239,14 +241,14 @@ checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC (Scoped Typ)
 checkApp _ _ typ []     = return typ
 checkApp f n typ (e:es) =
   case unDef typ of
-    (Scoped defs typ'@(TFun (Arg x ty) s)) -> do
+    (Scoped defs _typ@(TFun (Arg x ty) s)) -> do
       debug . unlines $
         ["Check application:"
         ,"f:      " ++ pretty f
         ,"ldefs:  " ++ pretty (typ ^. ldefs)
         ,"ldefs': " ++ pretty defs
         ,"typ:    " ++ pretty (typ ^. scoped)
-        ,"typ':   " ++ pretty typ'
+        ,"_typ:   " ++ pretty _typ
         ,"e:      " ++ pretty e
         ,"es:     " ++ pretty es
         {-

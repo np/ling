@@ -12,7 +12,7 @@ class Rename a where
   rename :: Ren -> Endom a
 
 rename1 :: Rename a => (Name, Name) -> Endom a
-rename1 = rename . subst1
+rename1 xy = rename (subst1 xy id)
 
 instance Rename Name where
   rename = id
@@ -29,8 +29,8 @@ instance Rename Term where
     TTyp       -> e0
     Lit{}      -> e0
 
-    Proc{}     -> error "rename/Proc: TODO"
-    TProto{}   -> error "rename/TProto: TODO"
+    Proc cs p  -> Proc (rename f cs) (rename f p)
+    TProto rs  -> TProto (rename f rs)
 
 instance Rename a => Rename (Arg a) where
   rename f (Arg x e) = Arg (rename f x) (rename f e)
