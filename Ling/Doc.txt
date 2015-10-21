@@ -41,18 +41,18 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 
 The reserved words used in Ling are the following:
   | ``Fwd`` | ``Log`` | ``Sort`` | ``Type``
-  | ``as`` | ``case`` | ``data`` | ``end``
-  | ``fwd`` | ``new`` | ``of`` | ``proc``
-  | ``recv`` | ``send`` | ``slice`` | 
+  | ``as`` | ``assert`` | ``case`` | ``data``
+  | ``end`` | ``fwd`` | ``new`` | ``of``
+  | ``proc`` | ``recv`` | ``send`` | ``slice``
 
 The symbols used in Ling are the following:
-  | , | = | : | %assert
-  | ` | | | ( | )
-  | -> | < | > | {
-  | } | ** | \ | .
-  | [ | ] | [: | :]
-  | @ | ! | ? | ~
-  | -o | ^ |  | 
+  | , | = | : | `
+  | | | ( | ) | ->
+  | < | > | { | }
+  | ** | \ | . | [
+  | ] | [: | :] | @
+  | ! | ? | ~ | -o
+  | ^ |  |  | 
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {- and -}.
@@ -70,7 +70,7 @@ All other symbols are terminals.
   | //Dec// | -> | //Name// //OptSig// ``=`` //Term// 
   |  |  **|**  | //Name// ``:`` //Term// 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// 
-  |  |  **|**  | ``%assert`` //Assertion// 
+  |  |  **|**  | ``assert`` //Assertion// 
   | //Assertion// | -> | //Term// ``=`` //Term// ``:`` //Term// 
   | //ConName// | -> | ````` //Name// 
   | //[ConName]// | -> | **eps**

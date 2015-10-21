@@ -45,32 +45,32 @@ import Ling.ErrM
 %tokentype {Token}
 %token
   '!' { PT _ (TS _ 1) }
-  '%assert' { PT _ (TS _ 2) }
-  '(' { PT _ (TS _ 3) }
-  ')' { PT _ (TS _ 4) }
-  '**' { PT _ (TS _ 5) }
-  ',' { PT _ (TS _ 6) }
-  '->' { PT _ (TS _ 7) }
-  '-o' { PT _ (TS _ 8) }
-  '.' { PT _ (TS _ 9) }
-  ':' { PT _ (TS _ 10) }
-  ':]' { PT _ (TS _ 11) }
-  '<' { PT _ (TS _ 12) }
-  '=' { PT _ (TS _ 13) }
-  '>' { PT _ (TS _ 14) }
-  '?' { PT _ (TS _ 15) }
-  '@' { PT _ (TS _ 16) }
-  'Fwd' { PT _ (TS _ 17) }
-  'Log' { PT _ (TS _ 18) }
-  'Sort' { PT _ (TS _ 19) }
-  'Type' { PT _ (TS _ 20) }
-  '[' { PT _ (TS _ 21) }
-  '[:' { PT _ (TS _ 22) }
-  '\\' { PT _ (TS _ 23) }
-  ']' { PT _ (TS _ 24) }
-  '^' { PT _ (TS _ 25) }
-  '`' { PT _ (TS _ 26) }
-  'as' { PT _ (TS _ 27) }
+  '(' { PT _ (TS _ 2) }
+  ')' { PT _ (TS _ 3) }
+  '**' { PT _ (TS _ 4) }
+  ',' { PT _ (TS _ 5) }
+  '->' { PT _ (TS _ 6) }
+  '-o' { PT _ (TS _ 7) }
+  '.' { PT _ (TS _ 8) }
+  ':' { PT _ (TS _ 9) }
+  ':]' { PT _ (TS _ 10) }
+  '<' { PT _ (TS _ 11) }
+  '=' { PT _ (TS _ 12) }
+  '>' { PT _ (TS _ 13) }
+  '?' { PT _ (TS _ 14) }
+  '@' { PT _ (TS _ 15) }
+  'Fwd' { PT _ (TS _ 16) }
+  'Log' { PT _ (TS _ 17) }
+  'Sort' { PT _ (TS _ 18) }
+  'Type' { PT _ (TS _ 19) }
+  '[' { PT _ (TS _ 20) }
+  '[:' { PT _ (TS _ 21) }
+  '\\' { PT _ (TS _ 22) }
+  ']' { PT _ (TS _ 23) }
+  '^' { PT _ (TS _ 24) }
+  '`' { PT _ (TS _ 25) }
+  'as' { PT _ (TS _ 26) }
+  'assert' { PT _ (TS _ 27) }
   'case' { PT _ (TS _ 28) }
   'data' { PT _ (TS _ 29) }
   'end' { PT _ (TS _ 30) }
@@ -111,7 +111,7 @@ Dec :: { Dec }
 Dec : Name OptSig '=' Term { Ling.Abs.DDef $1 $2 $4 }
     | Name ':' Term { Ling.Abs.DSig $1 $3 }
     | 'data' Name '=' ListConName { Ling.Abs.DDat $2 $4 }
-    | '%assert' Assertion { Ling.Abs.DAsr $2 }
+    | 'assert' Assertion { Ling.Abs.DAsr $2 }
 Assertion :: { Assertion }
 Assertion : Term '=' Term ':' Term { Ling.Abs.AEq $1 $3 $5 }
 ConName :: { ConName }
