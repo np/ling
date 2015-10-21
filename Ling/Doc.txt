@@ -46,7 +46,7 @@ The reserved words used in Ling are the following:
   | ``recv`` | ``send`` | ``slice`` | 
 
 The symbols used in Ling are the following:
-  | , | = | : | %equal
+  | , | = | : | %assert
   | ` | | | ( | )
   | -> | < | > | {
   | } | ** | \ | .
@@ -70,7 +70,8 @@ All other symbols are terminals.
   | //Dec// | -> | //Name// //OptSig// ``=`` //Term// 
   |  |  **|**  | //Name// ``:`` //Term// 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// 
-  |  |  **|**  | ``%equal`` //Term// ``=`` //Term// ``:`` //Term// 
+  |  |  **|**  | ``%assert`` //Assertion// 
+  | //Assertion// | -> | //Term// ``=`` //Term// ``:`` //Term// 
   | //ConName// | -> | ````` //Name// 
   | //[ConName]// | -> | **eps**
   |  |  **|**  | //ConName// 

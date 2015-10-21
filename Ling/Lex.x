@@ -20,7 +20,7 @@ $i = [$l $d _ ']          -- identifier character
 $u = [\0-\255]          -- universal: any character
 
 @rsyms =    -- symbols and non-identifier-like reserved words
-   \, | \= | \: | \% "equal" | \` | \| | \( | \) | \- \> | \< | \> | \{ | \} | \* \* | \\ | \. | \[ | \] | \[ \: | \: \] | \@ | \! | \? | \~ | \- "o" | \^
+   \, | \= | \: | \% "assert" | \` | \| | \( | \) | \- \> | \< | \> | \{ | \} | \* \* | \\ | \. | \[ | \] | \[ \: | \: \] | \@ | \! | \? | \~ | \- "o" | \^
 
 :-
 "--" [.]* ; -- Toss single line comments
@@ -100,7 +100,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b "[" 21 (b ":]" 11 (b "," 6 (b "(" 3 (b "%equal" 2 (b "!" 1 N N) N) (b "**" 5 (b ")" 4 N N) N)) (b "." 9 (b "-o" 8 (b "->" 7 N N) N) (b ":" 10 N N))) (b "@" 16 (b ">" 14 (b "=" 13 (b "<" 12 N N) N) (b "?" 15 N N)) (b "Sort" 19 (b "Log" 18 (b "Fwd" 17 N N) N) (b "Type" 20 N N)))) (b "new" 32 (b "as" 27 (b "]" 24 (b "\\" 23 (b "[:" 22 N N) N) (b "`" 26 (b "^" 25 N N) N)) (b "end" 30 (b "data" 29 (b "case" 28 N N) N) (b "fwd" 31 N N))) (b "slice" 37 (b "recv" 35 (b "proc" 34 (b "of" 33 N N) N) (b "send" 36 N N)) (b "}" 40 (b "|" 39 (b "{" 38 N N) N) (b "~" 41 N N))))
+resWords = b "[" 21 (b ":]" 11 (b "," 6 (b "(" 3 (b "%assert" 2 (b "!" 1 N N) N) (b "**" 5 (b ")" 4 N N) N)) (b "." 9 (b "-o" 8 (b "->" 7 N N) N) (b ":" 10 N N))) (b "@" 16 (b ">" 14 (b "=" 13 (b "<" 12 N N) N) (b "?" 15 N N)) (b "Sort" 19 (b "Log" 18 (b "Fwd" 17 N N) N) (b "Type" 20 N N)))) (b "new" 32 (b "as" 27 (b "]" 24 (b "\\" 23 (b "[:" 22 N N) N) (b "`" 26 (b "^" 25 N N) N)) (b "end" 30 (b "data" 29 (b "case" 28 N N) N) (b "fwd" 31 N N))) (b "slice" 37 (b "recv" 35 (b "proc" 34 (b "of" 33 N N) N) (b "send" 36 N N)) (b "}" 40 (b "|" 39 (b "{" 38 N N) N) (b "~" 41 N N))))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 

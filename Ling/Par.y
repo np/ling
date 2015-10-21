@@ -11,6 +11,7 @@ import Ling.ErrM
 %name pProgram Program
 %name pListName ListName
 %name pDec Dec
+%name pAssertion Assertion
 %name pConName ConName
 %name pListConName ListConName
 %name pOptSig OptSig
@@ -44,7 +45,7 @@ import Ling.ErrM
 %tokentype {Token}
 %token
   '!' { PT _ (TS _ 1) }
-  '%equal' { PT _ (TS _ 2) }
+  '%assert' { PT _ (TS _ 2) }
   '(' { PT _ (TS _ 3) }
   ')' { PT _ (TS _ 4) }
   '**' { PT _ (TS _ 5) }
@@ -110,7 +111,9 @@ Dec :: { Dec }
 Dec : Name OptSig '=' Term { Ling.Abs.DDef $1 $2 $4 }
     | Name ':' Term { Ling.Abs.DSig $1 $3 }
     | 'data' Name '=' ListConName { Ling.Abs.DDat $2 $4 }
-    | '%equal' Term '=' Term ':' Term { Ling.Abs.AEq $2 $4 $6 }
+    | '%assert' Assertion { Ling.Abs.DAsr $2 }
+Assertion :: { Assertion }
+Assertion : Term '=' Term ':' Term { Ling.Abs.AEq $1 $3 $5 }
 ConName :: { ConName }
 ConName : '`' Name { Ling.Abs.CN $2 }
 ListConName :: { [ConName] }

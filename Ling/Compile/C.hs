@@ -440,7 +440,7 @@ transDec env x = case x of
   Sig d ty tm -> [transSig env d ty tm]
   Dat _d _cs ->
     [] -- TODO typedef ? => [C.TEnum (map (C.EEnm . transCon) cs)]
-  Equal _t1 _t2 _ty ->
+  Assert _a ->
     [] -- could be an assert.. but why?
 
 transProgram :: Program -> C.Prg

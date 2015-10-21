@@ -15,7 +15,10 @@ data Dec
     = DDef Name OptSig Term
     | DSig Name Term
     | DDat Name [ConName]
-    | AEq Term Term Term
+    | DAsr Assertion
+  deriving (Eq, Ord, Show, Read)
+
+data Assertion = AEq Term Term Term
   deriving (Eq, Ord, Show, Read)
 
 data ConName = CN Name

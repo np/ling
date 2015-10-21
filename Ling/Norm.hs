@@ -20,7 +20,11 @@ data Program = Program { _prgDecs :: [Dec] }
 data Dec
   = Sig Name (Maybe Typ) (Maybe Term)
   | Dat Name [Name]
-  | Equal Term Term Typ
+  | Assert Assertion
+  deriving (Eq,Ord,Show,Read)
+
+data Assertion
+  = Equal Term Term Typ
   deriving (Eq,Ord,Show,Read)
 
 infixr 4 `Dot`

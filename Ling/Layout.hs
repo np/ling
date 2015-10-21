@@ -212,7 +212,7 @@ sToken p s = PT p (TS s i)
   where
     i = case s of
       "!" -> 1
-      "%equal" -> 2
+      "%assert" -> 2
       "(" -> 3
       ")" -> 4
       "**" -> 5

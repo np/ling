@@ -219,7 +219,7 @@ transDec x = case x of
             emptyEnv
   Dat{} -> x
   Sig{} -> x
-  Equal{} -> x -- probably wrong!
+  Assert{} -> x -- probably wrong!
 
 transProgram :: Program -> Program
 transProgram (Program decs) = Program (map transDec decs)

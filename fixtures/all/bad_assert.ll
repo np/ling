@@ -1,3 +1,3 @@
 data Bool = `false | `true
 
-%equal `false = `true : Bool
+%assert `false = `true : Bool

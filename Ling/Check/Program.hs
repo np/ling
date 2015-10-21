@@ -25,7 +25,10 @@ checkDec (Dat d cs)       kont = do
   local ((ctyps %~ union (l2m [ (c,d) | c <- cs ]))
         .(evars . at d .~ Just TTyp)
         .(ddefs . at d .~ Just cs)) kont
-checkDec (Equal t1 t2 ty) kont = do
+checkDec (Assert a) kont = checkAsr a kont
+
+checkAsr :: Assertion -> TC () -> TC ()
+checkAsr (Equal t1 t2 ty) kont = do
   checkTyp ty
   checkTerm ty t1
   checkTerm ty t2
