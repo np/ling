@@ -87,7 +87,6 @@ instance Equiv Name where
 
 instance Equiv Term where
   equiv env t0 t1 =
-    t0 == t1 || -- Quadratic but safe
     equivDef env t0 t1 ||
     case (s0'^.scoped,s1'^.scoped) of
       (Def x0 es0,   Def x1 es1)   -> equiv env' (x0, es0) (x1, es1)
