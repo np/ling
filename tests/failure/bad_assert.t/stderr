@@ -1,1 +1,6 @@
-The term `false is not equal to `true
+Terms are not equivalent.
+Expected:
+  `false
+Inferred:
+  `true
+

@@ -4,6 +4,7 @@ import           Ling.Check.Base
 import           Ling.Check.Core
 import           Ling.Norm
 import           Ling.Print
+import           Ling.Scoped(emptyScope)
 import           Ling.Utils
 
 import           Control.Lens
@@ -32,8 +33,7 @@ checkAsr (Equal t1 t2 ty) kont = do
   checkTyp ty
   checkTerm ty t1
   checkTerm ty t2
-  -- This should probably be a better check
-  when (t1 /= t2) $
-    tcError ("The term " ++ pretty t1
-            ++ " is not equal to " ++ pretty t2)
+
+  checkEquivalence "Terms are not equivalent." (emptyScope t1) (emptyScope t2)
+
   kont
