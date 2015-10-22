@@ -11,6 +11,7 @@ import Ling.Fmt.Albert.ErrM
 %name pProgram Program
 %name pListName ListName
 %name pDec Dec
+%name pAssertion Assertion
 %name pConName ConName
 %name pOptDot OptDot
 %name pTermProc TermProc
@@ -71,20 +72,21 @@ import Ling.Fmt.Albert.ErrM
   '^' { PT _ (TS _ 24) }
   '`' { PT _ (TS _ 25) }
   'as' { PT _ (TS _ 26) }
-  'case' { PT _ (TS _ 27) }
-  'data' { PT _ (TS _ 28) }
-  'end' { PT _ (TS _ 29) }
-  'fwd' { PT _ (TS _ 30) }
-  'new' { PT _ (TS _ 31) }
-  'of' { PT _ (TS _ 32) }
-  'proc' { PT _ (TS _ 33) }
-  'recv' { PT _ (TS _ 34) }
-  'send' { PT _ (TS _ 35) }
-  'slice' { PT _ (TS _ 36) }
-  '{' { PT _ (TS _ 37) }
-  '|' { PT _ (TS _ 38) }
-  '}' { PT _ (TS _ 39) }
-  '~' { PT _ (TS _ 40) }
+  'assert' { PT _ (TS _ 27) }
+  'case' { PT _ (TS _ 28) }
+  'data' { PT _ (TS _ 29) }
+  'end' { PT _ (TS _ 30) }
+  'fwd' { PT _ (TS _ 31) }
+  'new' { PT _ (TS _ 32) }
+  'of' { PT _ (TS _ 33) }
+  'proc' { PT _ (TS _ 34) }
+  'recv' { PT _ (TS _ 35) }
+  'send' { PT _ (TS _ 36) }
+  'slice' { PT _ (TS _ 37) }
+  '{' { PT _ (TS _ 38) }
+  '|' { PT _ (TS _ 39) }
+  '}' { PT _ (TS _ 40) }
+  '~' { PT _ (TS _ 41) }
 
 L_integ  { PT _ (TI $$) }
 L_doubl  { PT _ (TD $$) }
@@ -112,6 +114,9 @@ Dec : Name '(' ListChanDec ')' '=' Proc OptDot { Ling.Fmt.Albert.Abs.DPrc $1 $3 
     | Name OptSig '=' TermProc OptDot { Ling.Fmt.Albert.Abs.DDef $1 $2 $4 $5 }
     | Name ':' Term OptDot { Ling.Fmt.Albert.Abs.DSig $1 $3 $4 }
     | 'data' Name '=' ListConName OptDot { Ling.Fmt.Albert.Abs.DDat $2 $4 $5 }
+    | 'assert' Assertion { Ling.Fmt.Albert.Abs.DAsr $2 }
+Assertion :: { Assertion }
+Assertion : Term '=' Term ':' Term { Ling.Fmt.Albert.Abs.AEq $1 $3 $5 }
 ConName :: { ConName }
 ConName : '`' Name { Ling.Fmt.Albert.Abs.CN $2 }
 OptDot :: { OptDot }

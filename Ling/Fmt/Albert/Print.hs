@@ -96,9 +96,14 @@ instance Print Dec where
     DDef name optsig termproc optdot -> prPrec i 0 (concatD [prt 0 name, prt 0 optsig, doc (showString "="), prt 0 termproc, prt 0 optdot])
     DSig name term optdot -> prPrec i 0 (concatD [prt 0 name, doc (showString ":"), prt 0 term, prt 0 optdot])
     DDat name connames optdot -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "="), prt 0 connames, prt 0 optdot])
+    DAsr assertion -> prPrec i 0 (concatD [doc (showString "assert"), prt 0 assertion])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
+instance Print Assertion where
+  prt i e = case e of
+    AEq term1 term2 term3 -> prPrec i 0 (concatD [prt 0 term1, doc (showString "="), prt 0 term2, doc (showString ":"), prt 0 term3])
+
 instance Print ConName where
   prt i e = case e of
     CN name -> prPrec i 0 (concatD [doc (showString "`"), prt 0 name])

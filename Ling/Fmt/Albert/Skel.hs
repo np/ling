@@ -21,6 +21,10 @@ transDec x = case x of
   DDef name optsig termproc optdot -> failure x
   DSig name term optdot -> failure x
   DDat name connames optdot -> failure x
+  DAsr assertion -> failure x
+transAssertion :: Assertion -> Result
+transAssertion x = case x of
+  AEq term1 term2 term3 -> failure x
 transConName :: ConName -> Result
 transConName x = case x of
   CN name -> failure x

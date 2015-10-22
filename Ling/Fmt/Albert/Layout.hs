@@ -231,20 +231,21 @@ sToken p s = PT p (TS s i)
       "^" -> 24
       "`" -> 25
       "as" -> 26
-      "case" -> 27
-      "data" -> 28
-      "end" -> 29
-      "fwd" -> 30
-      "new" -> 31
-      "of" -> 32
-      "proc" -> 33
-      "recv" -> 34
-      "send" -> 35
-      "slice" -> 36
-      "{" -> 37
-      "|" -> 38
-      "}" -> 39
-      "~" -> 40
+      "assert" -> 27
+      "case" -> 28
+      "data" -> 29
+      "end" -> 30
+      "fwd" -> 31
+      "new" -> 32
+      "of" -> 33
+      "proc" -> 34
+      "recv" -> 35
+      "send" -> 36
+      "slice" -> 37
+      "{" -> 38
+      "|" -> 39
+      "}" -> 40
+      "~" -> 41
       _ -> error $ "not a reserved word: " ++ show s
 
 -- | Get the position of a token.

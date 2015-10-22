@@ -1,3 +1,9 @@
+data Bool = `false | `true
+
+assert `false = `false : Bool
+data Bool = `false | `true
+
+assert `false = `true : Bool
 Id : (A : Type)(x : A)(y : A)-> Type
 
 refl : (A : Type)(x : A)-> Id A x x

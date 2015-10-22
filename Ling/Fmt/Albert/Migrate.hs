@@ -22,6 +22,11 @@ transDec x = case x of
     L.DDef (transName name) (transOptSig optsig) (transTerm term)
   DSig name term _ -> L.DSig (transName name) (transTerm term)
   DDat name connames _ -> L.DDat (transName name) (map transConName connames)
+  DAsr assertion -> L.DAsr (transAssertion assertion)
+
+transAssertion :: Assertion -> L.Assertion
+transAssertion x = case x of
+  AEq term1 term2 term3 -> L.AEq (transTerm term1) (transTerm term2) (transTerm term3)
 
 transConName :: ConName -> L.ConName
 transConName x = case x of

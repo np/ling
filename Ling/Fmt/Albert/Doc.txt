@@ -41,9 +41,9 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 
 The reserved words used in Albert are the following:
   | ``Fwd`` | ``Log`` | ``Sort`` | ``Type``
-  | ``as`` | ``case`` | ``data`` | ``end``
-  | ``fwd`` | ``new`` | ``of`` | ``proc``
-  | ``recv`` | ``send`` | ``slice`` | 
+  | ``as`` | ``assert`` | ``case`` | ``data``
+  | ``end`` | ``fwd`` | ``new`` | ``of``
+  | ``proc`` | ``recv`` | ``send`` | ``slice``
 
 The symbols used in Albert are the following:
   | , | ( | ) | =
@@ -71,6 +71,8 @@ All other symbols are terminals.
   |  |  **|**  | //Name// //OptSig// ``=`` //TermProc// //OptDot// 
   |  |  **|**  | //Name// ``:`` //Term// //OptDot// 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// //OptDot// 
+  |  |  **|**  | ``assert`` //Assertion// 
+  | //Assertion// | -> | //Term// ``=`` //Term// ``:`` //Term// 
   | //ConName// | -> | ````` //Name// 
   | //OptDot// | -> | **eps**
   |  |  **|**  | ``.`` 

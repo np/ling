@@ -16,6 +16,9 @@ DPrc. Dec ::= Name "(" [ChanDec] ")" "=" Proc OptDot ;
 DDef. Dec ::= Name OptSig "=" TermProc OptDot ;
 DSig. Dec ::= Name ":" Term OptDot ;
 DDat. Dec ::= "data" Name "=" [ConName] OptDot ;
+DAsr. Dec ::= "assert" Assertion ;
+
+AEq. Assertion ::= Term "=" Term ":" Term ;
 
 CN. ConName ::= "`" Name ;
 
