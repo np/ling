@@ -1,5 +1,4 @@
-data Bool = `false | `true
-
+assert `false = `false : Bool
 not : (x : Bool)-> Bool
     = \(x : Bool)-> case x of { `false -> `true, `true -> `false }
 
@@ -46,6 +45,13 @@ cut_send_recv_recv_send_with_log_prll =
     | send c 1).
     ( send logc "recv c"
     | recv c (x : Int)))
+dep_fun_server =
+  \(A : Type)
+   (B : (x : A)-> Type)
+   (f : (x : A)-> B x)->
+   proc(c : ?(x : A). !B x)
+   recv c (x : A).
+   send c (f x)
 div_mod_server_cont = proc(c : ?Int.?Int.!Int.!Int)
   recv c (m : Int).
   recv c (n : Int).
@@ -175,8 +181,7 @@ fun1_to_proc_seq =
   proc(c : ?I. !O)
   recv c (x : I).
   send c (f x)
-data MyZero =
-fwd0_snd0 = proc(c : Fwd 0 (!MyZero)) fwd 0 (!MyZero) c
+fwd0_snd0 = proc(c : Fwd 0 (!Empty)) fwd 0 (!Empty) c
 fwd1_rcv = proc(c : Fwd 1 (?Int)) fwd 1 (?Int) c
 fwd2_par2_ten2 = proc(c : Fwd 2 {?Int,!Int.?Int}) fwd 2 {?Int,!Int.?Int} c
 fwd3_par2_ten2_ten2 = proc(c : Fwd 3 {?Int,!Int.?Int})
@@ -244,6 +249,25 @@ fwd_seq2_seq2_seq2 =
       )
   fwd [: ?Int,!Int.?Int :](i,o,l)
 fwd_ten2_par2 = proc(i : [?Int,!Int.?Int], o : {!Int,?Int.!Int}) fwd[?Int,!Int.?Int](i,o)
+split_nested_seq_core =
+  \(A : Session)(B : Session)(C : Session)(D : Session)->
+   proc(i : [: ~A, ~B, ~C, ~D :], o : [: [: A, B :], [: C, D :] :])
+    i[:na,nb,nc,nd:]
+    o[:ab,cd:]
+    ab[:a,b:]
+    cd[:c,d:]
+    fwd A (a,na).
+    fwd B (b,nb).
+    fwd C (c,nc).
+    fwd D (d,nd)
+
+group_nested_seq :
+  (A : Session)(B : Session)(C : Session)(D : Session)->
+  < [: [: A, B :], [: C, D :] :] -o [: A, B, C, D :] > =
+  \(A : Session)(B : Session)(C : Session)(D : Session)->
+   proc(c : {[: [: ~A, ~B :], [: ~C, ~D :] :], [: A, B, C, D :]})
+     c{i,o}
+     @(split_nested_seq_core (~A) (~B) (~C) (~D))(o,i)
 id : (A : Type)(x : A) -> A
 
 idproc = proc(c : ?Int, d : !Int)
@@ -295,7 +319,7 @@ merger =
   )
 merger_loli_Sort =
  \(m : Int)(n : Int)->
- proc( c : {Sort Int m, Sort Int n} -o Sort Int (m + n) )
+ proc( c : {DotSort Int m, DotSort Int n} -o DotSort Int (m + n) )
   c{c01,d}
   c01[c0,c1]
   recv d (vi : Vec Int (m + n)).
@@ -306,9 +330,9 @@ merger_loli_Sort =
   send d (merge m n v0 v1)
 merger_nstSort_prll =
  \(m : Int)(n : Int)->
- proc( c0 : ~Sort Int m
-     , c1 : ~Sort Int n
-     , c  : Sort Int (m + n)
+ proc( c0 : ~DotSort Int m
+     , c1 : ~DotSort Int n
+     , c  : DotSort Int (m + n)
      )
   recv c (vi : Vec Int (m + n)).
   ( send c0 (take Int m n vi)
@@ -318,8 +342,8 @@ merger_nstSort_prll =
   send c (merge m n v0 v1)
 merger_nstSort_prll_v2 =
  \(m : Int)(n : Int)->
- proc( c : [~Sort Int m, ~Sort Int n]
-     , d : Sort Int (m + n)
+ proc( c : [~DotSort Int m, ~DotSort Int n]
+     , d : DotSort Int (m + n)
      )
   c[c0,c1]
   recv d (vi : Vec Int (m + n)).
@@ -328,13 +352,11 @@ merger_nstSort_prll_v2 =
   ( recv c0 (v0 : Vec Int m)
   | recv c1 (v1 : Vec Int n)).
   send d (merge m n v0 v1)
--- ParSort = \(n : Int) -> {? Vec Int n, ! Vec Int n}
-
 merger_ParSort_full_prll =
  \(m : Int)(n : Int)->
- proc( c0 : [! Vec Int m, ? Vec Int m]
-     , c1 : [! Vec Int n, ? Vec Int n]
-     , c  : {? Vec Int (m + n), ! Vec Int (m + n)}
+ proc( c0 : ~ParSort Int m
+     , c1 : ~ParSort Int n
+     , c  : ParSort Int (m + n)
      )
   c0[c0i,c0o]
   c1[c1i,c1o]
@@ -369,7 +391,7 @@ merger_seq =
   send co (merge m n v0 v1)
 merger_seq_Sort =
  \(m : Int)(n : Int)->
- proc(c : [Sort Int m, Sort Int n] -o Sort Int (m + n))
+ proc(c : [DotSort Int m, DotSort Int n] -o DotSort Int (m + n))
   c{d,io} d{d0,d1}
   recv io (vi : Vec Int (m + n)).
   send d0 (take Int m n vi).
@@ -379,7 +401,7 @@ merger_seq_Sort =
   send io (merge m n v0 v1)
 merger_seqential_ten2_loli_Sort =
  \(m : Int)(n : Int)->
- proc( c : [Sort Int m, Sort Int n] -o Sort Int (m + n) )
+ proc( c : [DotSort Int m, DotSort Int n] -o DotSort Int (m + n) )
   c{c01,d}
   c01{c0,c1}
   recv d (vi : Vec Int (m + n)).
@@ -390,7 +412,7 @@ merger_seqential_ten2_loli_Sort =
   send d (merge m n v0 v1)
 merger_ten2_loli_Sort =
  \(m : Int)(n : Int)->
- proc( c : [Sort Int m, Sort Int n] -o Sort Int (m + n) )
+ proc( c : [DotSort Int m, DotSort Int n] -o DotSort Int (m + n) )
   c{c01,d}
   c01{c0,c1}
   recv d (vi : Vec Int (m + n)).
@@ -399,6 +421,17 @@ merger_ten2_loli_Sort =
   ( recv c0 (v0 : Vec Int m)
   | recv c1 (v1 : Vec Int n)).
   send d (merge m n v0 v1)
+my_dual = \(S : Session)-> ~S
+
+test_my_dual = proc(c : my_dual (!Int))
+  recv c (x : Int)
+my_loli = \(S : Session)(T : Session) -> {~S,T}
+
+test_my_loli =
+  proc(c : my_loli (!Int) (!Int))
+  c{i,o}
+  recv i (x : Int).
+  send o x
 -- Requires a mix
 no_dead_lock_new_new = proc()
   new (c : ?Int, d)
@@ -560,6 +593,9 @@ plug_send_recv =
   \(p : < !Int, ?Int >)->
   proc(c : !Int, d : ?Int)
     @p(c,d)
+_ = 1
+_ = 2
+_ = "Hello!"
 replicate_par = proc(c : {!Int ^ 10})
   c{d}
   slice (d) 10 as i
@@ -568,6 +604,12 @@ replicate_ten = proc(c : [!Int ^ 10])
   c[d]
   slice (d) 10 as i
   send d i
+seq0_explicit =
+  proc(c : [: :])
+  c[: :]
+seq0 =
+  proc(c : [: :])
+  ()
 seq3 = proc(c : [: !Int, !Int, !Int :])
   c[: c0, c1, c2 :]
   send c0 0
@@ -612,6 +654,20 @@ sorter =
   recv ci (v : Vec Int n)
   send co (sort n v)
 split_fwd1_rcv = proc(c : Fwd 1 (?Int)) c{d} fwd (?Int) (d)
+split_nested_seq :
+  (A : Session)(B : Session)(C : Session)(D : Session)->
+  < [: A, B, C, D :] -o [: [: A, B :], [: C, D :] :] > =
+  \(A : Session)(B : Session)(C : Session)(D : Session)->
+   proc(c : {[: ~A, ~B, ~C, ~D :], [: [: A, B :], [: C, D :] :]})
+    c{i,o}
+    i[:na,nb,nc,nd:]
+    o[:ab,cd:]
+    ab[:a,b:]
+    cd[:c,d:]
+    fwd A (a,na).
+    fwd B (b,nb).
+    fwd C (c,nc).
+    fwd D (d,nd)
 sum_int = proc(a : {?Int ^ 10}, r : !Int)
   new (itmp : !Int.?Int, tmp)
   (send itmp 0
@@ -624,6 +680,20 @@ sum_int = proc(a : {?Int ^ 10}, r : !Int)
    send tmp (x + y)
   )
 
+switch
+  : (A : Session)(B : Session)(C : Session)->
+    < [A, {B, C}] -o {[A, B], C} >
+  = \(A : Session)(B : Session)(C : Session)->
+    -- The definition of `-o` is expanded to make it easier to follow the splits.
+    proc(c : {{~A, [~B, ~C]}, {[A, B], C}})
+      c{i,o}
+      i{na,nbc}
+      nbc[nb,nc]
+      o{ab,c}
+      ab[a,b]
+      ( fwd A (a,na)
+      | fwd B (b,nb)
+      | fwd C (c,nc))
 ten_loli_par =
  \(A : Session)
   (B : Session)->
@@ -806,7 +876,7 @@ trans : (A : Type)(x' : A)(y' : A)(z' : A)(p : Id A x' y')(q : Id A y' z')-> Id 
       = \(A : Type)(x' : A)(y' : A)(z' : A)(p : Id A x' y')(q : Id A y' z')->
         tr A y' (Id A x') p z' q
 -- -}
-zap_ten_fwd = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
+zap_ten_fwd = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
   cf{cfi}
   cn{cni}
   co[coi]
@@ -828,7 +898,7 @@ zap_ten_par = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10
     send coi y
   )
 
-zap_ten_seq = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
+zap_ten_seq = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
   cf{cfi}
   cn{cni}
   co[coi]

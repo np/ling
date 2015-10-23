@@ -1,13 +1,13 @@
+{-# LANGUAGE LambdaCase #-}
 module Ling.Session where
 
 import Prelude hiding (log)
 import Data.Maybe
 import Ling.Norm
+import qualified Ling.Raw as Raw
 
 array :: TraverseKind -> Sessions -> Session
-array ParK = Par
-array TenK = Ten
-array SeqK = Seq
+array = Array
 
 one :: Session -> RSession
 one s = Repl s (Lit (LInteger 1))
@@ -16,7 +16,7 @@ list :: [Session] -> Sessions
 list = map one
 
 loli :: Session -> Session -> Session
-loli s t = Par $ list [dual s, t]
+loli s t = Array ParK $ list [dual s, t]
 
 fwds :: Int -> Session -> Sessions
 fwds n s
@@ -26,10 +26,24 @@ fwds n s
   | otherwise = list $ s : dual s : replicate (n - 2) (log s)
 
 fwd :: Int -> Session -> Session
-fwd n s = Par $ fwds n s
+fwd n s = Array ParK $ fwds n s
 
-sortSession :: Typ -> Term -> Session
-sortSession a e = Rcv (vecTyp a e) (Snd (vecTyp a e) End)
+endS :: Session
+endS = Array SeqK []
+
+-- Here one can tune what we consider ended.
+-- Being ended implies:
+-- * No need to actually use the channel
+-- * Forwarders thus never use them
+-- For instance these could be ended.
+-- * `Array _ []` (thus `{}` and `[]`)
+-- * `Array _ [ended ,..., ended]`
+isEnd :: Session -> Bool
+isEnd = (==) endS
+
+isEndR :: RSession -> Bool
+isEndR (Repl s (Lit (LInteger 1))) = isEnd s
+isEndR _ = False
 
 mapR :: (Session -> Session) -> RSession -> RSession
 mapR f (Repl s a) = Repl (f s) a
@@ -39,13 +53,29 @@ mapSessions = map . mapR
 
 class Dual a where
   dual :: a -> a
+  dual = dualOp DualOp
+
   log  :: a -> a
+  log = dualOp LogOp
+
+  sink :: Dual a => a -> a
+  sink = dual . log
+
+  dualOp :: Dual a => DualOp -> a -> a
+  dualOp NoOp   = id
+  dualOp DualOp = dual
+  dualOp LogOp  = log
+  dualOp SinkOp = sink
+
+termS :: DualOp -> Term -> Session
+termS op (TSession s) = dualOp op s
+termS op           t  = TermS  op t
 
 -- Sub-optimal but concise
 isLog, isSink :: (Eq session, Dual session) => session -> Bool
 
-isLog  s = s ==       log s
-isSink s = s == dual (log s)
+isLog  s = s ==  log s
+isSink s = s == sink s
 
 validAx :: (Eq session, Dual session) => session -> [channel] -> Bool
 -- Forwarding anything between no channels is always possible
@@ -62,43 +92,60 @@ instance Dual RW where
   dual Write = Read
   log _      = Write
 
-instance Dual Session where
-  dual (Par s)    = Ten   (dual s)
-  dual (Ten s)    = Par   (dual s)
-  dual (Seq s)    = Seq   (dual s)
-  dual (Snd a s)  = Rcv a (dual s)
-  dual (Rcv a s)  = Snd a (dual s)
-  dual (Atm p n)  = Atm (dual p) n
-  dual End        = End
+instance Dual DualOp where
+  dual DualOp = NoOp
+  dual NoOp   = DualOp
+  dual LogOp  = SinkOp
+  dual SinkOp = LogOp
+  log  _      = LogOp
 
-  log (Par s)    = Par (mapSessions log s)
-  log (Ten s)    = Par (mapSessions log s)
-  log (Seq s)    = Seq (mapSessions log s)
-  log (Snd a s)  = Snd a (log s)
-  log (Rcv a s)  = Snd a (log s)
-  log (Atm _ n)  = Atm Write n
-  log End        = End
+instance Dual TraverseKind where
+  dual ParK = TenK
+  dual TenK = ParK
+  dual SeqK = SeqK
+  log  SeqK = SeqK
+  log  _    = ParK
+
+instance Dual Session where
+  dualOp f = \case
+    Array k s -> Array (dualOp f k) (dualOp f s)
+    IO p a s  -> IO (dualOp f p) a (dualOp f s)
+    TermS p t -> TermS (dualOp f p) t
+
+instance Dual Raw.Term where
+  dual (Raw.Dual s) =          s
+  dual           s  = Raw.Dual s
+
+  log s
+    | Raw.RawApp (Raw.Var (Raw.Name "Log")) [_] <- s
+      = s
+    | otherwise
+      = Raw.RawApp (Raw.Var (Raw.Name "Log")) [Raw.paren s]
 
 instance Dual RSession where
-  dual = mapR dual
-  log  = mapR log
+  dual   = mapR dual
+  log    = mapR log
+  dualOp = mapR . dualOp
 
 instance Dual a => Dual [a] where
-  dual = map dual
-  log  = map log
+  dual   = map dual
+  log    = map log
+  dualOp = map . dualOp
+
+instance Dual Term where
+  dualOp op = tSession . termS op
 
 defaultEnd :: Maybe Session -> Session
-defaultEnd Nothing  = End
+defaultEnd Nothing  = endS
 defaultEnd (Just s) = s
 
 defaultEndR :: Maybe RSession -> RSession
-defaultEndR Nothing  = one End
+defaultEndR Nothing  = one endS
 defaultEndR (Just s) = s
 
 sessionStep :: Session -> Session
-sessionStep (Snd _ s) = s
-sessionStep (Rcv _ s) = s
-sessionStep s         = error $ "sessionStep: no steps " ++ show s
+sessionStep (IO _ _ s) = s
+sessionStep s          = error $ "sessionStep: no steps " ++ show s
 
 extractDuals :: Dual a => (Maybe a , Maybe a) -> Maybe (a , a)
 extractDuals (Nothing , Nothing) = Nothing
@@ -131,10 +178,8 @@ projRSessions n (Repl s a:ss)
       _ -> error "projRSessions/Repl: only integer literals are supported"
 
 projSession :: Integer -> Session -> Session
-projSession n (Par ss) = projRSessions n ss
-projSession n (Ten ss) = projRSessions n ss
-projSession n (Seq ss) = projRSessions n ss
-projSession _ _        = error "projSession: not a par/tensor/seq session"
+projSession n (Array _ ss) = projRSessions n ss
+projSession _ _            = error "projSession: not an array (par,tensor,seq) session"
 
 int0, int1 :: Term
 int0 = Lit (LInteger 0)

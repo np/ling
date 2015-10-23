@@ -54,6 +54,10 @@ transATerm x = case x of
   TTyp -> failure x
   TProto rsessions -> failure x
   Paren term -> failure x
+  End -> failure x
+  Par rsessions -> failure x
+  Ten rsessions -> failure x
+  Seq rsessions -> failure x
 transDTerm :: DTerm -> Result
 transDTerm x = case x of
   DTTyp name aterms -> failure x
@@ -61,6 +65,10 @@ transDTerm x = case x of
 transTerm :: Term -> Result
 transTerm x = case x of
   RawApp aterm aterms -> failure x
+  Snd dterm csession -> failure x
+  Rcv dterm csession -> failure x
+  Dual term -> failure x
+  Loli term1 term2 -> failure x
   Case term branchs -> failure x
   TFun vardec vardecs term -> failure x
   TSig vardec vardecs term -> failure x
@@ -81,36 +89,25 @@ transAct x = case x of
   Send name aterm -> failure x
   Recv name vardec -> failure x
   NewSlice names aterm name -> failure x
-  Ax session names -> failure x
-  SplitAx integer session name -> failure x
+  Ax asession names -> failure x
+  SplitAx integer asession name -> failure x
   At aterm names -> failure x
+transASession :: ASession -> Result
+transASession x = case x of
+  AS aterm -> failure x
 transOptSession :: OptSession -> Result
 transOptSession x = case x of
   NoSession -> failure x
   SoSession rsession -> failure x
-transSession :: Session -> Result
-transSession x = case x of
-  Atm name -> failure x
-  End -> failure x
-  Par rsessions -> failure x
-  Ten rsessions -> failure x
-  Seq rsessions -> failure x
-  Sort aterm1 aterm2 -> failure x
-  Log session -> failure x
-  Fwd integer session -> failure x
-  Snd dterm csession -> failure x
-  Rcv dterm csession -> failure x
-  Dual session -> failure x
-  Loli session1 session2 -> failure x
 transRSession :: RSession -> Result
 transRSession x = case x of
-  Repl session optrepl -> failure x
+  Repl term optrepl -> failure x
 transOptRepl :: OptRepl -> Result
 transOptRepl x = case x of
   One -> failure x
   Some aterm -> failure x
 transCSession :: CSession -> Result
 transCSession x = case x of
-  Cont session -> failure x
+  Cont term -> failure x
   Done -> failure x
 

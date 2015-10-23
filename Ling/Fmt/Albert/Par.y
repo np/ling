@@ -28,16 +28,15 @@ import Ling.Fmt.Albert.ErrM
 %name pATerm ATerm
 %name pListATerm ListATerm
 %name pDTerm DTerm
+%name pTerm2 Term2
+%name pTerm1 Term1
 %name pTerm Term
 %name pProc1 Proc1
 %name pProc Proc
 %name pListProc ListProc
 %name pAct Act
+%name pASession ASession
 %name pOptSession OptSession
-%name pSession4 Session4
-%name pSession3 Session3
-%name pSession2 Session2
-%name pSession Session
 %name pRSession RSession
 %name pListRSession ListRSession
 %name pOptRepl OptRepl
@@ -61,32 +60,29 @@ import Ling.Fmt.Albert.ErrM
   '>' { PT _ (TS _ 13) }
   '?' { PT _ (TS _ 14) }
   '@' { PT _ (TS _ 15) }
-  'Fwd' { PT _ (TS _ 16) }
-  'Log' { PT _ (TS _ 17) }
-  'Sort' { PT _ (TS _ 18) }
-  'Type' { PT _ (TS _ 19) }
-  '[' { PT _ (TS _ 20) }
-  '[:' { PT _ (TS _ 21) }
-  '\\' { PT _ (TS _ 22) }
-  ']' { PT _ (TS _ 23) }
-  '^' { PT _ (TS _ 24) }
-  '`' { PT _ (TS _ 25) }
-  'as' { PT _ (TS _ 26) }
-  'assert' { PT _ (TS _ 27) }
-  'case' { PT _ (TS _ 28) }
-  'data' { PT _ (TS _ 29) }
-  'end' { PT _ (TS _ 30) }
-  'fwd' { PT _ (TS _ 31) }
-  'new' { PT _ (TS _ 32) }
-  'of' { PT _ (TS _ 33) }
-  'proc' { PT _ (TS _ 34) }
-  'recv' { PT _ (TS _ 35) }
-  'send' { PT _ (TS _ 36) }
-  'slice' { PT _ (TS _ 37) }
-  '{' { PT _ (TS _ 38) }
-  '|' { PT _ (TS _ 39) }
-  '}' { PT _ (TS _ 40) }
-  '~' { PT _ (TS _ 41) }
+  'Type' { PT _ (TS _ 16) }
+  '[' { PT _ (TS _ 17) }
+  '[:' { PT _ (TS _ 18) }
+  '\\' { PT _ (TS _ 19) }
+  ']' { PT _ (TS _ 20) }
+  '^' { PT _ (TS _ 21) }
+  '`' { PT _ (TS _ 22) }
+  'as' { PT _ (TS _ 23) }
+  'assert' { PT _ (TS _ 24) }
+  'case' { PT _ (TS _ 25) }
+  'data' { PT _ (TS _ 26) }
+  'end' { PT _ (TS _ 27) }
+  'fwd' { PT _ (TS _ 28) }
+  'new' { PT _ (TS _ 29) }
+  'of' { PT _ (TS _ 30) }
+  'proc' { PT _ (TS _ 31) }
+  'recv' { PT _ (TS _ 32) }
+  'send' { PT _ (TS _ 33) }
+  'slice' { PT _ (TS _ 34) }
+  '{' { PT _ (TS _ 35) }
+  '|' { PT _ (TS _ 36) }
+  '}' { PT _ (TS _ 37) }
+  '~' { PT _ (TS _ 38) }
 
 L_integ  { PT _ (TI $$) }
 L_doubl  { PT _ (TD $$) }
@@ -165,18 +161,30 @@ ATerm : Name { Ling.Fmt.Albert.Abs.Var $1 }
       | 'Type' { Ling.Fmt.Albert.Abs.TTyp }
       | '<' ListRSession '>' { Ling.Fmt.Albert.Abs.TProto $2 }
       | '(' Term ')' { Ling.Fmt.Albert.Abs.Paren $2 }
+      | 'end' { Ling.Fmt.Albert.Abs.End }
+      | '{' ListRSession '}' { Ling.Fmt.Albert.Abs.Par $2 }
+      | '[' ListRSession ']' { Ling.Fmt.Albert.Abs.Ten $2 }
+      | '[:' ListRSession ':]' { Ling.Fmt.Albert.Abs.Seq $2 }
 ListATerm :: { [ATerm] }
 ListATerm : {- empty -} { [] } | ListATerm ATerm { flip (:) $1 $2 }
 DTerm :: { DTerm }
 DTerm : Name ListATerm { Ling.Fmt.Albert.Abs.DTTyp $1 (reverse $2) }
       | '(' Name ':' Term ')' { Ling.Fmt.Albert.Abs.DTBnd $2 $4 }
+Term2 :: { Term }
+Term2 : ATerm ListATerm { Ling.Fmt.Albert.Abs.RawApp $1 (reverse $2) }
+      | '!' DTerm CSession { Ling.Fmt.Albert.Abs.Snd $2 $3 }
+      | '?' DTerm CSession { Ling.Fmt.Albert.Abs.Rcv $2 $3 }
+      | '~' Term2 { Ling.Fmt.Albert.Abs.Dual $2 }
+Term1 :: { Term }
+Term1 : Term2 '-o' Term1 { Ling.Fmt.Albert.Abs.Loli $1 $3 }
+      | Term2 { $1 }
 Term :: { Term }
-Term : ATerm ListATerm { Ling.Fmt.Albert.Abs.RawApp $1 (reverse $2) }
-     | 'case' Term 'of' '{' ListBranch '}' { Ling.Fmt.Albert.Abs.Case $2 $5 }
+Term : 'case' Term 'of' '{' ListBranch '}' { Ling.Fmt.Albert.Abs.Case $2 $5 }
      | VarDec ListVarDec '->' Term { Ling.Fmt.Albert.Abs.TFun $1 (reverse $2) $4 }
      | VarDec ListVarDec '**' Term { Ling.Fmt.Albert.Abs.TSig $1 (reverse $2) $4 }
      | '\\' VarDec ListVarDec '->' Term { Ling.Fmt.Albert.Abs.Lam $2 (reverse $3) $5 }
      | 'proc' '(' ListChanDec ')' Proc { Ling.Fmt.Albert.Abs.TProc $3 $5 }
+     | Term1 { $1 }
 Proc1 :: { Proc }
 Proc1 : Act { Ling.Fmt.Albert.Abs.PAct $1 }
       | '(' ListProc ')' { Ling.Fmt.Albert.Abs.PPrll $2 }
@@ -196,34 +204,16 @@ Act : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Fmt.Albert.Abs.Nu $3 $5 }
     | 'send' Name ATerm { Ling.Fmt.Albert.Abs.Send $2 $3 }
     | 'recv' Name VarDec { Ling.Fmt.Albert.Abs.Recv $2 $3 }
     | 'slice' '(' ListName ')' ATerm 'as' Name { Ling.Fmt.Albert.Abs.NewSlice $3 $5 $7 }
-    | 'fwd' Session '(' ListName ')' { Ling.Fmt.Albert.Abs.Ax $2 $4 }
-    | 'fwd' Integer Session Name { Ling.Fmt.Albert.Abs.SplitAx $2 $3 $4 }
+    | 'fwd' ASession '(' ListName ')' { Ling.Fmt.Albert.Abs.Ax $2 $4 }
+    | 'fwd' Integer ASession Name { Ling.Fmt.Albert.Abs.SplitAx $2 $3 $4 }
     | '@' ATerm '(' ListName ')' { Ling.Fmt.Albert.Abs.At $2 $4 }
+ASession :: { ASession }
+ASession : ATerm { Ling.Fmt.Albert.Abs.AS $1 }
 OptSession :: { OptSession }
 OptSession : {- empty -} { Ling.Fmt.Albert.Abs.NoSession }
            | ':' RSession { Ling.Fmt.Albert.Abs.SoSession $2 }
-Session4 :: { Session }
-Session4 : Name { Ling.Fmt.Albert.Abs.Atm $1 }
-         | 'end' { Ling.Fmt.Albert.Abs.End }
-         | '{' ListRSession '}' { Ling.Fmt.Albert.Abs.Par $2 }
-         | '[' ListRSession ']' { Ling.Fmt.Albert.Abs.Ten $2 }
-         | '[:' ListRSession ':]' { Ling.Fmt.Albert.Abs.Seq $2 }
-         | '(' Session ')' { $2 }
-Session3 :: { Session }
-Session3 : 'Sort' ATerm ATerm { Ling.Fmt.Albert.Abs.Sort $2 $3 }
-         | 'Log' Session4 { Ling.Fmt.Albert.Abs.Log $2 }
-         | 'Fwd' Integer Session4 { Ling.Fmt.Albert.Abs.Fwd $2 $3 }
-         | Session4 { $1 }
-Session2 :: { Session }
-Session2 : '!' DTerm CSession { Ling.Fmt.Albert.Abs.Snd $2 $3 }
-         | '?' DTerm CSession { Ling.Fmt.Albert.Abs.Rcv $2 $3 }
-         | '~' Session2 { Ling.Fmt.Albert.Abs.Dual $2 }
-         | Session3 { $1 }
-Session :: { Session }
-Session : Session2 '-o' Session { Ling.Fmt.Albert.Abs.Loli $1 $3 }
-        | Session2 { $1 }
 RSession :: { RSession }
-RSession : Session OptRepl { Ling.Fmt.Albert.Abs.Repl $1 $2 }
+RSession : Term OptRepl { Ling.Fmt.Albert.Abs.Repl $1 $2 }
 ListRSession :: { [RSession] }
 ListRSession : {- empty -} { [] }
              | RSession { (:[]) $1 }
@@ -232,7 +222,7 @@ OptRepl :: { OptRepl }
 OptRepl : {- empty -} { Ling.Fmt.Albert.Abs.One }
         | '^' ATerm { Ling.Fmt.Albert.Abs.Some $2 }
 CSession :: { CSession }
-CSession : '.' Session2 { Ling.Fmt.Albert.Abs.Cont $2 }
+CSession : '.' Term1 { Ling.Fmt.Albert.Abs.Cont $2 }
          | {- empty -} { Ling.Fmt.Albert.Abs.Done }
 {
 

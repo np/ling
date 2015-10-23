@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, RankNTypes #-}
+{-# LANGUAGE TemplateHaskell, RankNTypes, LambdaCase #-}
 module Ling.Sequential where
 
 {-
@@ -55,7 +55,7 @@ transErr :: Print a => String -> a -> b
 transErr msg v = error $ msg ++ "\n" ++ pretty v
 
 emptyEnv :: Env
-emptyEnv = Env Map.empty Map.empty Map.empty
+emptyEnv = Env ø ø ø
 
 addChans :: [(Channel, (Location, RSession))] -> Env -> Env
 addChans xys = chans %~ Map.union (Map.fromList xys)
@@ -97,11 +97,9 @@ sessionsStatus dflt l ss =
   , ls <- sessionStatus dflt (Proj l i) s ]
 
 sessionStatus :: (Session -> Status) -> Location -> Session -> [(Location,Status)]
-sessionStatus dflt l x = case x of
-  Ten ss -> sessionsStatus dflt l ss
-  Par ss -> sessionsStatus dflt l ss
-  Seq ss -> sessionsStatus dflt l ss
-  _      -> [(l, dflt x)]
+sessionStatus dflt l = \case
+  Array _ ss -> sessionsStatus dflt l ss
+  s          -> [(l, dflt s)]
 
 rsessionStatus :: (Session -> Status) -> Location -> RSession -> [(Location,Status)]
 rsessionStatus dflt l r@(Repl s t) =
@@ -210,10 +208,10 @@ transDec :: Dec -> Dec
 transDec x = case x of
   Sig d oty (Just (Proc cs proc)) -> transProc env proc (const $ Sig d oty . Just . Proc cs)
     where
-      decSt Snd{} = Empty
-      decSt Rcv{} = Full
-      decSt End{} = Empty
-      decSt _     = error "transDec.decSt: impossible"
+      decSt (IO Write _ _) = Empty
+      decSt (IO Read  _ _) = Full
+      decSt (Array _ [])   = Empty
+      decSt _              = error "transDec.decSt: impossible"
       env = addLocs  [ ls          | Arg c (Just s) <- cs, ls <- rsessionStatus decSt (Root c) s ] $
             addChans [ (c, (l, s)) | Arg c (Just s) <- cs, let l = Root c ]
             emptyEnv

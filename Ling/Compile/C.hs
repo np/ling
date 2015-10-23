@@ -42,10 +42,11 @@ import Data.Maybe
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Set (Set)
-import Ling.Utils
+import Debug.Trace
+import Ling.Utils hiding (q)
 import Ling.Print
 import Ling.Session
-import Ling.Norm
+import Ling.Norm hiding (mkCase)
 import qualified MiniC.Abs as C
 import qualified MiniC.Print as C
 
@@ -214,6 +215,7 @@ transTerm env x = case x of
   TSig{}         -> dummyTyp
   TProto{}       -> dummyTyp
   TTyp           -> dummyTyp
+  TSession{}     -> dummyTyp -- so far one cannot match on sessions
 
 -- Types are erased to 0
 dummyTyp :: C.Exp
@@ -322,6 +324,10 @@ unionT ts
   | allEq ts  = head ts
   | otherwise = (C.TUni [ C.FFld t (uniI i) arrs | (i,(t,arrs)) <- zip [0..] ts ], [])
 
+rwQual :: RW -> C.Qual
+rwQual Read  = C.QConst
+rwQual Write = C.NoQual
+
 unionQual :: C.Qual -> C.Qual -> C.Qual
 unionQual C.QConst C.QConst = C.QConst
 unionQual _        _        = C.NoQual
@@ -358,6 +364,7 @@ transTyp env e0 = case e0 of
   Lit{}    -> transErr "transTyp: Not a type: Lit" e0
   Con{}    -> transErr "transTyp: Not a type: Con" e0
   Proc{}   -> transErr "transTyp: Not a type: Proc" e0
+  TSession{}-> transErr "transTyp: Not a type: TSession" e0
 
 transCTyp :: Env -> C.Qual -> Typ -> AQTyp
 transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env
@@ -373,13 +380,11 @@ mapAQTyp f (C.QTyp  q t , arrs) = (C.QTyp q t', arrs')
 
 transSession :: Env -> Session -> AQTyp
 transSession env x = case x of
-  End      -> tupQ []
-  Snd a s  -> unionQ [transCTyp env C.NoQual a, transSession env s]
-  Rcv a s  -> unionQ [transCTyp env C.QConst a, transSession env s]
-  Par ss   -> tupQ (transSessions env ss)
-  Ten ss   -> tupQ (transSessions env ss)
-  Seq ss   -> tupQ (transSessions env ss)
-  Atm _ n  -> transErr "Cannot compile an abstract session: " n
+  IO rw (Arg n ty) s
+    | n == anonName -> unionQ [transCTyp env (rwQual rw) ty, transSession env s]
+    | otherwise     -> transErr "Cannot compile a dependent session (yet): " x
+  Array _ ss -> tupQ (transSessions env ss)
+  TermS{} -> transErr "Cannot compile an abstract session: " x
 
 transRSession :: Env -> RSession -> AQTyp
 transRSession env (Repl s a) = case a of
@@ -412,17 +417,17 @@ transChanDec env (Arg c (Just session)) =
 transChanDec _   (Arg c Nothing)
   = transErr "transChanDec: TODO No Session for channel:" c
 
-transSig :: Env -> Name -> Maybe Typ -> Maybe Term -> C.Def
+transSig :: Env -> Name -> Maybe Typ -> Maybe Term -> [C.Def]
 transSig env0 f _ty0 (Just t) =
   case t of
     Proc cs proc ->
-      C.DDef (C.Dec voidQ (transName f) [])
-             (map fst news)
-             (transProc env proc)
+      [C.DDef (C.Dec voidQ (transName f) [])
+              (map fst news)
+              (transProc env proc)]
       where
         news = map (transChanDec env0) cs
         env  = addChans (map snd news) env0
-    _ -> transErr "transSig: TODO unsupported def" t
+    _ -> trace ("[WARNING] Skipping compilation of unsupported definition " ++ pretty f) []
 -- Of course this does not properly handle dependent types
 transSig env0 f (Just ty0) Nothing = case ty0 of
   TFun{} -> go env0 [] ty0 where
@@ -430,14 +435,14 @@ transSig env0 f (Just ty0) Nothing = case ty0 of
       TFun (Arg n s) t -> go (addEVar n (transName n) env)
                              (dDec (transCTyp env C.QConst s) (transName n) : args)
                              t
-      _                -> C.DSig (dDec (transCTyp env C.NoQual t1) (transName f))
-                                 (reverse args)
-  _ -> C.DDec (dDec (transCTyp env0 C.NoQual ty0) (transName f))
+      _                -> [C.DSig (dDec (transCTyp env C.NoQual t1) (transName f))
+                                  (reverse args)]
+  _ -> [C.DDec (dDec (transCTyp env0 C.NoQual ty0) (transName f))]
 transSig _ _ Nothing Nothing = error "IMPOSSIBLE transSig no sig nor def"
 
 transDec :: Env -> Dec -> [C.Def]
 transDec env x = case x of
-  Sig d ty tm -> [transSig env d ty tm]
+  Sig d ty tm -> transSig env d ty tm
   Dat _d _cs ->
     [] -- TODO typedef ? => [C.TEnum (map (C.EEnm . transCon) cs)]
   Assert _a ->

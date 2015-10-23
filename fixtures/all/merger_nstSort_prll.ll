@@ -1,8 +1,8 @@
 merger_nstSort_prll =
  \(m : Int)(n : Int)->
- proc( c0 : ~Sort Int m
-     , c1 : ~Sort Int n
-     , c  : Sort Int (m + n)
+ proc( c0 : ~DotSort Int m
+     , c1 : ~DotSort Int n
+     , c  : DotSort Int (m + n)
      )
   recv c (vi : Vec Int (m + n)).
   ( send c0 (take Int m n vi)

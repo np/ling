@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 module Ling.Fmt.Albert.Migrate where
 
-import qualified Ling.Abs            as L
+import qualified Ling.Raw            as L
 import           Ling.Fmt.Albert.Abs
 
 transName :: Name -> L.Name
@@ -67,6 +67,10 @@ transATerm x = case x of
   TTyp -> L.TTyp
   TProto rsessions -> L.TProto (map transRSession rsessions)
   Paren term -> L.Paren (transTerm term)
+  End -> L.End
+  Par rsessions -> L.Par (map transRSession rsessions)
+  Ten rsessions -> L.Ten (map transRSession rsessions)
+  Seq rsessions -> L.Seq (map transRSession rsessions)
 
 transDTerm :: DTerm -> L.DTerm
 transDTerm x = case x of
@@ -81,6 +85,10 @@ transTerm x = case x of
   TSig vardec vardecs term -> L.TSig (transVarDec vardec) (map transVarDec vardecs) (transTerm term)
   Lam vardec vardecs term -> L.Lam (transVarDec vardec) (map transVarDec vardecs) (transTerm term)
   TProc chandecs proc -> L.TProc (map transChanDec chandecs) (transProc proc)
+  Snd dterm csession -> L.Snd (transDTerm dterm) (transCSession csession)
+  Rcv dterm csession -> L.Rcv (transDTerm dterm) (transCSession csession)
+  Dual session -> L.Dual (transTerm session)
+  Loli session1 session2 -> L.Loli (transTerm session1) (transTerm session2)
 
 transProc :: Proc -> L.Proc
 transProc = \case
@@ -98,8 +106,8 @@ transAct = \case
   Send name aterm -> L.Send (transName name) (transATerm aterm)
   Recv name vardec -> L.Recv (transName name) (transVarDec vardec)
   NewSlice names aterm name -> L.NewSlice (map transName names) (transATerm aterm) (transName name)
-  Ax session names -> L.Ax (transSession session) (map transName names)
-  SplitAx integer session name -> L.SplitAx integer (transSession session) (transName name)
+  Ax session names -> L.Ax (transASession session) (map transName names)
+  SplitAx integer session name -> L.SplitAx integer (transASession session) (transName name)
   At aterm names -> L.At (transATerm aterm) (map transName names)
 
 transOptSession :: OptSession -> L.OptSession
@@ -107,24 +115,12 @@ transOptSession x = case x of
   NoSession -> L.NoSession
   SoSession rsession -> L.SoSession (transRSession rsession)
 
-transSession :: Session -> L.Session
-transSession x = case x of
-  Atm name -> L.Atm (transName name)
-  End -> L.End
-  Par rsessions -> L.Par (map transRSession rsessions)
-  Ten rsessions -> L.Ten (map transRSession rsessions)
-  Seq rsessions -> L.Seq (map transRSession rsessions)
-  Sort aterm1 aterm2 -> L.Sort (transATerm aterm1) (transATerm aterm2)
-  Log session -> L.Log (transSession session)
-  Fwd integer session -> L.Fwd integer (transSession session)
-  Snd dterm csession -> L.Snd (transDTerm dterm) (transCSession csession)
-  Rcv dterm csession -> L.Rcv (transDTerm dterm) (transCSession csession)
-  Dual session -> L.Dual (transSession session)
-  Loli session1 session2 -> L.Loli (transSession session1) (transSession session2)
+transASession :: ASession -> L.ASession
+transASession (AS aterm)= L.AS (transATerm aterm)
 
 transRSession :: RSession -> L.RSession
 transRSession x = case x of
-  Repl session optrepl -> L.Repl (transSession session) (transOptRepl optrepl)
+  Repl session optrepl -> L.Repl (transTerm session) (transOptRepl optrepl)
 
 transOptRepl :: OptRepl -> L.OptRepl
 transOptRepl x = case x of
@@ -133,5 +129,5 @@ transOptRepl x = case x of
 
 transCSession :: CSession -> L.CSession
 transCSession x = case x of
-  Cont session -> L.Cont (transSession session)
+  Cont session -> L.Cont (transTerm session)
   Done -> L.Done

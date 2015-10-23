@@ -1,29 +1,29 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
 module Main where
 
-import           System.Environment   (getArgs)
-import           System.Exit          (exitFailure)
-import           System.IO            (hPutStrLn, stderr)
+import           System.Environment (getArgs)
+import           System.Exit        (exitFailure)
+import           System.IO          (hPutStrLn, stderr)
 
 import           Control.Lens
-import           Control.Monad        (when)
+import           Control.Monad      (when)
 import           Data.Monoid
+import           IPPrint.Colored
 
-import qualified MiniC.Print          as C
+import qualified MiniC.Print        as C
 
 import           Ling.Abs
-import           Ling.Check.Base      (TCOpts, debugChecker,
-                                       defaultTCOpts, runTC)
-import           Ling.Check.Program   (checkProgram)
-import qualified Ling.Compile.C       as Compile
+import           Ling.Check.Base    (TCOpts, debugChecker, defaultTCOpts, runTC)
+import           Ling.Check.Program (checkProgram)
+import qualified Ling.Compile.C     as Compile
 import           Ling.ErrM
-import           Ling.Layout          (resolveLayout)
-import           Ling.Lex             (Token)
-import qualified Ling.Norm            as N
+import           Ling.Layout        (resolveLayout)
+import           Ling.Lex           (Token)
+import qualified Ling.Norm          as N
 import           Ling.Par
 import           Ling.Print
 import           Ling.Reify
-import qualified Ling.Sequential      as Sequential
+import qualified Ling.Sequential    as Sequential
 import           Ling.Utils
 
 type ParseFun a = [Token] -> Err a
@@ -45,35 +45,58 @@ layoutLexer :: String -> [Token]
 layoutLexer = resolveLayout True . myLexer
 
 prims :: String
-prims =
-  "Int   : Type\n\
-  \_+_   : (m : Int)(n : Int) -> Int\n\
-  \_-_   : (m : Int)(n : Int) -> Int\n\
-  \_*_   : (m : Int)(n : Int) -> Int\n\
-  \_/_   : (m : Int)(n : Int) -> Int\n\
-  \_%_   : (m : Int)(n : Int) -> Int\n\
-  \pow   : (m : Int)(n : Int) -> Int\n\
-  \Vec   : (A : Type)(n : Int) -> Type\n\
-  \take  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A m\n\
-  \drop  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A n\n\
-  \merge : (m : Int)(n : Int)(v0 : Vec Int m)(v1 : Vec Int n) -> Vec Int (m + n)\n\
-  \sort  : (n : Int)(v : Vec Int n) -> Vec Int n\n\
-  \Session : Type\n\
-  \Double : Type\n\
-  \Int2Double : (n : Int) -> Double\n\
-  \_+D_ : (m : Double)(n : Double) -> Double\n\
-  \_-D_ : (m : Double)(n : Double) -> Double\n\
-  \_*D_ : (m : Double)(n : Double) -> Double\n\
-  \_/D_ : (m : Double)(n : Double) -> Double\n\
-  \powD : (m : Double)(n : Double) -> Double\n\
-  \Char : Type\n\
-  \String : Type\n\
-  \showInt : (n : Int) -> String\n\
-  \showDouble : (n : Double) -> String\n\
-  \showChar : (c : Char) -> String\n\
-  \showString : (s : String) -> String\n\
-  \_++S_ : (s0 : String)(s1 : String) -> String\n\
-  \"
+prims = [q|
+data Empty =
+data Unit = `unit
+data Bool = `false | `true
+data LR = `left | `right
+Int   : Type
+_+_   : (m : Int)(n : Int) -> Int
+_-_   : (m : Int)(n : Int) -> Int
+_*_   : (m : Int)(n : Int) -> Int
+_/_   : (m : Int)(n : Int) -> Int
+_%_   : (m : Int)(n : Int) -> Int
+pow   : (m : Int)(n : Int) -> Int
+Vec   : (A : Type)(n : Int) -> Type
+take  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A m
+drop  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A n
+merge : (m : Int)(n : Int)(v0 : Vec Int m)(v1 : Vec Int n) -> Vec Int (m + n)
+sort  : (n : Int)(v : Vec Int n) -> Vec Int n
+Session : Type
+IO = \(I : Type)(O : (i : I) -> Type)-> ?(x : I). !O x
+IO' = \(I : Type)(O : Type)-> ?I. !O
+Par = \(S0 : Session)(S1 : Session)-> {S0, S1}
+Ten = \(S0 : Session)(S1 : Session)-> [S0, S1]
+Seq = \(S0 : Session)(S1 : Session)-> [:S0, S1:]
+ParIO = \(I : Type)(O : Type)-> {?I, !O}
+TenIO = \(I : Type)(O : Type)-> [?I, !O]
+TenOI = \(O : Type)(I : Type)-> [!O, ?I]
+SeqIO = \(I : Type)(O : Type)-> [: ?I, !O :]
+SeqOI = \(O : Type)(I : Type)-> [: !O, ?I :]
+EndoIO = \(T : Type)-> IO' T T
+EndoLoli = \(S : Session)-> S -o S
+EndoParIO = \(T : Type)-> ParIO T T
+EndoTenIO = \(T : Type)-> TenIO T T
+EndoTenOI = \(T : Type)-> TenOI T T
+EndoSeqIO = \(T : Type)-> SeqIO T T
+DotSort = \(A : Type)(n : Int)-> EndoIO (Vec A n)
+ParSort = \(A : Type)(n : Int)-> EndoLoli (!Vec A n)
+SeqSort = \(A : Type)(n : Int)-> [: ?Vec A n, !Vec A n :]
+Double : Type
+Int2Double : (n : Int) -> Double
+_+D_ : (m : Double)(n : Double) -> Double
+_-D_ : (m : Double)(n : Double) -> Double
+_*D_ : (m : Double)(n : Double) -> Double
+_/D_ : (m : Double)(n : Double) -> Double
+powD : (m : Double)(n : Double) -> Double
+Char : Type
+String : Type
+showInt : (n : Int) -> String
+showDouble : (n : Double) -> String
+showChar : (c : Char) -> String
+showString : (s : String) -> String
+_++S_ : (s0 : String)(s1 : String) -> String
+|]
 
 primsN :: N.Program
 primsN =
@@ -128,8 +151,9 @@ transP opts prg = do
 
 showTree :: (Show a, Print a) => Opts -> a -> IO ()
 showTree opts tree
- = do when (opts ^. showAST) $
-        putStrLn $ "\n[Abstract Syntax]\n\n" ++ show tree
+ = do when (opts ^. showAST) $ do
+        putStrLn "\n[Abstract Syntax]\n\n"
+        cpprint tree
       when (opts ^. showPretty) $
         putStrLn $ "\n-- Pretty-printed program\n\n" ++ pretty tree
 

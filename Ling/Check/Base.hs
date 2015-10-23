@@ -13,6 +13,7 @@ import           Ling.ErrM
 import           Ling.Free
 import           Ling.Norm
 import           Ling.Print
+import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.Session
 import           Ling.Subst           (Subst, unScoped)
@@ -22,7 +23,7 @@ import           Control.Lens
 import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Data.List            (sort)
-import           Data.Map             (Map, empty)
+import           Data.Map             (Map)
 import           Data.Set             (Set)
 import qualified Data.Set             as Set
 
@@ -45,7 +46,7 @@ data TCEnv = TCEnv
 $(makeLenses ''TCEnv)
 
 emptyTCEnv :: TCEnv
-emptyTCEnv = TCEnv False empty empty empty empty
+emptyTCEnv = TCEnv False ø ø ø ø
 
 tcEqEnv :: MonadReader TCEnv m => m EqEnv
 tcEqEnv = emptyEqEnv <$> view edefs
@@ -77,18 +78,6 @@ assertDoc :: MonadError TCErr m => Bool -> Doc -> m ()
 assertDoc True  _ = return ()
 assertDoc False d = tcError (render d)
 
-assertEqual :: (MonadError TCErr m, Eq a) => a -> a -> [Msg] -> m ()
-assertEqual x y = assert (x == y)
-
-checkEquality :: (Print a, Eq a, MonadError TCErr m) => String -> a -> a -> m ()
-checkEquality msg t0 t1 = assertEqual t0 t1
-  [msg
-  ,"Expected:"
-  ,"  " ++ pretty t0
-  ,"Inferred:"
-  ,"  " ++ pretty t1
-  ]
-
 checkNoDups :: (Print a, Eq a, MonadError TCErr m) => String -> [a] -> m ()
 checkNoDups _   [] = return ()
 checkNoDups msg (x:xs)
@@ -107,34 +96,30 @@ checkPrefWellFormness pref = do
   checkDisjointness "bound channels" $ map bcAct pref
   checkDisjointness "bound names"    $ map bvAct pref
 
-checkEqSessions :: MonadError TCErr m =>
+checkEqSessions :: MonadTC m =>
                    Name -> RSession -> Maybe RSession -> m ()
-checkEqSessions c s0 Nothing   = assertEqual s0 (one End) ["Unused channel: " ++ pretty c]
+checkEqSessions c s0 Nothing   = checkUnused c Nothing s0
 checkEqSessions c s0 (Just s1) =
-  assertEqual s0 s1
-    ["On channel " ++ pretty c ++ " sessions are not equivalent."
-    ,"Given session (expanded):"
-    ,"  " ++ pretty s0
-    ,"Inferred session:"
-    ,"  " ++ pretty s1
-    ]
+  checkEquivalence
+    ("On channel " ++ pretty c ++ " sessions are not equivalent.")
+    "Given session (expanded):" (emptyScope s0)
+    "Inferred session:"         (emptyScope s1)
 
 -- checkUnused c ms s: Check if the channel c is used given the
 -- inferred session ms, and its dual ds.
 checkUnused :: MonadError TCErr m =>
                Name -> Maybe RSession -> RSession -> m ()
 checkUnused _ (Just _) _ = return ()
-checkUnused c Nothing  s = assertEqual s (one End) ["Unused channel " ++ pretty c]
+checkUnused c Nothing  s = assert (isEndR s) ["Unused channel " ++ pretty c]
 
-checkDual :: MonadError TCErr m => RSession -> RSession -> m ()
-checkDual (Repl s0 (Lit (LInteger 1))) (Repl s1 (Lit (LInteger 1))) =
-  assertEqual s0 (dual s1)
-    ["Sessions are not dual."
-    ,"Given session (expanded):"
-    ,"  " ++ pretty s0
-    ,"Inferred dual session:"
-    ,"  " ++ pretty s1
-    ]
+checkDual :: MonadTC m => RSession -> RSession -> m ()
+checkDual (Repl s0 (Lit (LInteger 1))) (Repl s1 (Lit (LInteger 1))) = do
+  (b, us0, us1) <- isEquiv (emptyScope s0) (emptyScope (dual s1))
+  assertDiff
+    "Sessions are not dual." (\_ _ -> b)
+    "Given session (expanded):" us0
+    "Inferred dual session:"    (dual us1)
+
 checkDual _ _ =
   tcError "Unexpected session replication in 'new'."
 
@@ -151,9 +136,9 @@ checkSlice cond (c, rs) = when (cond c) $
 
 type MonadTC m = (MonadReader TCEnv m, MonadError TCErr m)
 
-checkEquivalence :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
-                 => String -> Scoped a -> Scoped a -> m ()
-checkEquivalence msg t0 t1 = do
+isEquiv :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
+        => Scoped a -> Scoped a -> m (Bool, a, a)
+isEquiv t0 t1 = do
   env <- tcEqEnv
   whenDebug $ do
     when (t0 /= t1) . debug . unlines $
@@ -164,18 +149,35 @@ checkEquivalence msg t0 t1 = do
       ]
     when (ut0 == ut1) . debug . unlines $
       ["Once expanded they are equal"]
-  assert (equiv env t0 t1)
-    [msg
-    ,"Expected:"
-    ,"  " ++ pretty ut0
-    ,"Inferred:"
-    ,"  " ++ pretty ut1
-    ]
+  return $ (equiv env t0 t1, ut0, ut1)
   where ut0 = unScoped t0
         ut1 = unScoped t1
 
+checkEquivalence :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
+                 => String -> String -> Scoped a -> String -> Scoped a -> m ()
+checkEquivalence msg expected t0 inferred t1 = do
+  (b, ut0, ut1) <- isEquiv t0 t1
+  assertDiff msg (\_ _ -> b) expected ut0 inferred ut1
+
+assertDiff :: (MonadError TCErr m, Print a)
+           => String -> (a -> a -> Bool)
+           -> String -> a
+           -> String -> a
+           -> m ()
+assertDiff msg cond expected x0 inferred x1 =
+  assert (cond x0 x1)
+    [msg
+    ,expected
+    ,"  " ++ pretty x0
+    ,inferred
+    ,"  " ++ pretty x1
+    ]
+
 checkTypeEquivalence :: MonadTC m => Scoped Typ -> Scoped Typ -> m ()
-checkTypeEquivalence = checkEquivalence "Types are not equivalent."
+checkTypeEquivalence t0 t1 =
+   checkEquivalence "Types are not equivalent."
+                    "Expected:" t0
+                    "Inferred:" t1
 
 checkNotIn :: MonadTC m => Lens' TCEnv (Map Name v) -> String -> Name -> m ()
 checkNotIn l msg c = do
@@ -208,15 +210,18 @@ literalType l = case l of
 
 caseType :: MonadTC m => Term -> Scoped Typ -> [(Name,Scoped Typ)] -> m (Scoped Typ)
 caseType t ty brs =
-  case unDef ty ^. scoped of
+  case reduceWHNF ty ^. scoped of
     Def d [] -> do
       def <- view $ ddefs . at d
       case def of
         Just cs -> do
-          checkEquality "Labels are not equal." (sort cs) (fst <$> brs)
+          assertDiff "Labels are not equal." (==)
+                     "Expected:" (sort cs)
+                     "Inferred:" (fst <$> brs)
+
           env <- tcEqEnv
           return $ if allEquiv env (snd <$> brs) then snd (head brs)
-                   else emptyScope (Case t (brs & mapped . _2 %~ unScoped))
+                   else emptyScope (mkCase t (brs & mapped . _2 %~ unScoped))
         _ -> tcError $ "Case on a non data type: " ++ pretty d
     _ -> tcError $ "Case on a non data type: " ++ pretty (ty^.scoped)
 
@@ -233,6 +238,9 @@ sFun :: VarDec -> Scoped Typ -> Scoped Typ
 sFun arg s
   | s^.ldefs.hasKey(arg^.argName) = error "sFun: IMPOSSIBLE"
   | otherwise                     = TFun arg <$> s
+
+sSession :: Scoped Typ
+sSession = emptyScope sessionTyp
 
 ------------
 -- TCOpts --

@@ -1,7 +1,7 @@
 merger_nstSort_prll_v2 =
  \(m : Int)(n : Int)->
- proc( c : [~Sort Int m, ~Sort Int n]
-     , d : Sort Int (m + n)
+ proc( c : [~DotSort Int m, ~DotSort Int n]
+     , d : DotSort Int (m + n)
      )
   c[c0,c1]
   recv d (vi : Vec Int (m + n)).

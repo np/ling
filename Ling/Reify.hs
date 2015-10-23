@@ -3,12 +3,14 @@
 module Ling.Reify where
 
 import           Data.List
-import           Ling.Abs
+import           Ling.Raw
 import qualified Ling.Norm    as N
 import           Ling.Proc
 import           Ling.Session
 import           Ling.Utils
 import           Prelude      hiding (log)
+
+newtype RawSession = RawSession { rawSession :: Term }
 
 class Norm a where
   type Normalized a
@@ -23,57 +25,42 @@ instance Norm a => Norm [a] where
   reify = map reify
   norm  = map norm
 
-dualIfWrite :: N.RW -> Session -> Session
-dualIfWrite N.Read  = id
-dualIfWrite N.Write = Dual
-
-instance Norm Session where
-  type Normalized Session = N.Session
-  reify (N.Par s)   = Par (reify s)
-  reify (N.Ten s)   = Ten (reify s)
-  reify (N.Seq s)   = Seq (reify s)
-  reify (N.Snd a s) = Snd (reify a) (reify s)
-  reify (N.Rcv a s) = Rcv (reify a) (reify s)
-  reify (N.Atm p n) = dualIfWrite p (Atm n)
-  reify N.End       = End
-
-  norm (Par s)    = N.Par (norm s)
-  norm (Ten s)    = N.Ten (norm s)
-  norm (Seq s)    = N.Seq (norm s)
-  norm (Snd a s)  = N.Snd (norm a) (norm s)
-  norm (Rcv a s)  = N.Rcv (norm a) (norm s)
-  norm (Loli s t) = N.Par $ list [dual (norm s), norm t]
-  norm (Dual s)   = dual (norm s)
-  norm (Log s)    = log (norm s)
-  norm (Fwd n s)
-    | n >= 0 && n < 10000 = fwd (fromInteger n) (norm s)
-    | otherwise           = error "Do you really want to blow the stack?"
-  norm End        = N.End
-  norm (Atm n)    = N.Atm N.Read n -- Read is abitrary here
-  norm (Sort a e) = sortSession (norm a) (norm e)
-
 instance Norm CSession where
   type Normalized CSession = N.Session
-  reify N.End   = Done
-  reify s       = Cont (reify s)
-  norm  Done    = N.End
-  norm (Cont s) = norm s
+  reify s | s == endS = Done
+          | otherwise = Cont . rawSession $ reify s
+  norm  Done    = endS
+  norm (Cont s) = norm (RawSession s)
 
-reifySession :: N.Session -> Session
-reifySession = reify
+instance Norm ASession where
+  type Normalized ASession = N.Session
+  norm (AS s) = termS N.NoOp . norm $ s
+  reify       = AS . paren . rawSession . reify
 
-reifySessions :: [N.Session] -> [Session]
-reifySessions = reify
+instance Norm RawSession where
+  type Normalized RawSession = N.Session
+  norm = termS N.NoOp . norm . rawSession
+  reify = RawSession . \case
+    N.Array k s      -> aTerm $ reifyArray k (reify s)
+    N.IO N.Write a s -> Snd (reify a) (reify s)
+    N.IO N.Read  a s -> Rcv (reify a) (reify s)
+    N.TermS op e     -> dualOp op (reify e)
+
+reifySession :: N.Session -> Term
+reifySession = rawSession . reify
+
+reifySessions :: [N.Session] -> [Term]
+reifySessions = map reifySession
 
 reifyDec :: N.Dec -> Dec
 reifyDec = reify
 
 instance Norm RSession where
   type Normalized RSession = N.RSession
-  reify (N.Repl s (N.Lit (LInteger 1))) = Repl (reify s) One
-  reify (N.Repl s t)                    = Repl (reify s) (Some (reify t))
-  norm  (Repl s One)         = one (norm s)
-  norm  (Repl s (Some a))    = N.Repl (norm s) (norm a)
+  reify (N.Repl s (N.Lit (LInteger 1))) = Repl (reifySession s) One
+  reify (N.Repl s t)                    = Repl (reifySession s) (Some (reify t))
+  norm  (Repl s One)         = one (norm (RawSession s))
+  norm  (Repl s (Some a))    = N.Repl (norm (RawSession s)) (norm a)
 
 reifyRSession :: N.RSession -> RSession
 reifyRSession = reify
@@ -90,22 +77,8 @@ instance Norm Proc where
     PDot proc proc' -> norm proc `dotP` norm proc'
     PPrll procs     -> mconcat $ norm procs
 
-mkProcs :: [Proc] -> Proc
-mkProcs = \case
-  []  -> PPrll []
-  [p] -> p
-  ps  -> PPrll ps
-
 pAct :: N.Act -> Proc
 pAct = PAct . reifyAct
-
-pNxt :: Proc -> Proc -> Proc
-pNxt proc0 (PPrll []) = proc0
-pNxt proc0 proc1      = proc0 `PNxt` proc1
-
-pDot :: Proc -> Proc -> Proc
-pDot proc0 (PPrll []) = proc0
-pDot proc0 proc1      = proc0 `PDot` proc1
 
 actR :: N.Act -> Proc -> Proc
 actR act proc
@@ -174,6 +147,12 @@ normRawApp [e] = norm e
 normRawApp (e0 : Var (Name op) : es)
   | op `elem` ["-","+","*","/","%","-D","+D","*D","/D","++S"]
   = N.Def (Name ("_" ++ op ++ "_")) [norm e0, normRawApp es]
+normRawApp (Var (Name "Fwd") : es)
+  | [Lit (LInteger n), e] <- es = N.tSession $ fwd (fromInteger n) (norm (AS e))
+  | otherwise = error "invalid usage of Fwd"
+normRawApp (Var (Name "Log") : es)
+  | [e] <- es = N.tSession $ log (norm (AS e))
+  | otherwise = error "invalid usage of Log"
 normRawApp (Var x : es) = N.Def x (norm es)
 normRawApp [] = error "normRawApp: IMPOSSIBLE"
 normRawApp _ = error "normRawApp: unexpected application"
@@ -185,32 +164,42 @@ reifyRawApp e0 =
     e0'                  -> [e0']
 
 instance Norm DTerm where
-  type Normalized DTerm = N.Term
+  type Normalized DTerm = N.VarDec
 
-  reify e0 = case e0 of
-    N.Def x es -> DTTyp x (reify es)
-    _          -> DTBnd (Name "_") (reify e0)
+  reify (Arg x e0)
+    | x == anonName, N.Def d es <- e0 = DTTyp d (reify es)
+    | otherwise                       = DTBnd x (reify e0)
 
-  norm (DTTyp x es) = N.Def x (norm es)
-  norm (DTBnd (Name "_") e) = norm e
-  norm  DTBnd{} = error "DTBnd..."
+  norm (DTTyp d es) = anonArg (N.Def d (norm es))
+  norm (DTBnd x e)  = Arg x (norm e)
+
+reifyArray :: N.TraverseKind -> [RSession] -> ATerm
+reifyArray N.ParK = Par
+reifyArray N.SeqK = Seq
+reifyArray N.TenK = Ten
 
 instance Norm ATerm where
   type Normalized ATerm = N.Term
 
-  reify e0 = case e0 of
+  reify = \case
     N.Def x []         -> Var x
     N.Lit l            -> Lit l
     N.Con n            -> Con (reify n)
     N.TTyp             -> TTyp
     N.TProto ss        -> TProto (reify ss)
-    _                  -> Paren (reify e0)
+    N.TSession
+        (N.Array k ss) -> reifyArray k (reify ss)
+    e                  -> paren (reify e)
 
   norm (Var x)          = N.Def x []
   norm (Lit l)          = N.Lit l
   norm (Con n)          = N.Con (norm n)
   norm TTyp             = N.TTyp
   norm (TProto ss)      = N.TProto (norm ss)
+  norm End              = N.TSession endS
+  norm (Par s)          = N.TSession $ N.Array N.ParK (norm s)
+  norm (Ten s)          = N.TSession $ N.Array N.TenK (norm s)
+  norm (Seq s)          = N.TSession $ N.Array N.SeqK (norm s)
   norm (Paren t)        = norm t
 
 instance Norm Term where
@@ -229,6 +218,7 @@ instance Norm Term where
     N.TFun (Arg a t) s -> TFun (VD a (reify t)) [] (reify s)
     N.TSig (Arg a t) s -> TSig (VD a (reify t)) [] (reify s)
     N.Case t brs       -> Case (reify t) (reify brs)
+    N.TSession s       -> reifySession s
 
   norm (RawApp e es)    = normRawApp (e:es)
   norm (Case t brs)     = N.Case (norm t) (sort (norm brs))
@@ -236,6 +226,10 @@ instance Norm Term where
   norm (Lam  xs xss t)  = normVarDec N.Lam  (xs:xss) (norm t)
   norm (TFun xs xss t)  = normVarDec N.TFun (xs:xss) (norm t)
   norm (TSig xs xss t)  = normVarDec N.TSig (xs:xss) (norm t)
+  norm (Snd a s)        = N.TSession $ N.IO N.Write (norm a) (norm s)
+  norm (Rcv a s)        = N.TSession $ N.IO N.Read  (norm a) (norm s)
+  norm (Loli s t)       = N.TSession $ norm (RawSession s) `loli` norm (RawSession t)
+  norm (Dual s)         = dual (norm s)
 
 instance Norm Branch where
   type Normalized Branch = (Name, N.Term)

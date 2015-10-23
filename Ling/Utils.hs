@@ -1,43 +1,67 @@
-{-# LANGUAGE CPP             #-}
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE Rank2Types      #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Ling.Utils
   ( module Ling.Utils
-  , (<>)
-  , pure
-  , (<$>)
-  , (<*>)) where
+  , module Data.Functor
+  , module Control.Applicative
+  , module Debug.Trace
+  , (<>)) where
 
-#if !(MIN_VERSION_base(4,8,0))
 import           Control.Applicative
-#endif
 import           Control.Lens
-import           Data.Map            (Map)
-import qualified Data.Map            as Map
+import           Data.Functor
+import           Data.Map                  (Map)
+import qualified Data.Map                  as Map
 import           Data.Monoid
-import           Data.Set            (Set, member, notMember, intersection, union)
-import qualified Data.Set            as Set
+import           Data.Set                  (Set, intersection, member,
+                                            notMember, union)
+import qualified Data.Set                  as Set
 import           Debug.Trace
+import           Language.Haskell.TH       (litP, stringE, stringL)
+import           Language.Haskell.TH.Quote
 import           Ling.Abs
+
 
 type Endom a = a -> a
 type EndoM m a = a -> m a
 type Msg = String
 type Verbosity = Bool
 
+anonName :: Name
+anonName = Name "_"
+
 data Arg a = Arg { _argName :: Name, _unArg :: a }
   deriving (Eq,Ord,Show,Read)
 
 $(makeLenses ''Arg)
 
+instance Functor Arg where
+  fmap f (Arg n x) = Arg n (f x)
+
+anonArg :: a -> Arg a
+anonArg = Arg anonName
+
 data Abs a b = Abs { _argAbs :: Arg a, _bodyAbs :: b }
 
 $(makeLenses ''Abs)
 
+instance Functor (Abs a) where
+  fmap f (Abs arg x) = Abs arg (f x)
+
+instance Bifunctor Abs where
+  bimap f g (Abs arg x) = Abs (f <$> arg) (g x)
+
+-- TODO: Rename into something like 'Telescoped' instead
 data Telescope a b = Telescope { _argsTele :: [Arg a], _bodyTele :: b }
 
 $(makeLenses ''Telescope)
+
+instance Functor (Telescope a) where
+  fmap f (Telescope args x) = Telescope args (f x)
+
+instance Bifunctor Telescope where
+  bimap f g (Telescope args x) = Telescope (fmap f <$> args) (g x)
 
 type Channel = Name
 
@@ -53,8 +77,8 @@ prefName s n = n & nameString %~ (s ++)
 suffName :: String -> Endom Name
 suffName s n = n & nameString %~ (++ s)
 
-traceShow :: Show a => String -> a -> a
-traceShow msg x = trace (msg ++ " " ++ show x) x
+traceShowMsg :: Show a => String -> a -> a
+traceShowMsg msg x = trace (msg ++ " " ++ show x) x
 
 debugTraceWhen :: Bool -> Msg -> a -> a
 debugTraceWhen b s =
@@ -166,3 +190,16 @@ hasNoKey k = at k . to (isn't _Just)
 -- There must be something equivalent in lens
 composeMap :: (a -> Endom b) -> [a] -> Endom b
 composeMap f = foldr ((.) . f) id
+
+quasiQuoter :: String -> QuasiQuoter
+quasiQuoter qqName =
+  QuasiQuoter (err "expressions") (err "patterns")
+              (err "types") (err "declarations")
+  where err kind _ = fail $ qqName ++ ": not available in " ++ kind
+
+q :: QuasiQuoter
+q = (quasiQuoter "q"){ quoteExp = stringE
+                     , quotePat = litP . stringL }
+
+qFile :: QuasiQuoter
+qFile = quoteFile q

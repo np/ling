@@ -1,10 +1,8 @@
--- ParSort = \(n : Int) -> {? Vec Int n, ! Vec Int n}
-
 merger_ParSort_full_prll =
  \(m : Int)(n : Int)->
- proc( c0 : [! Vec Int m, ? Vec Int m]
-     , c1 : [! Vec Int n, ? Vec Int n]
-     , c  : {? Vec Int (m + n), ! Vec Int (m + n)}
+ proc( c0 : ~ParSort Int m
+     , c1 : ~ParSort Int n
+     , c  : ParSort Int (m + n)
      )
   c0[c0i,c0o]
   c1[c1i,c1o]

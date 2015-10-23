@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 echo "== EXPECTED FAILURES =="
 cmdcheck "$@" tests/failure/*.t
 echo "== EXPECTED SUCCESSES =="

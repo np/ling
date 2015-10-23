@@ -1,5 +1,3 @@
-data Bool = `false | `true
-
 not : (x : Bool)-> Bool
     = \(x : Bool)-> case x of { `false -> `true, `true -> `false }
 

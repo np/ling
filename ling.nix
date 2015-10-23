@@ -1,5 +1,5 @@
-{ mkDerivation, alex, array, base, containers, happy, lens, mtl
-, stdenv
+{ mkDerivation, alex, array, base, containers, ghci-pretty, happy
+, lens, mtl, stdenv, template-haskell
 }:
 mkDerivation {
   pname = "ling";
@@ -7,7 +7,9 @@ mkDerivation {
   src = ./.;
   isLibrary = false;
   isExecutable = true;
-  buildDepends = [ array base containers lens mtl ];
-  buildTools = [ alex happy ];
+  executableHaskellDepends = [
+    array base containers ghci-pretty lens mtl template-haskell
+  ];
+  executableToolDepends = [ alex happy ];
   license = stdenv.lib.licenses.bsd3;
 }

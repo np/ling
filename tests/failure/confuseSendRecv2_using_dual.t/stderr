@@ -1,6 +1,6 @@
 Sessions are not dual.
 Given session (expanded):
-  ?Int
+  ?(x : Int)
 Inferred dual session:
-  ?Int
+  ?(y : Int)
 

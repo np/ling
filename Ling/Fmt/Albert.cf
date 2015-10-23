@@ -60,17 +60,31 @@ TTyp.    ATerm ::= "Type" ;
 TProto.  ATerm ::= "<" [RSession] ">" ;
 Paren.   ATerm ::= "(" Term ")" ;
 
+-- Sessions
+End.     ATerm ::= "end" ;
+Par.     ATerm ::= "{"  [RSession]  "}" ;
+Ten.     ATerm ::= "["  [RSession]  "]" ;
+Seq.     ATerm ::= "[:" [RSession] ":]" ;
+
 separator ATerm "" ;
 
 DTTyp.   DTerm ::= Name [ATerm] ;
 DTBnd.   DTerm ::= "(" Name ":" Term ")" ;
 
-RawApp.  Term  ::= ATerm [ATerm] ;
-Case.    Term  ::= "case" Term "of" "{" [Branch] "}" ;
-TFun.    Term  ::= VarDec [VarDec] "->" Term ;
-TSig.    Term  ::= VarDec [VarDec] "**" Term ;
-Lam.     Term  ::= "\\" VarDec [VarDec] "->" Term ;
-TProc.   Term  ::= "proc" "(" [ChanDec] ")" Proc ;
+RawApp.   Term2  ::= ATerm [ATerm] ;
+Snd.      Term2  ::= "!" DTerm CSession ;
+Rcv.      Term2  ::= "?" DTerm CSession ;
+Dual.     Term2  ::= "~" Term2 ;
+
+Loli.     Term1  ::= Term2 "-o" Term1 ;
+_.        Term1  ::= Term2 ;
+
+Case.     Term   ::= "case" Term "of" "{" [Branch] "}" ;
+TFun.     Term   ::= VarDec [VarDec] "->" Term ;
+TSig.     Term   ::= VarDec [VarDec] "**" Term ;
+Lam.      Term   ::= "\\" VarDec [VarDec] "->" Term ;
+TProc.    Term   ::= "proc" "(" [ChanDec] ")" Proc ;
+_.        Term   ::= Term1 ;
 
 PAct.     Proc1 ::= Act ;
 PPrll.    Proc1 ::= "(" [Proc] ")" ;
@@ -87,41 +101,20 @@ SeqSplit. Act ::= Name "[:" [ChanDec] ":]" ;
 Send.     Act ::= "send" Name ATerm ;
 Recv.     Act ::= "recv" Name VarDec ;
 NewSlice. Act ::= "slice" "(" [Name] ")" ATerm "as" Name ;
-Ax.       Act ::= "fwd" Session "(" [Name] ")" ;
-SplitAx.  Act ::= "fwd" Integer Session Name ;
+Ax.       Act ::= "fwd" ASession "(" [Name] ")" ;
+SplitAx.  Act ::= "fwd" Integer ASession Name ;
 At.       Act ::= "@" ATerm "(" [Name] ")" ;
+
+AS.       ASession ::= ATerm ;
 
 NoSession. OptSession ::= ;
 SoSession. OptSession ::= ":" RSession ;
 
--- Atomic sessions
-Atm.  Session4 ::= Name ;
-End.  Session4 ::= "end" ;
-Par.  Session4 ::= "{" [RSession] "}" ;
-Ten.  Session4 ::= "[" [RSession] "]" ;
-Seq.  Session4 ::= "[:" [RSession] ":]" ;
-_.    Session4 ::= "(" Session ")" ;
-
--- Applicative sessions
-Sort. Session3 ::= "Sort" ATerm ATerm ;
-Log.  Session3 ::= "Log"  Session4 ;
-Fwd.  Session3 ::= "Fwd" Integer Session4 ;
-_.    Session3 ::= Session4 ;
-
--- Communicating sessions
-Snd.  Session2 ::= "!" DTerm CSession ;
-Rcv.  Session2 ::= "?" DTerm CSession ;
-Dual. Session2 ::= "~" Session2 ;
-_.    Session2 ::= Session3 ;
-
-Loli. Session  ::= Session2 "-o" Session ;
-_.    Session  ::= Session2 ;
-
-Repl. RSession ::= Session OptRepl ;
+Repl. RSession ::= Term OptRepl ;
 separator RSession "," ;
 
 One.  OptRepl  ::= ;
 Some. OptRepl  ::= "^" ATerm ;
 
-Cont. CSession ::= "." Session2 ;
+Cont. CSession ::= "." Term1 ;
 Done. CSession ::= ;

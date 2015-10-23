@@ -8,6 +8,7 @@ import           Ling.Check.Base
 import           Ling.Norm
 import           Ling.Print
 import           Ling.Proto
+import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.Session
 import           Ling.Subst           (unScoped)
@@ -30,8 +31,11 @@ checkProc (pref `Dot` procs) = do
 
 sendRecvSession :: Act -> TC (Channel, Session -> Session)
 sendRecvSession = \case
-  Send c e -> (,) c . Snd <$> inferTerm' e
-  Recv c (Arg _ typ) -> checkTyp typ >> return (c, Rcv typ)
+  -- TODO this cannot infer dependent sends!
+  -- https://github.com/np/ling/issues/13
+  Send c e -> (,) c . sendS <$> inferTerm' e
+  Recv c arg@(Arg _c typ) ->
+    checkTyp typ $> (c, depRecv arg)
   _ -> tcError "typeSendRecv: Not Send/Recv"
 
 checkPref :: Pref -> Proto -> TC Proto
@@ -57,7 +61,7 @@ checkProcs :: [Proc] -> TC Proto
 checkProcs procs = mconcat <$> traverse checkProc procs
 
 checkChanDec :: Proto -> ChanDec -> TC RSession
-checkChanDec proto (Arg c s) = checkOptSession c s s' >> return (defaultEndR s')
+checkChanDec proto (Arg c s) = checkOptSession c s s' $> defaultEndR s'
   where s' = proto ^. chanSession c
 
 checkChanDecs_ :: Proto -> [ChanDec] -> TC ()
@@ -141,16 +145,12 @@ checkAct act proto =
         case k of
           TenK -> checkConflictingChans proto (Just c) ds
           ParK -> return proto
-          SeqK -> do
-            checkOrderedChans proto ds
-            return proto
+          SeqK -> checkOrderedChans proto ds $> proto
       return $ substChans (ds, (c,one s)) proto'
-    Send c e -> do
-      typ <- inferTerm' e
-      return $ protoSendRecv [(c, Snd typ)] proto
-    Recv c (Arg _x typ) -> do
-      checkTyp typ
-      return $ protoSendRecv [(c, Rcv typ)] proto
+    Send{} ->
+      (`protoSendRecv` proto) . pure <$> sendRecvSession act
+    Recv{} ->
+      (`protoSendRecv` proto) . pure <$> sendRecvSession act
     NewSlice cs t _i -> do
       checkTerm intTyp t
       mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
@@ -160,7 +160,7 @@ checkAct act proto =
       t <- inferTerm' e
       case t of
         TProto ss -> do
-          assertEqual (length cs) (length ss)
+          assert (length cs == length ss)
              ["Expected " ++ show (length ss) ++ " channels, not " ++ show (length cs)]
           return $ mkProto (zip cs ss) `dotProto` proto
         _ ->
@@ -181,9 +181,10 @@ inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
   Con n           -> conType n
   Case t brs      -> join $ caseType t <$> inferTerm t <*> mapM inferBranch brs
   Proc cs proc    -> inferProcTyp cs proc
-  TFun arg s      -> checkVarDec arg (checkTyp s) >> return sTyp
-  TSig arg s      -> checkVarDec arg (checkTyp s) >> return sTyp
-  TProto sessions -> checkSessions sessions       >> return sTyp
+  TFun arg s      -> checkVarDec arg (checkTyp s) $> sTyp
+  TSig arg s      -> checkVarDec arg (checkTyp s) $> sTyp
+  TProto sessions -> checkSessions sessions       $> sTyp
+  TSession s      -> checkSession s               $> sSession
 
 inferProcTyp :: [ChanDec] -> Proc -> TC (Scoped Typ)
 inferProcTyp cds proc = do
@@ -218,7 +219,7 @@ checkMaybeTerm _   Nothing   = return ()
 checkMaybeTerm typ (Just tm) = checkTerm typ tm
 
 checkSig :: Maybe Typ -> Maybe Term -> TC Typ
-checkSig (Just typ) mtm = checkTyp typ >> checkMaybeTerm typ mtm >> return typ
+checkSig (Just typ) mtm = checkTyp typ >> checkMaybeTerm typ mtm $> typ
 checkSig Nothing    mtm =
   case mtm of
     Just tm -> inferTerm' tm
@@ -230,7 +231,11 @@ inferDef f es = do
   defs  <- view edefs
   case mtyp of
     Just typ -> checkApp f 0 (Scoped defs typ) es
-    Nothing  -> tcError $ "unknown definition " ++ unName f
+    Nothing  -> tcError $ "unknown definition " ++ unName f ++
+                          if f == anonName then
+                            "\n\nHint: While `_` is allowed as a name for a definition, one cannot reference it."
+                          else
+                            ""
 
 -- `checkApp f n typ es`
 -- `f`   is the name of the definition currently checked
@@ -240,13 +245,13 @@ inferDef f es = do
 checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC (Scoped Typ)
 checkApp _ _ typ []     = return typ
 checkApp f n typ (e:es) =
-  case unDef typ of
+  case reduceWHNF typ of
     (Scoped defs _typ@(TFun (Arg x ty) s)) -> do
       debug . unlines $
         ["Check application:"
         ,"f:      " ++ pretty f
         ,"ldefs:  " ++ pretty (typ ^. ldefs)
-        ,"ldefs': " ++ pretty defs
+--        ,"ldefs': " ++ pretty defs
         ,"typ:    " ++ pretty (typ ^. scoped)
         ,"_typ:   " ++ pretty _typ
         ,"e:      " ++ pretty e
@@ -271,20 +276,18 @@ checkRSession (Repl s t) = checkSession s >> checkTerm intTyp t
 
 checkSession :: Session -> TC ()
 checkSession s0 = case s0 of
-  Atm _ n -> checkTerm sessionTyp (Def n [])
-  End -> return ()
-  Snd t s -> checkTyp t >> checkSession s
-  Rcv t s -> checkTyp t >> checkSession s
-  Par ss -> checkSessions ss
-  Ten ss -> checkSessions ss
-  Seq ss -> checkSessions ss
+  TermS _ t   -> checkTerm sessionTyp t
+  IO _ arg s  -> checkVarDec arg $ checkSession s
+  Array _ ss  -> checkSessions ss
 
 checkVarDef :: Name -> Maybe Typ -> Maybe Term -> Endom (TC a)
-checkVarDef x mtyp mtm kont = do
-  checkNotIn evars "name" x
-  typ <- checkSig mtyp mtm
-  local ((evars . at x .~ Just typ)
-       . (edefs . at x .~ mtm)) kont
+checkVarDef x mtyp mtm kont
+  | x == anonName = checkSig mtyp mtm >> kont
+  | otherwise     = do
+    checkNotIn evars "name" x
+    typ <- checkSig mtyp mtm
+    local ((evars . at x .~ Just typ)
+         . (edefs . at x .~ mtm)) kont
 
 checkVarDec :: VarDec -> Endom (TC a)
 checkVarDec (Arg x typ) = checkVarDef x (Just typ) Nothing

@@ -1,1 +1,0 @@
-../all/test4_inferred.ll

@@ -54,6 +54,10 @@ data ATerm
     | TTyp
     | TProto [RSession]
     | Paren Term
+    | End
+    | Par [RSession]
+    | Ten [RSession]
+    | Seq [RSession]
   deriving (Eq, Ord, Show, Read)
 
 data DTerm = DTTyp Name [ATerm] | DTBnd Name Term
@@ -61,6 +65,10 @@ data DTerm = DTTyp Name [ATerm] | DTBnd Name Term
 
 data Term
     = RawApp ATerm [ATerm]
+    | Snd DTerm CSession
+    | Rcv DTerm CSession
+    | Dual Term
+    | Loli Term Term
     | Case Term [Branch]
     | TFun VarDec [VarDec] Term
     | TSig VarDec [VarDec] Term
@@ -80,35 +88,23 @@ data Act
     | Send Name ATerm
     | Recv Name VarDec
     | NewSlice [Name] ATerm Name
-    | Ax Session [Name]
-    | SplitAx Integer Session Name
+    | Ax ASession [Name]
+    | SplitAx Integer ASession Name
     | At ATerm [Name]
+  deriving (Eq, Ord, Show, Read)
+
+data ASession = AS ATerm
   deriving (Eq, Ord, Show, Read)
 
 data OptSession = NoSession | SoSession RSession
   deriving (Eq, Ord, Show, Read)
 
-data Session
-    = Atm Name
-    | End
-    | Par [RSession]
-    | Ten [RSession]
-    | Seq [RSession]
-    | Sort ATerm ATerm
-    | Log Session
-    | Fwd Integer Session
-    | Snd DTerm CSession
-    | Rcv DTerm CSession
-    | Dual Session
-    | Loli Session Session
-  deriving (Eq, Ord, Show, Read)
-
-data RSession = Repl Session OptRepl
+data RSession = Repl Term OptRepl
   deriving (Eq, Ord, Show, Read)
 
 data OptRepl = One | Some ATerm
   deriving (Eq, Ord, Show, Read)
 
-data CSession = Cont Session | Done
+data CSession = Cont Term | Done
   deriving (Eq, Ord, Show, Read)
 

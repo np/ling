@@ -1012,7 +1012,7 @@ wrong : Int =
   Type
 
 zap_ten_fwd =
-  proc (cf : {?Int -o ?Int ^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
+  proc (cf : {(?Int -o ?Int)^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   cf {cfi}
   cn {cni}
   co [coi]
@@ -1022,7 +1022,7 @@ zap_ten_fwd =
   | fwd (?Int)(cfio, coi))
 
 zap_ten_par =
-  proc (cf : {?Int -o ?Int ^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
+  proc (cf : {(?Int -o ?Int)^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   cf {cfi}
   cn {cni}
   co [coi]

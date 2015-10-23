@@ -34,6 +34,8 @@ checkAsr (Equal t1 t2 ty) kont = do
   checkTerm ty t1
   checkTerm ty t2
 
-  checkEquivalence "Terms are not equivalent." (emptyScope t1) (emptyScope t2)
+  checkEquivalence "Terms are not equivalent."
+    "Left side:"  (emptyScope t1)
+    "Right side:" (emptyScope t2)
 
   kont

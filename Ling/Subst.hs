@@ -6,6 +6,7 @@ import qualified Data.Map       as Map
 import           Data.Maybe     (fromMaybe)
 
 import           Ling.Norm
+import           Ling.Session
 import           Ling.Scoped    hiding (subst1)
 import           Ling.Utils     hiding (subst1)
 
@@ -57,7 +58,7 @@ instance Subst Term where
     Lam  arg t -> Lam  (subst f arg) (subst (hideArg arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hideArg arg f) t)
-    Case t brs -> Case (subst f t)   (map (second (subst f)) brs)
+    Case t brs -> mkCase (subst f t) (map (second (subst f)) brs)
 
     Con{}      -> e0
     TTyp       -> e0
@@ -65,6 +66,7 @@ instance Subst Term where
 
     Proc cs p  -> Proc cs (subst f p)
     TProto rs  -> TProto (subst f rs)
+    TSession s -> TSession (subst f s)
 
 instance Subst a => Subst (Arg a) where
   subst f (Arg x e) = Arg x (subst f e)
@@ -100,13 +102,9 @@ instance Subst Proc where
 
 instance Subst Session where
   subst f s0 = case s0 of
-    Ten ss  -> Ten (subst f ss)
-    Par ss  -> Par (subst f ss)
-    Seq ss  -> Seq (subst f ss)
-    Snd t s -> Snd (subst f t) (subst f s)
-    Rcv t s -> Rcv (subst f t) (subst f s)
-    Atm{}   -> s0
-    End     -> End
+    Array k ss -> Array k (subst f ss)
+    IO p arg s -> IO p (subst f arg) (subst (hideArg arg f) s)
+    TermS p t  -> termS p (subst f t)
 
 instance Subst RSession where
   subst f (Repl s t) = Repl (subst f s) (subst f t)

@@ -1,6 +1,6 @@
 Terms are not equivalent.
-Expected:
+Left side:
   `false
-Inferred:
+Right side:
   `true
 

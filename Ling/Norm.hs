@@ -67,21 +67,33 @@ data Term
   | TFun VarDec Typ
   | TSig VarDec Typ
   | TProto [RSession]
+  | TSession Session
   deriving (Eq,Ord,Show,Read)
+
+tSession :: Session -> Term
+tSession (TermS NoOp t) = t
+tSession             s  = TSession s
 
 -- Polarity with a read/write (recv/send) flavor
 data RW = Read | Write
   deriving (Eq,Ord,Show,Read)
 
-data Session
-  = Atm RW Name
-  | End
-  | Snd Typ Session
-  | Rcv Typ Session
-  | Par Sessions
-  | Ten Sessions
-  | Seq Sessions
+data DualOp = DualOp | NoOp | LogOp | SinkOp
   deriving (Eq,Ord,Show,Read)
+
+data Session
+  = TermS DualOp Term
+  | IO RW VarDec Session
+  | Array TraverseKind Sessions
+  deriving (Eq,Ord,Show,Read)
+
+depSend, depRecv :: VarDec -> Session -> Session
+depSend = IO Write
+depRecv = IO Read
+
+sendS, recvS :: Typ -> Session -> Session
+sendS = depSend . anonArg
+recvS = depRecv . anonArg
 
 data RSession
   = Repl { _rsession :: Session
@@ -105,8 +117,8 @@ instance Monoid Proc where
   mappend        = parP
     where
       ([] `Dot` ps) `parP` ([] `Dot` qs) = mconcat $ ps ++ qs
-      ([] `Dot` ps) `parP` q             = mconcat $ ps ++ [q]
-      p             `parP` ([] `Dot` qs) = mconcat $ p : qs
+      ([] `Dot` ps) `parP` p             = mconcat $ ps ++ [p]
+      p             `parP` ([] `Dot` ps) = mconcat $ p : ps
       (ps `Dot` []) `parP` (qs `Dot` []) = (ps ++ qs) `Dot` []
       p0            `parP` p1            = mconcat   [p0,p1]
   mconcat []     = mempty
@@ -177,7 +189,13 @@ isSendRecv = \case
 
 allSndRcv :: Session -> Bool
 allSndRcv = \case
-  Snd _ s -> allSndRcv s
-  Rcv _ s -> allSndRcv s
-  End     -> True
-  _       -> False
+  IO _ _ s   -> allSndRcv s
+  Array _ [] -> True
+  _          -> False
+
+mkCase :: Term -> [Branch] -> Term
+mkCase e brs = case e of
+  Con c
+    | Just rhs <- lookup c brs -> rhs
+    | otherwise -> error $ "mkCase: IMPOSSIBLE no branch for constructor " ++ show c
+  _ -> Case e brs

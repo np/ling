@@ -8,7 +8,8 @@ import           Data.Map             (Map)
 import qualified Data.Map             as Map
 
 import           Ling.Norm
-import           Ling.Scoped          (Defs, Scoped (..), ldefs, scoped, unDef)
+import           Ling.Reduce          (reduceWHNF)
+import           Ling.Scoped          (Defs, Scoped (..), ldefs, scoped)
 import           Ling.Utils           (Abs (..), Arg (..), Telescope (..))
 
 data EqEnv = EqEnv
@@ -99,6 +100,17 @@ instance Equiv Term where
       (TSig arg0 u0, TSig arg1 u1) -> equiv env' (Abs arg0 u0) (Abs arg1 u1)
       (Proc cds0 p0, Proc cds1 p1) -> equiv env' (Telescope cds0 p0) (Telescope cds1 p1)
       (TProto ss0,   TProto ss1)   -> equiv env' ss0 ss1
+      (TSession se0, TSession se1) -> case (se0, se1) of
+        (IO p0 ty0 se0', IO p1 ty1 se1') -> equiv env' (p0, Abs ty0 se0') (p1, Abs ty1 se1')
+        (Array k0 ss0,   Array k1 ss1)   -> equiv env' (k0, ss0) (k1, ss1)
+
+        -- The normal form should prevent u0/u1 to be TSession (TermS _ _)
+        -- themselves. Otherwise we would miss equivalences such as ~~A === A.
+        (TermS op0 u0,   TermS op1 u1)   -> equiv env' (op0, u0) (op1, u1)
+
+        (IO{}, _)    -> False
+        (Array{}, _) -> False
+        (TermS{}, _) -> False
 
       (Def{},        _)            -> False
       (Lit{},        _)            -> False
@@ -110,42 +122,31 @@ instance Equiv Term where
       (TSig{},       _)            -> False
       (Proc{},       _)            -> False
       (TProto{},     _)            -> False
+      (TSession{},   _)            -> False
     where
       defs0 = env ^. edefs0
       defs1 = env ^. edefs1
       s0    = Scoped defs0 t0
       s1    = Scoped defs1 t1
-      s0'   = unDef s0
-      s1'   = unDef s1
+      s0'   = reduceWHNF s0
+      s1'   = reduceWHNF s1
       env'  = env & edefs0 .~ (s0'^.ldefs)
                   & edefs1 .~ (s1'^.ldefs)
 
 instance Equiv RW where
-  equiv _ Read  Read  = True
-  equiv _ Write Write = True
-  equiv _ _     _     = False
+  equiv _ = (==)
+
+instance Equiv DualOp where
+  equiv _ = (==)
+
+instance Equiv TraverseKind where
+  equiv _ = (==)
 
 instance Equiv RSession where
   equiv env (s0 `Repl` t0) (s1 `Repl` t1) = equiv env (s0, t0) (s1, t1)
 
 instance Equiv Session where
-  equiv env s0' s1' =
-    case (s0', s1') of
-      (Atm rw0 n0, Atm rw1 n1) -> equiv env (rw0, n0) (rw1, n1)
-      (End,        End)        -> True
-      (Snd ty0 s0, Snd ty1 s1) -> equiv env (ty0, s0) (ty1, s1)
-      (Rcv ty0 s0, Rcv ty1 s1) -> equiv env (ty0, s0) (ty1, s1)
-      (Par ss0,    Par ss1)    -> equiv env ss0 ss1
-      (Ten ss0,    Ten ss1)    -> equiv env ss0 ss1
-      (Seq ss0,    Seq ss1)    -> equiv env ss0 ss1
-
-      (Atm{}, _) -> False
-      (End{}, _) -> False
-      (Snd{}, _) -> False
-      (Rcv{}, _) -> False
-      (Par{}, _) -> False
-      (Ten{}, _) -> False
-      (Seq{}, _) -> False
+  equiv env s0' s1' = equiv env (tSession s0') (tSession s1')
 
 instance Equiv Proc where
   equiv _ = (==)

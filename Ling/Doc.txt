@@ -40,18 +40,18 @@ Name literals are recognized by the regular expression
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
 The reserved words used in Ling are the following:
-  | ``Fwd`` | ``Log`` | ``Sort`` | ``Type``
-  | ``as`` | ``assert`` | ``case`` | ``data``
-  | ``end`` | ``fwd`` | ``new`` | ``of``
-  | ``proc`` | ``recv`` | ``send`` | ``slice``
+  | ``Type`` | ``as`` | ``assert`` | ``case``
+  | ``data`` | ``end`` | ``fwd`` | ``new``
+  | ``of`` | ``proc`` | ``recv`` | ``send``
+  | ``slice`` |  |  | 
 
 The symbols used in Ling are the following:
   | , | = | : | `
   | | | ( | ) | ->
   | < | > | { | }
-  | ** | \ | . | [
-  | ] | [: | :] | @
+  | [ | ] | [: | :]
   | ! | ? | ~ | -o
+  | ** | \ | . | @
   | ^ |  |  | 
 
 ===Comments===
@@ -102,16 +102,26 @@ All other symbols are terminals.
   |  |  **|**  | ``Type`` 
   |  |  **|**  | ``<`` //[RSession]// ``>`` 
   |  |  **|**  | ``(`` //Term// ``)`` 
+  |  |  **|**  | ``end`` 
+  |  |  **|**  | ``{`` //[RSession]// ``}`` 
+  |  |  **|**  | ``[`` //[RSession]// ``]`` 
+  |  |  **|**  | ``[:`` //[RSession]// ``:]`` 
   | //[ATerm]// | -> | **eps**
   |  |  **|**  | //ATerm// //[ATerm]// 
   | //DTerm// | -> | //Name// //[ATerm]// 
   |  |  **|**  | ``(`` //Name// ``:`` //Term// ``)`` 
-  | //Term// | -> | //ATerm// //[ATerm]// 
-  |  |  **|**  | ``case`` //Term// ``of`` ``{`` //[Branch]// ``}`` 
+  | //Term2// | -> | //ATerm// //[ATerm]// 
+  |  |  **|**  | ``!`` //DTerm// //CSession// 
+  |  |  **|**  | ``?`` //DTerm// //CSession// 
+  |  |  **|**  | ``~`` //Term2// 
+  | //Term1// | -> | //Term2// ``-o`` //Term1// 
+  |  |  **|**  | //Term2// 
+  | //Term// | -> | ``case`` //Term// ``of`` ``{`` //[Branch]// ``}`` 
   |  |  **|**  | //VarDec// //[VarDec]// ``->`` //Term// 
   |  |  **|**  | //VarDec// //[VarDec]// ``**`` //Term// 
   |  |  **|**  | ``\`` //VarDec// //[VarDec]// ``->`` //Term// 
   |  |  **|**  | ``proc`` ``(`` //[ChanDec]// ``)`` //Proc// 
+  |  |  **|**  | //Term1// 
   | //Proc1// | -> | //Act// 
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
   | //Proc// | -> | //Proc1// //Proc// 
@@ -127,34 +137,19 @@ All other symbols are terminals.
   |  |  **|**  | ``send`` //Name// //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
   |  |  **|**  | ``slice`` ``(`` //[Name]// ``)`` //ATerm// ``as`` //Name// 
-  |  |  **|**  | ``fwd`` //Session4// ``(`` //[Name]// ``)`` 
-  |  |  **|**  | ``fwd`` //Integer// //Session4// //Name// 
+  |  |  **|**  | ``fwd`` //ASession// ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``fwd`` //Integer// //ASession// //Name// 
   |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
+  | //ASession// | -> | //ATerm// 
   | //OptSession// | -> | **eps**
   |  |  **|**  | ``:`` //RSession// 
-  | //Session4// | -> | //Name// 
-  |  |  **|**  | ``end`` 
-  |  |  **|**  | ``{`` //[RSession]// ``}`` 
-  |  |  **|**  | ``[`` //[RSession]// ``]`` 
-  |  |  **|**  | ``[:`` //[RSession]// ``:]`` 
-  |  |  **|**  | ``(`` //Session// ``)`` 
-  | //Session3// | -> | ``Sort`` //ATerm// //ATerm// 
-  |  |  **|**  | ``Log`` //Session4// 
-  |  |  **|**  | ``Fwd`` //Integer// //Session4// 
-  |  |  **|**  | //Session4// 
-  | //Session2// | -> | ``!`` //DTerm// //CSession// 
-  |  |  **|**  | ``?`` //DTerm// //CSession// 
-  |  |  **|**  | ``~`` //Session2// 
-  |  |  **|**  | //Session3// 
-  | //Session// | -> | //Session2// ``-o`` //Session// 
-  |  |  **|**  | //Session2// 
-  | //RSession// | -> | //Session// //OptRepl// 
+  | //RSession// | -> | //Term// //OptRepl// 
   | //[RSession]// | -> | **eps**
   |  |  **|**  | //RSession// 
   |  |  **|**  | //RSession// ``,`` //[RSession]// 
   | //OptRepl// | -> | **eps**
   |  |  **|**  | ``^`` //ATerm// 
-  | //CSession// | -> | ``.`` //Session2// 
+  | //CSession// | -> | ``.`` //Term1// 
   |  |  **|**  | **eps**
 
 

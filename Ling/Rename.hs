@@ -31,6 +31,7 @@ instance Rename Term where
 
     Proc cs p  -> Proc (rename f cs) (rename f p)
     TProto rs  -> TProto (rename f rs)
+    TSession s -> TSession (rename f s)
 
 instance Rename a => Rename (Arg a) where
   rename f (Arg x e) = Arg (rename f x) (rename f e)
@@ -72,14 +73,10 @@ instance Rename Proc where
     rename f pref `Dot` rename (hidePref pref f) procs
 
 instance Rename Session where
-  rename f s0 = case s0 of
-    Ten ss  -> Ten (rename f ss)
-    Par ss  -> Par (rename f ss)
-    Seq ss  -> Seq (rename f ss)
-    Snd t s -> Snd (rename f t) (rename f s)
-    Rcv t s -> Rcv (rename f t) (rename f s)
-    Atm p n -> Atm p (rename f n)
-    End     -> End
+  rename f = \case
+    Array k ss  -> Array k (rename f ss)
+    IO p arg s  -> IO p (rename f arg) (rename (hideArg arg f) s)
+    TermS p t   -> TermS p (rename f t)
 
 instance Rename RSession where
   rename f (Repl s t) = Repl (rename f s) (rename f t)
