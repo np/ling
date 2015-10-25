@@ -144,7 +144,7 @@ checkAct act proto =
       proto' <-
         case k of
           TenK -> checkConflictingChans proto (Just c) ds
-          ParK -> return proto
+          ParK -> checkSomeOrderChans proto (l2s ds) $> proto
           SeqK -> checkOrderedChans proto ds $> proto
       return $ substChans (ds, (c,one s)) proto'
     Send{} ->

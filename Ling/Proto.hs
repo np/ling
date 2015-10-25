@@ -185,6 +185,20 @@ checkOrderedChans proto cs = do
     where ref = cs `dotActS` ø
           my  = Skel.select (l2s cs) (proto^.skel)
 
+checkSomeOrderChans :: MonadTC m => Proto -> Set Channel -> m ()
+checkSomeOrderChans proto cs = do
+  b <- view $ tcOpts.strictPar
+  debug . unlines $
+    ["Checking SOME channel ordering for:"
+    ,"  " ++ pretty cs
+    ,"Protocol:"
+    ] ++ prettyProto proto ++
+    ["Selected ordering:"
+    ,"  " ++ pretty my]
+  assert (not b || Just cs == my)
+    ["These channels should be used in some order (not in parallel):", pretty cs]
+    where my = Skel.dotChannelSet $ Skel.select cs (proto^.skel)
+
 replProtoWhen :: (Channel -> Bool) -> Term -> Endom Proto
 replProtoWhen cond n = chans . imapped %@~ replRSessionWhen where
   replRSessionWhen c s | cond c    = replRSession n s

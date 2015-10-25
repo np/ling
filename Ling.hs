@@ -1,4 +1,5 @@
-{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes     #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Main where
 
 import           System.Environment (getArgs)
@@ -13,7 +14,8 @@ import           IPPrint.Colored
 import qualified MiniC.Print        as C
 
 import           Ling.Abs
-import           Ling.Check.Base    (TCOpts, debugChecker, defaultTCOpts, runTC)
+import           Ling.Check.Base    (TCOpts, debugChecker, defaultTCOpts, runTC,
+                                     strictPar)
 import           Ling.Check.Program (checkProgram)
 import qualified Ling.Compile.C     as Compile
 import           Ling.ErrM
@@ -170,6 +172,7 @@ mainArgs opts args0 = case args0 of
       "debug-check" -> add debugCheck
       "compile" -> add compile
       "compile-prims" -> add compilePrims
+      "strict-par" -> add (checkOpts.strictPar)
       "seq" -> add sequential
       "no-prims" -> add noPrims
       _ -> failIO $ "Unexpected flag --" ++ arg

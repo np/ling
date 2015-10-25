@@ -27,12 +27,28 @@ import           Data.Map             (Map)
 import           Data.Set             (Set)
 import qualified Data.Set             as Set
 
+------------
+-- TCOpts --
+------------
+
+data TCOpts = TCOpts
+  { _debugChecker
+  , _strictPar :: !Bool
+  -- ^ No mix rule, {c,d} means that one can use c before d or
+  -- d before c but not in parallel
+  }
+
+$(makeLenses ''TCOpts)
+
+defaultTCOpts :: TCOpts
+defaultTCOpts = TCOpts False False
+
 -----------
 -- TCEnv --
 -----------
 
 data TCEnv = TCEnv
-  { _verbosity :: Verbosity
+  { _tcOpts    :: !TCOpts
   , _evars     :: Map Name Typ
   -- ^ Term types
   , _edefs     :: Map Name Term
@@ -46,10 +62,13 @@ data TCEnv = TCEnv
 $(makeLenses ''TCEnv)
 
 emptyTCEnv :: TCEnv
-emptyTCEnv = TCEnv False ø ø ø ø
+emptyTCEnv = TCEnv defaultTCOpts ø ø ø ø
 
 tcEqEnv :: MonadReader TCEnv m => m EqEnv
 tcEqEnv = emptyEqEnv <$> view edefs
+
+verbosity :: Lens' TCEnv Verbosity
+verbosity = tcOpts . debugChecker
 
 whenDebug :: MonadReader TCEnv m => m () -> m ()
 whenDebug f = do
@@ -149,7 +168,7 @@ isEquiv t0 t1 = do
       ]
     when (ut0 == ut1) . debug . unlines $
       ["Once expanded they are equal"]
-  return $ (equiv env t0 t1, ut0, ut1)
+  return (equiv env t0 t1, ut0, ut1)
   where ut0 = unScoped t0
         ut1 = unScoped t1
 
@@ -242,17 +261,6 @@ sFun arg s
 sSession :: Scoped Typ
 sSession = emptyScope sessionTyp
 
-------------
--- TCOpts --
-------------
-
-data TCOpts = TCOpts { _debugChecker :: Bool }
-
-$(makeLenses ''TCOpts)
-
-defaultTCOpts :: TCOpts
-defaultTCOpts = TCOpts False
-
 --------
 -- TC --
 --------
@@ -264,4 +272,4 @@ runTC :: TCOpts -> TC a -> Err a
 runTC opts tc = either Bad Ok
               . runExcept
               . runReaderT (unTC tc)
-              $ emptyTCEnv & verbosity .~ (opts ^. debugChecker)
+              $ emptyTCEnv & tcOpts .~ opts

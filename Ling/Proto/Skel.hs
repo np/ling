@@ -11,6 +11,7 @@ module Ling.Proto.Skel
   , prune
   , select
   , subst
+  , dotChannelSet
   , check
   ) where
 
@@ -143,6 +144,22 @@ prune cs = subst (substMember (cs, Zero) Act)
 
 select :: Ord a => Set a -> Endom (Skel a)
 select cs = subst (substPred ((`notMember` cs), Zero) Act)
+
+-- TODO: What about unknown?
+-- If the meaning of unknown gets tweak to mean
+-- "in some order but not in parallel", then
+-- sequencingOp Unknown = True
+sequencingOp :: Op -> Bool
+sequencingOp Dot = True
+sequencingOp _   = False
+
+dotChannelSet :: Ord a => Skel a -> Maybe (Set a)
+dotChannelSet = \case
+  Zero -> pure ø
+  Act c -> pure (l2s [c])
+  Op op sk0 sk1
+    | sequencingOp op -> union <$> dotChannelSet sk0 <*> dotChannelSet sk1
+    | otherwise -> Nothing
 
 mAct :: Maybe channel -> Skel channel
 mAct Nothing  = Zero

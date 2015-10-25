@@ -39,6 +39,7 @@ alias cmdrcompileall='cmdrecord tests/compile/all.t  --env empty -- Ling --compi
 alias cmdrfmtall='cmdrecord tests/fmt/all.t  --env empty -- ling-fmt < fixtures/all/*.ll'
 alias cmdrprettyall='cmdrecord tests/pretty/all.t  --env empty -- Ling --pretty < fixtures/all/*.ll'
 alias cmdrnormall='cmdrecord tests/norm/all.t  --env empty -- Ling --norm < fixtures/success/*.ll'
+alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty -- Ling --strict-par --check  < fixtures/strict-par-success/*.ll'
 current_nixpkgs=$HOME/hub/np/nixpkgs
 [ ! -d "$current_nixpkgs" ] || export NIX_PATH=nixpkgs=$current_nixpkgs
 export PATH=`pwd`/dist/build/Ling:`pwd`/dist/build/ling-fmt:`pwd`/env/bin:$PATH

@@ -265,6 +265,11 @@ txt = doc . showString
 nl :: Doc
 nl = txt "\n"
 
+instance Print a => Print (Maybe a) where
+  prt i = \case
+    Nothing -> txt "Nothing"
+    Just x  -> prPrec i 0 (txt "Just" . prt 0 x)
+
 prtSeq :: Doc -> Doc -> Doc -> Doc -> Doc -> [Doc] -> Doc
 prtSeq n p b s e = \case
   []     -> concatD [p, b, e]
