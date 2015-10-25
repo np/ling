@@ -17,19 +17,22 @@ module Ling.Proto
   , substChans
   , chanSession
   , chanSessions
+  , arrayProto
+  , pureProto
   , mkProto
   , protoAx
   , protoSendRecv
   , replProtoWhen
   , assertAbsent
   , checkOrderedChans
+  , checkSomeOrderChans
   , checkConflictingChans)
   where
 
 import           Ling.Check.Base
 import           Ling.Norm
 import           Ling.Print
-import           Ling.Proto.Skel      (Skel, dotS, actS, prllActS, dotActS)
+import           Ling.Proto.Skel      (Skel, actS, prllActS, dotActS)
 import qualified Ling.Proto.Skel      as Skel
 import           Ling.Session
 import           Ling.Utils
@@ -39,7 +42,7 @@ import           Control.Monad.Except
 import           Data.List            (sort)
 import           Data.Map             (Map, keysSet)
 import qualified Data.Map             as Map
-import           Data.Set             (intersection)
+import           Data.Set             (Set)
 import qualified Data.Set             as Set
 import           Prelude              hiding (log)
 
@@ -66,26 +69,29 @@ chanDecs = chans . to m2l . each . to (uncurry Arg)
 prettyChanDecs :: Proto -> [String]
 prettyChanDecs = toListOf (chanDecs . to pretty)
 
-disjoint :: Proto -> Proto -> Bool
-disjoint proto0 proto1 = Set.null (keysSet (proto0^.chans) `intersection` keysSet (proto1^.chans))
-
 instance Monoid Proto where
   mempty = MkProto ø ø
 
   -- Use (<>) to combine protocols from processes which are composed in
-  -- **parallel**. If the processes are in sequence use dotProto instead.
-  mappend proto0 proto1
-    | proto0 `disjoint` proto1 =
-      MkProto (proto0^.chans       <> proto1^.chans)
-              (proto0^.skel        <> proto1^.skel)
-    | otherwise = error "mergeSession"
+  -- **parallel** (namely tensor).
+  -- If the processes are in sequence use dotProto instead.
+  mappend = combineProto TenK
 
 dotProto :: Proto -> Proto -> Proto
-dotProto proto0 proto1
-  | proto0 `disjoint` proto1 =
-    MkProto (proto0^.chans       <> proto1^.chans)
-            (proto0^.skel    `dotS` proto1^.skel)
-  | otherwise = error "dotProto"
+dotProto = combineProto SeqK
+
+combineProto :: TraverseKind -> Proto -> Proto -> Proto
+combineProto k proto0 proto1 =
+  if Set.null common then
+    MkProto (proto0^.chans <> proto1^.chans)
+            (Skel.combineS k (proto0^.skel) (proto1^.skel))
+  else
+    error . unlines $ ["These channels are re-used:", pretty common]
+  where
+    common = keysSet (proto0^.chans) `Set.intersection` keysSet (proto1^.chans)
+
+arrayProto :: TraverseKind -> [Proto] -> Proto
+arrayProto k = foldr (combineProto k) ø
 
 -- Not used
 -- chanPresent :: Channel -> Getter Proto Bool
@@ -125,15 +131,16 @@ chanSession c = chans . at c
 chanSessions :: [Channel] -> Proto -> [Maybe RSession]
 chanSessions cs p = [ p ^. chanSession c | c <- cs ]
 
-mkProto :: [(Channel,RSession)] -> Proto
-mkProto css = MkProto (l2m css) (mkSkel css)
-  where
-    mkSkel = Skel.unknownS . map ((`actS` ø) . fst)
+pureProto :: Channel -> Session -> Proto
+pureProto c s = MkProto (l2m [(c,one s)]) (c `actS` ø)
 
-protoAx :: RSession -> [Channel] -> Proto
+mkProto :: TraverseKind -> [(Channel,Session)] -> Proto
+mkProto k = arrayProto k . map (uncurry pureProto)
+
+protoAx :: Session -> [Channel] -> Proto
 protoAx _ []             = mempty
-protoAx s [c] | isSink s = mkProto [(c,s)]
-protoAx s (c:d:es)       = mkProto ((c,s):(d,dual s):map (\e -> (e, log s)) es)
+protoAx s [c] | isSink s = pureProto c s
+protoAx s (c:d:es)       = mkProto ParK ((c,s):(d,dual s):map (\e -> (e, log s)) es)
 protoAx _ _              = error "protoAx: Not enough channels given to forward"
 
 protoSendRecv :: [(Channel, Session -> Session)] -> Endom Proto

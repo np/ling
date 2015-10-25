@@ -103,9 +103,21 @@ Recv.     Act ::= "recv" Name VarDec ;
 NewSlice. Act ::= "slice" "(" [Name] ")" ATerm "as" Name ;
 Ax.       Act ::= "fwd" ASession "(" [Name] ")" ;
 SplitAx.  Act ::= "fwd" Integer ASession Name ;
-At.       Act ::= "@" ATerm "(" [Name] ")" ;
+At.       Act ::= "@" ATerm TopCPatt ;
 
 AS.       ASession ::= ATerm ;
+
+OldTopPatt. TopCPatt ::= "(" [ChanDec] ")" ;
+ParTopPatt. TopCPatt ::= "{"  [CPatt]  "}" ;
+TenTopPatt. TopCPatt ::= "["  [CPatt]  "]" ;
+SeqTopPatt. TopCPatt ::= "[:" [CPatt] ":]" ;
+
+ChaPatt.  CPatt ::= ChanDec ;
+ParPatt.  CPatt ::= "{"  [CPatt]  "}" ;
+TenPatt.  CPatt ::= "["  [CPatt]  "]" ;
+SeqPatt.  CPatt ::= "[:" [CPatt] ":]" ;
+
+separator CPatt "," ;
 
 NoSession. OptSession ::= ;
 SoSession. OptSession ::= ":" RSession ;

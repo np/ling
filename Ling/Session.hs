@@ -9,8 +9,11 @@ import qualified Ling.Raw as Raw
 array :: TraverseKind -> Sessions -> Session
 array = Array
 
+oneT :: Term
+oneT = Lit (LInteger 1)
+
 one :: Session -> RSession
-one s = Repl s (Lit (LInteger 1))
+one s = Repl s oneT
 
 list :: [Session] -> Sessions
 list = map one
@@ -44,6 +47,10 @@ isEnd = (==) endS
 isEndR :: RSession -> Bool
 isEndR (Repl s (Lit (LInteger 1))) = isEnd s
 isEndR _ = False
+
+wrapSessions :: [RSession] -> Session
+wrapSessions [s `Repl` r] | r == oneT = s
+wrapSessions ss = Array ParK ss
 
 mapR :: (Session -> Session) -> RSession -> RSession
 mapR f (Repl s a) = Repl (f s) a

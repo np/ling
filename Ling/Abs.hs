@@ -83,10 +83,24 @@ data Act
     | NewSlice [Name] ATerm Name
     | Ax ASession [Name]
     | SplitAx Integer ASession Name
-    | At ATerm [Name]
+    | At ATerm TopCPatt
   deriving (Eq, Ord, Show, Read)
 
 data ASession = AS ATerm
+  deriving (Eq, Ord, Show, Read)
+
+data TopCPatt
+    = OldTopPatt [ChanDec]
+    | ParTopPatt [CPatt]
+    | TenTopPatt [CPatt]
+    | SeqTopPatt [CPatt]
+  deriving (Eq, Ord, Show, Read)
+
+data CPatt
+    = ChaPatt ChanDec
+    | ParPatt [CPatt]
+    | TenPatt [CPatt]
+    | SeqPatt [CPatt]
   deriving (Eq, Ord, Show, Read)
 
 data OptSession = NoSession | SoSession RSession

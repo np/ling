@@ -108,7 +108,7 @@ transAct = \case
   NewSlice names aterm name -> L.NewSlice (map transName names) (transATerm aterm) (transName name)
   Ax session names -> L.Ax (transASession session) (map transName names)
   SplitAx integer session name -> L.SplitAx integer (transASession session) (transName name)
-  At aterm names -> L.At (transATerm aterm) (map transName names)
+  At aterm topcpatt -> L.At (transATerm aterm) (transTopCPatt topcpatt)
 
 transOptSession :: OptSession -> L.OptSession
 transOptSession x = case x of
@@ -131,3 +131,17 @@ transCSession :: CSession -> L.CSession
 transCSession x = case x of
   Cont session -> L.Cont (transTerm session)
   Done -> L.Done
+
+transTopCPatt :: TopCPatt -> L.TopCPatt
+transTopCPatt = \case
+  OldTopPatt chandecs -> L.OldTopPatt (transChanDecs chandecs)
+  ParTopPatt cpatts -> L.ParTopPatt (map transCPatt cpatts)
+  TenTopPatt cpatts -> L.TenTopPatt (map transCPatt cpatts)
+  SeqTopPatt cpatts -> L.SeqTopPatt (map transCPatt cpatts)
+
+transCPatt :: CPatt -> L.CPatt
+transCPatt = \case
+  ChaPatt chandec -> L.ChaPatt (transChanDec chandec)
+  ParPatt cpatts -> L.ParPatt (map transCPatt cpatts)
+  TenPatt cpatts -> L.TenPatt (map transCPatt cpatts)
+  SeqPatt cpatts -> L.SeqPatt (map transCPatt cpatts)

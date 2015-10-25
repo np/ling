@@ -413,7 +413,7 @@ split_nested_seq_core =
 group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]}> =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]})
   c {i, o}
-  @ (split_nested_seq_core (~ A)(~ B)(~ C)(~ D)) (o, i)
+  @ (split_nested_seq_core (~ A)(~ B)(~ C)(~ D)) {o, i}
 
 id : (A : Type)-> (x : A)-> A
 
@@ -827,12 +827,12 @@ pattern_example_expanded =
 plug_compose =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < A, B >)-> \ (q : < ~ B, C >)-> proc (a : A, c : C)
   new (b : B, b' : ~ B)
-  ( @ p (a, b)
-  | @ q (b', c))
+  ( @ p {a, b}
+  | @ q {b', c})
 
 plug_send_recv =
   \ (p : < !Int, ?Int >)-> proc (c : !Int, d : ?Int)
-  @ p (c, d)
+  @ p {c, d}
 
 _ =
   1

@@ -16,7 +16,7 @@ import           Ling.Utils           hiding (subst1)
 import           Prelude              hiding (log)
 
 import           Control.Lens
-import           Control.Monad        (join)
+import           Control.Monad        (join, zipWithM)
 import           Control.Monad.Reader (local)
 
 checkOptSession :: Name -> Maybe RSession -> Maybe RSession -> TC ()
@@ -155,16 +155,39 @@ checkAct act proto =
       checkTerm intTyp t
       mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
       return $ replProtoWhen (`elem` cs) t proto
-    Ax s cs -> return $ protoAx (one s) cs `dotProto` proto
-    At e cs -> do
+    Ax s cs -> return $ protoAx s cs `dotProto` proto
+    At e p -> do
       t <- inferTerm' e
       case t of
         TProto ss -> do
-          assert (length cs == length ss)
-             ["Expected " ++ show (length ss) ++ " channels, not " ++ show (length cs)]
-          return $ mkProto (zip cs ss) `dotProto` proto
+          proto' <- checkCPatt (wrapSessions ss) p
+          return $ proto' `dotProto` proto
         _ ->
           tcError . unlines $ ["Expected a protocol type, not:", pretty t]
+
+checkCPatt :: Session -> CPatt -> TC Proto
+checkCPatt s = \case
+  ChanP cd ->
+    let proto = pureProto (cd^.argName) s in
+    checkChanDec proto cd $> proto
+  ArrayP kpat pats ->
+    case s of
+      Array k ss -> do
+        assert (kpat == k)
+          ["Expected an array splitting pattern with " ++ kindSymbols kpat ++
+           " not " ++ kindSymbols k]
+        assert (length pats == length ss)
+          ["Expected " ++ show (length ss) ++ " sub-patterns, not " ++
+            show (length pats)]
+        arrayProto k <$> zipWithM checkCPattR ss pats
+      _ ->
+        tcError $ "Unexpected array splitting pattern (" ++
+                  kindSymbols kpat ++ ") for session " ++ pretty s
+
+checkCPattR :: RSession -> CPatt -> TC Proto
+checkCPattR (s `Repl` r) pat
+  | r == oneT = checkCPatt s pat
+  | otherwise = tcError "Unexpected pattern for replicated session"
 
 inferBranch :: (Name,Term) -> TC (Name,Scoped Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t

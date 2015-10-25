@@ -34,6 +34,9 @@ import Ling.ErrM
 %name pListProc ListProc
 %name pAct Act
 %name pASession ASession
+%name pTopCPatt TopCPatt
+%name pCPatt CPatt
+%name pListCPatt ListCPatt
 %name pOptSession OptSession
 %name pRSession RSession
 %name pListRSession ListRSession
@@ -196,9 +199,23 @@ Act : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Abs.Nu $3 $5 }
     | 'slice' '(' ListName ')' ATerm 'as' Name { Ling.Abs.NewSlice $3 $5 $7 }
     | 'fwd' ASession '(' ListName ')' { Ling.Abs.Ax $2 $4 }
     | 'fwd' Integer ASession Name { Ling.Abs.SplitAx $2 $3 $4 }
-    | '@' ATerm '(' ListName ')' { Ling.Abs.At $2 $4 }
+    | '@' ATerm TopCPatt { Ling.Abs.At $2 $3 }
 ASession :: { ASession }
 ASession : ATerm { Ling.Abs.AS $1 }
+TopCPatt :: { TopCPatt }
+TopCPatt : '(' ListChanDec ')' { Ling.Abs.OldTopPatt $2 }
+         | '{' ListCPatt '}' { Ling.Abs.ParTopPatt $2 }
+         | '[' ListCPatt ']' { Ling.Abs.TenTopPatt $2 }
+         | '[:' ListCPatt ':]' { Ling.Abs.SeqTopPatt $2 }
+CPatt :: { CPatt }
+CPatt : ChanDec { Ling.Abs.ChaPatt $1 }
+      | '{' ListCPatt '}' { Ling.Abs.ParPatt $2 }
+      | '[' ListCPatt ']' { Ling.Abs.TenPatt $2 }
+      | '[:' ListCPatt ':]' { Ling.Abs.SeqPatt $2 }
+ListCPatt :: { [CPatt] }
+ListCPatt : {- empty -} { [] }
+          | CPatt { (:[]) $1 }
+          | CPatt ',' ListCPatt { (:) $1 $3 }
 OptSession :: { OptSession }
 OptSession : {- empty -} { Ling.Abs.NoSession }
            | ':' RSession { Ling.Abs.SoSession $2 }

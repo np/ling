@@ -42,14 +42,20 @@ data TraverseKind
   | SeqK
   deriving (Eq,Ord,Show,Read)
 
+data CPatt
+    = ChanP ChanDec
+    | ArrayP TraverseKind [CPatt]
+  deriving (Eq, Ord, Show, Read)
+
 data Act
   = Nu       ChanDec ChanDec
+  -- TODO? Split Channel CPatt
   | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term
   | Recv     Channel VarDec
   | NewSlice [Channel] Term Name
   | Ax       Session [Channel]
-  | At       Term [Channel]
+  | At       Term CPatt
   deriving (Eq,Ord,Show,Read)
 
 type Branch = (Name,Term)
@@ -151,6 +157,12 @@ actVarDecs = \case
   Recv _ a       -> [a]
   NewSlice _ _ x -> [Arg x intTyp]
   _              -> []
+
+kindSymbols :: TraverseKind -> String
+kindSymbols = \case
+  ParK -> "{ ... }"
+  TenK -> "[ ... ]"
+  SeqK -> "[: ... :]"
 
 kindLabel :: TraverseKind -> String
 kindLabel ParK = "par/⅋"

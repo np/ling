@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Ling.Proto.Skel
   ( Skel(Act)
+  , combineS
   , dotS
   , unknownS
   , prllActS
@@ -17,8 +18,9 @@ import           Control.Monad.Except
 import           Data.Set   hiding (foldr)
 import           Prelude    hiding (null)
 
+import           Ling.Norm  (TraverseKind(..))
 import           Ling.Print hiding (Prll)
-import           Ling.Utils
+import           Ling.Utils hiding (q)
 
 -- A way to deal with Unknown would be to stick an identifier
 -- on each of them. Then the normal equality could be used
@@ -73,8 +75,14 @@ infixr 4 `dotS`
 dotS :: Eq a => Skel a -> Skel a -> Skel a
 dotS = mkOp Dot
 
-unknownS :: Eq a => [Skel a] -> Skel a
-unknownS = foldr (mkOp Unknown) ø
+unknownS :: Eq a => Skel a -> Skel a -> Skel a
+unknownS = mkOp Unknown
+
+combineS :: Eq a => TraverseKind -> Skel a -> Skel a -> Skel a
+combineS = \case
+  ParK -> unknownS
+  TenK -> mappend
+  SeqK -> dotS
 
 instance Eq a => Monoid (Skel a) where
   mempty = Zero

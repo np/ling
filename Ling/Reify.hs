@@ -77,6 +77,35 @@ instance Norm Proc where
     PDot proc proc' -> norm proc `dotP` norm proc'
     PPrll procs     -> mconcat $ norm procs
 
+instance Norm CPatt where
+  type Normalized CPatt = N.CPatt
+  reify (N.ChanP cd) = ChaPatt (reify cd)
+  reify (N.ArrayP k ps) = k' (reify ps) where
+    k' = case k of
+      N.TenK -> TenPatt
+      N.ParK -> ParPatt
+      N.SeqK -> SeqPatt
+  norm = \case
+    TenPatt ps -> N.ArrayP N.TenK (norm ps)
+    ParPatt ps -> N.ArrayP N.ParK (norm ps)
+    SeqPatt ps -> N.ArrayP N.SeqK (norm ps)
+    ChaPatt cd -> N.ChanP (norm cd)
+
+instance Norm TopCPatt where
+  type Normalized TopCPatt = N.CPatt
+  reify (N.ChanP cd) = OldTopPatt [reify cd]
+  reify (N.ArrayP k ps) = k' (reify ps) where
+    k' = case k of
+      N.TenK -> TenTopPatt
+      N.ParK -> ParTopPatt
+      N.SeqK -> SeqTopPatt
+  norm = \case
+    OldTopPatt[cd]-> N.ChanP (norm cd)
+    OldTopPatt cs -> N.ArrayP N.ParK (N.ChanP . norm <$> cs)
+    TenTopPatt ps -> N.ArrayP N.TenK (norm ps)
+    ParTopPatt ps -> N.ArrayP N.ParK (norm ps)
+    SeqTopPatt ps -> N.ArrayP N.SeqK (norm ps)
+
 pAct :: N.Act -> Proc
 pAct = PAct . reifyAct
 
@@ -110,7 +139,7 @@ normAct = \case
     Send     c t      -> go [N.Send         c (norm t)]
     Recv     c a      -> go [N.Recv         c (norm a)]
     NewSlice cs t x   -> go [N.NewSlice    cs (norm t) x]
-    At       t cs     -> go [N.At             (norm t) cs]
+    At       t pa     -> go [N.At             (norm t) (norm pa)]
   where go = (`actsP` [])
 
 reifyProc :: N.Proc -> Proc
@@ -126,7 +155,7 @@ reifyAct = \case
   N.Recv     c a      -> Recv     c (reify a)
   N.NewSlice cs t x   -> NewSlice cs (reify t) x
   N.Ax       s cs     -> Ax          (reify s) cs
-  N.At       t cs     -> At          (reify t) cs
+  N.At       t ps     -> At          (reify t) (reify ps)
 
 -- isInfix xs = match "_[^_]*_" xs
 isInfix :: Name -> Maybe Name

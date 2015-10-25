@@ -17,6 +17,14 @@ bvVarDec = l2s . pure . _argName
 bcChanDecs :: BoundChans [ChanDec]
 bcChanDecs = l2s . map _argName
 
+fcPat :: FreeChans CPatt
+fcPat = \case
+  ArrayP _ ps -> fcPats ps
+  ChanP cd    -> bcChanDecs [cd]
+
+fcPats :: FreeChans [CPatt]
+fcPats = mconcat . map fcPat
+
 fcAct :: FreeChans Act
 fcAct = \case
   Nu{}            -> ø
@@ -25,7 +33,7 @@ fcAct = \case
   Recv c _        -> l2s [c]
   NewSlice cs _ _ -> l2s cs
   Ax _ cs         -> l2s cs
-  At _ cs         -> l2s cs
+  At _ p          -> fcPat p
 
 bcAct :: BoundChans Act
 bcAct = \case

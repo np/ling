@@ -91,10 +91,22 @@ transAct x = case x of
   NewSlice names aterm name -> failure x
   Ax asession names -> failure x
   SplitAx integer asession name -> failure x
-  At aterm names -> failure x
+  At aterm topcpatt -> failure x
 transASession :: ASession -> Result
 transASession x = case x of
   AS aterm -> failure x
+transTopCPatt :: TopCPatt -> Result
+transTopCPatt x = case x of
+  OldTopPatt chandecs -> failure x
+  ParTopPatt cpatts -> failure x
+  TenTopPatt cpatts -> failure x
+  SeqTopPatt cpatts -> failure x
+transCPatt :: CPatt -> Result
+transCPatt x = case x of
+  ChaPatt chandec -> failure x
+  ParPatt cpatts -> failure x
+  TenPatt cpatts -> failure x
+  SeqPatt cpatts -> failure x
 transOptSession :: OptSession -> Result
 transOptSession x = case x of
   NoSession -> failure x

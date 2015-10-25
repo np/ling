@@ -144,8 +144,19 @@ All other symbols are terminals.
   |  |  **|**  | ``slice`` ``(`` //[Name]// ``)`` //ATerm// ``as`` //Name// 
   |  |  **|**  | ``fwd`` //ASession// ``(`` //[Name]// ``)`` 
   |  |  **|**  | ``fwd`` //Integer// //ASession// //Name// 
-  |  |  **|**  | ``@`` //ATerm// ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``@`` //ATerm// //TopCPatt// 
   | //ASession// | -> | //ATerm// 
+  | //TopCPatt// | -> | ``(`` //[ChanDec]// ``)`` 
+  |  |  **|**  | ``{`` //[CPatt]// ``}`` 
+  |  |  **|**  | ``[`` //[CPatt]// ``]`` 
+  |  |  **|**  | ``[:`` //[CPatt]// ``:]`` 
+  | //CPatt// | -> | //ChanDec// 
+  |  |  **|**  | ``{`` //[CPatt]// ``}`` 
+  |  |  **|**  | ``[`` //[CPatt]// ``]`` 
+  |  |  **|**  | ``[:`` //[CPatt]// ``:]`` 
+  | //[CPatt]// | -> | **eps**
+  |  |  **|**  | //CPatt// 
+  |  |  **|**  | //CPatt// ``,`` //[CPatt]// 
   | //OptSession// | -> | **eps**
   |  |  **|**  | ``:`` //RSession// 
   | //RSession// | -> | //Term// //OptRepl// 

@@ -58,6 +58,11 @@ hideArgs = flip (foldr hideArg)
 hidePref :: Pref -> Endom Ren
 hidePref = hideArgs . concatMap actVarDecs
 
+instance Rename CPatt where
+  rename f = \case
+    ChanP cd    -> ChanP (rename f cd)
+    ArrayP k ps -> ArrayP k (rename f ps)
+
 instance Rename Act where
   rename f = \case
     Split k c ds    -> Split k (rename f c) (rename f ds)
