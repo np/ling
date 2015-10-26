@@ -148,7 +148,26 @@ instance Equiv RSession where
 instance Equiv Session where
   equiv env s0' s1' = equiv env (tSession s0') (tSession s1')
 
+instance Equiv Act where
+  equiv env a0 a1 = case (a0 , a1) of
+    (Recv c0 _b0, Recv c1 _b1) -> c0 == c1
+    (Send c0 t0, Send c1 t1) -> c0 == c1 && equiv env t0 t1
+    (_ , _) -> a0 == a1
+
+prefToTelescope :: Pref -> [Arg Typ]
+prefToTelescope prefs = prefs >>= \x -> case x of
+  Recv _ v -> [v]
+  _ -> []
+
 instance Equiv Proc where
-  equiv _ = (==)
+  equiv env p0 p1 = equiv env pr0 pr1
+    && equiv env (Telescope cd0 pp0) (Telescope cd1 pp1)
+    where
+      pr0 = p0 ^. procPref
+      pr1 = p1 ^. procPref
+      cd0 = prefToTelescope pr0
+      cd1 = prefToTelescope pr1
+      pp0 = p0 ^. procProcs
+      pp1 = p1 ^. procProcs
   -- TODO
   -- equiv env (pref0 `Act` procs0) (pref1 `Act` procs1) =
