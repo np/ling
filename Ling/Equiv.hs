@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell , LambdaCase#-}
 module Ling.Equiv (Equiv(equiv), EqEnv, emptyEqEnv, allEquiv) where
 
 import           Control.Lens
@@ -10,7 +10,8 @@ import qualified Data.Map             as Map
 import           Ling.Norm
 import           Ling.Reduce          (reduceWHNF)
 import           Ling.Scoped          (Defs, Scoped (..), ldefs, scoped)
-import           Ling.Utils           (Abs (..), Arg (..), Telescope (..))
+import           Ling.Utils           (Abs (..), Arg (..), unArg
+                                      , Telescope (..))
 
 data EqEnv = EqEnv
   { _eqnms  :: [(Name,Name)]
@@ -150,12 +151,14 @@ instance Equiv Session where
 
 instance Equiv Act where
   equiv env a0 a1 = case (a0 , a1) of
-    (Recv c0 _b0, Recv c1 _b1) -> c0 == c1
+    (Recv c0 b0, Recv c1 b1) -> c0 == c1
+      && equiv env (b0 ^. unArg) (b1 ^. unArg)
     (Send c0 t0, Send c1 t1) -> c0 == c1 && equiv env t0 t1
+    -- Add for splicing and At
     (_ , _) -> a0 == a1
 
 prefToTelescope :: Pref -> [Arg Typ]
-prefToTelescope prefs = prefs >>= \x -> case x of
+prefToTelescope prefs = prefs >>= \case
   Recv _ v -> [v]
   _ -> []
 
@@ -169,5 +172,3 @@ instance Equiv Proc where
       cd1 = prefToTelescope pr1
       pp0 = p0 ^. procProcs
       pp1 = p1 ^. procProcs
-  -- TODO
-  -- equiv env (pref0 `Act` procs0) (pref1 `Act` procs1) =
