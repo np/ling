@@ -235,8 +235,8 @@ caseType t ty brs =
       case def of
         Just cs -> do
           assertDiff "Labels are not equal." (==)
-                     "Expected:" (sort cs)
-                     "Inferred:" (fst <$> brs)
+                     "Expected:" (Comma (sort cs))
+                     "Inferred:" (Comma (fst <$> brs))
 
           env <- tcEqEnv
           return $ if allEquiv env (snd <$> brs) then snd (head brs)

@@ -167,7 +167,7 @@ checkConflictingChans proto c cs =
     (proto & skel %%~ Skel.check c cs)
     `catchError` (\_err ->
       throwError . unlines $
-        ["These channels should be used independently:", pretty (sort cs)]
+        ["These channels should be used independently:", pretty (Comma (sort cs))]
         -- ++ [_err]
     )
 
@@ -181,7 +181,7 @@ checkOrderedChans proto cs = do
     ["Selected ordering:"
     ] ++ (map ("  "++) . lines . pretty $ my)
   assert (ref == my)
-    ["These channels should be used in-order:", pretty cs]
+    ["These channels should be used in-order:", pretty (Comma cs)]
     where ref = cs `dotActS` ø
           my  = Skel.select (l2s cs) (proto^.skel)
 

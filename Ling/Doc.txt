@@ -46,8 +46,8 @@ The reserved words used in Ling are the following:
   | ``slice`` |  |  | 
 
 The symbols used in Ling are the following:
-  | , | = | : | `
-  | | | ( | ) | ->
+  | = | : | ` | |
+  | , | ( | ) | ->
   | < | > | { | }
   | [ | ] | [: | :]
   | ! | ? | ~ | -o
@@ -65,8 +65,7 @@ All other symbols are terminals.
 
   | //Program// | -> | //[Dec]// 
   | //[Name]// | -> | **eps**
-  |  |  **|**  | //Name// 
-  |  |  **|**  | //Name// ``,`` //[Name]// 
+  |  |  **|**  | //Name// //[Name]// 
   | //Dec// | -> | //Name// //OptSig// ``=`` //Term// 
   |  |  **|**  | //Name// ``:`` //Term// 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// 
@@ -82,8 +81,9 @@ All other symbols are terminals.
   |  |  **|**  | //Dec// 
   |  |  **|**  | //Dec// ``,`` //[Dec]// 
   | //VarDec// | -> | ``(`` //Name// ``:`` //Term// ``)`` 
-  | //[VarDec]// | -> | **eps**
-  |  |  **|**  | //VarDec// //[VarDec]// 
+  | //VarsDec// | -> | ``(`` //Name// //[Name]// ``:`` //Term// ``)`` 
+  | //[VarsDec]// | -> | **eps**
+  |  |  **|**  | //VarsDec// //[VarsDec]// 
   | //ChanDec// | -> | //Name// //OptSession// 
   | //[ChanDec]// | -> | **eps**
   |  |  **|**  | //ChanDec// 
@@ -111,15 +111,15 @@ All other symbols are terminals.
   | //DTerm// | -> | //Name// //[ATerm]// 
   |  |  **|**  | ``(`` //Name// ``:`` //Term// ``)`` 
   | //Term2// | -> | //ATerm// //[ATerm]// 
+  |  |  **|**  | ``case`` //Term// ``of`` ``{`` //[Branch]// ``}`` 
   |  |  **|**  | ``!`` //DTerm// //CSession// 
   |  |  **|**  | ``?`` //DTerm// //CSession// 
   |  |  **|**  | ``~`` //Term2// 
   | //Term1// | -> | //Term2// ``-o`` //Term1// 
   |  |  **|**  | //Term2// 
-  | //Term// | -> | ``case`` //Term// ``of`` ``{`` //[Branch]// ``}`` 
-  |  |  **|**  | //VarDec// //[VarDec]// ``->`` //Term// 
-  |  |  **|**  | //VarDec// //[VarDec]// ``**`` //Term// 
-  |  |  **|**  | ``\`` //VarDec// //[VarDec]// ``->`` //Term// 
+  | //Term// | -> | //VarsDec// //[VarsDec]// ``->`` //Term// 
+  |  |  **|**  | //VarsDec// //[VarsDec]// ``**`` //Term// 
+  |  |  **|**  | ``\`` //VarsDec// //[VarsDec]// ``->`` //Term// 
   |  |  **|**  | ``proc`` ``(`` //[ChanDec]// ``)`` //Proc// 
   |  |  **|**  | //Term1// 
   | //Proc1// | -> | //Act// 
@@ -136,8 +136,8 @@ All other symbols are terminals.
   |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 
   |  |  **|**  | ``send`` //Name// //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
-  |  |  **|**  | ``slice`` ``(`` //[Name]// ``)`` //ATerm// ``as`` //Name// 
-  |  |  **|**  | ``fwd`` //ASession// ``(`` //[Name]// ``)`` 
+  |  |  **|**  | ``slice`` ``(`` //[ChanDec]// ``)`` //ATerm// ``as`` //Name// 
+  |  |  **|**  | ``fwd`` //ASession// ``(`` //[ChanDec]// ``)`` 
   |  |  **|**  | ``fwd`` //Integer// //ASession// //Name// 
   |  |  **|**  | ``@`` //ATerm// //TopCPatt// 
   | //ASession// | -> | //ATerm// 

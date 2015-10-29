@@ -17,7 +17,8 @@ import Ling.ErrM
 %name pOptSig OptSig
 %name pListDec ListDec
 %name pVarDec VarDec
-%name pListVarDec ListVarDec
+%name pVarsDec VarsDec
+%name pListVarsDec ListVarsDec
 %name pChanDec ChanDec
 %name pListChanDec ListChanDec
 %name pBranch Branch
@@ -103,9 +104,7 @@ Name    :: { Name} : L_Name { Name ($1)}
 Program :: { Program }
 Program : ListDec { Ling.Abs.Prg $1 }
 ListName :: { [Name] }
-ListName : {- empty -} { [] }
-         | Name { (:[]) $1 }
-         | Name ',' ListName { (:) $1 $3 }
+ListName : {- empty -} { [] } | Name ListName { (:) $1 $2 }
 Dec :: { Dec }
 Dec : Name OptSig '=' Term { Ling.Abs.DDef $1 $2 $4 }
     | Name ':' Term { Ling.Abs.DSig $1 $3 }
@@ -128,9 +127,11 @@ ListDec : {- empty -} { [] }
         | Dec ',' ListDec { (:) $1 $3 }
 VarDec :: { VarDec }
 VarDec : '(' Name ':' Term ')' { Ling.Abs.VD $2 $4 }
-ListVarDec :: { [VarDec] }
-ListVarDec : {- empty -} { [] }
-           | ListVarDec VarDec { flip (:) $1 $2 }
+VarsDec :: { VarsDec }
+VarsDec : '(' Name ListName ':' Term ')' { Ling.Abs.VsD $2 $3 $5 }
+ListVarsDec :: { [VarsDec] }
+ListVarsDec : {- empty -} { [] }
+            | ListVarsDec VarsDec { flip (:) $1 $2 }
 ChanDec :: { ChanDec }
 ChanDec : Name OptSession { Ling.Abs.CD $1 $2 }
 ListChanDec :: { [ChanDec] }
@@ -166,16 +167,16 @@ DTerm : Name ListATerm { Ling.Abs.DTTyp $1 (reverse $2) }
       | '(' Name ':' Term ')' { Ling.Abs.DTBnd $2 $4 }
 Term2 :: { Term }
 Term2 : ATerm ListATerm { Ling.Abs.RawApp $1 (reverse $2) }
+      | 'case' Term 'of' '{' ListBranch '}' { Ling.Abs.Case $2 $5 }
       | '!' DTerm CSession { Ling.Abs.Snd $2 $3 }
       | '?' DTerm CSession { Ling.Abs.Rcv $2 $3 }
       | '~' Term2 { Ling.Abs.Dual $2 }
 Term1 :: { Term }
 Term1 : Term2 '-o' Term1 { Ling.Abs.Loli $1 $3 } | Term2 { $1 }
 Term :: { Term }
-Term : 'case' Term 'of' '{' ListBranch '}' { Ling.Abs.Case $2 $5 }
-     | VarDec ListVarDec '->' Term { Ling.Abs.TFun $1 (reverse $2) $4 }
-     | VarDec ListVarDec '**' Term { Ling.Abs.TSig $1 (reverse $2) $4 }
-     | '\\' VarDec ListVarDec '->' Term { Ling.Abs.Lam $2 (reverse $3) $5 }
+Term : VarsDec ListVarsDec '->' Term { Ling.Abs.TFun $1 (reverse $2) $4 }
+     | VarsDec ListVarsDec '**' Term { Ling.Abs.TSig $1 (reverse $2) $4 }
+     | '\\' VarsDec ListVarsDec '->' Term { Ling.Abs.Lam $2 (reverse $3) $5 }
      | 'proc' '(' ListChanDec ')' Proc { Ling.Abs.TProc $3 $5 }
      | Term1 { $1 }
 Proc1 :: { Proc }
@@ -196,8 +197,8 @@ Act : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Abs.Nu $3 $5 }
     | Name '[:' ListChanDec ':]' { Ling.Abs.SeqSplit $1 $3 }
     | 'send' Name ATerm { Ling.Abs.Send $2 $3 }
     | 'recv' Name VarDec { Ling.Abs.Recv $2 $3 }
-    | 'slice' '(' ListName ')' ATerm 'as' Name { Ling.Abs.NewSlice $3 $5 $7 }
-    | 'fwd' ASession '(' ListName ')' { Ling.Abs.Ax $2 $4 }
+    | 'slice' '(' ListChanDec ')' ATerm 'as' Name { Ling.Abs.NewSlice $3 $5 $7 }
+    | 'fwd' ASession '(' ListChanDec ')' { Ling.Abs.Ax $2 $4 }
     | 'fwd' Integer ASession Name { Ling.Abs.SplitAx $2 $3 $4 }
     | '@' ATerm TopCPatt { Ling.Abs.At $2 $3 }
 ASession :: { ASession }
