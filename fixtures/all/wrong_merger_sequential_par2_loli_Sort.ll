@@ -1,5 +1,5 @@
 wrong_merger_seqential_par2_loli_Sort =
- \(m : Int)(n : Int)->
+ \(m n : Int)->
  proc( c : {DotSort Int m, DotSort Int n} -o DotSort Int (m + n) )
   c{c01,d}
   c01[c0,c1]

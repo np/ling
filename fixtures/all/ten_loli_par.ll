@@ -1,6 +1,5 @@
 ten_loli_par =
- \(A : Session)
-  (B : Session)->
+ \(A B : Session)->
  proc(c : [A,B] -o {A,B})
   c{i,o}
   i{na,nb}

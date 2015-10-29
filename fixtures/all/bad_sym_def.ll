@@ -1,4 +1,4 @@
-Id : (A : Type)(x : A)(y : A)-> Type
+Id : (A : Type)(x y : A)-> Type
 
-sym : (A : Type)(x : A)(y : A)(p : Id A x y)-> Id A y x
-    = \(A : Type)(x : A)(y : A)(p : Id A x y)-> p
+sym : (A : Type)(x y : A)(p : Id A x y)-> Id A y x
+    = \(A : Type)(x y : A)(p : Id A x y)-> p

@@ -1,4 +1,4 @@
-Id : (A : Type)(x : A)(y : A)-> Type
+Id : (A : Type)(x y : A)-> Type
 
 refl : (A : Type)(x : A)-> Id A x x
 
@@ -17,18 +17,18 @@ tr-refl : (A : Type)(x : A)(P : (y : A)-> Type)(Px : P x)->
         = \(A : Type)(x : A)(P : (y : A)-> Type)(Px : P x)->
           J-refl A x (\(z : A)(q : Id A x z)-> P z) Px
 
-coe : (A : Type)(B : Type)(p : Id Type A B)(x : A)-> B
-    = \(A : Type)(B : Type)(p : Id Type A B)(x : A)->
+coe : (A B : Type)(p : Id Type A B)(x : A)-> B
+    = \(A B : Type)(p : Id Type A B)(x : A)->
       tr Type A (\(X : Type)-> X) x B p
 
 coe-refl : (A : Type)(x : A)-> Id A (coe A A (refl Type A) x) x
          = \(A : Type)(x : A)->
            tr-refl Type A (\(X : Type)-> X) x
 
-sym : (A : Type)(x : A)(y : A)(p : Id A x y)-> Id A y x
-    = \(A : Type)(x : A)(y : A)(p : Id A x y)-> tr A x (\(z : A)-> Id A z x) (refl A x) y p
+sym : (A : Type)(x y : A)(p : Id A x y)-> Id A y x
+    = \(A : Type)(x y : A)(p : Id A x y)-> tr A x (\(z : A)-> Id A z x) (refl A x) y p
 
-trans : (A : Type)(x' : A)(y' : A)(z' : A)(p : Id A x' y')(q : Id A y' z')-> Id A x' z'
-      = \(A : Type)(x' : A)(y' : A)(z' : A)(p : Id A x' y')(q : Id A y' z')->
-        tr A y' (Id A x') p z' q
+trans : (A : Type)(x y z : A)(p : Id A x y)(q : Id A y z)-> Id A x z
+     = \(A : Type)(x y z : A)(p : Id A x y)(q : Id A y z)->
+        tr A y (Id A x) p z q
 -- -}

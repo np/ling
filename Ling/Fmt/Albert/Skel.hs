@@ -43,6 +43,9 @@ transOptSig x = case x of
 transVarDec :: VarDec -> Result
 transVarDec x = case x of
   VD name term -> failure x
+transVarsDec :: VarsDec -> Result
+transVarsDec x = case x of
+  VsD aterm aterms term -> failure x
 transChanDec :: ChanDec -> Result
 transChanDec x = case x of
   CD name optsession -> failure x
@@ -74,14 +77,14 @@ transDTerm x = case x of
 transTerm :: Term -> Result
 transTerm x = case x of
   RawApp aterm aterms -> failure x
+  Case term branchs -> failure x
   Snd dterm csession -> failure x
   Rcv dterm csession -> failure x
   Dual term -> failure x
   Loli term1 term2 -> failure x
-  Case term branchs -> failure x
-  TFun vardec vardecs term -> failure x
-  TSig vardec vardecs term -> failure x
-  Lam vardec vardecs term -> failure x
+  TFun varsdec varsdecs term -> failure x
+  TSig varsdec varsdecs term -> failure x
+  Lam varsdec varsdecs term -> failure x
   TProc chandecs proc -> failure x
 transProc :: Proc -> Result
 transProc x = case x of
@@ -97,8 +100,8 @@ transAct x = case x of
   SeqSplit name chandecs -> failure x
   Send name aterm -> failure x
   Recv name vardec -> failure x
-  NewSlice names aterm name -> failure x
-  Ax asession names -> failure x
+  NewSlice chandecs aterm name -> failure x
+  Ax asession chandecs -> failure x
   SplitAx integer asession name -> failure x
   At aterm topcpatt -> failure x
 transASession :: ASession -> Result

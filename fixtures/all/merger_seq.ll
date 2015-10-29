@@ -1,5 +1,5 @@
 merger_seq =
- \(m : Int)(n : Int)->
+ \(m n : Int)->
  proc( c0 : ! Vec Int m. ? Vec Int m
      , c1 : ! Vec Int n. ? Vec Int n
      , ci : ? Vec Int (m + n)

@@ -41,6 +41,10 @@ transVarDec :: VarDec -> L.VarDec
 transVarDec x = case x of
   VD name term -> L.VD (transName name) (transTerm term)
 
+transVarsDec :: VarsDec -> L.VarsDec
+transVarsDec x = case x of
+  VsD aterm aterms term -> L.VsD (transATerm aterm) (map transATerm aterms) (transTerm term)
+
 transChanDecs :: [ChanDec] -> [L.ChanDec]
 transChanDecs = map transChanDec
 
@@ -81,9 +85,9 @@ transTerm :: Term -> L.Term
 transTerm x = case x of
   RawApp aterm aterms -> L.RawApp (transATerm aterm) (map transATerm aterms)
   Case term branchs -> L.Case (transTerm term) (map transBranch branchs)
-  TFun vardec vardecs term -> L.TFun (transVarDec vardec) (map transVarDec vardecs) (transTerm term)
-  TSig vardec vardecs term -> L.TSig (transVarDec vardec) (map transVarDec vardecs) (transTerm term)
-  Lam vardec vardecs term -> L.Lam (transVarDec vardec) (map transVarDec vardecs) (transTerm term)
+  TFun varsdec varsdecs term -> L.TFun (transVarsDec varsdec) (map transVarsDec varsdecs) (transTerm term)
+  TSig varsdec varsdecs term -> L.TSig (transVarsDec varsdec) (map transVarsDec varsdecs) (transTerm term)
+  Lam  varsdec varsdecs term -> L.Lam  (transVarsDec varsdec) (map transVarsDec varsdecs) (transTerm term)
   TProc chandecs proc -> L.TProc (map transChanDec chandecs) (transProc proc)
   Snd dterm csession -> L.Snd (transDTerm dterm) (transCSession csession)
   Rcv dterm csession -> L.Rcv (transDTerm dterm) (transCSession csession)
@@ -105,8 +109,8 @@ transAct = \case
   SeqSplit name chandecs -> L.SeqSplit (transName name) (map transChanDec chandecs)
   Send name aterm -> L.Send (transName name) (transATerm aterm)
   Recv name vardec -> L.Recv (transName name) (transVarDec vardec)
-  NewSlice names aterm name -> L.NewSlice (map transName names) (transATerm aterm) (transName name)
-  Ax session names -> L.Ax (transASession session) (map transName names)
+  NewSlice chandecs aterm name -> L.NewSlice (map transChanDec chandecs) (transATerm aterm) (transName name)
+  Ax session chandecs -> L.Ax (transASession session) (map transChanDec chandecs)
   SplitAx integer session name -> L.SplitAx integer (transASession session) (transName name)
   At aterm topcpatt -> L.At (transATerm aterm) (transTopCPatt topcpatt)
 

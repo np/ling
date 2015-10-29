@@ -10,7 +10,7 @@ token Name ((letter | ["_-+*/'%^"] | digit)*
             (letter | ["_-+*/'%^"])
             (letter | ["_-+*/'%^"] | digit)*) ;
 
-separator Name "," ;
+separator Name "" ;
 
 DPrc. Dec ::= Name "(" [ChanDec] ")" "=" Proc OptDot ;
 DDef. Dec ::= Name OptSig "=" TermProc OptDot ;
@@ -35,9 +35,14 @@ SoSig. OptSig ::= ":" Term ;
 
 separator Dec "," ;
 
-VD. VarDec  ::= "(" Name ":" Term ")" ;
+VD. VarDec ::= "(" Name ":" Term ")" ;
 
-separator VarDec "" ;
+-- Warning: here ATerm is used instead of Name.
+-- The rule with Name would create a parsing conflict
+-- (when using LALR). This grammar is thus more generous
+-- and erroneous terms are rejected after in Ling.Reify.
+VsD.      VarsDec ::= "(" ATerm [ATerm] ":" Term ")" ;
+separator VarsDec "" ;
 
 CD. ChanDec ::= Name OptSession ;
 
@@ -72,6 +77,7 @@ DTTyp.   DTerm ::= Name [ATerm] ;
 DTBnd.   DTerm ::= "(" Name ":" Term ")" ;
 
 RawApp.   Term2  ::= ATerm [ATerm] ;
+Case.     Term2  ::= "case" Term "of" "{" [Branch] "}" ;
 Snd.      Term2  ::= "!" DTerm CSession ;
 Rcv.      Term2  ::= "?" DTerm CSession ;
 Dual.     Term2  ::= "~" Term2 ;
@@ -79,10 +85,9 @@ Dual.     Term2  ::= "~" Term2 ;
 Loli.     Term1  ::= Term2 "-o" Term1 ;
 _.        Term1  ::= Term2 ;
 
-Case.     Term   ::= "case" Term "of" "{" [Branch] "}" ;
-TFun.     Term   ::= VarDec [VarDec] "->" Term ;
-TSig.     Term   ::= VarDec [VarDec] "**" Term ;
-Lam.      Term   ::= "\\" VarDec [VarDec] "->" Term ;
+TFun.     Term   ::= VarsDec [VarsDec] "->" Term ;
+TSig.     Term   ::= VarsDec [VarsDec] "**" Term ;
+Lam.      Term   ::= "\\" VarsDec [VarsDec] "->" Term ;
 TProc.    Term   ::= "proc" "(" [ChanDec] ")" Proc ;
 _.        Term   ::= Term1 ;
 
@@ -100,8 +105,8 @@ TenSplit. Act ::= Name "[" [ChanDec] "]" ;
 SeqSplit. Act ::= Name "[:" [ChanDec] ":]" ;
 Send.     Act ::= "send" Name ATerm ;
 Recv.     Act ::= "recv" Name VarDec ;
-NewSlice. Act ::= "slice" "(" [Name] ")" ATerm "as" Name ;
-Ax.       Act ::= "fwd" ASession "(" [Name] ")" ;
+NewSlice. Act ::= "slice" "(" [ChanDec] ")" ATerm "as" Name ;
+Ax.       Act ::= "fwd" ASession "(" [ChanDec] ")" ;
 SplitAx.  Act ::= "fwd" Integer ASession Name ;
 At.       Act ::= "@" ATerm TopCPatt ;
 

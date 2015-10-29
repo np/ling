@@ -1,5 +1,5 @@
 merger_seq_Sort =
- \(m : Int)(n : Int)->
+ \(m n : Int)->
  proc(c : [DotSort Int m, DotSort Int n] -o DotSort Int (m + n))
   c{d,io} d{d0,d1}
   recv io (vi : Vec Int (m + n)).

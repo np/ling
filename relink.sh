@@ -53,9 +53,9 @@ link(){
 }
 # }}}
 
-for d in fixtures/*; do
-  if [ "$d" != fixtures/all ]; then
-    for f in "$d"/*.ll; do
+for d in fixtures/*/; do
+  if [ "$d" != fixtures/all/ ]; then
+    for f in "$d"*.ll; do
       b="$(basename "$f")"
       link fixtures/all/"$b" "$f"
     done
@@ -70,3 +70,7 @@ for t in tests/**/*.t/*.ll issues/**/*.ll; do
     error 1 "Missing file $f"
   fi
 done
+
+link fixtures/all.ll tests/fmt/all.t/stdin
+link fixtures/all.ll tests/pretty/all.t/stdin
+link fixtures/success.ll tests/norm/all.t/stdin

@@ -1,7 +1,7 @@
 split_nested_seq :
-  (A : Session)(B : Session)(C : Session)(D : Session)->
+  (A B C D : Session)->
   < [: A, B, C, D :] -o [: [: A, B :], [: C, D :] :] > =
-  \(A : Session)(B : Session)(C : Session)(D : Session)->
+  \(A B C D : Session)->
    proc(c : {[: ~A, ~B, ~C, ~D :], [: [: A, B :], [: C, D :] :]})
     c{i,o}
     i[:na,nb,nc,nd:]

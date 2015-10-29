@@ -118,12 +118,17 @@ reifyPref :: N.Pref -> Proc -> Proc
 reifyPref pref proc = case pref of
   []    -> proc
   [act] -> act `actR` proc
-  acts  -> PPrll (map pAct acts) `pDot` proc
+  acts  -> PPrll (pAct <$> acts) `pDot` proc
+
+noSoSession :: ChanDec -> Name
+noSoSession (CD x NoSession) = x
+noSoSession (CD (Name x) SoSession{}) = error $
+  "unexpected session annotation for channel " ++ x
 
 normAct :: Act -> N.Proc
 normAct = \case
     -- These two clauses expand the forwarders
-    Ax        s cs    -> fwdP    ø (norm s) cs
+    Ax        s cs    -> fwdP    ø (norm s) (noSoSession <$> cs)
     SplitAx n s c     -> fwdProc n (norm s) c
 
     -- TODO make a flag to turn these on
@@ -138,8 +143,8 @@ normAct = \case
     SeqSplit c ds     -> go [N.Split N.SeqK c (norm ds)]
     Send     c t      -> go [N.Send         c (norm t)]
     Recv     c a      -> go [N.Recv         c (norm a)]
-    NewSlice cs t x   -> go [N.NewSlice    cs (norm t) x]
-    At       t pa     -> go [N.At             (norm t) (norm pa)]
+    NewSlice cs t x   -> go [N.NewSlice (noSoSession <$> cs) (norm t) x]
+    At       t pa     -> go [N.At                            (norm t) (norm pa)]
   where go = (`actsP` [])
 
 reifyProc :: N.Proc -> Proc
@@ -153,8 +158,8 @@ reifyAct = \case
   N.Split N.SeqK c ds -> SeqSplit c (reify ds)
   N.Send     c t      -> Send     c (reify t)
   N.Recv     c a      -> Recv     c (reify a)
-  N.NewSlice cs t x   -> NewSlice cs (reify t) x
-  N.Ax       s cs     -> Ax          (reify s) cs
+  N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (reify t) x
+  N.Ax       s cs     -> Ax          (reify s) ((`CD` NoSession) <$> cs)
   N.At       t ps     -> At          (reify t) (reify ps)
 
 -- isInfix xs = match "_[^_]*_" xs
@@ -231,6 +236,9 @@ instance Norm ATerm where
   norm (Seq s)          = N.TSession $ N.Array N.SeqK (norm s)
   norm (Paren t)        = norm t
 
+vsd :: Name -> [Name] -> Term -> VarsDec
+vsd a as = VsD (Var a) (Var <$> as)
+
 instance Norm Term where
   type Normalized Term = N.Term
 
@@ -243,18 +251,18 @@ instance Norm Term where
     N.TTyp             -> RawApp  TTyp   []
     N.TProto ss        -> RawApp (TProto (reify ss)) []
     N.Proc cs p        -> TProc (reify cs) (reify p)
-    N.Lam  (Arg a t) s -> Lam  (VD a (reify t)) [] (reify s)
-    N.TFun (Arg a t) s -> TFun (VD a (reify t)) [] (reify s)
-    N.TSig (Arg a t) s -> TSig (VD a (reify t)) [] (reify s)
+    N.Lam  (Arg a t) s -> Lam  (vsd a [] (reify t)) [] (reify s)
+    N.TFun (Arg a t) s -> TFun (vsd a [] (reify t)) [] (reify s)
+    N.TSig (Arg a t) s -> TSig (vsd a [] (reify t)) [] (reify s)
     N.Case t brs       -> Case (reify t) (reify brs)
     N.TSession s       -> reifySession s
 
   norm (RawApp e es)    = normRawApp (e:es)
   norm (Case t brs)     = N.Case (norm t) (sort (norm brs))
   norm (TProc cs p)     = N.Proc (norm cs) (norm p)
-  norm (Lam  xs xss t)  = normVarDec N.Lam  (xs:xss) (norm t)
-  norm (TFun xs xss t)  = normVarDec N.TFun (xs:xss) (norm t)
-  norm (TSig xs xss t)  = normVarDec N.TSig (xs:xss) (norm t)
+  norm (Lam  xs xss t)  = normVarsDecs N.Lam  (xs:xss) (norm t)
+  norm (TFun xs xss t)  = normVarsDecs N.TFun (xs:xss) (norm t)
+  norm (TSig xs xss t)  = normVarsDecs N.TSig (xs:xss) (norm t)
   norm (Snd a s)        = N.TSession $ N.IO N.Write (norm a) (norm s)
   norm (Rcv a s)        = N.TSession $ N.IO N.Read  (norm a) (norm s)
   norm (Loli s t)       = N.TSession $ norm (RawSession s) `loli` norm (RawSession t)
@@ -292,8 +300,13 @@ instance Norm OptSession where
   norm NoSession     = Nothing
   norm (SoSession s) = Just (norm s)
 
-normVarDec :: (Arg N.Term -> N.Term -> N.Term) -> [VarDec] -> N.Term -> N.Term
-normVarDec f xs z = foldr (f . norm) z xs
+normVarsDecs :: (Arg N.Term -> N.Term -> N.Term) -> [VarsDec] -> N.Term -> N.Term
+normVarsDecs f vsds z =
+  foldr f z [ Arg (unVar y) (norm s) | VsD x xs s <- vsds, y <- (x:xs) ]
+  where
+    unVar = \case
+      Var x -> x
+      e     -> error $ "Only variables are expected as binders. Unexpected: " ++ show e
 
 instance Norm Program where
   type Normalized Program = N.Program

@@ -1,5 +1,5 @@
 merger_ParSort_full_prll =
- \(m : Int)(n : Int)->
+ \(m n : Int)->
  proc( c0 : ~ParSort Int m
      , c1 : ~ParSort Int n
      , c  : ParSort Int (m + n)

@@ -1,7 +1,5 @@
 plug_compose =
-  \(A : Session)
-   (B : Session)
-   (C : Session)
+  \(A B C : Session)
    (p : < A, B >)
    (q : < ~B, C >)->
   proc(a : A, c : C)

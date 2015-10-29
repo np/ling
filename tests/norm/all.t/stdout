@@ -135,6 +135,13 @@ double =
     recv d (z : Int).
     send r z )
 
+another_dual =
+  \ (S : Session)-> ~ S
+
+dual_dual =
+  \ (S : Session)-> \ (p : < S >)-> proc (c : ~ another_dual S)
+  @ p (c)
+
 fake_div_mod_server_ten2 =
   proc (r : [?Int, ?Int],s : [!Int, !Int])
   r [rm, rn]
@@ -188,6 +195,9 @@ feed_send_then_recv =
   ( @ p (c)
   | recv d (x : Int).
     send d (f x))
+
+flexible_telescope : (A : Type)-> (B : Type)-> (x : A)-> (y : A)-> (z : B)-> (t : B)-> Int =
+  \ (A : Type)-> \ (B : Type)-> \ (x : A)-> \ (y : A)-> \ (z : B)-> \ (t : B)-> 42
 
 fun1_to_proc_ord =
   \ (I : Type)-> \ (O : Type)-> \ (f : (x : I)-> O)-> proc (c : [: ?I, !O :])
@@ -434,17 +444,17 @@ suc : (x : Int)-> Int =
 doubleInt : (x : Int)-> Int =
   \ (x : Int)-> x + x
 
-data T = `a | `b | `c
+data ABC = `a | `b | `c
 
-rot : (x : T)-> T =
-  \ (x : T)-> case x of {
+rot : (x : ABC)-> ABC =
+  \ (x : ABC)-> case x of {
     `a -> `b ,
     `b -> `c ,
     `c -> `a
   }
 
-rot2 : (x : T)-> T =
-  \ (x : T)-> rot (rot x)
+rot2 : (x : ABC)-> ABC =
+  \ (x : ABC)-> rot (rot x)
 
 showMult =
   \ (m : Int)-> \ (n : Int)-> (showInt m)++S " * " ++S (showInt n)++S " = " ++S showInt (m * n)
@@ -737,6 +747,13 @@ par_loli_ten_send_v2 =
   ( send ss vs
   | send st vt )
 
+par_pat =
+  proc (d : !Int, e : ?Int)
+  @ (proc (f)
+  f {f0#, f1#}
+  recv f1# (x#f1# : Int).
+  send f0# x#f1#){d, e}
+
 par_seq_back =
   proc (a : {[: !Int, !Int :], !Int})
   a {b, e}
@@ -905,6 +922,14 @@ seq_par_back_v2 =
   send d 3.
   send c 2.
   send e 1
+
+seq_pat =
+  proc (c : [: ?Int, !Int :])
+  c [: d, e :]
+  @ (proc (f)
+  f [: g, h :]
+  recv g (x#g : Int).
+  send h x#g)[: d, e :]
 
 seq_seq =
   proc (a : [: [: !Int, !Int :], !Int :])
@@ -1094,6 +1119,28 @@ test4 =
     send d 2.
     send d 3 )
 
+test_pat_term =
+  proc (abcde : [!Int, [: !Int, !Int :], {[!Int, !Int],{?Int, ?Int}}])
+  abcde [a, bc, de]
+  bc [: b, c :]
+  de {d, e}
+  ( send a 1
+  | send b 2.
+    send c 3
+  | d [d0#, d1#]
+    e {e0#, e1#}
+    ( recv e0# (x#e0# : Int).
+      send d0# x#e0#
+    | recv e1# (x#e1# : Int).
+      send d1# x#e1# ))
+
+test_pat =
+  proc (bcaed : [[: !Int, !Int :], !Int, {{?Int, ?Int},[!Int, !Int]}])
+  bcaed [bc, a, ed]
+  bc [: b, c :]
+  ed {e, d}
+  @ test_pat_term [a, [: b, c :], {d, e}]
+
 ZeroCh : Type =
   (A : Type)-> A
 
@@ -1174,8 +1221,8 @@ coe-refl : (A : Type)-> (x : A)-> Id A (coe A A (refl Type A)x)x =
 sym : (A : Type)-> (x : A)-> (y : A)-> (p : Id A x y)-> Id A y x =
   \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (p : Id A x y)-> tr A x (\ (z : A)-> Id A z x)(refl A x)y p
 
-trans : (A : Type)-> (x' : A)-> (y' : A)-> (z' : A)-> (p : Id A x' y')-> (q : Id A y' z')-> Id A x' z' =
-  \ (A : Type)-> \ (x' : A)-> \ (y' : A)-> \ (z' : A)-> \ (p : Id A x' y')-> \ (q : Id A y' z')-> tr A y' (Id A x')p z' q
+trans : (A : Type)-> (x : A)-> (y : A)-> (z : A)-> (p : Id A x y)-> (q : Id A y z)-> Id A x z =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (z : A)-> \ (p : Id A x y)-> \ (q : Id A y z)-> tr A y (Id A x)p z q
 
 zap_ten_fwd =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])

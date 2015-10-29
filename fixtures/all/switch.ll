@@ -1,7 +1,7 @@
 switch
-  : (A : Session)(B : Session)(C : Session)->
+  : (A B C : Session)->
     < [A, {B, C}] -o {[A, B], C} >
-  = \(A : Session)(B : Session)(C : Session)->
+  = \(A B C : Session)->
     -- The definition of `-o` is expanded to make it easier to follow the splits.
     proc(c : {{~A, [~B, ~C]}, {[A, B], C}})
       c{i,o}

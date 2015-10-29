@@ -8,22 +8,22 @@ zeroOne : One
         = \(A : Type)(x : A)-> x
 
 Two : Type
-    = (A : Type)(x : A)(y : A)-> A
+    = (A : Type)(x y : A)-> A
 
 zeroTwo : Two
-        = \(A : Type)(x : A)(y : A)-> x
+        = \(A : Type)(x y : A)-> x
 
 oneTwo : Two
-       = \(A : Type)(x : A)(y : A)-> y
+       = \(A : Type)(x y : A)-> y
 
 notTwo : (b : Two)-> Two
-       = \(b : Two)(A : Type)(x : A)(y : A)-> b A y x
+       = \(b : Two)(A : Type)(x y : A)-> b A y x
 
-andTwo : (b0 : Two)(b1 : Two)-> Two
-       = \(b0 : Two)(b1 : Two)-> b0 Two zeroTwo b1
+andTwo : (b0 b1 : Two)-> Two
+       = \(b0 b1 : Two)-> b0 Two zeroTwo b1
 
-orTwo : (b0 : Two)(b1 : Two)-> Two
-      = \(b0 : Two)(b1 : Two)-> b0 Two b1 oneTwo
+orTwo : (b0 b1 : Two)-> Two
+      = \(b0 b1 : Two)-> b0 Two b1 oneTwo
 
 Nat : Type
     = (A : Type)(z : A)(s : (n : A)-> A)-> A
@@ -34,8 +34,8 @@ zeroNat : Nat
 sucNat : (n : Nat)-> Nat
        = \(n : Nat)(A : Type)(z : A)(s : (m : A)-> A)-> s (n A z s)
 
-addNat : (m : Nat)(n : Nat)-> Nat
-       = \(m : Nat)(n : Nat)-> m Nat n sucNat
+addNat : (m n : Nat)-> Nat
+       = \(m n : Nat)-> m Nat n sucNat
 
 Bin : Type
     = (A : Type)(leaf : A)(fork : (left : A)(right : A)-> A)-> A
@@ -53,8 +53,8 @@ consList : (X : Type)(head : X)(tail : List X)-> List X
          = \(X : Type)(head : X)(tail : List X)(A : Type)(nil : A)(cons : (head' : X)(tail' : A)-> A)->
            cons head (tail A nil cons)
 
-mapList : (X : Type)(Y : Type)(f : (x : X)-> Y)(xs : List X)-> List Y
-        = \(X : Type)(Y : Type)(f : (x : X)-> Y)(xs : List X)(A : Type)(nil : A)(cons : (head' : Y)(tail' : A)-> A)->
+mapList : (X Y : Type)(f : (x : X)-> Y)(xs : List X)-> List Y
+        = \(X Y : Type)(f : (x : X)-> Y)(xs : List X)(A : Type)(nil : A)(cons : (head' : Y)(tail' : A)-> A)->
           xs A nil (\(head : X)(tail : A)-> cons (f head) tail)
 
 -- -}

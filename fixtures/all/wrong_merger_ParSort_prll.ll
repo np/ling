@@ -1,7 +1,7 @@
 -- ParSort = \(n : Int) -> {? Vec Int n, ! Vec Int n}
 
 wrong_merger_ParSort_prll =
- \(m : Int)(n : Int)->
+ \(m n : Int)->
  proc( c0 : [! Vec Int m, ? Vec Int m]
      , c1 : [! Vec Int n, ? Vec Int n]
      , c  : {? Vec Int (m + n), ! Vec Int (m + n)}

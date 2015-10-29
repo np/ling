@@ -1,6 +1,5 @@
 wrong_par_comm_sequential =
- \(A : Session)
-  (B : Session)->
+ \(A B : Session)->
  proc(c : {A,B} -o {B,A})
   c{i,o}
   i[na,nb]

@@ -1,5 +1,5 @@
 merger_seq_inferred =
- \(m : Int)(n : Int)->
+ \(m n : Int)->
  proc(c0,c1,ci,co)
   recv ci (vi : Vec Int (m + n)).
   send c0 (take Int m n vi).

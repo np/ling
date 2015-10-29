@@ -1,6 +1,5 @@
 feed_fwd_send_then_recv =
-  \(I : Type)
-   (O : Type)
+  \(I O : Type)
    (i : I)
    (f : (x : I)-> O)
    (p : < Fwd 2 (!I.?O) >)->

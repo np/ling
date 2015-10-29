@@ -1,5 +1,5 @@
 split_nested_seq_core =
-  \(A : Session)(B : Session)(C : Session)(D : Session)->
+  \(A B C D : Session)->
    proc(i : [: ~A, ~B, ~C, ~D :], o : [: [: A, B :], [: C, D :] :])
     i[:na,nb,nc,nd:]
     o[:ab,cd:]
@@ -11,9 +11,9 @@ split_nested_seq_core =
     fwd D (d,nd)
 
 group_nested_seq :
-  (A : Session)(B : Session)(C : Session)(D : Session)->
+  (A B C D : Session)->
   < [: [: A, B :], [: C, D :] :] -o [: A, B, C, D :] > =
-  \(A : Session)(B : Session)(C : Session)(D : Session)->
+  \(A B C D : Session)->
    proc(c : {[: [: ~A, ~B :], [: ~C, ~D :] :], [: A, B, C, D :]})
      c{i,o}
      @(split_nested_seq_core (~A) (~B) (~C) (~D))(o,i)

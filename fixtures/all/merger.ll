@@ -1,6 +1,6 @@
 -- Should be renamed merge_ParSort_seq_recv
 merger =
- \(m : Int)(n : Int)->
+ \(m n : Int)->
  proc( c0 : [! Vec Int m, ? Vec Int m]
      , c1 : [! Vec Int n, ? Vec Int n]
      , ci : ? Vec Int (m + n)

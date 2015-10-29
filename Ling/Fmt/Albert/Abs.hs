@@ -37,6 +37,9 @@ data OptSig = NoSig | SoSig Term
 data VarDec = VD Name Term
   deriving (Eq, Ord, Show, Read)
 
+data VarsDec = VsD ATerm [ATerm] Term
+  deriving (Eq, Ord, Show, Read)
+
 data ChanDec = CD Name OptSession
   deriving (Eq, Ord, Show, Read)
 
@@ -65,14 +68,14 @@ data DTerm = DTTyp Name [ATerm] | DTBnd Name Term
 
 data Term
     = RawApp ATerm [ATerm]
+    | Case Term [Branch]
     | Snd DTerm CSession
     | Rcv DTerm CSession
     | Dual Term
     | Loli Term Term
-    | Case Term [Branch]
-    | TFun VarDec [VarDec] Term
-    | TSig VarDec [VarDec] Term
-    | Lam VarDec [VarDec] Term
+    | TFun VarsDec [VarsDec] Term
+    | TSig VarsDec [VarsDec] Term
+    | Lam VarsDec [VarsDec] Term
     | TProc [ChanDec] Proc
   deriving (Eq, Ord, Show, Read)
 
@@ -87,8 +90,8 @@ data Act
     | SeqSplit Name [ChanDec]
     | Send Name ATerm
     | Recv Name VarDec
-    | NewSlice [Name] ATerm Name
-    | Ax ASession [Name]
+    | NewSlice [ChanDec] ATerm Name
+    | Ax ASession [ChanDec]
     | SplitAx Integer ASession Name
     | At ATerm TopCPatt
   deriving (Eq, Ord, Show, Read)

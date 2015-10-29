@@ -1,4 +1,4 @@
-Id : (A : Type)(x : A)(y : A)-> Type
+Id : (A : Type)(x y : A)-> Type
 
 refl : (A : Type)(x : A)-> Id A x x
 

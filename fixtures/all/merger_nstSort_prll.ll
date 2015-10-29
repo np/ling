@@ -1,5 +1,5 @@
 merger_nstSort_prll =
- \(m : Int)(n : Int)->
+ \(m n : Int)->
  proc( c0 : ~DotSort Int m
      , c1 : ~DotSort Int n
      , c  : DotSort Int (m + n)

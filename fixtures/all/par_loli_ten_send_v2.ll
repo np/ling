@@ -1,5 +1,5 @@
 par_loli_ten_send_v2 =
- \(S : Type)(T : Type)->
+ \(S T : Type)->
  proc(c : {!S,!T} -o [!S,!T])
   c{i,o}
   i[rs,rt]
