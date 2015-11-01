@@ -4,4 +4,7 @@ packages:
 extra-deps:
   - BNFC-2.8
   - cabal-helper-0.5.3.0
+  - ghci-pretty-0.0.2
+  - ipprint-0.6
+  - sr-extra-1.46.3.1
 resolver: lts-3.3
