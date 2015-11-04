@@ -1,1 +1,1 @@
-wrong_telescope = \(42 : Int)-> 42
+wrong_telescope = (42 : Int)-> Int

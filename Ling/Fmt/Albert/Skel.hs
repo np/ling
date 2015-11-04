@@ -45,7 +45,7 @@ transVarDec x = case x of
   VD name term -> failure x
 transVarsDec :: VarsDec -> Result
 transVarsDec x = case x of
-  VsD aterm aterms term -> failure x
+  VsD name names term -> failure x
 transChanDec :: ChanDec -> Result
 transChanDec x = case x of
   CD name optsession -> failure x
@@ -65,7 +65,7 @@ transATerm x = case x of
   Con conname -> failure x
   TTyp -> failure x
   TProto rsessions -> failure x
-  Paren term -> failure x
+  Paren term optsig -> failure x
   End -> failure x
   Par rsessions -> failure x
   Ten rsessions -> failure x
@@ -82,8 +82,8 @@ transTerm x = case x of
   Rcv dterm csession -> failure x
   Dual term -> failure x
   Loli term1 term2 -> failure x
-  TFun varsdec varsdecs term -> failure x
-  TSig varsdec varsdecs term -> failure x
+  TFun term1 term2 -> failure x
+  TSig term1 term2 -> failure x
   Lam varsdec varsdecs term -> failure x
   TProc chandecs proc -> failure x
 transProc :: Proc -> Result

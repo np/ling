@@ -8,12 +8,12 @@ module Ling.Raw
 import           Ling.Abs
 
 aTerm :: ATerm -> Term
-aTerm (Paren t) = t
-aTerm t         = RawApp t []
+aTerm (Paren t NoSig) = t
+aTerm t               = RawApp t []
 
 paren :: Term -> ATerm
 paren (RawApp t []) = t
-paren t             = Paren t
+paren t             = Paren t NoSig
 
 mkProcs :: [Proc] -> Proc
 mkProcs = \case

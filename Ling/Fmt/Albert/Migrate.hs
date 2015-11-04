@@ -43,7 +43,7 @@ transVarDec x = case x of
 
 transVarsDec :: VarsDec -> L.VarsDec
 transVarsDec x = case x of
-  VsD aterm aterms term -> L.VsD (transATerm aterm) (map transATerm aterms) (transTerm term)
+  VsD name names term -> L.VsD (transName name) (map transName names) (transTerm term)
 
 transChanDecs :: [ChanDec] -> [L.ChanDec]
 transChanDecs = map transChanDec
@@ -70,7 +70,7 @@ transATerm x = case x of
   Con conname -> L.Con (transConName conname)
   TTyp -> L.TTyp
   TProto rsessions -> L.TProto (map transRSession rsessions)
-  Paren term -> L.Paren (transTerm term)
+  Paren term optsig -> L.Paren (transTerm term) (transOptSig optsig)
   End -> L.End
   Par rsessions -> L.Par (map transRSession rsessions)
   Ten rsessions -> L.Ten (map transRSession rsessions)
@@ -85,8 +85,8 @@ transTerm :: Term -> L.Term
 transTerm x = case x of
   RawApp aterm aterms -> L.RawApp (transATerm aterm) (map transATerm aterms)
   Case term branchs -> L.Case (transTerm term) (map transBranch branchs)
-  TFun varsdec varsdecs term -> L.TFun (transVarsDec varsdec) (map transVarsDec varsdecs) (transTerm term)
-  TSig varsdec varsdecs term -> L.TSig (transVarsDec varsdec) (map transVarsDec varsdecs) (transTerm term)
+  TFun term1 term2 -> L.TFun (transTerm term1) (transTerm term2)
+  TSig term1 term2 -> L.TSig (transTerm term1) (transTerm term2)
   Lam  varsdec varsdecs term -> L.Lam  (transVarsDec varsdec) (map transVarsDec varsdecs) (transTerm term)
   TProc chandecs proc -> L.TProc (map transChanDec chandecs) (transProc proc)
   Snd dterm csession -> L.Snd (transDTerm dterm) (transCSession csession)

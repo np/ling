@@ -1,6 +1,6 @@
 Types are not equivalent.
 Expected:
-  Type
+  (_ : Int)-> Int
 Inferred:
-  Int
+  (x : Bool)-> Int
 

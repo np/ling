@@ -1,0 +1,1 @@
+../../../fixtures/all/type_annotation.ll

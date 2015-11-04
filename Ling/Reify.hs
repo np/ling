@@ -194,8 +194,8 @@ normRawApp _ = error "normRawApp: unexpected application"
 reifyRawApp :: N.Term -> [ATerm]
 reifyRawApp e0 =
   case reify e0 of
-    Paren (RawApp e1 es) -> e1 : es
-    e0'                  -> [e0']
+    Paren (RawApp e1 es) NoSig -> e1 : es
+    e0'                        -> [e0']
 
 instance Norm DTerm where
   type Normalized DTerm = N.VarDec
@@ -234,10 +234,21 @@ instance Norm ATerm where
   norm (Par s)          = N.TSession $ N.Array N.ParK (norm s)
   norm (Ten s)          = N.TSession $ N.Array N.TenK (norm s)
   norm (Seq s)          = N.TSession $ N.Array N.SeqK (norm s)
-  norm (Paren t)        = norm t
+  norm (Paren t os)     = N.optSig (norm t) (norm os)
 
-vsd :: Name -> [Name] -> Term -> VarsDec
-vsd a as = VsD (Var a) (Var <$> as)
+mkVsD :: ATerm -> VarsDec
+mkVsD = \case
+  Paren (RawApp (Var x) as) (SoSig s)
+     | let xs = [ y | Var y <- as ]
+     , length xs == length as
+     -> VsD x xs s
+  e ->
+    VsD anonName [] (aTerm e)
+
+mkVsDs :: Term -> [VarsDec]
+mkVsDs = \case
+  RawApp a as -> mkVsD <$> (a:as)
+  e -> error $ "Expecting bindings (x... : T)... not: " ++ show e
 
 instance Norm Term where
   type Normalized Term = N.Term
@@ -251,18 +262,18 @@ instance Norm Term where
     N.TTyp             -> RawApp  TTyp   []
     N.TProto ss        -> RawApp (TProto (reify ss)) []
     N.Proc cs p        -> TProc (reify cs) (reify p)
-    N.Lam  (Arg a t) s -> Lam  (vsd a [] (reify t)) [] (reify s)
-    N.TFun (Arg a t) s -> TFun (vsd a [] (reify t)) [] (reify s)
-    N.TSig (Arg a t) s -> TSig (vsd a [] (reify t)) [] (reify s)
+    N.Lam  (Arg a t) s -> Lam  (VsD a [] (reify t)) [] (reify s)
+    N.TFun (Arg a t) s -> TFun (RawApp (Paren (RawApp (Var a) []) (SoSig (reify t))) []) (reify s)
+    N.TSig (Arg a t) s -> TSig (RawApp (Paren (RawApp (Var a) []) (SoSig (reify t))) []) (reify s)
     N.Case t brs       -> Case (reify t) (reify brs)
     N.TSession s       -> reifySession s
 
   norm (RawApp e es)    = normRawApp (e:es)
   norm (Case t brs)     = N.Case (norm t) (sort (norm brs))
   norm (TProc cs p)     = N.Proc (norm cs) (norm p)
-  norm (Lam  xs xss t)  = normVarsDecs N.Lam  (xs:xss) (norm t)
-  norm (TFun xs xss t)  = normVarsDecs N.TFun (xs:xss) (norm t)
-  norm (TSig xs xss t)  = normVarsDecs N.TSig (xs:xss) (norm t)
+  norm (Lam  xs xss t)  = normVarsDecs N.Lam  (xs:xss)   (norm t)
+  norm (TFun u t)       = normVarsDecs N.TFun (mkVsDs u) (norm t)
+  norm (TSig u t)       = normVarsDecs N.TSig (mkVsDs u) (norm t)
   norm (Snd a s)        = N.TSession $ N.IO N.Write (norm a) (norm s)
   norm (Rcv a s)        = N.TSession $ N.IO N.Read  (norm a) (norm s)
   norm (Loli s t)       = N.TSession $ norm (RawSession s) `loli` norm (RawSession t)
@@ -302,11 +313,7 @@ instance Norm OptSession where
 
 normVarsDecs :: (Arg N.Term -> N.Term -> N.Term) -> [VarsDec] -> N.Term -> N.Term
 normVarsDecs f vsds z =
-  foldr f z [ Arg (unVar y) (norm s) | VsD x xs s <- vsds, y <- (x:xs) ]
-  where
-    unVar = \case
-      Var x -> x
-      e     -> error $ "Only variables are expected as binders. Unexpected: " ++ show e
+  foldr f z [ Arg y (norm s) | VsD x xs s <- vsds, y <- x:xs ]
 
 instance Norm Program where
   type Normalized Program = N.Program

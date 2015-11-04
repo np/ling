@@ -37,7 +37,7 @@ render d = rend 0 (map ($ "") $ d []) "" where
   rend i ss = case ss of
     "\n"        :ts -> new i . rend i ts
     [c]         :ts | c `elem` "{[(.?!`" -> showChar c . dropWhile isSpace . rend i ts
-    ": "        :ts -> space ":" . rend (i+1) ts
+    ": "        :ts -> space ":" . rend (i `max` 1) ts
     "=\n"       :ts -> showString "=" . new 1 . rend 1 ts
     [c,'\n']    :ts | c `elem` "{[" -> showChar c . new (i+1) . rend (i+1) ts
     [c,'\n']    :ts | c `elem` "("  -> space [c] . rend (i+1) ts
@@ -145,7 +145,7 @@ instance Print VarDec where
 
 instance Print VarsDec where
   prt i e = case e of
-    VsD aterm aterms term -> prPrec i 0 (concatD [doc (showString "("), prt 0 aterm, prt 0 aterms, doc (showString ":"), prt 0 term, doc (showString ")")])
+    VsD name names term -> prPrec i 0 (concatD [doc (showString "("), prt 0 name, prt 0 names, doc (showString ":"), prt 0 term, doc (showString ")")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print ChanDec where
@@ -174,7 +174,7 @@ instance Print ATerm where
     Con conname -> prPrec i 0 (concatD [prt 0 conname])
     TTyp -> prPrec i 0 (concatD [doc (showString "Type")])
     TProto rsessions -> prPrec i 0 (concatD [doc (showString "<"), prt 0 rsessions, doc (showString ">")])
-    Paren term -> prPrec i 0 (concatD [doc (showString "("), prt 0 term, doc (showString ")")])
+    Paren term optsig -> prPrec i 0 (concatD [doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")")])
     End -> prPrec i 0 (concatD [doc (showString "end")])
     Par rsessions -> prPrec i 0 (concatD [doc (showString "{"), prt 0 rsessions, doc (showString "}")])
     Ten rsessions -> prPrec i 0 (concatD [doc (showString "["), prt 0 rsessions, doc (showString "]")])
@@ -194,8 +194,8 @@ instance Print Term where
     Rcv dterm csession -> prPrec i 2 (concatD [doc (showString "?"), prt 0 dterm, prt 0 csession])
     Dual term -> prPrec i 2 (concatD [doc (showString "~"), prt 2 term])
     Loli term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "-o"), prt 1 term2])
-    TFun varsdec varsdecs term -> prPrec i 0 (concatD [prt 0 varsdec, prt 0 varsdecs, doc (showString "->"), prt 0 term])
-    TSig varsdec varsdecs term -> prPrec i 0 (concatD [prt 0 varsdec, prt 0 varsdecs, doc (showString "**"), prt 0 term])
+    TFun term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "->"), prt 1 term2])
+    TSig term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "**"), prt 1 term2])
     Lam varsdec varsdecs term -> prPrec i 0 (concatD [doc (showString "\\"), prt 0 varsdec, prt 0 varsdecs, doc (showString "->"), prt 0 term])
     TProc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc"), doc (showString "("), prt 0 chandecs, doc (showString ")"), nl, prt 0 proc])
 

@@ -1646,7 +1646,7 @@ wrong_string_literal : Double =
   "Hello!"
 
 wrong_telescope =
-  \ (42 : Int)-> 42
+  (42 : Int)-> Int
 
 wrong_ten2_par2 =
   proc (c : [{!Int, !Int},!Int])

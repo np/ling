@@ -37,11 +37,7 @@ separator Dec "," ;
 
 VD. VarDec ::= "(" Name ":" Term ")" ;
 
--- Warning: here ATerm is used instead of Name.
--- The rule with Name would create a parsing conflict
--- (when using LALR). This grammar is thus more generous
--- and erroneous terms are rejected after in Ling.Reify.
-VsD.      VarsDec ::= "(" ATerm [ATerm] ":" Term ")" ;
+VsD.      VarsDec ::= "(" Name [Name] ":" Term ")" ;
 separator VarsDec "" ;
 
 CD. ChanDec ::= Name OptSession ;
@@ -63,7 +59,7 @@ Lit.     ATerm ::= Literal ;
 Con.     ATerm ::= ConName ;
 TTyp.    ATerm ::= "Type" ;
 TProto.  ATerm ::= "<" [RSession] ">" ;
-Paren.   ATerm ::= "(" Term ")" ;
+Paren.   ATerm ::= "(" Term OptSig ")" ;
 
 -- Sessions
 End.     ATerm ::= "end" ;
@@ -83,10 +79,19 @@ Rcv.      Term2  ::= "?" DTerm CSession ;
 Dual.     Term2  ::= "~" Term2 ;
 
 Loli.     Term1  ::= Term2 "-o" Term1 ;
+-- WARNING: `Term2` is used on the left of `->` and `**` as
+-- Notice that `Term2` is used on the left of `->` and `**`.
+-- In Ling.Reify this `Term2` is analysed:
+-- If it matches against `[VarsDec]` then this is a dependent (`->`/`**`)
+-- Otherwise it is considered as a *non* dependent `->`/`**`.
+-- For instance `(Vec Int n : Type)-> F Vec Int n` is a dependent `->`
+-- which introduces 3 types `Vec`, `Int`, and `n`, while
+-- `(Vec Int 42 : Type)-> T` is single non-dependent `->` where `: Type` is
+-- an annotation.
+TFun.     Term1  ::= Term2 "->" Term1 ;
+TSig.     Term1  ::= Term2 "**" Term1 ;
 _.        Term1  ::= Term2 ;
 
-TFun.     Term   ::= VarsDec [VarsDec] "->" Term ;
-TSig.     Term   ::= VarsDec [VarsDec] "**" Term ;
 Lam.      Term   ::= "\\" VarsDec [VarsDec] "->" Term ;
 TProc.    Term   ::= "proc" "(" [ChanDec] ")" Proc ;
 _.        Term   ::= Term1 ;

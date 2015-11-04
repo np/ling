@@ -137,7 +137,7 @@ ListDec : {- empty -} { [] }
 VarDec :: { VarDec }
 VarDec : '(' Name ':' Term ')' { Ling.Fmt.Albert.Abs.VD $2 $4 }
 VarsDec :: { VarsDec }
-VarsDec : '(' ATerm ListATerm ':' Term ')' { Ling.Fmt.Albert.Abs.VsD $2 (reverse $3) $5 }
+VarsDec : '(' Name ListName ':' Term ')' { Ling.Fmt.Albert.Abs.VsD $2 $3 $5 }
 ListVarsDec :: { [VarsDec] }
 ListVarsDec : {- empty -} { [] }
             | ListVarsDec VarsDec { flip (:) $1 $2 }
@@ -164,7 +164,7 @@ ATerm : Name { Ling.Fmt.Albert.Abs.Var $1 }
       | ConName { Ling.Fmt.Albert.Abs.Con $1 }
       | 'Type' { Ling.Fmt.Albert.Abs.TTyp }
       | '<' ListRSession '>' { Ling.Fmt.Albert.Abs.TProto $2 }
-      | '(' Term ')' { Ling.Fmt.Albert.Abs.Paren $2 }
+      | '(' Term OptSig ')' { Ling.Fmt.Albert.Abs.Paren $2 $3 }
       | 'end' { Ling.Fmt.Albert.Abs.End }
       | '{' ListRSession '}' { Ling.Fmt.Albert.Abs.Par $2 }
       | '[' ListRSession ']' { Ling.Fmt.Albert.Abs.Ten $2 }
@@ -182,11 +182,11 @@ Term2 : ATerm ListATerm { Ling.Fmt.Albert.Abs.RawApp $1 (reverse $2) }
       | '~' Term2 { Ling.Fmt.Albert.Abs.Dual $2 }
 Term1 :: { Term }
 Term1 : Term2 '-o' Term1 { Ling.Fmt.Albert.Abs.Loli $1 $3 }
+      | Term2 '->' Term1 { Ling.Fmt.Albert.Abs.TFun $1 $3 }
+      | Term2 '**' Term1 { Ling.Fmt.Albert.Abs.TSig $1 $3 }
       | Term2 { $1 }
 Term :: { Term }
-Term : VarsDec ListVarsDec '->' Term { Ling.Fmt.Albert.Abs.TFun $1 (reverse $2) $4 }
-     | VarsDec ListVarsDec '**' Term { Ling.Fmt.Albert.Abs.TSig $1 (reverse $2) $4 }
-     | '\\' VarsDec ListVarsDec '->' Term { Ling.Fmt.Albert.Abs.Lam $2 (reverse $3) $5 }
+Term : '\\' VarsDec ListVarsDec '->' Term { Ling.Fmt.Albert.Abs.Lam $2 (reverse $3) $5 }
      | 'proc' '(' ListChanDec ')' Proc { Ling.Fmt.Albert.Abs.TProc $3 $5 }
      | Term1 { $1 }
 Proc1 :: { Proc }

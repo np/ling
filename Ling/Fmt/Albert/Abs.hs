@@ -37,7 +37,7 @@ data OptSig = NoSig | SoSig Term
 data VarDec = VD Name Term
   deriving (Eq, Ord, Show, Read)
 
-data VarsDec = VsD ATerm [ATerm] Term
+data VarsDec = VsD Name [Name] Term
   deriving (Eq, Ord, Show, Read)
 
 data ChanDec = CD Name OptSession
@@ -56,7 +56,7 @@ data ATerm
     | Con ConName
     | TTyp
     | TProto [RSession]
-    | Paren Term
+    | Paren Term OptSig
     | End
     | Par [RSession]
     | Ten [RSession]
@@ -73,8 +73,8 @@ data Term
     | Rcv DTerm CSession
     | Dual Term
     | Loli Term Term
-    | TFun VarsDec [VarsDec] Term
-    | TSig VarsDec [VarsDec] Term
+    | TFun Term Term
+    | TSig Term Term
     | Lam VarsDec [VarsDec] Term
     | TProc [ChanDec] Proc
   deriving (Eq, Ord, Show, Read)

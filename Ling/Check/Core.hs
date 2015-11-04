@@ -249,6 +249,11 @@ checkSig Nothing    mtm =
     Nothing -> tcError "IMPOSSIBLE signature with no type nor definition"
 
 inferDef :: Name -> [Term] -> TC (Scoped Typ)
+inferDef (Name "_:_") [a,t] = do
+  checkTyp a
+  let a' = emptyScope a
+  checkTerm' a' t
+  return a'
 inferDef f es = do
   mtyp  <- view $ evars . at f
   defs  <- view edefs

@@ -131,6 +131,18 @@ instance Monoid Proc where
   mconcat [proc] = proc
   mconcat procs  = [] `Dot` procs
 
+-- Arbitrary type annotations can be seen as the use of the
+-- following definition (the identity function)
+-- _:_ :  (A : Type)(x : A)-> A
+--     = \(A : Type)(x : A)-> x
+--
+-- The only twist is that the arguments are reversed:
+-- `(t : A)` is represented internally as `_:_ A t`
+optSig :: Term -> Maybe Typ -> Term
+optSig t = \case
+  Nothing -> t
+  Just a  -> Def (Name "_:_") [a,t]
+
 vecTyp :: Typ -> Term -> Typ
 vecTyp t e = Def (Name "Vec") [t,e]
 

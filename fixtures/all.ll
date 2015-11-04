@@ -1264,7 +1264,7 @@ wrong_split_nested_seq :
     | fwd(D)(d,nd)
     )
 wrong_string_literal : Double = "Hello!"
-wrong_telescope = \(42 : Int)-> 42
+wrong_telescope = (42 : Int)-> Int
 wrong_ten2_par2 = proc(c : [{!Int,!Int},!Int])
   c[d,e]
   d{f,g}

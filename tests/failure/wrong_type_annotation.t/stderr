@@ -1,6 +1,6 @@
 Types are not equivalent.
 Expected:
-  Type
-Inferred:
   Int
+Inferred:
+  Type
 
