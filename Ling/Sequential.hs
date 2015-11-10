@@ -98,10 +98,9 @@ sessionStatus dflt l = \case
   s          -> [(l, dflt s)]
 
 rsessionStatus :: (Session -> Status) -> Location -> RSession -> [(Location,Status)]
-rsessionStatus dflt l r@(Repl s t) =
-  case t of
-    Lit (LInteger 1) -> sessionStatus  dflt l  s
-    _                -> sessionsStatus dflt l [r]
+rsessionStatus dflt l sr@(Repl s r)
+  | Just 1 <- isLitR r = sessionStatus  dflt l s
+  | otherwise          = sessionsStatus dflt l [sr]
 
 statusAt :: Channel -> Env -> Maybe Status
 statusAt c env
@@ -135,7 +134,7 @@ actIsReady env pref =
 transSplit :: Channel -> [ChanDec] -> Env -> Env
 transSplit c dOSs env =
   rmChan c $
-  addChans [ (d, (Proj l n, one (projSession (fromIntegral n) (unRepl session))))
+  addChans [ (d, (Proj l n, oneS (projSession (fromIntegral n) (unRepl session))))
            | (d, n) <- zip ds [(0 :: Int)..] ] env
   where (l, session) = env ! c
         ds = _argName <$> dOSs
@@ -151,10 +150,6 @@ transPref env pref0 procs k =
     act:pref -> transPref (transAct act env) pref procs $ \env' proc' ->
                   k env' (act `actP` [proc'])
 
-unRepl :: RSession -> Session
-unRepl (Repl s (Lit (LInteger 1))) = s
-unRepl r                           = transErr "unRepl: unexpected replicated session" r
-
 transAct :: Act -> Env -> Env
 transAct act =
   case act of
@@ -165,7 +160,7 @@ transAct act =
           l = Root c0
       in
       addLocs  (sessionStatus (const Empty) l c0S) .
-      addChans [(c0,(l,one c0S)),(c1,(l,one c1S))]
+      addChans [(c0,(l,oneS c0S)),(c1,(l,oneS c1S))]
     Split _ c ds ->
       transSplit c ds
     Send c _ ->

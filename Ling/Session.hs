@@ -1,4 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase   #-}
+{-# LANGUAGE ViewPatterns #-}
 module Ling.Session where
 
 import Prelude hiding (log)
@@ -9,14 +10,11 @@ import qualified Ling.Raw as Raw
 array :: TraverseKind -> Sessions -> Session
 array = Array
 
-oneT :: Term
-oneT = Lit (LInteger 1)
-
-one :: Session -> RSession
-one s = Repl s oneT
+oneS :: Session -> RSession
+oneS s = Repl s ø
 
 list :: [Session] -> Sessions
-list = map one
+list = map oneS
 
 loli :: Session -> Session -> Session
 loli s t = Array ParK $ list [dual s, t]
@@ -25,7 +23,7 @@ fwds :: Int -> Session -> Sessions
 fwds n s
   | n <  0    = error "fwd: Negative number of channels to forward"
   | n == 0    = []
-  | n == 1    = [one s]
+  | n == 1    = [oneS s]
   | otherwise = list $ s : dual s : replicate (n - 2) (log s)
 
 fwd :: Int -> Session -> Session
@@ -45,12 +43,15 @@ isEnd :: Session -> Bool
 isEnd = (==) endS
 
 isEndR :: RSession -> Bool
-isEndR (Repl s (Lit (LInteger 1))) = isEnd s
-isEndR _ = False
+isEndR (s `Repl` r) = isEnd s && Just 1 == isLitR r
+
+unRepl :: RSession -> Session
+unRepl (s `Repl` (isLitR -> Just 1)) = s
+unRepl _                             = error "unRepl: unexpected replicated session"
 
 wrapSessions :: [RSession] -> Session
-wrapSessions [s `Repl` r] | r == oneT = s
-wrapSessions ss = Array ParK ss
+wrapSessions [s `Repl` (isLitR -> Just 1)] = s
+wrapSessions ss                            = Array ParK ss
 
 mapR :: (Session -> Session) -> RSession -> RSession
 mapR f (Repl s a) = Repl (f s) a
@@ -147,7 +148,7 @@ defaultEnd Nothing  = endS
 defaultEnd (Just s) = s
 
 defaultEndR :: Maybe RSession -> RSession
-defaultEndR Nothing  = one endS
+defaultEndR Nothing  = oneS endS
 defaultEndR (Just s) = s
 
 sessionStep :: Session -> Session
@@ -168,8 +169,9 @@ extractSession l =
     _   -> error "Missing type signature in `new`"
 
 flatRSession :: RSession -> [Session]
-flatRSession (Repl s (Lit (LInteger n))) = replicate (fromInteger n) s
-flatRSession _                           = error "flatRSession"
+flatRSession (Repl s r)
+  | Just n <- isLitR r = replicate (fromInteger n) s
+  | otherwise          = error "flatRSession"
 
 flatSessions :: Sessions -> [Session]
 flatSessions = concatMap flatRSession
@@ -177,31 +179,17 @@ flatSessions = concatMap flatRSession
 projRSessions :: Integer -> Sessions -> Session
 projRSessions _ []
   = error "projRSessions: out of bound"
-projRSessions n (Repl s a:ss)
-  = case a of
-      Lit (LInteger i)
-        | n < i     -> s
-        | otherwise -> projRSessions (n-i) ss
-      _ -> error "projRSessions/Repl: only integer literals are supported"
+projRSessions n (Repl s r:ss)
+  | Just i <- isLitR r = if n < i
+                           then s
+                           else projRSessions (n-i) ss
+  | otherwise = error "projRSessions/Repl: only integer literals are supported"
 
 projSession :: Integer -> Session -> Session
 projSession n (Array _ ss) = projRSessions n ss
 projSession _ _            = error "projSession: not an array (par,tensor,seq) session"
 
-int0, int1 :: Term
-int0 = Lit (LInteger 0)
-int1 = Lit (LInteger 1)
-
-multTerm :: Term -> Term -> Term
-multTerm x y
-  | x == int0 || y == int0 = int0
-  | x == int1              = y
-  | y == int1              = x
-  | Lit (LInteger i) <- x
-  , Lit (LInteger j) <- y  = Lit (LInteger $ i * j)
-  | otherwise              = Def multName [x,y]
-
-replRSession :: Term -> RSession -> RSession
-replRSession r (Repl s t) = Repl s (multTerm r t)
+replRSession :: RFactor -> RSession -> RSession
+replRSession r (Repl s t) = Repl s (r <> t)
 
 -- -}

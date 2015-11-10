@@ -105,3 +105,6 @@ instance Subst Session where
 
 instance Subst RSession where
   subst f (Repl s t) = Repl (subst f s) (subst f t)
+
+instance Subst RFactor where
+  subst f (RFactor t) = RFactor (subst f t)

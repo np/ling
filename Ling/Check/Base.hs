@@ -125,23 +125,23 @@ checkUnused :: MonadError TCErr m =>
 checkUnused _ (Just _) _ = return ()
 checkUnused c Nothing  s = assert (isEndR s) ["Unused channel " ++ pretty c]
 
+checkOneR :: MonadError TCErr m => RFactor -> m ()
+checkOneR r = assert (r == ø) ["Unexpected replication:", pretty r]
+
 checkDual :: MonadTC m => RSession -> RSession -> m ()
-checkDual (Repl s0 (Lit (LInteger 1))) (Repl s1 (Lit (LInteger 1))) = do
+checkDual (Repl s0 r0) (Repl s1 r1) = do
+  checkOneR r0
+  checkOneR r1
   (b, us0, us1) <- isEquiv (emptyScope s0) (emptyScope (dual s1))
   assertDiff
     "Sessions are not dual." (\_ _ -> b)
     "Given session (expanded):" us0
     "Inferred dual session:"    (dual us1)
 
-checkDual _ _ =
-  tcError "Unexpected session replication in 'new'."
-
 checkSlice :: MonadError TCErr m => (Channel -> Bool) -> Channel -> RSession -> m ()
-checkSlice cond c rs = when (cond c) $
-  case rs of
-    Repl s (Lit (LInteger 1)) ->
-      assert (allSndRcv s) ["checkSlice: non send/recv session"]
-    _ -> tcError "checkSlice: Replicated session"
+checkSlice cond c (s `Repl` r) = when (cond c) $ do
+  checkOneR r
+  assert (allSndRcv s) ["checkSlice: non send/recv session"]
 
 -------------
 -- MonadTC --

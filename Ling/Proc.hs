@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 module Ling.Proc
   ( asProcs
   , actP
@@ -130,7 +131,7 @@ split' :: TraverseKind -> Channel -> [Channel] -> Act
 split' k c = Split k c . map noSession
 
 unRSession :: RSession -> Session
-unRSession (Repl s (Lit (LInteger 1))) = s
+unRSession (Repl s (isLitR -> Just 1)) = s
 unRSession _                           = error "unRSession"
 
 type UsedNames = Set Name

@@ -263,8 +263,8 @@ transAct env act =
         ctyp  = transCTyp env C.QConst typ
         y     = transName x
         cinit = C.SoInit (transLVal (env!c))
-    NewSlice cs t xi ->
-      (env', pure . stdFor (transName xi) (transTerm env t))
+    NewSlice cs r xi ->
+      (env', pure . stdFor (transName xi) (transRFactor env r))
       where
         i = transName xi
         sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
@@ -379,10 +379,13 @@ transSession env x = case x of
   Array _ ss -> tupQ (transSessions env ss)
   TermS{} -> transErr "Cannot compile an abstract session: " x
 
+transRFactor :: Env -> RFactor -> C.Exp
+transRFactor env (RFactor t) = transTerm env t
+
 transRSession :: Env -> RSession -> AQTyp
-transRSession env (Repl s a) = case a of
-  Lit (LInteger 1) -> transSession env s
-  _                -> mapAQTyp (\t -> tArr t (transTerm env a)) (transSession env s)
+transRSession env (s `Repl` r) = case isLitR r of
+  Just 1 -> transSession env s
+  _      -> mapAQTyp (\t -> tArr t (transRFactor env r)) (transSession env s)
 
 transSessions :: Env -> Sessions -> [AQTyp]
 transSessions = map . transRSession

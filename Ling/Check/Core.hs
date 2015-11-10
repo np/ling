@@ -66,7 +66,8 @@ checkChanDecs_ = mapM_ . checkChanDec
 checkChanDecs :: Proto -> [ChanDec] -> TC [RSession]
 checkChanDecs = mapM . checkChanDec
 
-
+checkRFactor :: RFactor -> TC ()
+checkRFactor (RFactor t) = checkTerm intTyp t
 
 {-
 Γ(P) is the protocol, namely mapping from channel to sessions of the process P
@@ -142,15 +143,15 @@ checkAct act proto =
           TenK -> checkConflictingChans proto (Just c) ds
           ParK -> checkSomeOrderChans proto (l2s ds) $> proto
           SeqK -> checkOrderedChans proto ds $> proto
-      return $ substChans (ds, (c,one s)) proto'
+      return $ substChans (ds, (c,oneS s)) proto'
     Send{} ->
       (`protoSendRecv` proto) . pure <$> sendRecvSession act
     Recv{} ->
       (`protoSendRecv` proto) . pure <$> sendRecvSession act
-    NewSlice cs t _i -> do
-      checkTerm intTyp t
+    NewSlice cs r _i -> do
+      checkRFactor r
       ifor_ (proto^.chans) (checkSlice (`notElem` cs))
-      return $ replProtoWhen (`elem` cs) t proto
+      return $ replProtoWhen (`elem` cs) r proto
     Ax s cs -> return $ protoAx s cs `dotProto` proto
     At e p -> do
       t <- inferTerm' e
@@ -182,8 +183,8 @@ checkCPatt s = \case
 
 checkCPattR :: RSession -> CPatt -> TC Proto
 checkCPattR (s `Repl` r) pat
-  | r == oneT = checkCPatt s pat
-  | otherwise = tcError "Unexpected pattern for replicated session"
+  | Just 1 <- isLitR r = checkCPatt s pat
+  | otherwise          = tcError "Unexpected pattern for replicated session"
 
 inferBranch :: (Name,Term) -> TC (Name,Scoped Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
@@ -296,7 +297,7 @@ checkSessions :: [RSession] -> TC ()
 checkSessions = mapM_ checkRSession
 
 checkRSession :: RSession -> TC ()
-checkRSession (Repl s t) = checkSession s >> checkTerm intTyp t
+checkRSession (s `Repl` r) = checkSession s >> checkRFactor r
 
 checkSession :: Session -> TC ()
 checkSession s0 = case s0 of

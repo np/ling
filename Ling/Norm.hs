@@ -9,6 +9,9 @@ module Ling.Norm
 import           Ling.Abs     (Literal (..), Name (Name))
 import           Ling.Prelude
 
+newtype RFactor = RFactor { _RFactor :: Term }
+  deriving (Eq, Ord, Read, Show)
+
 type ChanDec = Arg (Maybe RSession)
 type VarDec  = Arg Typ
 
@@ -51,7 +54,7 @@ data Act
   | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term
   | Recv     Channel VarDec
-  | NewSlice [Channel] Term Name
+  | NewSlice [Channel] RFactor Name
   | Ax       Session [Channel]
   | At       Term CPatt
   deriving (Eq,Ord,Show,Read)
@@ -101,7 +104,7 @@ recvS = depRecv . anonArg
 
 data RSession
   = Repl { _rsession :: Session
-         , _rfactor  :: Term
+         , _rfactor  :: RFactor
          }
   deriving (Eq,Ord,Show,Read)
 
@@ -221,3 +224,27 @@ mkCase e brs = case e of
     | Just rhs <- lookup c brs -> rhs
     | otherwise -> error $ "mkCase: IMPOSSIBLE no branch for constructor " ++ show c
   _ -> Case e brs
+
+litR :: Integer -> RFactor
+litR = RFactor . Lit . LInteger
+
+int0, int1 :: Term
+int0 = Lit (LInteger 0)
+int1 = Lit (LInteger 1)
+
+multTerm :: Term -> Term -> Term
+multTerm x y
+  | x == int0 || y == int0 = int0
+  | x == int1              = y
+  | y == int1              = x
+  | Lit (LInteger i) <- x
+  , Lit (LInteger j) <- y  = Lit (LInteger $ i * j)
+  | otherwise              = Def multName [x,y]
+
+instance Monoid RFactor where
+  mempty = litR 1
+  mappend (RFactor x) (RFactor y) = RFactor (multTerm x y)
+
+isLitR :: RFactor -> Maybe Integer
+isLitR (RFactor (Lit (LInteger i))) = Just i
+isLitR _                            = Nothing

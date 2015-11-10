@@ -125,7 +125,7 @@ chanSessions :: [Channel] -> Proto -> [Maybe RSession]
 chanSessions cs p = [ p ^. chanSession c | c <- cs ]
 
 pureProto :: Channel -> Session -> Proto
-pureProto c s = MkProto (l2m [(c,one s)]) (c `actS` ø)
+pureProto c s = MkProto (l2m [(c,oneS s)]) (c `actS` ø)
 
 mkProto :: TraverseKind -> [(Channel,Session)] -> Proto
 mkProto k = arrayProto k . map (uncurry pureProto)
@@ -192,7 +192,7 @@ checkSomeOrderChans proto cs = do
     ["These channels should be used in some order (not in parallel):", pretty cs]
     where my = Skel.dotChannelSet $ Skel.select cs (proto^.skel)
 
-replProtoWhen :: (Channel -> Bool) -> Term -> Endom Proto
+replProtoWhen :: (Channel -> Bool) -> RFactor -> Endom Proto
 replProtoWhen cond n = chans . imapped %@~ replRSessionWhen where
   replRSessionWhen c s | cond c    = replRSession n s
                        | otherwise = s

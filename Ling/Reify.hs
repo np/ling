@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 module Ling.Reify where
 
 import           Ling.Raw
@@ -54,12 +55,17 @@ reifySessions = map reifySession
 reifyDec :: N.Dec -> Dec
 reifyDec = reify
 
+instance Norm OptRepl where
+  type Normalized OptRepl = N.RFactor
+  reify (N.isLitR -> Just 1) = One
+  reify (N.RFactor t)        = Some (reify t)
+  norm  One                  = ø
+  norm (Some t)              = N.RFactor (norm t)
+
 instance Norm RSession where
   type Normalized RSession = N.RSession
-  reify (N.Repl s (N.Lit (LInteger 1))) = Repl (reifySession s) One
-  reify (N.Repl s t)                    = Repl (reifySession s) (Some (reify t))
-  norm  (Repl s One)         = one (norm (RawSession s))
-  norm  (Repl s (Some a))    = N.Repl (norm (RawSession s)) (norm a)
+  reify (N.Repl s r) = Repl (reifySession s) (reify r)
+  norm  (Repl s r)   = N.Repl (norm (RawSession s)) (norm r)
 
 reifyRSession :: N.RSession -> RSession
 reifyRSession = reify
@@ -142,7 +148,7 @@ normAct = \case
     SeqSplit c ds     -> go [N.Split N.SeqK c (norm ds)]
     Send     c t      -> go [N.Send         c (norm t)]
     Recv     c a      -> go [N.Recv         c (norm a)]
-    NewSlice cs t x   -> go [N.NewSlice (noSoSession <$> cs) (norm t) x]
+    NewSlice cs t x   -> go [N.NewSlice (noSoSession <$> cs) (norm (Some t)) x]
     At       t pa     -> go [N.At                            (norm t) (norm pa)]
   where go = (`actsP` [])
 
@@ -157,7 +163,7 @@ reifyAct = \case
   N.Split N.SeqK c ds -> SeqSplit c (reify ds)
   N.Send     c t      -> Send     c (reify t)
   N.Recv     c a      -> Recv     c (reify a)
-  N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (reify t) x
+  N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (reify (N._RFactor t)) x
   N.Ax       s cs     -> Ax          (reify s) ((`CD` NoSession) <$> cs)
   N.At       t ps     -> At          (reify t) (reify ps)
 

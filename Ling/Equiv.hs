@@ -136,6 +136,9 @@ instance Equiv TraverseKind where
 instance Equiv RSession where
   equiv env (s0 `Repl` t0) (s1 `Repl` t1) = equiv env (s0, t0) (s1, t1)
 
+instance Equiv RFactor where
+  equiv env (RFactor t0) (RFactor t1) = equiv env t0 t1
+
 instance Equiv Session where
   equiv env s0' s1' = equiv env (tSession s0') (tSession s1')
 

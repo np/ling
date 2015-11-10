@@ -83,3 +83,6 @@ instance Rename Session where
 
 instance Rename RSession where
   rename f (Repl s t) = Repl (rename f s) (rename f t)
+
+instance Rename RFactor where
+  rename f (RFactor t) = RFactor (rename f t)

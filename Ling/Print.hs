@@ -364,3 +364,7 @@ instance Print N.Program where
 instance Print N.Term where
   prt     i = prt i . reifyTerm
   prtList i = prtList i . map reifyTerm
+
+instance Print N.RFactor where
+  prt     i (N.RFactor t) = prt i t
+  prtList i = prtList i . map N._RFactor
