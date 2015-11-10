@@ -1,14 +1,11 @@
 module Ling.Subst where
 
-import           Control.Lens
-import           Data.Bifunctor
 import qualified Data.Map       as Map
-import           Data.Maybe     (fromMaybe)
 
 import           Ling.Norm
 import           Ling.Session
 import           Ling.Scoped    hiding (subst1)
-import           Ling.Utils     hiding (subst1)
+import           Ling.Prelude   hiding (subst1)
 
 class Subst a where
   subst :: Sub -> a -> a
@@ -58,7 +55,7 @@ instance Subst Term where
     Lam  arg t -> Lam  (subst f arg) (subst (hideArg arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hideArg arg f) t)
-    Case t brs -> mkCase (subst f t) (map (second (subst f)) brs)
+    Case t brs -> mkCase (subst f t) (second (subst f) <$> brs)
 
     Con{}      -> e0
     TTyp       -> e0

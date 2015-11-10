@@ -1,10 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 module Ling.Rename where
 
-import           Control.Lens
-
 import           Ling.Norm
-import           Ling.Utils
+import           Ling.Prelude
 
 type Ren = Name -> Name
 

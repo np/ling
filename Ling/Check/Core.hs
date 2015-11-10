@@ -12,12 +12,8 @@ import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.Session
 import           Ling.Subst           (unScoped)
-import           Ling.Utils           hiding (subst1)
+import           Ling.Prelude         hiding (subst1)
 import           Prelude              hiding (log)
-
-import           Control.Lens
-import           Control.Monad        (join, zipWithM)
-import           Control.Monad.Reader (local)
 
 checkOptSession :: Name -> Maybe RSession -> Maybe RSession -> TC ()
 checkOptSession _ Nothing   _   = return ()
@@ -138,7 +134,7 @@ checkAct act proto =
     Split k c dOSs -> do
       assertAbsent c proto
       let ds         = dOSs^..each.argName
-          dsSessions = map defaultEndR $ chanSessions ds proto
+          dsSessions = defaultEndR <$> chanSessions ds proto
           s          = array k dsSessions
       checkChanDecs_ proto dOSs
       proto' <-
@@ -153,7 +149,7 @@ checkAct act proto =
       (`protoSendRecv` proto) . pure <$> sendRecvSession act
     NewSlice cs t _i -> do
       checkTerm intTyp t
-      mapM_ (checkSlice (`notElem` cs)) (proto ^. chans . to m2l)
+      ifor_ (proto^.chans) (checkSlice (`notElem` cs))
       return $ replProtoWhen (`elem` cs) t proto
     Ax s cs -> return $ protoAx s cs `dotProto` proto
     At e p -> do
@@ -211,7 +207,7 @@ inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
 
 inferProcTyp :: [ChanDec] -> Proc -> TC (Scoped Typ)
 inferProcTyp cds proc = do
-  let cs  = map _argName cds
+  let cs  = _argName <$> cds
   proto <- checkProc proc
   rs <- checkChanDecs proto cds
   let proto' = rmChans cs proto

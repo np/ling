@@ -6,9 +6,9 @@ comment "{-" "-}" ;
 
 Prg. Program ::= [Dec] ;
 
-token Name ((letter | ["_-+*/'%^"] | digit)*
-            (letter | ["_-+*/'%^"])
-            (letter | ["_-+*/'%^"] | digit)*) ;
+token Name ((letter | ["_-+*/'%"] | digit)*
+            (letter | ["_-+*/'%"])
+            (letter | ["_-+*/'%"] | digit)*) ;
 
 separator Name "" ;
 

@@ -21,11 +21,9 @@ module Ling.Proc
   , splitAx
   ) where
 
-import Control.Lens
-import Data.List (transpose)
-import Data.Set (Set, member, insert)
+import Data.Set (member, insert)
 
-import Ling.Utils
+import Ling.Prelude
 import Ling.Norm
 import Ling.Session
 
@@ -123,7 +121,7 @@ suffChan :: String -> Endom Channel
 suffChan s = suffName $ s ++ "#"
 
 suffChans :: (Show i, Integral i) => i -> Channel -> [Channel]
-suffChans n c = map ((`suffChan` c) . show) [0..n-1]
+suffChans n c = (`suffChan` c) . show <$> [0..n-1]
 
 noSession :: Channel -> ChanDec
 noSession c = Arg c Nothing
@@ -154,10 +152,10 @@ fwdSplit ks fprocs used rss cs
   -- These splits are independant, they are put in sequence because
   -- splitting always commutes anyway.
   where
-    ss   = map unRSession rss
-    dss  = map (suffChans (length ss)) cs
+    ss   = unRSession <$> rss
+    dss  = suffChans (length ss) <$> cs
     ps   = zipWith     (fwdP used) ss (transpose dss)
-    pref = zipWith3 id (map split' ks) cs dss
+    pref = zipWith3 id (split' <$> ks) cs dss
 
 fwdParTen, fwdSeqSeq :: UsedNames -> [RSession] -> [Channel] -> Proc
 fwdParTen = fwdSplit (TenK : repeat ParK) id
@@ -213,11 +211,11 @@ replProcs :: (Show i, Integral i) => i -> Name -> Procs -> Procs
 replProcs n = concatMap . replProc n
 
 replArg :: (Show i, Integral i) => i -> Name -> ChanDec -> [ChanDec]
-replArg n x (Arg d s) = map go [0..n-1] where
+replArg n x (Arg d s) = go <$> [0..n-1] where
   go i = Arg (suffChan (show i) d) (substi (x, i) s)
 
 replProc' :: Integral i => i -> Name -> Proc -> Procs
-replProc' n x p = map go [0..n-1] where
+replProc' n x p = go <$> [0..n-1] where
   go i = substi (x, i) p
 
 replPref :: (Show i, Integral i) => i -> Name -> Act -> Proc -> Proc

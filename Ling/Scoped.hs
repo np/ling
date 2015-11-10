@@ -12,14 +12,13 @@ module Ling.Scoped
   )
   where
 
-import           Control.Lens
-import           Data.Map     (Map, insert, member)
+import           Data.Map     (insert, member)
 import           Prelude      hiding (log)
 
 import           Ling.Norm
 import           Ling.Rename
 import           Ling.Session
-import           Ling.Utils   hiding (subst1)
+import           Ling.Prelude hiding (subst1)
 
 type Sub  = Map Name Term
 type Defs = Sub

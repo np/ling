@@ -9,15 +9,12 @@ module Ling.Print where
 -- and n(o) for the ones you want to keep.
 
 import           Data.Char
-import           Data.Map    (Map)
-import           Data.Set    (Set)
-import           Debug.Trace
 import           Ling.Abs
 import           Ling.ErrM
 import qualified Ling.Norm as N
 import           Ling.Reify
 import           Ling.Scoped
-import           Ling.Utils hiding (q)
+import           Ling.Prelude hiding (q)
 
 
 -- the top-level printing method
@@ -33,7 +30,7 @@ doc :: ShowS -> Doc
 doc = (:)
 
 render :: Doc -> String
-render d = rend 0 (map ($ "") $ d []) "" where
+render d = rend 0 (($ "") <$> d []) "" where
   rend i ss = case ss of
     "\n"        :ts -> new i . rend i ts
     [c]         :ts | c `elem` "{[(.?!`" -> showChar c . dropWhile isSpace . rend i ts
@@ -55,9 +52,9 @@ render d = rend 0 (map ($ "") $ d []) "" where
   new    i = showChar '\n' . indent i
   indent i = unlessElem "\n" (replicateS (2*i) (showChar ' '))
   space  t = showString t . unlessElem ".\n" (showChar ' ')
-  unlessElem set f s
-    | null s || head s `elem` set = s
-    | otherwise                   = f s
+  unlessElem xs f s
+    | null s || head s `elem` xs = s
+    | otherwise                  = f s
 
 parenth :: Doc -> Doc
 parenth ss = doc (showChar '(') . ss . doc (showChar ')')

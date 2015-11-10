@@ -35,14 +35,9 @@ import           Ling.Print
 import           Ling.Proto.Skel      (Skel, actS, prllActS, dotActS)
 import qualified Ling.Proto.Skel      as Skel
 import           Ling.Session
-import           Ling.Utils
+import           Ling.Prelude
 
-import           Control.Lens
-import           Control.Monad.Except
-import           Data.List            (sort)
-import           Data.Map             (Map, keysSet)
 import qualified Data.Map             as Map
-import           Data.Set             (Set)
 import qualified Data.Set             as Set
 import           Prelude              hiding (log)
 
@@ -53,14 +48,12 @@ data Proto = MkProto { _chans  :: Map Channel RSession
 $(makeLenses ''Proto)
 
 prettyProto :: Proto -> [String]
-prettyProto p =
-  [" channels:"]
-  ++
-  map ("   - " ++) (prettyChanDecs p)
-  ++
-  if p ^. skel == ø then [] else
-  " skeleton:"
-  : map ("   " ++) (p^.skel.to pretty.to lines)
+prettyProto p = concat
+  [[" channels:"]
+  ,("   - " ++) <$> prettyChanDecs p
+  ,if p ^. skel == ø then [] else
+   " skeleton:"
+   : (("   " ++) <$> p^.skel.to pretty.to lines)]
 
 -- toListOf chanDecs :: Proto -> [Arg Session]
 chanDecs :: Fold Proto (Arg RSession)
@@ -140,7 +133,7 @@ mkProto k = arrayProto k . map (uncurry pureProto)
 protoAx :: Session -> [Channel] -> Proto
 protoAx _ []             = mempty
 protoAx s [c] | isSink s = pureProto c s
-protoAx s (c:d:es)       = mkProto ParK ((c,s):(d,dual s):map (\e -> (e, log s)) es)
+protoAx s (c:d:es)       = mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
 protoAx _ _              = error "protoAx: Not enough channels given to forward"
 
 protoSendRecv :: [(Channel, Session -> Session)] -> Endom Proto
@@ -148,7 +141,7 @@ protoSendRecv cfs p =
   p & composeMap addChanOnly crs
     & skel %~ prllActS cs
   where crs = [ (c,mapR f (defaultEndR $ p ^. chanSession c)) | (c,f) <- cfs ]
-        cs = map fst cfs
+        cs = fst <$> cfs
 
 assertAbsent :: MonadError TCErr m => Channel -> Proto -> m ()
 assertAbsent c p =

@@ -1,12 +1,9 @@
 module Ling.Reduce where
 
-import           Control.Lens
-import           Data.Maybe   (fromMaybe)
-
 import           Ling.Norm
 import           Ling.Scoped
 import           Ling.Session
-import           Ling.Utils hiding (subst1)
+import           Ling.Prelude hiding (subst1)
 
 app :: Name -> Scoped Term -> [Term] -> Scoped Term
 app _ st []     = reduceWHNF st

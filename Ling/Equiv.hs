@@ -1,17 +1,12 @@
-{-# LANGUAGE TemplateHaskell , LambdaCase#-}
-module Ling.Equiv (Equiv(equiv), EqEnv, emptyEqEnv, allEquiv) where
+{-# LANGUAGE TemplateHaskell #-}
+module Ling.Equiv (Equiv(equiv), EqEnv, emptyEqEnv) where
 
-import           Control.Lens
-
-import           Data.List            (elemIndex)
-import           Data.Map             (Map)
 import qualified Data.Map             as Map
 
 import           Ling.Norm
 import           Ling.Reduce          (reduceWHNF)
 import           Ling.Scoped          (Defs, Scoped (..), ldefs, scoped)
-import           Ling.Utils           (Abs (..), Arg (..), unArg
-                                      , Telescope (..))
+import           Ling.Prelude
 
 data EqEnv = EqEnv
   { _eqnms  :: [(Name,Name)]
@@ -49,17 +44,12 @@ instance (Equiv a, Equiv b) => Equiv (Telescope a b) where
                                         (Abs a1 (Telescope as1 u1))
       _                    -> False
 
-allEquiv :: Equiv a => EqEnv -> [a] -> Bool
-allEquiv _   []         = False
-allEquiv _   [_]        = True
-allEquiv env (x0:x1:xs) = equiv env x0 x1 && allEquiv env (x0:xs)
-
 instance (Equiv a, Equiv b) => Equiv (a, b) where
   equiv env (x0,y0) (x1,y1) = equiv env x0 x1 && equiv env y0 y1
 
 instance Equiv a => Equiv [a] where
   equiv _   []       []       = True
-  equiv env (x0:xs0) (x1:xs1) = equiv env x0 x1 && equiv env xs0 xs1
+  equiv env (x0:xs0) (x1:xs1) = equiv env (x0, xs0) (x1, xs1)
   equiv _   _        _        = False
 
 instance Equiv a => Equiv (Maybe a) where
@@ -83,8 +73,8 @@ instance Equiv a => Equiv (Scoped a) where
 instance Equiv Name where
   equiv env x0 x1 = i0 == i1
     where
-      i0 = nameIndex x0 $ map fst es
-      i1 = nameIndex x1 $ map snd es
+      i0 = nameIndex x0 $ fst <$> es
+      i1 = nameIndex x1 $ snd <$> es
       es = env ^. eqnms
 
 instance Equiv Term where
@@ -154,21 +144,12 @@ instance Equiv Act where
     (Recv c0 b0, Recv c1 b1) -> c0 == c1
       && equiv env (b0 ^. unArg) (b1 ^. unArg)
     (Send c0 t0, Send c1 t1) -> c0 == c1 && equiv env t0 t1
-    -- Add for splicing and At
+    -- TODO: Add for splicing and At
     (_ , _) -> a0 == a1
 
-prefToTelescope :: Pref -> [Arg Typ]
-prefToTelescope prefs = prefs >>= \case
-  Recv _ v -> [v]
-  _ -> []
-
 instance Equiv Proc where
-  equiv env p0 p1 = equiv env pr0 pr1
-    && equiv env (Telescope cd0 pp0) (Telescope cd1 pp1)
+  equiv env (pr0 `Dot` pp0) (pr1 `Dot` pp1) =
+      equiv env (pr0, Telescope cd0 pp0) (pr1, Telescope cd1 pp1)
     where
-      pr0 = p0 ^. procPref
-      pr1 = p1 ^. procPref
-      cd0 = prefToTelescope pr0
-      cd1 = prefToTelescope pr1
-      pp0 = p0 ^. procProcs
-      pp1 = p1 ^. procProcs
+      cd0 = actVarDecs =<< pr0
+      cd1 = actVarDecs =<< pr1

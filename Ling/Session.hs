@@ -2,7 +2,7 @@
 module Ling.Session where
 
 import Prelude hiding (log)
-import Data.Maybe
+import Ling.Prelude
 import Ling.Norm
 import qualified Ling.Raw as Raw
 
@@ -75,8 +75,8 @@ class Dual a where
   dualOp SinkOp = sink
 
 termS :: DualOp -> Term -> Session
-termS op (TSession s) = dualOp op s
-termS op           t  = TermS  op t
+termS o (TSession s) = dualOp o s
+termS o           t  = TermS  o t
 
 -- Sub-optimal but concise
 isLog, isSink :: (Eq session, Dual session) => session -> Bool
@@ -140,7 +140,7 @@ instance Dual a => Dual [a] where
   dualOp = map . dualOp
 
 instance Dual Term where
-  dualOp op = tSession . termS op
+  dualOp o = tSession . termS o
 
 defaultEnd :: Maybe Session -> Session
 defaultEnd Nothing  = endS

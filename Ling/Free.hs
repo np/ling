@@ -1,10 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 module Ling.Free where
 
-import           Data.Set   (Set)
 import qualified Data.Set   as Set
 import           Ling.Norm
-import           Ling.Utils
+import           Ling.Prelude
 
 type FreeChans a = a -> Set Channel
 type BoundChans a = FreeChans a

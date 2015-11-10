@@ -15,13 +15,12 @@ module Ling.Proto.Skel
   , check
   ) where
 
-import           Control.Monad.Except
 import           Data.Set   hiding (foldr)
 import           Prelude    hiding (null)
 
 import           Ling.Norm  (TraverseKind(..))
 import           Ling.Print hiding (Prll)
-import           Ling.Utils hiding (q)
+import           Ling.Prelude hiding (q, null, op)
 
 -- A way to deal with Unknown would be to stick an identifier
 -- on each of them. Then the normal equality could be used

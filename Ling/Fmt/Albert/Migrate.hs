@@ -10,18 +10,18 @@ transName x = case x of
 
 transProgram :: Program -> L.Program
 transProgram x = case x of
-  Prg decs -> L.Prg (map transDec decs)
+  Prg decs -> L.Prg (transDec <$> decs)
 
 transDec :: Dec -> L.Dec
 transDec x = case x of
   DPrc name chandecs proc _ ->
-    L.DDef (transName name) L.NoSig (L.TProc (transChanDecs chandecs) (transProc proc))
+    L.DDef (transName name) L.NoSig (L.TProc (transChanDec <$> chandecs) (transProc proc))
   DDef name optsig (SoProc proc) _ ->
     L.DDef (transName name) (transOptSig optsig) (L.TProc [] (transProc proc))
   DDef name optsig (SoTerm term) _ ->
     L.DDef (transName name) (transOptSig optsig) (transTerm term)
   DSig name term _ -> L.DSig (transName name) (transTerm term)
-  DDat name connames _ -> L.DDat (transName name) (map transConName connames)
+  DDat name connames _ -> L.DDat (transName name) (transConName <$> connames)
   DAsr assertion -> L.DAsr (transAssertion assertion)
 
 transAssertion :: Assertion -> L.Assertion
@@ -43,10 +43,7 @@ transVarDec x = case x of
 
 transVarsDec :: VarsDec -> L.VarsDec
 transVarsDec x = case x of
-  VsD name names term -> L.VsD (transName name) (map transName names) (transTerm term)
-
-transChanDecs :: [ChanDec] -> [L.ChanDec]
-transChanDecs = map transChanDec
+  VsD name names term -> L.VsD (transName name) (transName <$> names) (transTerm term)
 
 transChanDec :: ChanDec -> L.ChanDec
 transChanDec x = case x of
@@ -69,26 +66,26 @@ transATerm x = case x of
   Lit literal -> L.Lit (transLiteral literal)
   Con conname -> L.Con (transConName conname)
   TTyp -> L.TTyp
-  TProto rsessions -> L.TProto (map transRSession rsessions)
+  TProto rsessions -> L.TProto (transRSession <$> rsessions)
   Paren term optsig -> L.Paren (transTerm term) (transOptSig optsig)
   End -> L.End
-  Par rsessions -> L.Par (map transRSession rsessions)
-  Ten rsessions -> L.Ten (map transRSession rsessions)
-  Seq rsessions -> L.Seq (map transRSession rsessions)
+  Par rsessions -> L.Par (transRSession <$> rsessions)
+  Ten rsessions -> L.Ten (transRSession <$> rsessions)
+  Seq rsessions -> L.Seq (transRSession <$> rsessions)
 
 transDTerm :: DTerm -> L.DTerm
 transDTerm x = case x of
-  DTTyp name aterms -> L.DTTyp (transName name) (map transATerm aterms)
+  DTTyp name aterms -> L.DTTyp (transName name) (transATerm <$> aterms)
   DTBnd name term -> L.DTBnd (transName name) (transTerm term)
 
 transTerm :: Term -> L.Term
 transTerm x = case x of
-  RawApp aterm aterms -> L.RawApp (transATerm aterm) (map transATerm aterms)
-  Case term branchs -> L.Case (transTerm term) (map transBranch branchs)
+  RawApp aterm aterms -> L.RawApp (transATerm aterm) (transATerm <$> aterms)
+  Case term branchs -> L.Case (transTerm term) (transBranch <$> branchs)
   TFun term1 term2 -> L.TFun (transTerm term1) (transTerm term2)
   TSig term1 term2 -> L.TSig (transTerm term1) (transTerm term2)
-  Lam  varsdec varsdecs term -> L.Lam  (transVarsDec varsdec) (map transVarsDec varsdecs) (transTerm term)
-  TProc chandecs proc -> L.TProc (map transChanDec chandecs) (transProc proc)
+  Lam  varsdec varsdecs term -> L.Lam  (transVarsDec varsdec) (transVarsDec <$> varsdecs) (transTerm term)
+  TProc chandecs proc -> L.TProc (transChanDec <$> chandecs) (transProc proc)
   Snd dterm csession -> L.Snd (transDTerm dterm) (transCSession csession)
   Rcv dterm csession -> L.Rcv (transDTerm dterm) (transCSession csession)
   Dual session -> L.Dual (transTerm session)
@@ -99,18 +96,18 @@ transProc = \case
   PAct act        -> L.PAct (transAct act)
   PNxt proc proc' -> transProc proc `L.PNxt` transProc proc'
   PDot proc proc' -> transProc proc `L.PDot` transProc proc'
-  PPrll procs     -> L.PPrll $ map transProc procs
+  PPrll procs     -> L.PPrll $ transProc <$> procs
 
 transAct :: Act -> L.Act
 transAct = \case
   Nu chandec1 chandec2 -> L.Nu (transChanDec chandec1) (transChanDec chandec2)
-  ParSplit name chandecs -> L.ParSplit (transName name) (map transChanDec chandecs)
-  TenSplit name chandecs -> L.TenSplit (transName name) (map transChanDec chandecs)
-  SeqSplit name chandecs -> L.SeqSplit (transName name) (map transChanDec chandecs)
+  ParSplit name chandecs -> L.ParSplit (transName name) (transChanDec <$> chandecs)
+  TenSplit name chandecs -> L.TenSplit (transName name) (transChanDec <$> chandecs)
+  SeqSplit name chandecs -> L.SeqSplit (transName name) (transChanDec <$> chandecs)
   Send name aterm -> L.Send (transName name) (transATerm aterm)
   Recv name vardec -> L.Recv (transName name) (transVarDec vardec)
-  NewSlice chandecs aterm name -> L.NewSlice (map transChanDec chandecs) (transATerm aterm) (transName name)
-  Ax session chandecs -> L.Ax (transASession session) (map transChanDec chandecs)
+  NewSlice chandecs aterm name -> L.NewSlice (transChanDec <$> chandecs) (transATerm aterm) (transName name)
+  Ax session chandecs -> L.Ax (transASession session) (transChanDec <$> chandecs)
   SplitAx integer session name -> L.SplitAx integer (transASession session) (transName name)
   At aterm topcpatt -> L.At (transATerm aterm) (transTopCPatt topcpatt)
 
@@ -138,14 +135,14 @@ transCSession x = case x of
 
 transTopCPatt :: TopCPatt -> L.TopCPatt
 transTopCPatt = \case
-  OldTopPatt chandecs -> L.OldTopPatt (transChanDecs chandecs)
-  ParTopPatt cpatts -> L.ParTopPatt (map transCPatt cpatts)
-  TenTopPatt cpatts -> L.TenTopPatt (map transCPatt cpatts)
-  SeqTopPatt cpatts -> L.SeqTopPatt (map transCPatt cpatts)
+  OldTopPatt chandecs -> L.OldTopPatt (transChanDec <$> chandecs)
+  ParTopPatt cpatts -> L.ParTopPatt (transCPatt <$> cpatts)
+  TenTopPatt cpatts -> L.TenTopPatt (transCPatt <$> cpatts)
+  SeqTopPatt cpatts -> L.SeqTopPatt (transCPatt <$> cpatts)
 
 transCPatt :: CPatt -> L.CPatt
 transCPatt = \case
   ChaPatt chandec -> L.ChaPatt (transChanDec chandec)
-  ParPatt cpatts -> L.ParPatt (map transCPatt cpatts)
-  TenPatt cpatts -> L.TenPatt (map transCPatt cpatts)
-  SeqPatt cpatts -> L.SeqPatt (map transCPatt cpatts)
+  ParPatt cpatts -> L.ParPatt (transCPatt <$> cpatts)
+  TenPatt cpatts -> L.TenPatt (transCPatt <$> cpatts)
+  SeqPatt cpatts -> L.SeqPatt (transCPatt <$> cpatts)

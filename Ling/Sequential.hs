@@ -15,12 +15,8 @@ module Ling.Sequential where
     Read then write
 -}
 
-import Control.Lens hiding (op,Empty)
-
-import Data.Maybe
 import qualified Data.Map as Map
-import Data.Map (Map)
-import Ling.Utils
+import Ling.Prelude
 import Ling.Print
 import Ling.Session
 import Ling.Proc
@@ -58,7 +54,7 @@ emptyEnv :: Env
 emptyEnv = Env ø ø ø
 
 addChans :: [(Channel, (Location, RSession))] -> Env -> Env
-addChans xys = chans %~ Map.union (Map.fromList xys)
+addChans xys = chans %~ Map.union (l2m xys)
 
 rmChan :: Channel -> Env -> Env
 rmChan c = chans . at c .~ Nothing
@@ -66,7 +62,7 @@ rmChan c = chans . at c .~ Nothing
 (!) :: Env -> Channel -> (Location, RSession)
 env ! i = fromMaybe err (env ^. chans . at i)
   where err = error $ "lookup/env " ++ show i ++ " in "
-                   ++ show (map unName (Map.keys (env ^. chans)))
+                   ++ show (unName <$> keys (env ^. chans))
 
 addLoc :: (Location, Status) -> Env -> Env
 addLoc (l, s) = locs . at l .~ fromStatus s
@@ -142,7 +138,7 @@ transSplit c dOSs env =
   addChans [ (d, (Proj l n, one (projSession (fromIntegral n) (unRepl session))))
            | (d, n) <- zip ds [(0 :: Int)..] ] env
   where (l, session) = env ! c
-        ds = map _argName dOSs
+        ds = _argName <$> dOSs
 
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
 transProc env (pref `Dot` procs) = transPref env pref procs
@@ -220,7 +216,7 @@ transDec x = case x of
   Assert{} -> x -- probably wrong!
 
 transProgram :: Program -> Program
-transProgram (Program decs) = Program (map transDec decs)
+transProgram (Program decs) = Program (transDec <$> decs)
 -- -}
 -- -}
 -- -}

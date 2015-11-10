@@ -36,14 +36,9 @@ module Ling.Compile.C where
 -}
 
 import Prelude hiding (log)
-import Control.Lens hiding (op)
 
-import Data.Maybe
 import qualified Data.Map as Map
-import Data.Map (Map)
-import Data.Set (Set)
-import Debug.Trace
-import Ling.Utils hiding (q)
+import Ling.Prelude hiding (q)
 import Ling.Print
 import Ling.Session
 import Ling.Norm hiding (mkCase)
@@ -118,13 +113,13 @@ basicTypes = l2m [ (Name n, t) | (n,t) <-
   ,("Char", C.TChar)] ]
 
 primTypes :: Set Name
-primTypes = l2s (Name "Vec" : Map.keys basicTypes)
+primTypes = l2s (Name "Vec" : keys basicTypes)
 
 emptyEnv :: Env
 emptyEnv = Env Map.empty Map.empty primTypes
 
 addChans :: [(Name, C.LVal)] -> Env -> Env
-addChans xys env = env & locs %~ Map.union (Map.fromList xys)
+addChans xys env = env & locs %~ Map.union (l2m xys)
 
 rmChan :: Channel -> Env -> Env
 rmChan c env = env & locs . at c .~ Nothing
@@ -135,8 +130,9 @@ addEVar x y env
   | otherwise               = env & evars . at x .~ Just y
 
 (!) :: Env -> Name -> C.LVal
-env ! i = fromMaybe (error $ "lookup/env " ++ show i ++ " in " ++ show (map unName (Map.keys (env ^. locs))))
+env ! i = fromMaybe (error $ "lookup/env " ++ show i ++ " in " ++ show scope)
                     (env ^. locs . at i)
+  where scope = unName <$> keys (env ^. locs)
 
 transCon :: Name -> C.Ident
 transCon (Name x) = C.Ident ("con_" ++ x)
@@ -170,7 +166,7 @@ mkCase :: C.Ident -> [C.Stm] -> C.Branch
 mkCase = C.Case . C.EVar
 
 switch :: C.Exp -> [(C.Ident,[C.Stm])] -> C.Stm
-switch e brs = C.SSwi e (map (uncurry mkCase) brs)
+switch e brs = C.SSwi e (uncurry mkCase <$> brs)
 
 isEVar :: C.Exp -> Bool
 isEVar C.EVar{} = True
@@ -201,15 +197,15 @@ transTerm env x = case x of
   Def f es0
    | env ^. types . contains f -> dummyTyp
    | otherwise ->
-     case map (transTerm env) es0 of
+     case transTerm env <$> es0 of
        []                             -> C.EVar (transEVar env f)
-       [e0,e1] | Just op <- transOp f -> op e0 e1
+       [e0,e1] | Just d <- transOp f  -> d e0 e1
        es                             -> C.EApp (C.EVar (transName f)) es
   Lit l          -> C.ELit (transLiteral l)
   Lam{}          -> transErr "transTerm/Lam"  x
   Con n          -> C.EVar (transCon n)
   Case t brs     -> switchE (transTerm env t)
-                            (map (bimap transCon (transTerm env)) brs)
+                            (bimap transCon (transTerm env) <$> brs)
   Proc{}         -> transErr "transTerm/Proc" x
   TFun{}         -> dummyTyp
   TSig{}         -> dummyTyp
@@ -300,7 +296,7 @@ transSplit :: Name -> [ChanDec] -> Env -> Env
 transSplit c dOSs env = rmChan c $ addChans newChans env
   where
     lval = env ! c
-    ds   = map _argName dOSs
+    ds   = _argName <$> dOSs
     newChans =
       case ds of
         [d] -> [ (d, lval) ]
@@ -315,14 +311,11 @@ fldI n = C.Ident ("f" ++ show n)
 uniI :: Int -> C.Ident
 uniI n = C.Ident ("u" ++ show n)
 
-allEq :: Eq a => [a] -> Bool
-allEq []     = False
-allEq (t:ts) = all (== t) ts
-
 unionT :: [ATyp] -> ATyp
 unionT ts
-  | allEq ts  = head ts
-  | otherwise = (C.TUni [ C.FFld t (uniI i) arrs | (i,(t,arrs)) <- zip [0..] ts ], [])
+  | Just t <- theUniq ts = t
+  | otherwise            = (u, [])
+      where u = C.TUni [ C.FFld t (uniI i) arrs | (i,(t,arrs)) <- zip [0..] ts ]
 
 rwQual :: RW -> C.Qual
 rwQual Read  = C.QConst
@@ -422,11 +415,11 @@ transSig env0 f _ty0 (Just t) =
   case t of
     Proc cs proc ->
       [C.DDef (C.Dec voidQ (transName f) [])
-              (map fst news)
+              (fst <$> news)
               (transProc env proc)]
       where
-        news = map (transChanDec env0) cs
-        env  = addChans (map snd news) env0
+        news = transChanDec env0 <$> cs
+        env  = addChans (snd <$> news) env0
     _ -> trace ("[WARNING] Skipping compilation of unsupported definition " ++ pretty f) []
 -- Of course this does not properly handle dependent types
 transSig env0 f (Just ty0) Nothing = case ty0 of
@@ -444,7 +437,7 @@ transDec :: Env -> Dec -> [C.Def]
 transDec env x = case x of
   Sig d ty tm -> transSig env d ty tm
   Dat _d _cs ->
-    [] -- TODO typedef ? => [C.TEnum (map (C.EEnm . transCon) cs)]
+    [] -- TODO typedef ? => [C.TEnum (C.EEnm . transCon <$> cs)]
   Assert _a ->
     [] -- could be an assert.. but why?
 

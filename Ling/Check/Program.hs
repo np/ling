@@ -4,12 +4,10 @@ import           Ling.Check.Base
 import           Ling.Check.Core
 import           Ling.Norm
 import           Ling.Print
-import           Ling.Scoped(emptyScope)
-import           Ling.Utils
+import           Ling.Scoped     (emptyScope)
+import           Ling.Prelude
 
-import           Control.Lens
-import           Control.Monad.Reader
-import           Data.Map             (union)
+import           Data.Map        (union)
 
 checkProgram :: Program -> TC ()
 checkProgram (Program decs) = checkDecs decs
@@ -22,7 +20,7 @@ checkDec (Sig d typ mt)   kont = checkVarDef d typ mt kont
 checkDec (Dat d cs)       kont = do
   checkNoDups ("in the definition of " ++ pretty d) cs
   checkNotIn evars "name" d
-  mapM_ (checkNotIn ctyps "data constructor") cs
+  for_ cs (checkNotIn ctyps "data constructor")
   local ((ctyps %~ union (l2m [ (c,d) | c <- cs ]))
         .(evars . at d .~ Just TTyp)
         .(ddefs . at d .~ Just cs)) kont

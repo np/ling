@@ -17,14 +17,8 @@ import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.Session
 import           Ling.Subst           (Subst, unScoped)
-import           Ling.Utils           hiding (subst1)
+import           Ling.Prelude         hiding (subst1)
 
-import           Control.Lens
-import           Control.Monad.Except
-import           Control.Monad.Reader
-import           Data.List            (sort)
-import           Data.Map             (Map)
-import           Data.Set             (Set)
 import qualified Data.Set             as Set
 
 ------------
@@ -111,9 +105,9 @@ checkDisjointness k ss =
 
 checkPrefWellFormness :: MonadError TCErr m => Pref -> m ()
 checkPrefWellFormness pref = do
-  checkDisjointness "free channels"  $ map fcAct pref
-  checkDisjointness "bound channels" $ map bcAct pref
-  checkDisjointness "bound names"    $ map bvAct pref
+  checkDisjointness "free channels"  $ fcAct <$> pref
+  checkDisjointness "bound channels" $ bcAct <$> pref
+  checkDisjointness "bound names"    $ bvAct <$> pref
 
 checkEqSessions :: MonadTC m =>
                    Name -> RSession -> Maybe RSession -> m ()
@@ -142,8 +136,8 @@ checkDual (Repl s0 (Lit (LInteger 1))) (Repl s1 (Lit (LInteger 1))) = do
 checkDual _ _ =
   tcError "Unexpected session replication in 'new'."
 
-checkSlice :: MonadError TCErr m => (Channel -> Bool) -> (Channel, RSession) -> m ()
-checkSlice cond (c, rs) = when (cond c) $
+checkSlice :: MonadError TCErr m => (Channel -> Bool) -> Channel -> RSession -> m ()
+checkSlice cond c rs = when (cond c) $
   case rs of
     Repl s (Lit (LInteger 1)) ->
       assert (allSndRcv s) ["checkSlice: non send/recv session"]
@@ -239,8 +233,9 @@ caseType t ty brs =
                      "Inferred:" (Comma (fst <$> brs))
 
           env <- tcEqEnv
-          return $ if allEquiv env (snd <$> brs) then snd (head brs)
-                   else emptyScope (mkCase t (brs & mapped . _2 %~ unScoped))
+          return $
+            fromMaybe (emptyScope (mkCase t (brs & mapped . _2 %~ unScoped)))
+                      (theUniqBy (equiv env) (snd <$> brs))
         _ -> tcError $ "Case on a non data type: " ++ pretty d
     _ -> tcError $ "Case on a non data type: " ++ pretty (ty^.scoped)
 

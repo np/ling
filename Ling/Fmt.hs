@@ -8,6 +8,7 @@ import           Ling.Fmt.Albert.Migrate
 import           Ling.Fmt.Albert.Par
 
 import           Ling.Print
+import           Ling.Prelude
 
 runFile :: FilePath -> IO ()
 runFile f = hPutStrLn stderr f >> readFile f >>= run
@@ -35,5 +36,5 @@ main = do
   case args of
     ["--help"] -> usage
     [] -> getContents >>= run
-    "-s":fs -> mapM_ runFile fs
-    fs -> mapM_ runFile fs
+    "-s":fs -> for_ fs runFile
+    fs -> for_ fs runFile

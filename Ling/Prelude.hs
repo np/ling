@@ -1,23 +1,30 @@
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE Rank2Types      #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Ling.Utils
-  ( module Ling.Utils
-  , module Data.Functor
-  , module Control.Applicative
-  , module Debug.Trace
-  , (<>)) where
+module Ling.Prelude
+  ( module Ling.Prelude
+  , module X
+  ) where
 
-import           Control.Applicative
-import           Control.Lens
-import           Data.Functor
-import           Data.Map                  (Map)
+import           Control.Applicative       as X
+import           Control.Lens              as X hiding (Empty)
+import           Control.Monad             as X
+import           Control.Monad.Except      as X
+import           Control.Monad.Reader      as X
+import           Data.Bifunctor            as X
+import           Data.Foldable             as X
+import           Data.Functor              as X
+import           Data.List                 as X (elemIndex, sort, transpose)
+import           Data.Map                  as X (Map, keysSet, keys)
 import qualified Data.Map                  as Map
-import           Data.Monoid
-import           Data.Set                  (Set, intersection, member,
-                                            notMember, union)
+import           Data.Maybe                as X
+import           Data.Monoid               as X hiding (Dual)
+import           Data.Set                  as X (Set)
+import           Data.Set                  (intersection, member, notMember,
+                                            union)
 import qualified Data.Set                  as Set
-import           Debug.Trace
+-- import           Data.Traversable          as X
+import           Debug.Trace               as X
 import           Language.Haskell.TH       (litP, stringE, stringL)
 import           Language.Haskell.TH.Quote
 import           Ling.Abs
@@ -120,6 +127,13 @@ infixr 3 <&&>
 mx <&&> my = do x <- mx
                 if x then my
                      else return False
+
+theUniqBy :: (a -> a -> Bool) -> [a] -> Maybe a
+theUniqBy eq (x:xs) | all (eq x) xs = Just x
+theUniqBy _  _                      = Nothing
+
+theUniq :: Eq a => [a] -> Maybe a
+theUniq = theUniqBy (==)
 
 -- Given a list of sets, return the set of elements which are
 -- redundant, namely appear more than once.

@@ -7,9 +7,7 @@ module Ling.Norm
   ) where
 
 import           Ling.Abs     (Literal (..), Name (Name))
-import           Ling.Utils
-
-import           Control.Lens
+import           Ling.Prelude
 
 type ChanDec = Arg (Maybe RSession)
 type VarDec  = Arg Typ

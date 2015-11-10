@@ -6,9 +6,6 @@ import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
 import           System.IO          (hPutStrLn, stderr)
 
-import           Control.Lens
-import           Control.Monad      (when)
-import           Data.Monoid
 import           IPPrint.Colored
 
 import qualified MiniC.Print        as C
@@ -26,7 +23,7 @@ import           Ling.Par
 import           Ling.Print
 import           Ling.Reify
 import qualified Ling.Sequential    as Sequential
-import           Ling.Utils
+import           Ling.Prelude
 
 type ParseFun a = [Token] -> Err a
 
@@ -178,7 +175,7 @@ mainArgs opts args0 = case args0 of
       _ -> failIO $ "Unexpected flag --" ++ arg
     where add opt = mainArgs (opts & opt .~ True) args
   [f] -> runProgram opts f
-  fs  -> mapM_ (\f -> putStrLn f >> runProgram opts f) fs
+  fs  -> for_ fs $ \f -> putStrLn f >> runProgram opts f
 
 main :: IO ()
 main = mainArgs defaultOpts =<< getArgs

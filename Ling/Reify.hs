@@ -2,12 +2,11 @@
 {-# LANGUAGE TypeFamilies #-}
 module Ling.Reify where
 
-import           Data.List
 import           Ling.Raw
 import qualified Ling.Norm    as N
 import           Ling.Proc
 import           Ling.Session
-import           Ling.Utils
+import           Ling.Prelude
 import           Prelude      hiding (log)
 
 newtype RawSession = RawSession { rawSession :: Term }
@@ -44,7 +43,7 @@ instance Norm RawSession where
     N.Array k s      -> aTerm $ reifyArray k (reify s)
     N.IO N.Write a s -> Snd (reify a) (reify s)
     N.IO N.Read  a s -> Rcv (reify a) (reify s)
-    N.TermS op e     -> dualOp op (reify e)
+    N.TermS o e      -> dualOp o (reify e)
 
 reifySession :: N.Session -> Term
 reifySession = rawSession . reify
@@ -178,9 +177,9 @@ isInfix _ = Nothing
 --   * this currently fails to parse: `f x + y`
 normRawApp :: [ATerm] -> N.Term
 normRawApp [e] = norm e
-normRawApp (e0 : Var (Name op) : es)
-  | op `elem` ["-","+","*","/","%","-D","+D","*D","/D","++S"]
-  = N.Def (Name ("_" ++ op ++ "_")) [norm e0, normRawApp es]
+normRawApp (e0 : Var (Name d) : es)
+  | d `elem` ["-","+","*","/","%","-D","+D","*D","/D","++S"]
+  = N.Def (Name ("_" ++ d ++ "_")) [norm e0, normRawApp es]
 normRawApp (Var (Name "Fwd") : es)
   | [Lit (LInteger n), e] <- es = N.tSession $ fwd (fromInteger n) (norm (AS e))
   | otherwise = error "invalid usage of Fwd"
@@ -254,8 +253,8 @@ instance Norm Term where
   type Normalized Term = N.Term
 
   reify e0 = case e0 of
-    N.Def x [e1,e2]     | Just op <- isInfix x
-                       -> RawApp (reify e1) (Var op : reifyRawApp e2)
+    N.Def x [e1,e2]     | Just d <- isInfix x
+                       -> RawApp (reify e1) (Var d : reifyRawApp e2)
     N.Def x es         -> RawApp (Var x) (reify es)
     N.Lit l            -> RawApp (Lit l) []
     N.Con n            -> RawApp (Con (reify n)) []
