@@ -1,3 +1,4 @@
+-- cf: would be more precise with {~(!Int -o !Int) ^ 10}
 zap_ten_seq = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
   cf{cfi}
   cn{cni}
