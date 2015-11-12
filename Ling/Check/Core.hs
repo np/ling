@@ -17,7 +17,7 @@ import           Prelude              hiding (log)
 
 -- The first session is the potential annotation.
 -- The second session is inferred or absent.
-checkOptSession :: Name -> Maybe RSession -> Maybe RSession -> TC ()
+checkOptSession :: Print channel => channel -> Maybe RSession -> Maybe RSession -> TC ()
 checkOptSession c ms0 ms1 =
   case ms0 of
     Nothing -> return ()
@@ -187,7 +187,7 @@ checkCPattR (s `Repl` r) pat
   | Just 1 <- isLitR r = checkCPatt s pat
   | otherwise          = tcError "Unexpected pattern for replicated session"
 
-inferBranch :: (Name,Term) -> TC (Name,Scoped Typ)
+inferBranch :: (name,Term) -> TC (name,Scoped Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
 
 inferTerm' :: Term -> TC Typ

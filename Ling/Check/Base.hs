@@ -109,8 +109,8 @@ checkPrefWellFormness pref = do
   checkDisjointness "bound channels" $ bcAct <$> pref
   checkDisjointness "bound names"    $ bvAct <$> pref
 
-checkEqSessions :: MonadTC m =>
-                   Name -> RSession -> RSession -> m ()
+checkEqSessions :: (MonadTC m, Print channel) =>
+                   channel -> RSession -> RSession -> m ()
 checkEqSessions c s0 s1 =
   checkEquivalence
     ("On channel " ++ pretty c ++ " sessions are not equivalent.")
@@ -119,8 +119,8 @@ checkEqSessions c s0 s1 =
 
 -- checkUnused c ms s: Check if the channel c is used given the
 -- inferred session ms, and its dual ds.
-checkUnused :: MonadError TCErr m =>
-               Name -> Maybe RSession -> RSession -> m ()
+checkUnused :: (MonadError TCErr m, Print channel) =>
+               channel -> Maybe RSession -> RSession -> m ()
 checkUnused _ (Just _) _ = return ()
 checkUnused c Nothing  s = assert (isEndR s) ["Unused channel " ++ pretty c]
 
@@ -137,10 +137,10 @@ checkDual (Repl s0 r0) (Repl s1 r1) = do
     "Given session (expanded):" us0
     "Inferred dual session:"    (dual us1)
 
-checkSlice :: MonadError TCErr m => (Channel -> Bool) -> Channel -> RSession -> m ()
+checkSlice :: (Print channel, MonadError TCErr m) => (channel -> Bool) -> channel -> RSession -> m ()
 checkSlice cond c (s `Repl` r) = when (cond c) $ do
   checkOneR r
-  assert (allSndRcv s) ["checkSlice: non send/recv session"]
+  assert (allSndRcv s) ["checkSlice: non send/recv session on channel " ++ pretty c]
 
 -------------
 -- MonadTC --
@@ -191,7 +191,7 @@ checkTypeEquivalence t0 t1 =
                     "Expected:" t0
                     "Inferred:" t1
 
-checkNotIn :: MonadTC m => Lens' TCEnv (Map Name v) -> String -> Name -> m ()
+checkNotIn :: (Ord name, Print name, MonadTC m) => Lens' TCEnv (Map name v) -> String -> name -> m ()
 checkNotIn l msg c = do
   b <- view $ l . hasKey c
   assert (not b) ["Already defined " ++ msg ++ ": ", pretty c]
