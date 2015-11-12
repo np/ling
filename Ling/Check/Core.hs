@@ -15,9 +15,16 @@ import           Ling.Subst           (unScoped)
 import           Ling.Prelude         hiding (subst1)
 import           Prelude              hiding (log)
 
+-- The first session is the potential annotation.
+-- The second session is inferred or absent.
 checkOptSession :: Name -> Maybe RSession -> Maybe RSession -> TC ()
-checkOptSession _ Nothing   _   = return ()
-checkOptSession c (Just s0) ms1 = checkRSession s0 >> checkEqSessions c s0 ms1
+checkOptSession c ms0 ms1 =
+  case ms0 of
+    Nothing -> return ()
+    Just s0 ->
+      case ms1 of
+        Nothing -> checkUnused c Nothing s0
+        Just s1 -> checkRSession s0 >> checkEqSessions c s0 s1
 
 checkProc :: Proc -> TC Proto
 checkProc (pref `Dot` procs) = do
@@ -59,12 +66,6 @@ checkProcs procs = mconcat <$> traverse checkProc procs
 checkChanDec :: Proto -> ChanDec -> TC RSession
 checkChanDec proto (Arg c s) = checkOptSession c s s' $> defaultEndR s'
   where s' = proto ^. chanSession c
-
-checkChanDecs_ :: Proto -> [ChanDec] -> TC ()
-checkChanDecs_ = mapM_ . checkChanDec
-
-checkChanDecs :: Proto -> [ChanDec] -> TC [RSession]
-checkChanDecs = mapM . checkChanDec
 
 checkRFactor :: RFactor -> TC ()
 checkRFactor (RFactor t) = checkTerm intTyp t
@@ -137,7 +138,7 @@ checkAct act proto =
       let ds         = dOSs^..each.argName
           dsSessions = defaultEndR <$> chanSessions ds proto
           s          = array k dsSessions
-      checkChanDecs_ proto dOSs
+      for_ dOSs $ checkChanDec proto
       proto' <-
         case k of
           TenK -> checkConflictingChans proto (Just c) ds
@@ -203,14 +204,14 @@ inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
   Proc cs proc    -> inferProcTyp cs proc
   TFun arg s      -> checkVarDec arg (checkTyp s) $> sTyp
   TSig arg s      -> checkVarDec arg (checkTyp s) $> sTyp
-  TProto sessions -> checkSessions sessions       $> sTyp
+  TProto sessions -> for_ sessions checkRSession  $> sTyp
   TSession s      -> checkSession s               $> sSession
 
 inferProcTyp :: [ChanDec] -> Proc -> TC (Scoped Typ)
 inferProcTyp cds proc = do
   let cs  = _argName <$> cds
   proto <- checkProc proc
-  rs <- checkChanDecs proto cds
+  rs <- forM cds $ checkChanDec proto
   let proto' = rmChans cs proto
   assert (proto' ^. isEmptyProto) $
     "These channels have not been introduced:" :
@@ -293,9 +294,6 @@ checkApp f n typ (e:es) =
                      show n ++ " arguments expected and " ++
                      show (n + 1 + length es) ++ " were given.")
 
-checkSessions :: [RSession] -> TC ()
-checkSessions = mapM_ checkRSession
-
 checkRSession :: RSession -> TC ()
 checkRSession (s `Repl` r) = checkSession s >> checkRFactor r
 
@@ -303,7 +301,7 @@ checkSession :: Session -> TC ()
 checkSession s0 = case s0 of
   TermS _ t   -> checkTerm sessionTyp t
   IO _ arg s  -> checkVarDec arg $ checkSession s
-  Array _ ss  -> checkSessions ss
+  Array _ ss  -> for_ ss checkRSession
 
 checkVarDef :: Name -> Maybe Typ -> Maybe Term -> Endom (TC a)
 checkVarDef x mtyp mtm kont

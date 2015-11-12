@@ -330,11 +330,34 @@ instance Print a => Print (Arg a) where
 
   prtList _ = concatD . map (prt 0)
 
+instance (Print a,Print b) => Print (a,b) where
+  prt _i (a,b) =
+    concatD [ doc (showString "(") , prt 0 a
+            , doc (showString ",") , prt 0 b
+            , doc (showString ")") ]
+
 instance (Print a,Print b,Print c) => Print (a,b,c) where
   prt _i (a,b,c) =
     concatD [ doc (showString "(") , prt 0 a
             , doc (showString ",") , prt 0 b
             , doc (showString ",") , prt 0 c
+            , doc (showString ")") ]
+
+instance (Print a,Print b,Print c,Print d) => Print (a,b,c,d) where
+  prt _i (a,b,c,d) =
+    concatD [ doc (showString "(") , prt 0 a
+            , doc (showString ",") , prt 0 b
+            , doc (showString ",") , prt 0 c
+            , doc (showString ",") , prt 0 d
+            , doc (showString ")") ]
+
+instance (Print a,Print b,Print c,Print d,Print e) => Print (a,b,c,d,e) where
+  prt _i (a,b,c,d,e) =
+    concatD [ doc (showString "(") , prt 0 a
+            , doc (showString ",") , prt 0 b
+            , doc (showString ",") , prt 0 c
+            , doc (showString ",") , prt 0 d
+            , doc (showString ",") , prt 0 e
             , doc (showString ")") ]
 
 instance Print N.Session where
@@ -367,4 +390,4 @@ instance Print N.Term where
 
 instance Print N.RFactor where
   prt     i (N.RFactor t) = prt i t
-  prtList i = prtList i . map N._RFactor
+  prtList i = prtList i . map N._rterm

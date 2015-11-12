@@ -1,3 +1,4 @@
+{-# LANGUAGE Rank2Types #-}
 module Ling.Reduce where
 
 import           Ling.Norm
@@ -28,3 +29,19 @@ reduceWHNF st =
     TSession (TermS p t') -> dualOp p $ reduceWHNF (st & scoped .~ t')
     Def d es -> fromMaybe st (app d <$> unDef (st & scoped .~ d) <*> pure es)
     _ -> st
+
+reduceWHNFWith :: Traversal' s Term -> Scoped s -> Scoped s
+reduceWHNFWith trv (Scoped defs s) = trv (reduceWHNF . Scoped defs) s
+
+flatRSession :: Scoped RSession -> [Scoped RSession]
+flatRSession ssr@(Scoped defs (Repl s r)) =
+  case () of
+  _ | Just n <- isLitR r'       -> replicate (fromInteger n) (pure $ oneS s)
+  _ | Just (r0,r1) <- isAddR r' -> flatRSession (Scoped defs' $ s `Repl` r0)
+                                ++ flatRSession (Scoped defs' $ s `Repl` r1)
+  _                             -> [ssr]
+  where Scoped defs' r' = reduceWHNFWith rterm (Scoped defs r)
+
+flatSessions :: Scoped Sessions -> Scoped Sessions
+flatSessions (Scoped defs ss) =
+  sequenceA $ ss >>= flatRSession . Scoped defs

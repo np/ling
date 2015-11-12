@@ -3,6 +3,7 @@ module Ling.Scoped
   ( Sub
   , Defs
   , emptyScope
+  , mergeDefs
   , addEDef
   , Scoped(Scoped)
   , ldefs
@@ -12,7 +13,7 @@ module Ling.Scoped
   )
   where
 
-import           Data.Map     (insert, member)
+import           Data.Map     (insert, member, unionWithKey)
 import           Prelude      hiding (log)
 
 import           Ling.Norm
@@ -34,14 +35,25 @@ $(makeLenses ''Scoped)
 instance Functor Scoped where
   fmap f (Scoped d x) = Scoped d (f x)
 
-{- Maybe ...
+-- Scopes must always be compatible. Namely in a Defs, a given Name always
+-- map to the same Term.
 instance Applicative Scoped where
-  pure = Scoped Map.empty
-  Scoped df f <*> Scoped dx x = ...
--}
+  pure = Scoped ø
+  Scoped df f <*> Scoped dx x = Scoped (mergeDefs df dx) (f x) -- error "Scoped (df `union` dx) (f x)"
+
+mergeDefs :: Defs -> Defs -> Defs
+mergeDefs = unionWithKey mergeDef
+  where mergeDef k v w | v == w    = v
+                       | otherwise = error $ "Scoped.mergeDefs: " ++ show k
+
+instance Monad Scoped where
+  return = pure
+  Scoped dx x >>= f = Scoped (mergeDefs dx dy) y
+    where Scoped dy y = f x
 
 emptyScope :: a -> Scoped a
-emptyScope = Scoped ø
+emptyScope = pure
+{-# DEPRECATED emptyScope "use pure instead" #-}
 
 instance Dual a => Dual (Scoped a) where
   dual = fmap dual

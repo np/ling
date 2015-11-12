@@ -1,5 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase      #-}
+{-# LANGUAGE ViewPatterns    #-}
 module Ling.Norm
   ( module Ling.Norm
   , Name(..)
@@ -9,7 +10,7 @@ module Ling.Norm
 import           Ling.Abs     (Literal (..), Name (Name))
 import           Ling.Prelude
 
-newtype RFactor = RFactor { _RFactor :: Term }
+newtype RFactor = RFactor { _rterm :: Term }
   deriving (Eq, Ord, Read, Show)
 
 type ChanDec = Arg (Maybe RSession)
@@ -111,9 +112,19 @@ data RSession
 type Sessions = [RSession]
 type NSession = Maybe Session
 
+makeLenses ''RFactor
 makeLenses ''Proc
 makeLenses ''Program
 makeLenses ''RSession
+makePrisms ''Dec
+makePrisms ''Assertion
+makePrisms ''TraverseKind
+makePrisms ''CPatt
+makePrisms ''Act
+makePrisms ''Term
+makePrisms ''RW
+makePrisms ''DualOp
+makePrisms ''Session
 
 instance Monoid Program where
   mempty        = Program []
@@ -161,6 +172,9 @@ charTyp = Def (Name "Char") []
 
 sessionTyp :: Typ
 sessionTyp = Def (Name "Session") []
+
+addName :: Name
+addName = Name "_+_"
 
 multName :: Name
 multName = Name "_*_"
@@ -248,3 +262,7 @@ instance Monoid RFactor where
 isLitR :: RFactor -> Maybe Integer
 isLitR (RFactor (Lit (LInteger i))) = Just i
 isLitR _                            = Nothing
+
+isAddR :: RFactor -> Maybe (RFactor, RFactor)
+isAddR (RFactor (Def ((== addName)->True) [x, y])) = Just (RFactor x, RFactor y)
+isAddR _ = Nothing

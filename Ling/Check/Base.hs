@@ -110,9 +110,8 @@ checkPrefWellFormness pref = do
   checkDisjointness "bound names"    $ bvAct <$> pref
 
 checkEqSessions :: MonadTC m =>
-                   Name -> RSession -> Maybe RSession -> m ()
-checkEqSessions c s0 Nothing   = checkUnused c Nothing s0
-checkEqSessions c s0 (Just s1) =
+                   Name -> RSession -> RSession -> m ()
+checkEqSessions c s0 s1 =
   checkEquivalence
     ("On channel " ++ pretty c ++ " sessions are not equivalent.")
     "Given session (expanded):" (emptyScope s0)

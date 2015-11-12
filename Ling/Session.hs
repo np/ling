@@ -168,13 +168,15 @@ extractSession l =
     s:_ -> s
     _   -> error "Missing type signature in `new`"
 
-flatRSession :: RSession -> [Session]
-flatRSession (Repl s r)
+-- See flatRSession in Ling.Reduce
+unsafeFlatRSession :: RSession -> [Session]
+unsafeFlatRSession (Repl s r)
   | Just n <- isLitR r = replicate (fromInteger n) s
-  | otherwise          = error "flatRSession"
+  | otherwise          = error "unsafeFlatRSession"
 
-flatSessions :: Sessions -> [Session]
-flatSessions = concatMap flatRSession
+-- See flatSessions in Ling.Reduce
+unsafeFlatSessions :: Sessions -> [Session]
+unsafeFlatSessions = concatMap unsafeFlatRSession
 
 projRSessions :: Integer -> Sessions -> Session
 projRSessions _ []

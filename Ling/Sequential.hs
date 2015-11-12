@@ -89,7 +89,7 @@ actEnv c env = env & chans   . at c . mapped . _2 %~ mapR sessionStep
 sessionsStatus :: (Session -> Status) -> Location -> Sessions -> [(Location,Status)]
 sessionsStatus dflt l ss =
   [ ls
-  | (i,s) <- zip [0..] (flatSessions ss)
+  | (i,s) <- zip [0..] (unsafeFlatSessions ss)
   , ls <- sessionStatus dflt (Proj l i) s ]
 
 sessionStatus :: (Session -> Status) -> Location -> Session -> [(Location,Status)]

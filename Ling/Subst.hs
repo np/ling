@@ -74,6 +74,9 @@ instance Subst a => Subst [a] where
 instance Subst a => Subst (Maybe a) where
   subst = fmap . subst
 
+instance (Subst a, Subst b) => Subst (a, b) where
+  subst f = bimap (subst f) (subst f)
+
 hideArg :: Arg a -> Endom Sub
 hideArg (Arg x _) = Map.delete x
 

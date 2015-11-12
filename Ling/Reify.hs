@@ -163,7 +163,7 @@ reifyAct = \case
   N.Split N.SeqK c ds -> SeqSplit c (reify ds)
   N.Send     c t      -> Send     c (reify t)
   N.Recv     c a      -> Recv     c (reify a)
-  N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (reify (N._RFactor t)) x
+  N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (reify (t ^. N.rterm)) x
   N.Ax       s cs     -> Ax          (reify s) ((`CD` NoSession) <$> cs)
   N.At       t ps     -> At          (reify t) (reify ps)
 

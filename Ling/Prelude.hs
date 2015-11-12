@@ -14,6 +14,7 @@ import           Control.Monad.Reader      as X
 import           Data.Bifunctor            as X
 import           Data.Foldable             as X
 import           Data.Functor              as X
+import           Data.Function             as X
 import           Data.List                 as X (elemIndex, sort, transpose)
 import           Data.Map                  as X (Map, keysSet, keys)
 import qualified Data.Map                  as Map
@@ -38,7 +39,7 @@ type Verbosity = Bool
 anonName :: Name
 anonName = Name "_"
 
-data Arg a = Arg { _argName :: Name, _unArg :: a }
+data Arg a = Arg { _argName :: Name, _argBody :: a }
   deriving (Eq,Ord,Show,Read)
 
 $(makeLenses ''Arg)
