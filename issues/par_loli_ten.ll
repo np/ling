@@ -1,1 +1,0 @@
-../fixtures/all/par_loli_ten.ll
