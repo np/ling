@@ -14,18 +14,15 @@ array = Array
 oneS :: Session -> RSession
 oneS s = Repl s ø
 
-list :: [Session] -> Sessions
-list = map oneS
-
 loli :: Session -> Session -> Session
-loli s t = Array ParK $ list [dual s, t]
+loli s t = Array ParK $ oneS <$> [dual s, t]
 
 fwds :: Int -> Session -> Sessions
 fwds n s
   | n <  0    = error "fwd: Negative number of channels to forward"
   | n == 0    = []
   | n == 1    = [oneS s]
-  | otherwise = list $ s : dual s : replicate (n - 2) (log s)
+  | otherwise = oneS <$> s : dual s : replicate (n - 2) (log s)
 
 fwd :: Int -> Session -> Session
 fwd n s = Array ParK $ fwds n s
