@@ -3,7 +3,6 @@
 module Ling.Scoped (
     Sub,
     Defs,
-    emptyScope,
     mergeDefs,
     addEDef,
     Scoped(Scoped),
@@ -48,10 +47,6 @@ instance Monad Scoped where
   Scoped dx x >>= f = Scoped (mergeDefs dx dy) y
     where
       Scoped dy y = f x
-
-emptyScope :: a -> Scoped a
-emptyScope = pure
-{-# DEPRECATED emptyScope "use pure instead" #-}
 
 instance Dual a => Dual (Scoped a) where
   dual = fmap dual

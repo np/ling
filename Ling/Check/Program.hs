@@ -4,7 +4,6 @@ import           Ling.Check.Base
 import           Ling.Check.Core
 import           Ling.Norm
 import           Ling.Print
-import           Ling.Scoped     (emptyScope)
 import           Ling.Prelude
 
 import           Data.Map        (union)
@@ -33,7 +32,7 @@ checkAsr (Equal t1 t2 ty) kont = do
   checkTerm ty t2
 
   checkEquivalence "Terms are not equivalent."
-    "Left side:"  (emptyScope t1)
-    "Right side:" (emptyScope t2)
+    "Left side:"  (pure t1)
+    "Right side:" (pure t2)
 
   kont

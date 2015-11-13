@@ -194,7 +194,7 @@ inferTerm' = fmap unScoped . inferTerm
 
 inferTerm :: Term -> TC (Scoped Typ)
 inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
-  Lit l           -> return . emptyScope $ literalType l
+  Lit l           -> return . pure $ literalType l
   TTyp            -> return sTyp -- type-in-type
   Def x es        -> inferDef x es
   Lam arg t       -> sFun arg <$> checkVarDec arg (inferTerm t)
@@ -215,10 +215,10 @@ inferProcTyp cds proc = do
   assert (proto' ^. isEmptyProto) $
     "These channels have not been introduced:" :
     prettyChanDecs proto'
-  return . emptyScope $ TProto rs
+  return . pure $ TProto rs
 
 checkTerm :: Typ -> Term -> TC ()
-checkTerm = checkTerm' . emptyScope
+checkTerm = checkTerm' . pure
 
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp
@@ -248,7 +248,7 @@ checkSig Nothing    mtm =
 inferDef :: Name -> [Term] -> TC (Scoped Typ)
 inferDef (Name "_:_") [a,t] = do
   checkTyp a
-  let a' = emptyScope a
+  let a' = pure a
   checkTerm' a' t
   return a'
 inferDef f es = do

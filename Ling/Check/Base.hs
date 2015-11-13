@@ -115,8 +115,8 @@ checkEqSessions :: (MonadTC m, Print channel)
 checkEqSessions c s0 s1 =
   checkEquivalence
     ("On channel " ++ pretty c ++ " sessions are not equivalent.")
-    "Given session (expanded):" (emptyScope s0)
-    "Inferred session:"         (emptyScope s1)
+    "Given session (expanded):" (pure s0)
+    "Inferred session:"         (pure s1)
 
 -- checkUnused c ms s: Check if the channel c is used given the inferred session ms, and its dual
 -- ds.
@@ -132,7 +132,7 @@ checkDual :: MonadTC m => RSession -> RSession -> m ()
 checkDual (Repl s0 r0) (Repl s1 r1) = do
   checkOneR r0
   checkOneR r1
-  (b, us0, us1) <- isEquiv (emptyScope s0) (emptyScope (dual s1))
+  (b, us0, us1) <- isEquiv (pure s0) (pure (dual s1))
   assertDiff
     "Sessions are not dual." (\_ _ -> b)
     "Given session (expanded):" us0
@@ -226,7 +226,7 @@ caseType t ty brs =
 
           env <- tcEqEnv
           return $
-            fromMaybe (emptyScope (mkCase t (brs & mapped . _2 %~ unScoped)))
+            fromMaybe (pure (mkCase t (brs & mapped . _2 %~ unScoped)))
                       (theUniqBy (equiv env) (snd <$> brs))
         _ -> tcError $ "Case on a non data type: " ++ pretty d
     _ -> tcError $ "Case on a non data type: " ++ pretty (ty ^. scoped)
@@ -235,10 +235,10 @@ def0 :: Name -> Term
 def0 x = Def x []
 
 conType :: MonadTC m => Name -> m (Scoped Typ)
-conType = fmap (emptyScope . def0) . conTypeName
+conType = fmap (pure . def0) . conTypeName
 
 sTyp :: Scoped Typ
-sTyp = emptyScope TTyp
+sTyp = pure TTyp
 
 sFun :: VarDec -> Scoped Typ -> Scoped Typ
 sFun arg s
@@ -246,7 +246,7 @@ sFun arg s
   | otherwise                     = TFun arg <$> s
 
 sSession :: Scoped Typ
-sSession = emptyScope sessionTyp
+sSession = pure sessionTyp
 
 {------}
 {- TC -}
