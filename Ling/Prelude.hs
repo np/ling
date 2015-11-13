@@ -33,6 +33,8 @@ type Endom a = a -> a
 
 type EndoM m a = a -> m a
 
+type Rel a = a -> a -> Bool
+
 type Msg = String
 
 type Verbosity = Bool
@@ -147,7 +149,7 @@ mx <&&> my = do
     then my
     else return False
 
-theUniqBy :: (a -> a -> Bool) -> [a] -> Maybe a
+theUniqBy :: Rel a -> [a] -> Maybe a
 theUniqBy eq (x:xs)
   | all (eq x) xs = Just x
 theUniqBy _ _ = Nothing
@@ -164,7 +166,7 @@ redundant = snd . foldr f ø
     f xs (acc, res) =
       (acc `union` xs, (acc `intersection` xs) `union` res)
 
-subList :: Eq a => [a] -> [a] -> Bool
+subList :: Eq a => Rel [a]
 subList []    _  = True
 subList (_:_) [] = False
 subList (x:xs) (y:ys)

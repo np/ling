@@ -32,7 +32,7 @@ data Op = Dot
   deriving (Eq, Ord, Read, Show)
 
 -- Use compat instead of (==) to avoid treating two unknowns as the same.
-compat :: Op -> Op -> Bool
+compat :: Rel Op
 Dot    `compat` Dot     = True
 Prll b `compat` Prll b' = b == b'
 _      `compat` _       = False -- Yes Unknown /= Unknown

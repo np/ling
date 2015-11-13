@@ -171,7 +171,7 @@ checkEquivalence msg expected t0 inferred t1 = do
   assertDiff msg (\_ _ -> b) expected ut0 inferred ut1
 
 assertDiff :: (MonadError TCErr m, Print a)
-           => String -> (a -> a -> Bool)
+           => String -> Rel a
            -> String -> a
            -> String -> a
            -> m ()

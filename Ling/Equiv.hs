@@ -39,7 +39,7 @@ ext env x0 x1 = env & eqnms  %~ ((x0,x1):)
                     & edefs1 . at x1 .~ Nothing
 -}
 
-type IsEquiv a = EqEnv -> a -> a -> Bool
+type IsEquiv a = EqEnv -> Rel a
 
 class Equiv a where
   equiv :: IsEquiv a
