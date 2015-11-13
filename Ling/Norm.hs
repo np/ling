@@ -1,5 +1,6 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE LambdaCase      #-}
+{-# LANGUAGE Rank2Types      #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns    #-}
 module Ling.Norm
   ( module Ling.Norm
@@ -78,9 +79,13 @@ data Term
   | TSession Session
   deriving (Eq,Ord,Show,Read)
 
-tSession :: Session -> Term
-tSession (TermS NoOp t) = t
-tSession             s  = TSession s
+tSession :: Iso' Session Term
+tSession = iso fwd bkd
+  where
+    fwd (TermS NoOp t) = t
+    fwd             s  = TSession s
+    bkd (TSession s)   = s
+    bkd           t    = TermS NoOp t
 
 -- Polarity with a read/write (recv/send) flavor
 data RW = Read | Write

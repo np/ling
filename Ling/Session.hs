@@ -142,7 +142,7 @@ instance Dual a => Dual [a] where
   dualOp = map . dualOp
 
 instance Dual Term where
-  dualOp o = tSession . termS o
+  dualOp o = view tSession . termS o
 
 defaultEnd :: Maybe Session -> Session
 defaultEnd Nothing  = endS

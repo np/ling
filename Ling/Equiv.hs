@@ -182,7 +182,7 @@ instance Equiv RFactor where
   equiv env (RFactor t0) (RFactor t1) = equiv env t0 t1
 
 instance Equiv Session where
-  equiv = equivAt (to tSession)
+  equiv = equivAt tSession
 
 -- NOTE that type and session annotations are ignored as in the `Abs` instance.
 instance Equiv Act where

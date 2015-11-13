@@ -36,7 +36,7 @@ instance Norm CSession where
 
 instance Norm ASession where
   type Normalized ASession = N.Session
-  norm (AS s) = termS N.NoOp . norm $ s
+  norm (AS s) = s ^. to norm . from N.tSession
   reify = AS . paren . rawSession . reify
 
 instance Norm RawSession where
@@ -191,10 +191,10 @@ normRawApp (e0:Var (Name d):es)
   | d `elem` ["-", "+", "*", "/", "%", "-D", "+D", "*D", "/D", "++S"] =
       N.Def (Name ("_" ++ d ++ "_")) [norm e0, normRawApp es]
 normRawApp (Var (Name "Fwd"):es)
-  | [Lit (LInteger n), e] <- es = N.tSession $ fwd (fromInteger n) (norm (AS e))
+  | [Lit (LInteger n), e] <- es = fwd (fromInteger n) (norm (AS e)) ^. N.tSession
   | otherwise = error "invalid usage of Fwd"
 normRawApp (Var (Name "Log"):es)
-  | [e] <- es = N.tSession $ log (norm (AS e))
+  | [e] <- es = log (norm (AS e)) ^. N.tSession
   | otherwise = error "invalid usage of Log"
 normRawApp (Var x:es) = N.Def x (norm es)
 normRawApp [] = error "normRawApp: IMPOSSIBLE"
