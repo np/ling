@@ -19,6 +19,9 @@ $(makeLenses ''EqEnv)
 emptyEqEnv :: Map Name Term -> EqEnv
 emptyEqEnv x = EqEnv [] x x
 
+swapEnv :: Endom EqEnv
+swapEnv (EqEnv nms ds0 ds1) = EqEnv (map swap) ds1 ds0
+
 ext :: EqEnv -> Name -> Name -> EqEnv
 ext env x0 x1
   | env^.edefs0.hasKey x0 =
