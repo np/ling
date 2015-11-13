@@ -1,5 +1,7 @@
+{-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE QuasiQuotes     #-}
 {-# LANGUAGE TemplateHaskell #-}
+
 module Main where
 
 import           System.Environment (getArgs)
@@ -20,16 +22,18 @@ import           Ling.Layout        (resolveLayout)
 import           Ling.Lex           (Token)
 import qualified Ling.Norm          as N
 import           Ling.Par
+import           Ling.Prelude
 import           Ling.Print
 import           Ling.Reify
 import qualified Ling.Sequential    as Sequential
-import           Ling.Prelude
 
 type ParseFun a = [Token] -> Err a
 
-data Opts = Opts { _tokens, _showAST, _showPretty, _doNorm, _check, _sequential
-                 , _compile, _compilePrims, _noPrims :: Bool
-                 , _checkOpts :: TCOpts }
+data Opts =
+       Opts
+         { _tokens,_showAST,_showPretty,_doNorm,_check,_sequential,_compile,_compilePrims,_noPrims :: Bool
+         , _checkOpts                                                                              :: TCOpts
+         }
 
 $(makeLenses ''Opts)
 
@@ -38,7 +42,7 @@ defaultOpts = Opts False False False False False False False False False default
 
 debugCheck :: Setter' Opts Bool
 -- debugCheck = mergeSetters check (checkOpts.debugChecker)
-debugCheck = sets $ \f -> over (checkOpts.debugChecker) f . over check f
+debugCheck = sets $ \f -> over (checkOpts . debugChecker) f . over check f
 
 layoutLexer :: String -> [Token]
 layoutLexer = resolveLayout True . myLexer
@@ -99,9 +103,9 @@ _++S_ : (s0 : String)(s1 : String) -> String
 
 primsN :: N.Program
 primsN =
-   case pProgram (layoutLexer prims) of
-     Bad e -> error $ "Bad prims\n" ++ e
-     Ok  p -> norm p
+  case pProgram (layoutLexer prims) of
+    Bad e -> error $ "Bad prims\n" ++ e
+    Ok p  -> norm p
 
 runFile :: (Print a, Show a) => Opts -> ParseFun a -> FilePath -> IO a
 runFile v p f = readFile f >>= run v p
@@ -111,14 +115,17 @@ runProgram opts f = runFile opts pProgram f >>= transP opts
 
 run :: (Print a, Show a) => Opts -> ParseFun a -> String -> IO a
 run opts p s = do
-   when (opts ^. tokens) $ do
-     putStrLn "Tokens:"
-     print ts
-   case p ts of
-     Bad e    -> failIO $ "Parse Failed: " ++ e
-     Ok  tree -> do showTree opts tree
-                    return tree
-  where ts = layoutLexer s
+  when (opts ^. tokens) $ do
+    putStrLn "Tokens:"
+    print ts
+  case p ts of
+    Bad e -> failIO $ "Parse Failed: " ++ e
+    Ok tree -> do
+      showTree opts tree
+      return tree
+
+  where
+    ts = layoutLexer s
 
 addPrims :: Bool -> Endom N.Program
 addPrims doAddPrims
@@ -137,42 +144,43 @@ transP opts prg = do
   when (opts ^. doNorm) $
     putStrLn (pretty nprg)
   when (opts ^. check) $ do
-    runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not(opts^.noPrims)) $ nprg
+    runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not (opts ^. noPrims)) $ nprg
     putStrLn "Checking Sucessful!"
   when (opts ^. sequential) $
     putStrLn $ "\n{- Sequential process -}\n\n" ++ pretty sprg
   when (opts ^. compile) $
     putStrLn $ "\n/* Transformed tree */\n\n" ++ C.printTree cprg
 
-  where nprg = norm prg
-        sprg = Sequential.transProgram nprg
-        cprg = Compile.transProgram (addPrims (opts^.compilePrims) sprg)
+  where
+    nprg = norm prg
+    sprg = Sequential.transProgram nprg
+    cprg = Compile.transProgram (addPrims (opts ^. compilePrims) sprg)
 
 showTree :: (Show a, Print a) => Opts -> a -> IO ()
-showTree opts tree
- = do when (opts ^. showAST) $ do
-        putStrLn "\n[Abstract Syntax]\n\n"
-        cpprint tree
-      when (opts ^. showPretty) $
-        putStrLn $ "\n-- Pretty-printed program\n\n" ++ pretty tree
+showTree opts tree = do
+  when (opts ^. showAST) $ do
+    putStrLn "\n[Abstract Syntax]\n\n"
+    cpprint tree
+  when (opts ^. showPretty) $
+    putStrLn $ "\n-- Pretty-printed program\n\n" ++ pretty tree
 
 mainArgs :: Opts -> [String] -> IO ()
-mainArgs opts args0 = case args0 of
+mainArgs opts = \case
   [] -> getContents >>= run opts pProgram >>= transP opts
   ('-':'-':arg@(_:_)):args ->
     case arg of
-      "tokens" -> add tokens
-      "ast" -> add showAST
-      "pretty" -> add showPretty
-      "norm" -> add doNorm
-      "check" -> add check
-      "debug-check" -> add debugCheck
-      "compile" -> add compile
+      "tokens"        -> add tokens
+      "ast"           -> add showAST
+      "pretty"        -> add showPretty
+      "norm"          -> add doNorm
+      "check"         -> add check
+      "debug-check"   -> add debugCheck
+      "compile"       -> add compile
       "compile-prims" -> add compilePrims
-      "strict-par" -> add (checkOpts.strictPar)
-      "seq" -> add sequential
-      "no-prims" -> add noPrims
-      _ -> failIO $ "Unexpected flag --" ++ arg
+      "strict-par"    -> add (checkOpts . strictPar)
+      "seq"           -> add sequential
+      "no-prims"      -> add noPrims
+      _               -> failIO $ "Unexpected flag --" ++ arg
     where add opt = mainArgs (opts & opt .~ True) args
   [f] -> runProgram opts f
   fs  -> for_ fs $ \f -> putStrLn f >> runProgram opts f

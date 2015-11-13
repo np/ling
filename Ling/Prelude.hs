@@ -1,10 +1,8 @@
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE Rank2Types      #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Ling.Prelude
-  ( module Ling.Prelude
-  , module X
-  ) where
+
+module Ling.Prelude (module Ling.Prelude, module X) where
 
 import           Control.Applicative       as X
 import           Control.Lens              as X hiding (Empty)
@@ -13,10 +11,10 @@ import           Control.Monad.Except      as X
 import           Control.Monad.Reader      as X
 import           Data.Bifunctor            as X
 import           Data.Foldable             as X
-import           Data.Functor              as X
 import           Data.Function             as X
+import           Data.Functor              as X
 import           Data.List                 as X (elemIndex, sort, transpose)
-import           Data.Map                  as X (Map, keysSet, keys)
+import           Data.Map                  as X (Map, keys, keysSet)
 import qualified Data.Map                  as Map
 import           Data.Maybe                as X
 import           Data.Monoid               as X hiding (Dual)
@@ -30,17 +28,19 @@ import           Language.Haskell.TH       (litP, stringE, stringL)
 import           Language.Haskell.TH.Quote
 import           Ling.Abs
 
-
 type Endom a = a -> a
+
 type EndoM m a = a -> m a
+
 type Msg = String
+
 type Verbosity = Bool
 
 anonName :: Name
 anonName = Name "_"
 
 data Arg a = Arg { _argName :: Name, _argBody :: a }
-  deriving (Eq,Ord,Show,Read)
+  deriving (Eq, Ord, Show, Read)
 
 $(makeLenses ''Arg)
 
@@ -90,57 +90,73 @@ traceShowMsg msg x = trace (msg ++ " " ++ show x) x
 
 debugTraceWhen :: Bool -> Msg -> a -> a
 debugTraceWhen b s =
-  if b then trace (unlines . map ("[DEBUG]  "++) . lines $ s) else id
+  if b
+    then trace (unlines . map ("[DEBUG]  " ++) . lines $ s)
+    else id
 
 unName :: Name -> String
 unName (Name x) = x
 
 l2s :: Ord a => [a] -> Set a
 l2s = Set.fromList
+
 s2l :: Ord a => Set a -> [a]
 s2l = Set.toList
-l2m :: Ord k => [(k,a)] -> Map k a
+
+l2m :: Ord k => [(k, a)] -> Map k a
 l2m = Map.fromList
-m2l :: Ord k => Map k a -> [(k,a)]
+
+m2l :: Ord k => Map k a -> [(k, a)]
 m2l = Map.toList
 
 countMap :: (a -> Bool) -> Map k a -> Int
 countMap p = Map.size . Map.filter p
 
+
 infixr 3 ||>
+
 (||>) :: Monad m => Bool -> m Bool -> m Bool
-True  ||> _  = return True
+True ||> _ = return True
 False ||> my = my
 
+
 infixr 3 <||>
+
 (<||>) :: Monad m => m Bool -> m Bool -> m Bool
-mx <||> my = do x <- mx
-                if x then return True
-                     else my
+mx <||> my = do
+  x <- mx
+  if x
+    then return True
+    else my
+
 
 infixr 3 &&>
+
 (&&>) :: Monad m => Bool -> m Bool -> m Bool
-True  &&> my = my
-False &&> _  = return False
+True &&> my = my
+False &&> _ = return False
+
 
 infixr 3 <&&>
+
 (<&&>) :: Monad m => m Bool -> m Bool -> m Bool
-mx <&&> my = do x <- mx
-                if x then my
-                     else return False
+mx <&&> my = do
+  x <- mx
+  if x
+    then my
+    else return False
 
 theUniqBy :: (a -> a -> Bool) -> [a] -> Maybe a
-theUniqBy eq (x:xs) | all (eq x) xs = Just x
-theUniqBy _  _                      = Nothing
+theUniqBy eq (x:xs)
+  | all (eq x) xs = Just x
+theUniqBy _ _ = Nothing
 
 theUniq :: Eq a => [a] -> Maybe a
 theUniq = theUniqBy (==)
 
--- Given a list of sets, return the set of elements which are
--- redundant, namely appear more than once.
--- `redudant` can be used to check the disjointness of sets.
--- Indeed if the result is empty all the sets are disjoint,
--- a non-empty result can be used to report errors.
+-- Given a list of sets, return the set of elements which are redundant, namely appear more than
+-- once. `redudant` can be used to check the disjointness of sets. Indeed if the result is empty all
+-- the sets are disjoint, a non-empty result can be used to report errors.
 redundant :: Ord a => [Set a] -> Set a
 redundant = snd . foldr f ø
   where
@@ -154,24 +170,24 @@ subList (x:xs) (y:ys)
   | x == y    = xs     `subList` ys
   | otherwise = (x:xs) `subList` ys
 
--- TODO: What is the best threshold between repeatdly deleting
--- elements from a map and filtering the whole map?
+-- TODO: What is the best threshold between repeatdly deleting elements from a map and filtering the
+-- whole map?
 deleteList :: Ord k => [k] -> Endom (Map k a)
-deleteList ks = case ks of
+deleteList = \case
   []  -> id
   [k] -> Map.delete k
-  _   -> Map.filterWithKey (\k _ -> k `notMember` sks)
-  where sks = l2s ks
+  ks  -> let sks = l2s ks in
+         Map.filterWithKey (\k _ -> k `notMember` sks)
 
 rmDups :: Eq a => [a] -> [a]
-rmDups (x1:x2:xs)
-  | x1 == x2  = rmDups (x1:xs)
-  | otherwise = x1 : rmDups (x2:xs)
-rmDups xs = xs
+rmDups (x1:x2:xs) | x1 == x2  = rmDups (x1 : xs)
+                  | otherwise = x1 : rmDups (x2 : xs)
+rmDups xs                     = xs
 
 substPred :: (a -> Bool, s) -> Endom (a -> s)
-substPred (p, t) var v | p v       = t
-                       | otherwise = var v
+substPred (p, t) var v
+  | p v = t
+  | otherwise = var v
 
 substMember :: Ord a => (Set a, s) -> Endom (a -> s)
 substMember (xs, t) = substPred ((`member` xs), t)
@@ -185,36 +201,25 @@ hasKey k = at k . to (isn't _Nothing)
 hasNoKey :: At m => Index m -> Getter m Bool
 hasNoKey k = at k . to (isn't _Just)
 
--- The two setters must not overlap.
--- If they do we can break the composition law:
--- Given l, f, g such that: f.g.f.g =/= f.f.g.g
--- ll = mergeSetters l l
--- (ll %~ f) . (ll %~ g)
--- ==
--- l %~ f.f.g.g
--- =/=
--- l %~ f.g.f.g
--- ==
--- ll %~ (f.g)
--- mergeSetters :: (Profunctor p, Settable f)
+-- The two setters must not overlap. If they do we can break the composition law: Given l, f, g such
+-- that: f.g.f.g =/= f.f.g.g ll = mergeSetters l l (ll %~ f) . (ll %~ g) == l %~ f.f.g.g =/= l %~
+-- f.g.f.g == ll %~ (f.g) mergeSetters :: (Profunctor p, Settable f)
 --              => Setting p s t a b
 --              -> Setting p t u a b
 --              -> Over p f s u a b
 -- mergeSetters l0 l1 = sets $ \f -> over l1 f . over l0 f
-
 -- There must be something equivalent in lens
 composeMap :: (a -> Endom b) -> [a] -> Endom b
 composeMap f = foldr ((.) . f) id
 
 quasiQuoter :: String -> QuasiQuoter
 quasiQuoter qqName =
-  QuasiQuoter (err "expressions") (err "patterns")
-              (err "types") (err "declarations")
-  where err kind _ = fail $ qqName ++ ": not available in " ++ kind
+  QuasiQuoter (err "expressions") (err "patterns") (err "types") (err "declarations")
+  where
+    err kind _ = fail $ qqName ++ ": not available in " ++ kind
 
 q :: QuasiQuoter
-q = (quasiQuoter "q"){ quoteExp = stringE
-                     , quotePat = litP . stringL }
+q = (quasiQuoter "q") { quoteExp = stringE, quotePat = litP . stringL }
 
 qFile :: QuasiQuoter
 qFile = quoteFile q

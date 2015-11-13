@@ -1,11 +1,12 @@
 {-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE ViewPatterns #-}
+
 module Ling.Session where
 
-import Prelude hiding (log)
-import Ling.Prelude
-import Ling.Norm
-import qualified Ling.Raw as Raw
+import           Ling.Norm
+import           Ling.Prelude
+import qualified Ling.Raw     as Raw
+import           Prelude      hiding (log)
 
 array :: TraverseKind -> Sessions -> Session
 array = Array
@@ -63,7 +64,7 @@ class Dual a where
   dual :: a -> a
   dual = dualOp DualOp
 
-  log  :: a -> a
+  log :: a -> a
   log = dualOp LogOp
 
   sink :: Dual a => a -> a
@@ -125,10 +126,10 @@ instance Dual Raw.Term where
   dual           s  = Raw.Dual s
 
   log s
-    | Raw.RawApp (Raw.Var (Raw.Name "Log")) [_] <- s
-      = s
-    | otherwise
-      = Raw.RawApp (Raw.Var (Raw.Name "Log")) [Raw.paren s]
+    | Raw.RawApp (Raw.Var (Raw.Name "Log")) [_] <- s =
+        s
+    | otherwise =
+        Raw.RawApp (Raw.Var (Raw.Name "Log")) [Raw.paren s]
 
 instance Dual RSession where
   dual   = mapR dual
@@ -155,11 +156,11 @@ sessionStep :: Session -> Session
 sessionStep (IO _ _ s) = s
 sessionStep s          = error $ "sessionStep: no steps " ++ show s
 
-extractDuals :: Dual a => (Maybe a , Maybe a) -> Maybe (a , a)
-extractDuals (Nothing , Nothing) = Nothing
-extractDuals (Just s0 , Nothing) = Just (s0, dual s0)
-extractDuals (Nothing , Just s1) = Just (dual s1, s1)
-extractDuals (Just s0 , Just s1) = Just (s0, s1)
+extractDuals :: Dual a => (Maybe a, Maybe a) -> Maybe (a, a)
+extractDuals (Nothing, Nothing) = Nothing
+extractDuals (Just s0, Nothing) = Just (s0, dual s0)
+extractDuals (Nothing, Just s1) = Just (dual s1, s1)
+extractDuals (Just s0, Just s1) = Just (s0, s1)
 
 -- TODO: would it be nicer with the First monoid
 extractSession :: [Maybe a] -> a
@@ -179,12 +180,11 @@ unsafeFlatSessions :: Sessions -> [Session]
 unsafeFlatSessions = concatMap unsafeFlatRSession
 
 projRSessions :: Integer -> Sessions -> Session
-projRSessions _ []
-  = error "projRSessions: out of bound"
+projRSessions _ [] = error "projRSessions: out of bound"
 projRSessions n (Repl s r:ss)
   | Just i <- isLitR r = if n < i
                            then s
-                           else projRSessions (n-i) ss
+                           else projRSessions (n - i) ss
   | otherwise = error "projRSessions/Repl: only integer literals are supported"
 
 projSession :: Integer -> Session -> Session

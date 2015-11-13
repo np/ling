@@ -1,44 +1,45 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE FlexibleContexts #-}
-module Ling.Proto.Skel
-  ( Skel(Act)
-  , combineS
-  , dotS
-  , unknownS
-  , prllActS
-  , dotActS
-  , actS
-  , prune
-  , select
-  , subst
-  , dotChannelSet
-  , check
-  ) where
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
-import           Data.Set   hiding (foldr)
-import           Prelude    hiding (null)
+module Ling.Proto.Skel (
+    Skel(Act),
+    combineS,
+    dotS,
+    unknownS,
+    prllActS,
+    dotActS,
+    actS,
+    prune,
+    select,
+    subst,
+    dotChannelSet,
+    check,
+    ) where
 
-import           Ling.Norm  (TraverseKind(..))
-import           Ling.Print hiding (Prll)
-import           Ling.Prelude hiding (q, null, op)
+import           Data.Set     hiding (foldr)
+import           Prelude      hiding (null)
 
--- A way to deal with Unknown would be to stick an identifier
--- on each of them. Then the normal equality could be used
--- safely. One way would be to use an `IORef ()`
-data Op = Dot | Prll !Bool | Unknown
+import           Ling.Norm    (TraverseKind (..))
+import           Ling.Prelude hiding (null, op, q)
+import           Ling.Print   hiding (Prll)
+
+-- A way to deal with Unknown would be to stick an identifier on each of them. Then the normal
+-- equality could be used safely. One way would be to use an `IORef ()`
+data Op = Dot
+        | Prll !Bool
+        | Unknown
   deriving (Eq, Ord, Read, Show)
 
--- Use compat instead of (==) to avoid treating two unknowns
--- as the same.
+-- Use compat instead of (==) to avoid treating two unknowns as the same.
 compat :: Op -> Op -> Bool
 Dot    `compat` Dot     = True
 Prll b `compat` Prll b' = b == b'
 _      `compat` _       = False -- Yes Unknown /= Unknown
 
-data Skel a
-  = Act a
-  | Zero
-  | Op !Op (Skel a) (Skel a)
+data Skel a = Act a
+            | Zero
+            | Op !Op (Skel a) (Skel a)
   deriving (Eq, Ord, Read, Show)
 
 mkOp :: Eq a => Op -> Skel a -> Skel a -> Skel a
@@ -107,10 +108,12 @@ instance Print a => Print (Skel a) where
   prtList _ [x] = prt 0 x
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString "\n|"), prt 0 xs]
 
+
 infixr 4 `actS`
 
 actS :: Eq a => a -> Skel a -> Skel a
 actS act sk = Act act `dotS` sk
+
 
 infixr 4 `prllActS`
 
@@ -125,18 +128,20 @@ dotActS []         sk = sk
 dotActS (act:acts) sk = act `actS` acts `dotActS` sk
 
 elemS :: Eq a => a -> Skel a -> Bool
-elemS c0 = go where
-  go = \case
-    Zero         -> False
-    Act c        -> c == c0
-    Op _ sk0 sk1 -> go sk0 || go sk1
+elemS c0 = go
+  where
+    go = \case
+      Zero         -> False
+      Act c        -> c == c0
+      Op _ sk0 sk1 -> go sk0 || go sk1
 
 subst :: Eq b => (a -> Skel b) -> Skel a -> Skel b
-subst act = go where
-  go = \case
-    Zero -> Zero
-    Act c -> act c
-    Op op sk0 sk1 -> mkOp op (go sk0) (go sk1)
+subst act = go
+  where
+    go = \case
+      Zero          -> Zero
+      Act c         -> act c
+      Op op sk0 sk1 -> mkOp op (go sk0) (go sk1)
 
 prune :: Ord a => Set a -> Endom (Skel a)
 prune cs = subst (substMember (cs, Zero) Act)

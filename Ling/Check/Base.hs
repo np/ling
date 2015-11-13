@@ -2,34 +2,35 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
+
 module Ling.Check.Base where
 
 import           Ling.Equiv
 import           Ling.ErrM
 import           Ling.Free
 import           Ling.Norm
+import           Ling.Prelude hiding (subst1)
 import           Ling.Print
 import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.Session
-import           Ling.Subst           (Subst, unScoped)
-import           Ling.Prelude         hiding (subst1)
+import           Ling.Subst   (Subst, unScoped)
 
-import qualified Data.Set             as Set
+import qualified Data.Set     as Set
 
-------------
--- TCOpts --
-------------
+{----------}
+{- TCOpts -}
+{----------}
 
 data TCOpts = TCOpts
   { _debugChecker
   , _strictPar :: !Bool
-  -- ^ No mix rule, {c,d} means that one can use c before d or
-  -- d before c but not in parallel
+  {- ^ No mix rule, {c,d} means that one can use c before d or
+       d before c but not in parallel -}
   }
 
 $(makeLenses ''TCOpts)
@@ -37,9 +38,9 @@ $(makeLenses ''TCOpts)
 defaultTCOpts :: TCOpts
 defaultTCOpts = TCOpts False False
 
------------
--- TCEnv --
------------
+{---------}
+{- TCEnv -}
+{---------}
 
 data TCEnv = TCEnv
   { _tcOpts    :: !TCOpts
@@ -74,9 +75,9 @@ debug s = do
   v <- view verbosity
   debugTraceWhen v s (return ())
 
------------
--- TCErr --
------------
+{---------}
+{- TCErr -}
+{---------}
 
 type TCErr = String
 
@@ -94,33 +95,33 @@ assertDoc False d = tcError (render d)
 checkNoDups :: (Print a, Eq a, MonadError TCErr m) => String -> [a] -> m ()
 checkNoDups _   [] = return ()
 checkNoDups msg (x:xs)
-  | x `elem` xs    = tcError $ pretty x ++ " appears twice " ++ msg
-  | otherwise      = checkNoDups msg xs
+  | x `elem` xs = tcError $ pretty x ++ " appears twice " ++ msg
+  | otherwise   = checkNoDups msg xs
 
 checkDisjointness :: (MonadError TCErr m, Ord a) => String -> [Set a] -> m ()
 checkDisjointness k ss =
-  assert (Set.null rs)
-    ["These " ++ k ++ " should not be used in different parallel parts" ]
-  where rs = redundant ss
+  assert (Set.null rs) ["These " ++ k ++ " should not be used in different parallel parts"]
+  where
+    rs = redundant ss
 
 checkPrefWellFormness :: MonadError TCErr m => Pref -> m ()
 checkPrefWellFormness pref = do
-  checkDisjointness "free channels"  $ fcAct <$> pref
+  checkDisjointness "free channels" $ fcAct <$> pref
   checkDisjointness "bound channels" $ bcAct <$> pref
   checkDisjointness "bound names"    $ bvAct <$> pref
 
-checkEqSessions :: (MonadTC m, Print channel) =>
-                   channel -> RSession -> RSession -> m ()
+checkEqSessions :: (MonadTC m, Print channel)
+                => channel -> RSession -> RSession -> m ()
 checkEqSessions c s0 s1 =
   checkEquivalence
     ("On channel " ++ pretty c ++ " sessions are not equivalent.")
     "Given session (expanded):" (emptyScope s0)
     "Inferred session:"         (emptyScope s1)
 
--- checkUnused c ms s: Check if the channel c is used given the
--- inferred session ms, and its dual ds.
-checkUnused :: (MonadError TCErr m, Print channel) =>
-               channel -> Maybe RSession -> RSession -> m ()
+-- checkUnused c ms s: Check if the channel c is used given the inferred session ms, and its dual
+-- ds.
+checkUnused :: (MonadError TCErr m, Print channel)
+            => channel -> Maybe RSession -> RSession -> m ()
 checkUnused _ (Just _) _ = return ()
 checkUnused c Nothing  s = assert (isEndR s) ["Unused channel " ++ pretty c]
 
@@ -142,9 +143,9 @@ checkSlice cond c (s `Repl` r) = when (cond c) $ do
   checkOneR r
   assert (allSndRcv s) ["checkSlice: non send/recv session on channel " ++ pretty c]
 
--------------
--- MonadTC --
--------------
+{-----------}
+{- MonadTC -}
+{-----------}
 
 type MonadTC m = (MonadReader TCEnv m, MonadError TCErr m)
 
@@ -154,16 +155,14 @@ isEquiv t0 t1 = do
   env <- tcEqEnv
   whenDebug $ do
     when (t0 /= t1) . debug . unlines $
-      ["checkEquivalence:"
-      ,"  " ++ pretty t0
-      ,"against"
-      ,"  " ++ pretty t1
-      ]
+      ["checkEquivalence:", "  " ++ pretty t0, "against", "  " ++ pretty t1]
     when (ut0 == ut1) . debug . unlines $
       ["Once expanded they are equal"]
   return (equiv env t0 t1, ut0, ut1)
-  where ut0 = unScoped t0
-        ut1 = unScoped t1
+
+  where
+    ut0 = unScoped t0
+    ut1 = unScoped t1
 
 checkEquivalence :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
                  => String -> String -> Scoped a -> String -> Scoped a -> m ()
@@ -177,13 +176,7 @@ assertDiff :: (MonadError TCErr m, Print a)
            -> String -> a
            -> m ()
 assertDiff msg cond expected x0 inferred x1 =
-  assert (cond x0 x1)
-    [msg
-    ,expected
-    ,"  " ++ pretty x0
-    ,inferred
-    ,"  " ++ pretty x1
-    ]
+  assert (cond x0 x1) [msg, expected, "  " ++ pretty x0, inferred, "  " ++ pretty x1]
 
 checkTypeEquivalence :: MonadTC m => Scoped Typ -> Scoped Typ -> m ()
 checkTypeEquivalence t0 t1 =
@@ -209,18 +202,18 @@ debugCheck fmt k =
    do debug (fmt (Bad err))
       throwError err
 
--------------------------
--- Basic type checking --
--------------------------
+{-----------------------}
+{- Basic type checking -}
+{-----------------------}
 
 literalType :: Literal -> Typ
-literalType l = case l of
+literalType = \case
   LInteger{} -> intTyp
   LDouble{}  -> doubleTyp
   LChar{}    -> charTyp
   LString{}  -> stringTyp
 
-caseType :: MonadTC m => Term -> Scoped Typ -> [(Name,Scoped Typ)] -> m (Scoped Typ)
+caseType :: MonadTC m => Term -> Scoped Typ -> [(Name, Scoped Typ)] -> m (Scoped Typ)
 caseType t ty brs =
   case reduceWHNF ty ^. scoped of
     Def d [] -> do
@@ -236,7 +229,7 @@ caseType t ty brs =
             fromMaybe (emptyScope (mkCase t (brs & mapped . _2 %~ unScoped)))
                       (theUniqBy (equiv env) (snd <$> brs))
         _ -> tcError $ "Case on a non data type: " ++ pretty d
-    _ -> tcError $ "Case on a non data type: " ++ pretty (ty^.scoped)
+    _ -> tcError $ "Case on a non data type: " ++ pretty (ty ^. scoped)
 
 def0 :: Name -> Term
 def0 x = Def x []
@@ -255,9 +248,9 @@ sFun arg s
 sSession :: Scoped Typ
 sSession = emptyScope sessionTyp
 
---------
--- TC --
---------
+{------}
+{- TC -}
+{------}
 
 newtype TC a = MkTC { unTC :: ReaderT TCEnv (Except TCErr) a }
   deriving (Functor, Applicative, Monad, MonadReader TCEnv, MonadError TCErr)
@@ -267,3 +260,4 @@ runTC opts tc = either Bad Ok
               . runExcept
               . runReaderT (unTC tc)
               $ emptyTCEnv & tcOpts .~ opts
+-- -}

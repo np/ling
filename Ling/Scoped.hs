@@ -1,42 +1,39 @@
 {-# LANGUAGE TemplateHaskell #-}
-module Ling.Scoped
-  ( Sub
-  , Defs
-  , emptyScope
-  , mergeDefs
-  , addEDef
-  , Scoped(Scoped)
-  , ldefs
-  , scoped
-  , subst1
-  , unDef
-  )
-  where
+
+module Ling.Scoped (
+    Sub,
+    Defs,
+    emptyScope,
+    mergeDefs,
+    addEDef,
+    Scoped(Scoped),
+    ldefs,
+    scoped,
+    subst1,
+    unDef,
+    ) where
 
 import           Data.Map     (insert, member, unionWithKey)
 import           Prelude      hiding (log)
 
 import           Ling.Norm
+import           Ling.Prelude hiding (subst1)
 import           Ling.Rename
 import           Ling.Session
-import           Ling.Prelude hiding (subst1)
 
-type Sub  = Map Name Term
+type Sub = Map Name Term
+
 type Defs = Sub
 
-data Scoped a = Scoped
-  { _ldefs  :: Defs
-  , _scoped :: a
-  }
-  deriving (Eq)
+data Scoped a = Scoped { _ldefs :: Defs, _scoped :: a }
+  deriving Eq
 
 $(makeLenses ''Scoped)
 
 instance Functor Scoped where
   fmap f (Scoped d x) = Scoped d (f x)
 
--- Scopes must always be compatible. Namely in a Defs, a given Name always
--- map to the same Term.
+-- Scopes must always be compatible. Namely in a Defs, a given Name always map to the same Term.
 instance Applicative Scoped where
   pure = Scoped ø
   Scoped df f <*> Scoped dx x = Scoped (mergeDefs df dx) (f x) -- error "Scoped (df `union` dx) (f x)"
@@ -49,7 +46,8 @@ mergeDefs = unionWithKey mergeDef
 instance Monad Scoped where
   return = pure
   Scoped dx x >>= f = Scoped (mergeDefs dx dy) y
-    where Scoped dy y = f x
+    where
+      Scoped dy y = f x
 
 emptyScope :: a -> Scoped a
 emptyScope = pure
@@ -67,10 +65,10 @@ addEDef x e m
   | otherwise     = insert x e m
 
 subst1 :: Rename a => Name -> (Name, Term) -> Scoped a -> Scoped a
-subst1 d (x,e) (Scoped defs s) =
-  Scoped (addEDef x' e defs) (rename1 (x,x') s)
+subst1 d (x, e) (Scoped defs s) =
+  Scoped (addEDef x' e defs) (rename1 (x, x') s)
   where
-    x'  = prefName (unName d ++ "#") x
+    x' = prefName (unName d ++ "#") x
 
 unDef :: Scoped Name -> Maybe (Scoped Term)
 unDef (Scoped defs d) = Scoped defs <$> defs^.at d

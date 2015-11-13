@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+
 module Ling.Rename where
 
 import           Ling.Norm
@@ -16,17 +17,15 @@ instance Rename Name where
   rename = id
 
 instance Rename Term where
-  rename f e0 = case e0 of
+  rename f = \case
     Def x es   -> Def (rename f x) (rename f es)
-
-    Lam  arg t -> Lam  (rename f arg) (rename (hideArg arg f) t)
+    Lam arg t  -> Lam (rename f arg) (rename (hideArg arg f) t)
     TFun arg t -> TFun (rename f arg) (rename (hideArg arg f) t)
     TSig arg t -> TSig (rename f arg) (rename (hideArg arg f) t)
-    Con x      -> Con  (rename f x)
+    Con x      -> Con (rename f x)
     Case t brs -> Case (rename f t) (rename f brs)
-    TTyp       -> e0
-    Lit{}      -> e0
-
+    e0@TTyp    -> e0
+    e0@Lit{}   -> e0
     Proc cs p  -> Proc (rename f cs) (rename f p)
     TProto rs  -> TProto (rename f rs)
     TSession s -> TSession (rename f s)
@@ -77,9 +76,9 @@ instance Rename Proc where
 
 instance Rename Session where
   rename f = \case
-    Array k ss  -> Array k (rename f ss)
-    IO p arg s  -> IO p (rename f arg) (rename (hideArg arg f) s)
-    TermS p t   -> TermS p (rename f t)
+    Array k ss -> Array k (rename f ss)
+    IO p arg s -> IO p (rename f arg) (rename (hideArg arg f) s)
+    TermS p t  -> TermS p (rename f t)
 
 instance Rename RSession where
   rename f (Repl s t) = Repl (rename f s) (rename f t)

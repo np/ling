@@ -1,9 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
-module Ling.Raw
-  ( module Ling.Abs
-  , module Ling.Raw
-  )
-  where
+
+module Ling.Raw (module Ling.Abs, module Ling.Raw) where
 
 import           Ling.Abs
 

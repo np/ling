@@ -1,5 +1,5 @@
 module Ling.Type where
 
-import Ling.Abs
+import           Ling.Abs
 
 type Typ = Term
