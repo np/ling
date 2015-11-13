@@ -194,17 +194,17 @@ inferTerm' = fmap unScoped . inferTerm
 
 inferTerm :: Term -> TC (Scoped Typ)
 inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
-  Lit l           -> return . pure $ literalType l
-  TTyp            -> return sTyp -- type-in-type
-  Def x es        -> inferDef x es
-  Lam arg t       -> sFun arg <$> checkVarDec arg (inferTerm t)
-  Con n           -> conType n
-  Case t brs      -> join $ caseType t <$> inferTerm t <*> mapM inferBranch brs
-  Proc cs proc    -> inferProcTyp cs proc
-  TFun arg s      -> checkVarDec arg (checkTyp s) $> sTyp
-  TSig arg s      -> checkVarDec arg (checkTyp s) $> sTyp
-  TProto sessions -> for_ sessions checkRSession  $> sTyp
-  TSession s      -> checkSession s               $> sSession
+  Lit l        -> pure . pure $ literalType l
+  TTyp         -> pure sTyp -- type-in-type
+  Def x es     -> inferDef x es
+  Lam arg t    -> sFun arg <$> checkVarDec arg (inferTerm t)
+  Con n        -> conType n
+  Case t brs   -> join $ caseType t <$> inferTerm t <*> list inferBranch brs
+  Proc cs proc -> inferProcTyp cs proc
+  TFun arg s   -> checkVarDec arg (checkTyp s) $> sTyp
+  TSig arg s   -> checkVarDec arg (checkTyp s) $> sTyp
+  TProto ss    -> for_ ss checkRSession        $> sTyp
+  TSession s   -> checkSession s               $> sSession
 
 inferProcTyp :: [ChanDec] -> Proc -> TC (Scoped Typ)
 inferProcTyp cds proc = do
