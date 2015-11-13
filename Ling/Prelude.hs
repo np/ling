@@ -23,6 +23,7 @@ import           Data.Set                  (intersection, member, notMember,
                                             union)
 import qualified Data.Set                  as Set
 -- import           Data.Traversable          as X
+import           Data.Tuple                as X
 import           Debug.Trace               as X
 import           Language.Haskell.TH       (litP, stringE, stringL)
 import           Language.Haskell.TH.Quote
