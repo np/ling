@@ -221,6 +221,9 @@ quasiQuoter qqName =
   where
     err kind _ = fail $ qqName ++ ": not available in " ++ kind
 
+list :: Traversal [a] [b] a b
+list = traverse
+
 q :: QuasiQuoter
 q = (quasiQuoter "q") { quoteExp = stringE, quotePat = litP . stringL }
 
