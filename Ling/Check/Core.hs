@@ -27,10 +27,9 @@ checkOptSession c ms0 ms1 =
         Just s1 -> checkRSession s0 >> checkEqSessions c s0 s1
 
 checkProc :: Proc -> TC Proto
-checkProc (pref `Dot` procs) = do
-  checkPrefWellFormness pref
-  proto <- checkVarDecs (concatMap actVarDecs pref) $ checkProcs procs
-  checkPref pref proto
+checkProc (pref `Dot` procs) =
+  checkPrefWellFormness pref >>
+  checkVarDecs (pref >>= actVarDecs) (checkProcs procs) >>= checkPref pref
 
 sendRecvSession :: Act -> TC (Channel, Session -> Session)
 sendRecvSession = \case

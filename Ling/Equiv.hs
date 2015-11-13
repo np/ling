@@ -1,6 +1,6 @@
 {-# LANGUAGE Rank2Types      #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Ling.Equiv (Equiv(equiv), EqEnv, emptyEqEnv) where
+module Ling.Equiv (Equiv(equiv), EqEnv, emptyEqEnv, swapEnv) where
 
 import           Ling.Norm
 import           Ling.Prelude
@@ -20,7 +20,7 @@ emptyEqEnv :: Map Name Term -> EqEnv
 emptyEqEnv x = EqEnv [] x x
 
 swapEnv :: Endom EqEnv
-swapEnv (EqEnv nms ds0 ds1) = EqEnv (map swap) ds1 ds0
+swapEnv (EqEnv nms ds0 ds1) = EqEnv (map swap nms) ds1 ds0
 
 ext :: EqEnv -> Name -> Name -> EqEnv
 ext env x0 x1
