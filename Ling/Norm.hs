@@ -61,14 +61,15 @@ data Act
   | At       Term CPatt
   deriving (Eq,Ord,Show,Read)
 
-type Branch = (Name,Term)
+type ConName = Name
+type Branch = (ConName,Term)
 
 type Typ = Term
 data Term
   = Def Name [Term]
   | Lit Literal
   | Lam VarDec Term
-  | Con Name
+  | Con ConName
   | Case Term [Branch]
   --          ^ Sorted
   | Proc [ChanDec] Proc
