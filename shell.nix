@@ -1,11 +1,14 @@
 { nixpkgs ? import <nixpkgs> {}, compiler ? "ghc7102" }:
 
-let mkdocsInputs =
+let
+  mkdocsInputs =
        [ nixpkgs.python27Full ] ++
        (with nixpkgs.python27Packages; [
         pip
         virtualenv
        ]);
+  callPackage = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage;
+  hfmt = callPackage ./nix/hfmt.nix {};
 in
 
 nixpkgs.lib.overrideDerivation
@@ -17,6 +20,8 @@ nixpkgs.lib.overrideDerivation
         BNFC
         ghc-make
         ghc-mod
+        hindent
+        hfmt
         hlint
         stylish-haskell
         pointfree
