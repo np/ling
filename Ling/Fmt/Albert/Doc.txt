@@ -33,7 +33,7 @@ Character literals //Char// have the form
 
 
 Name literals are recognized by the regular expression
-`````(letter | ["_-+*/'%^"] | digit)* (letter | ["_-+*/'%^"]) (letter | ["_-+*/'%^"] | digit)*`````
+`````(letter | ["_-+*/'%"] | digit)* (letter | ["_-+*/'%"]) (letter | ["_-+*/'%"] | digit)*`````
 
 
 ===Reserved words and symbols===
@@ -118,6 +118,7 @@ All other symbols are terminals.
   |  |  **|**  | ``!`` //Term3// //CSession// 
   |  |  **|**  | ``?`` //Term3// //CSession// 
   |  |  **|**  | ``~`` //Term2// 
+  |  |  **|**  | //Term3// 
   | //Term1// | -> | //Term2// ``-o`` //Term1// 
   |  |  **|**  | //Term2// ``->`` //Term1// 
   |  |  **|**  | //Term2// ``**`` //Term1// 

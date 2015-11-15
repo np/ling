@@ -178,6 +178,7 @@ Term2 : 'case' Term 'of' '{' ListBranch '}' { Ling.Fmt.Albert.Abs.Case $2 $5 }
       | '!' Term3 CSession { Ling.Fmt.Albert.Abs.Snd $2 $3 }
       | '?' Term3 CSession { Ling.Fmt.Albert.Abs.Rcv $2 $3 }
       | '~' Term2 { Ling.Fmt.Albert.Abs.Dual $2 }
+      | Term3 { $1 }
 Term1 :: { Term }
 Term1 : Term2 '-o' Term1 { Ling.Fmt.Albert.Abs.Loli $1 $3 }
       | Term2 '->' Term1 { Ling.Fmt.Albert.Abs.TFun $1 $3 }
