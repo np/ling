@@ -10,7 +10,7 @@ import           Ling.Scoped  hiding (subst1)
 import           Ling.Session
 
 class Subst a where
-  subst :: Sub -> a -> a
+  subst :: Defs -> a -> a
 
 subst1 :: Subst a => (Name, Term) -> a -> a
 subst1 = subst . l2m . pure
@@ -48,7 +48,7 @@ unDef defs e0 =
 unScoped :: Subst a => Scoped a -> a
 unScoped s = subst (s ^. ldefs) (s ^. scoped)
 
-substName :: Sub -> Name -> Term
+substName :: Defs -> Name -> Term
 substName f x = fromMaybe (Def x []) (f ^. at x)
 
 -- TODO binder: make an instance for Abs and use it for Lam,TFun,TSig
@@ -79,13 +79,13 @@ instance Subst a => Subst (Maybe a) where
 instance (Subst a, Subst b) => Subst (a, b) where
   subst f = bimap (subst f) (subst f)
 
-hideArg :: Arg a -> Endom Sub
+hideArg :: Arg a -> Endom Defs
 hideArg (Arg x _) = Map.delete x
 
-hideArgs :: [Arg a] -> Endom Sub
+hideArgs :: [Arg a] -> Endom Defs
 hideArgs = flip (foldr hideArg)
 
-hidePref :: Pref -> Endom Sub
+hidePref :: Pref -> Endom Defs
 hidePref = hideArgs . concatMap actVarDecs
 
 instance Subst Act where

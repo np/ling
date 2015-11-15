@@ -11,6 +11,8 @@ module Ling.Norm
 import           Ling.Abs     (Literal (..), Name (Name))
 import           Ling.Prelude
 
+type Defs = Map Name Term
+
 newtype RFactor = RFactor { _rterm :: Term }
   deriving (Eq, Ord, Read, Show)
 

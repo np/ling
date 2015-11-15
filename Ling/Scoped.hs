@@ -1,7 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Ling.Scoped (
-    Sub,
     Defs,
     mergeDefs,
     addEDef,
@@ -19,10 +18,6 @@ import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Rename
 import           Ling.Session
-
-type Sub = Map Name Term
-
-type Defs = Sub
 
 data Scoped a = Scoped { _ldefs :: Defs, _scoped :: a }
   deriving Eq
