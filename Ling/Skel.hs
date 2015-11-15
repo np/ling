@@ -61,16 +61,12 @@ transATerm x = case x of
   Par rsessions -> failure x
   Ten rsessions -> failure x
   Seq rsessions -> failure x
-transDTerm :: DTerm -> Result
-transDTerm x = case x of
-  DTTyp name aterms -> failure x
-  DTBnd name term -> failure x
 transTerm :: Term -> Result
 transTerm x = case x of
   RawApp aterm aterms -> failure x
   Case term branchs -> failure x
-  Snd dterm csession -> failure x
-  Rcv dterm csession -> failure x
+  Snd term csession -> failure x
+  Rcv term csession -> failure x
   Dual term -> failure x
   Loli term1 term2 -> failure x
   TFun term1 term2 -> failure x

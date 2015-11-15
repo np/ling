@@ -69,17 +69,15 @@ Seq.     ATerm ::= "[:" [RSession] ":]" ;
 
 separator ATerm "" ;
 
-DTTyp.   DTerm ::= Name [ATerm] ;
-DTBnd.   DTerm ::= "(" Name ":" Term ")" ;
+RawApp.   Term3  ::= ATerm [ATerm] ;
 
-RawApp.   Term2  ::= ATerm [ATerm] ;
 Case.     Term2  ::= "case" Term "of" "{" [Branch] "}" ;
-Snd.      Term2  ::= "!" DTerm CSession ;
-Rcv.      Term2  ::= "?" DTerm CSession ;
+Snd.      Term2  ::= "!" Term3 CSession ;
+Rcv.      Term2  ::= "?" Term3 CSession ;
 Dual.     Term2  ::= "~" Term2 ;
 
 Loli.     Term1  ::= Term2 "-o" Term1 ;
--- WARNING: `Term2` is used on the left of `->` and `**` as
+-- WARNING: Dependent `->`/`**` (e.g. Π/Σ) are recognized afterwards.
 -- Notice that `Term2` is used on the left of `->` and `**`.
 -- In Ling.Reify this `Term2` is analysed:
 -- If it matches against `[VarsDec]` then this is a dependent (`->`/`**`)

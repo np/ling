@@ -63,14 +63,11 @@ data ATerm
     | Seq [RSession]
   deriving (Eq, Ord, Show, Read)
 
-data DTerm = DTTyp Name [ATerm] | DTBnd Name Term
-  deriving (Eq, Ord, Show, Read)
-
 data Term
     = RawApp ATerm [ATerm]
     | Case Term [Branch]
-    | Snd DTerm CSession
-    | Rcv DTerm CSession
+    | Snd Term CSession
+    | Rcv Term CSession
     | Dual Term
     | Loli Term Term
     | TFun Term Term

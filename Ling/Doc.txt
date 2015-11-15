@@ -108,13 +108,12 @@ All other symbols are terminals.
   |  |  **|**  | ``[:`` //[RSession]// ``:]`` 
   | //[ATerm]// | -> | **eps**
   |  |  **|**  | //ATerm// //[ATerm]// 
-  | //DTerm// | -> | //Name// //[ATerm]// 
-  |  |  **|**  | ``(`` //Name// ``:`` //Term// ``)`` 
-  | //Term2// | -> | //ATerm// //[ATerm]// 
-  |  |  **|**  | ``case`` //Term// ``of`` ``{`` //[Branch]// ``}`` 
-  |  |  **|**  | ``!`` //DTerm// //CSession// 
-  |  |  **|**  | ``?`` //DTerm// //CSession// 
+  | //Term3// | -> | //ATerm// //[ATerm]// 
+  | //Term2// | -> | ``case`` //Term// ``of`` ``{`` //[Branch]// ``}`` 
+  |  |  **|**  | ``!`` //Term3// //CSession// 
+  |  |  **|**  | ``?`` //Term3// //CSession// 
   |  |  **|**  | ``~`` //Term2// 
+  |  |  **|**  | //Term3// 
   | //Term1// | -> | //Term2// ``-o`` //Term1// 
   |  |  **|**  | //Term2// ``->`` //Term1// 
   |  |  **|**  | //Term2// ``**`` //Term1// 

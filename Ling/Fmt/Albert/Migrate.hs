@@ -74,11 +74,6 @@ transATerm = \case
   Ten rsessions     -> L.Ten (transRSession <$> rsessions)
   Seq rsessions     -> L.Seq (transRSession <$> rsessions)
 
-transDTerm :: DTerm -> L.DTerm
-transDTerm = \case
-  DTTyp name aterms -> L.DTTyp (transName name) (transATerm <$> aterms)
-  DTBnd name term   -> L.DTBnd (transName name) (transTerm term)
-
 transTerm :: Term -> L.Term
 transTerm = \case
   RawApp aterm aterms    -> L.RawApp (transATerm aterm) (transATerm <$> aterms)
@@ -87,8 +82,8 @@ transTerm = \case
   TFun term1 term2       -> L.TFun (transTerm term1) (transTerm term2)
   TSig term1 term2       -> L.TSig (transTerm term1) (transTerm term2)
   TProc chandecs proc0   -> L.TProc (transChanDec <$> chandecs) (transProc proc0)
-  Snd dterm csession     -> L.Snd (transDTerm dterm) (transCSession csession)
-  Rcv dterm csession     -> L.Rcv (transDTerm dterm) (transCSession csession)
+  Snd term csession      -> L.Snd (transTerm term) (transCSession csession)
+  Rcv term csession      -> L.Rcv (transTerm term) (transCSession csession)
   Dual session           -> L.Dual (transTerm session)
   Loli session1 session2 -> L.Loli (transTerm session1) (transTerm session2)
 

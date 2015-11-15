@@ -166,17 +166,12 @@ instance Print ATerm where
     Seq rsessions -> prPrec i 0 (concatD [doc (showString "[:"), prt 0 rsessions, doc (showString ":]")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
-instance Print DTerm where
-  prt i e = case e of
-    DTTyp name aterms -> prPrec i 0 (concatD [prt 0 name, prt 0 aterms])
-    DTBnd name term -> prPrec i 0 (concatD [doc (showString "("), prt 0 name, doc (showString ":"), prt 0 term, doc (showString ")")])
-
 instance Print Term where
   prt i e = case e of
-    RawApp aterm aterms -> prPrec i 2 (concatD [prt 0 aterm, prt 0 aterms])
+    RawApp aterm aterms -> prPrec i 3 (concatD [prt 0 aterm, prt 0 aterms])
     Case term branchs -> prPrec i 2 (concatD [doc (showString "case"), prt 0 term, doc (showString "of"), doc (showString "{"), prt 0 branchs, doc (showString "}")])
-    Snd dterm csession -> prPrec i 2 (concatD [doc (showString "!"), prt 0 dterm, prt 0 csession])
-    Rcv dterm csession -> prPrec i 2 (concatD [doc (showString "?"), prt 0 dterm, prt 0 csession])
+    Snd term csession -> prPrec i 2 (concatD [doc (showString "!"), prt 3 term, prt 0 csession])
+    Rcv term csession -> prPrec i 2 (concatD [doc (showString "?"), prt 3 term, prt 0 csession])
     Dual term -> prPrec i 2 (concatD [doc (showString "~"), prt 2 term])
     Loli term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "-o"), prt 1 term2])
     TFun term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "->"), prt 1 term2])

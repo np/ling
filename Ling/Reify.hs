@@ -44,8 +44,8 @@ instance Norm RawSession where
   norm = termS N.NoOp . norm . rawSession
   reify = RawSession . \case
             N.Array k s      -> aTerm $ reifyArray k (reify s)
-            N.IO N.Write a s -> Snd (reify a) (reify s)
-            N.IO N.Read a s  -> Rcv (reify a) (reify s)
+            N.IO N.Write a s -> Snd (reifyVarDec a) (reify s)
+            N.IO N.Read a s  -> Rcv (reifyVarDec a) (reify s)
             N.TermS o e      -> dualOp o (reify e)
 
 reifySession :: N.Session -> Term
@@ -206,16 +206,6 @@ reifyRawApp e0 =
     Paren (RawApp e1 es) NoSig -> e1 : es
     e0'                        -> [e0']
 
-instance Norm DTerm where
-  type Normalized DTerm = N.VarDec
-  reify (Arg x e0)
-    | x == anonName,
-      N.Def d es <- e0
-    = DTTyp d (reify es)
-    | otherwise = DTBnd x (reify e0)
-  norm (DTTyp d es) = anonArg (N.Def d (norm es))
-  norm (DTBnd x e) = Arg x (norm e)
-
 reifyArray :: N.TraverseKind -> [RSession] -> ATerm
 reifyArray N.ParK = Par
 reifyArray N.SeqK = Seq
@@ -243,19 +233,22 @@ instance Norm ATerm where
     Seq s      -> N.TSession $ N.Array N.SeqK (norm s)
     Paren t os -> N.optSig (norm t) (norm os)
 
-mkVsD :: ATerm -> VarsDec
+mkVsD :: ATerm -> Maybe VarsDec
 mkVsD = \case
-  Paren (RawApp (Var x) as) (SoSig s)
-    | let xs = [y | Var y <- as],
-      length xs == length as
-    -> VsD x xs s
-  e ->
-    VsD anonName [] (aTerm e)
+  Paren (RawApp (Var x) as) (SoSig s) ->
+    VsD x <$> traverse (preview _Var) as <*> pure s
+  _ ->
+    Nothing
 
 mkVsDs :: Term -> [VarsDec]
 mkVsDs = \case
-  RawApp a as -> mkVsD <$> (a : as)
-  e           -> error $ "Expecting bindings (x... : T)... not: " ++ show e
+  RawApp a as | Just vsds <- sequence (mkVsD <$> (a : as)) -> vsds
+  e -> [VsD anonName [] e]
+
+mkVD :: ATerm -> VarDec
+mkVD = \case
+  Paren (RawApp (Var x) []) (SoSig s) -> VD x s
+  e -> VD anonName (aTerm e)
 
 reifyDef :: Name -> [N.Term] -> Term
 reifyDef x es
@@ -263,6 +256,14 @@ reifyDef x es
     Just d <- isInfix x
   = RawApp (reify e1) (Var d : reifyRawApp e2)
   | otherwise = RawApp (Var x) (reify es)
+
+reifyVarDecA :: N.VarDec -> ATerm
+reifyVarDecA (Arg a t)
+  | a == anonName = Paren (reify t)            NoSig
+  | otherwise     = Paren (RawApp (Var a) []) (SoSig (reify t))
+
+reifyVarDec :: N.VarDec -> Term
+reifyVarDec = aTerm . reifyVarDecA
 
 instance Norm Term where
   type Normalized Term = N.Term
@@ -274,19 +275,19 @@ instance Norm Term where
     N.TProto ss        -> RawApp (TProto (reify ss)) []
     N.Proc cs p        -> TProc (reify cs) (reify p)
     N.Lam (Arg a t) s  -> Lam (VsD a [] (reify t)) [] (reify s)
-    N.TFun (Arg a t) s -> TFun (RawApp (Paren (RawApp (Var a) []) (SoSig (reify t))) []) (reify s)
-    N.TSig (Arg a t) s -> TSig (RawApp (Paren (RawApp (Var a) []) (SoSig (reify t))) []) (reify s)
+    N.TFun arg s       -> TFun (reifyVarDec arg) (reify s)
+    N.TSig arg s       -> TSig (reifyVarDec arg) (reify s)
     N.Case t brs       -> Case (reify t) (reify brs)
     N.TSession s       -> reifySession s
   norm = \case
     RawApp e es  -> normRawApp (e : es)
     Case t brs   -> N.Case (norm t) (sort (norm brs))
     TProc cs p   -> N.Proc (norm cs) (norm p)
-    Lam xs xss t -> normVarsDecs N.Lam (xs : xss) (norm t)
+    Lam xs xss t -> normVarsDecs N.Lam  (xs : xss) (norm t)
     TFun u t     -> normVarsDecs N.TFun (mkVsDs u) (norm t)
     TSig u t     -> normVarsDecs N.TSig (mkVsDs u) (norm t)
-    Snd a s      -> N.TSession $ N.IO N.Write (norm a) (norm s)
-    Rcv a s      -> N.TSession $ N.IO N.Read (norm a) (norm s)
+    Snd t s      -> N.TSession $ normVarsDecs (N.IO N.Write) (mkVsDs t) (norm s)
+    Rcv t s      -> N.TSession $ normVarsDecs (N.IO N.Read ) (mkVsDs t) (norm s)
     Loli s t     -> N.TSession $ norm (RawSession s) `loli` norm (RawSession t)
     Dual s       -> dual (norm s)
 
@@ -320,7 +321,7 @@ instance Norm OptSession where
   norm NoSession     = Nothing
   norm (SoSession s) = Just (norm s)
 
-normVarsDecs :: (Arg N.Term -> N.Term -> N.Term) -> [VarsDec] -> N.Term -> N.Term
+normVarsDecs :: (Arg N.Term -> a -> a) -> [VarsDec] -> a -> a
 normVarsDecs f vsds z =
   foldr f z [Arg y (norm s) | VsD x xs s <- vsds
                             , y <- x : xs]

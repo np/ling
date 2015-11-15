@@ -28,7 +28,7 @@ import Ling.Fmt.Albert.ErrM
 %name pLiteral Literal
 %name pATerm ATerm
 %name pListATerm ListATerm
-%name pDTerm DTerm
+%name pTerm3 Term3
 %name pTerm2 Term2
 %name pTerm1 Term1
 %name pTerm Term
@@ -171,14 +171,12 @@ ATerm : Name { Ling.Fmt.Albert.Abs.Var $1 }
       | '[:' ListRSession ':]' { Ling.Fmt.Albert.Abs.Seq $2 }
 ListATerm :: { [ATerm] }
 ListATerm : {- empty -} { [] } | ListATerm ATerm { flip (:) $1 $2 }
-DTerm :: { DTerm }
-DTerm : Name ListATerm { Ling.Fmt.Albert.Abs.DTTyp $1 (reverse $2) }
-      | '(' Name ':' Term ')' { Ling.Fmt.Albert.Abs.DTBnd $2 $4 }
+Term3 :: { Term }
+Term3 : ATerm ListATerm { Ling.Fmt.Albert.Abs.RawApp $1 (reverse $2) }
 Term2 :: { Term }
-Term2 : ATerm ListATerm { Ling.Fmt.Albert.Abs.RawApp $1 (reverse $2) }
-      | 'case' Term 'of' '{' ListBranch '}' { Ling.Fmt.Albert.Abs.Case $2 $5 }
-      | '!' DTerm CSession { Ling.Fmt.Albert.Abs.Snd $2 $3 }
-      | '?' DTerm CSession { Ling.Fmt.Albert.Abs.Rcv $2 $3 }
+Term2 : 'case' Term 'of' '{' ListBranch '}' { Ling.Fmt.Albert.Abs.Case $2 $5 }
+      | '!' Term3 CSession { Ling.Fmt.Albert.Abs.Snd $2 $3 }
+      | '?' Term3 CSession { Ling.Fmt.Albert.Abs.Rcv $2 $3 }
       | '~' Term2 { Ling.Fmt.Albert.Abs.Dual $2 }
 Term1 :: { Term }
 Term1 : Term2 '-o' Term1 { Ling.Fmt.Albert.Abs.Loli $1 $3 }
