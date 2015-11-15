@@ -35,15 +35,18 @@ module Ling.Compile.C where
     recv c x (e(e0,e1) ...) ...
 -}
 
-import Prelude hiding (log)
+import           Prelude         hiding (log)
 
-import qualified Data.Map as Map
-import Ling.Prelude hiding (q)
-import Ling.Print
-import Ling.Session
-import Ling.Norm hiding (mkCase)
-import qualified MiniC.Abs as C
-import qualified MiniC.Print as C
+import qualified Data.Map        as Map
+import           Ling.Norm       hiding (mkCase)
+import           Ling.Prelude    hiding (q)
+import           Ling.Print
+import           Ling.Reduce     (reduceWHNF)
+import           Ling.Scoped     (Scoped(Scoped))
+import           Ling.Session
+import           Ling.Subst      (unScoped)
+import qualified MiniC.Abs       as C
+import qualified MiniC.Print     as C
 
 type ATyp = (C.Typ, [C.Arr])
 type AQTyp = (C.QTyp, [C.Arr])
@@ -99,6 +102,7 @@ type EVar = Name
 data Env =
   Env { _locs  :: Map Channel C.LVal
       , _evars :: Map EVar C.Ident
+      , _edefs :: Map EVar Term
       , _types :: Set Name
       }
   deriving (Show)
@@ -116,7 +120,7 @@ primTypes :: Set Name
 primTypes = l2s (Name "Vec" : keys basicTypes)
 
 emptyEnv :: Env
-emptyEnv = Env Map.empty Map.empty primTypes
+emptyEnv = Env ø ø ø primTypes
 
 addChans :: [(Name, C.LVal)] -> Env -> Env
 addChans xys env = env & locs %~ Map.union (l2m xys)
@@ -342,12 +346,12 @@ tupQ ts = (C.QTyp (unionQuals [ q | (C.QTyp q _, _) <- ts ])
 transTyp :: Env -> Typ -> ATyp
 transTyp env e0 = case e0 of
   Def x es
-    | Just t <- Map.lookup x basicTypes -> (t, [])
+    | null es, Just t <- Map.lookup x basicTypes -> (t, [])
     | otherwise ->
     case (unName x, es) of
       -- ("Vec", [a,e]) -> tArr (transTyp env a) (transTerm env e)
       ("Vec", [a,_e]) -> tPtr (transTyp env a)
-      _               -> tVoidPtr -- WARNING transError "transTyp: " e0
+      _ -> trace ("[WARNING] Unsupported type " ++ pretty x) tVoidPtr
   TTyp{}   -> tInt -- <- types are erased to 0
   Case{}   -> transErr "transTyp: Case" e0
   TProto{} -> transErr "transTyp: TProto" e0
@@ -360,7 +364,7 @@ transTyp env e0 = case e0 of
   TSession{}-> transErr "transTyp: Not a type: TSession" e0
 
 transCTyp :: Env -> C.Qual -> Typ -> AQTyp
-transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env
+transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env . reduceWHNF' env
 
 {-
 mapQTyp :: (C.Typ -> C.Typ) -> C.QTyp -> C.QTyp
@@ -425,27 +429,33 @@ transSig env0 f _ty0 (Just t) =
         env  = addChans (snd <$> news) env0
     _ -> trace ("[WARNING] Skipping compilation of unsupported definition " ++ pretty f) []
 -- Of course this does not properly handle dependent types
-transSig env0 f (Just ty0) Nothing = case ty0 of
-  TFun{} -> go env0 [] ty0 where
+transSig env0 f (Just ty0) Nothing =
+  let ty0' = reduceWHNF' env0 ty0 in
+  case ty0' of
+  TFun{} -> go env0 [] ty0' where
     go env args t1 = case t1 of
       TFun (Arg n s) t -> go (addEVar n (transName n) env)
                              (dDec (transCTyp env C.QConst s) (transName n) : args)
-                             t
+                             (reduceWHNF' env0 t)
       _                -> [C.DSig (dDec (transCTyp env C.NoQual t1) (transName f))
                                   (reverse args)]
-  _ -> [C.DDec (dDec (transCTyp env0 C.NoQual ty0) (transName f))]
+  _ -> [C.DDec (dDec (transCTyp env0 C.NoQual ty0') (transName f))]
 transSig _ _ Nothing Nothing = error "IMPOSSIBLE transSig no sig nor def"
 
-transDec :: Env -> Dec -> [C.Def]
+transDec :: Env -> Dec -> (Env, [C.Def])
 transDec env x = case x of
-  Sig d ty tm -> transSig env d ty tm
+  Sig d ty tm -> (env & edefs . at d .~ tm, transSig env d ty tm)
   Dat _d _cs ->
-    [] -- TODO typedef ? => [C.TEnum (C.EEnm . transCon <$> cs)]
+    (env, []) -- TODO typedef ? => [C.TEnum (C.EEnm . transCon <$> cs)]
   Assert _a ->
-    [] -- could be an assert.. but why?
+    (env, []) -- could be an assert.. but why?
 
 transProgram :: Program -> C.Prg
-transProgram (Program decs) = C.PPrg (transDec emptyEnv =<< decs)
+transProgram (Program decs) =
+  C.PPrg (mapAccumL transDec emptyEnv decs ^. _2 . to concat)
+
+reduceWHNF' :: Env -> Term -> Term
+reduceWHNF' env = unScoped . reduceWHNF . Scoped (env ^. edefs)
 -- -}
 -- -}
 -- -}

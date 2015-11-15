@@ -1,0 +1,7 @@
+
+/* Transformed tree */
+
+void send_1_lin (int * c_lin){
+  * c_lin = 1 ;
+  }
+
