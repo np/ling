@@ -181,7 +181,7 @@ instance Print ATerm where
 instance Print Term where
   prt i e = case e of
     RawApp aterm aterms -> prPrec i 3 (concatD [prt 0 aterm, prt 0 aterms])
-    Case term branchs -> prPrec i 2 (concatD [doc (showString "case"), prt 0 term, doc (showString "of"), doc (showString "{"), prt 0 branchs, doc (showString "}")])
+    Case term branchs -> prPrec i 2 (concatD [doc (showString "case"), prt 0 term, doc (showString "of"), doc (showString "{\n"), prt 0 branchs, doc (showString "\n}")])
     Snd term csession -> prPrec i 2 (concatD [doc (showString "!"), prt 3 term, prt 0 csession])
     Rcv term csession -> prPrec i 2 (concatD [doc (showString "?"), prt 3 term, prt 0 csession])
     Dual term -> prPrec i 2 (concatD [doc (showString "~"), prt 2 term])
