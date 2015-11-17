@@ -72,7 +72,6 @@ instance Equiv (Ignored a) where
 ignoreArgBody :: Arg a -> Arg (Ignored a)
 ignoreArgBody = argBody %~ Ignored
 
--- NOTE that Typ are ignored here.
 instance (Equiv a, Equiv b) => Equiv (Abs a b) where
   equiv env (Abs (Arg x0 s0) u0) (Abs (Arg x1 s1) u1) =
     equiv env s0 s1 && equiv (ext env x0 x1) u0 u1

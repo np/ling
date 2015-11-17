@@ -154,10 +154,11 @@ isEquiv :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
 isEquiv t0 t1 = do
   env <- tcEqEnv
   whenDebug $ do
-    when (t0 /= t1) . debug . unlines $
-      ["checkEquivalence:", "  " ++ pretty t0, "against", "  " ++ pretty t1]
-    when (ut0 == ut1) . debug . unlines $
-      ["Once expanded they are equal"]
+    when (t0 /= t1) $ do
+      debug . unlines $
+        ["checkEquivalence:", "  " ++ pretty t0, "against", "  " ++ pretty t1]
+      when (ut0 == ut1) . debug . unlines $
+        ["Once expanded they are equal:", pretty ut0]
   return (equiv env t0 t1, ut0, ut1)
 
   where
