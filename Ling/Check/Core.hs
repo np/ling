@@ -37,7 +37,7 @@ sendRecvSession = \case
   -- https://github.com/np/ling/issues/13
   Send c e -> (,) c . sendS <$> inferTerm' e
   Recv c arg@(Arg _c typ) ->
-    checkTyp typ $> (c, depRecv arg)
+    checkMaybeTyp typ $> (c, depRecv arg)
   _ -> tcError "typeSendRecv: Not Send/Recv"
 
 checkPref :: Pref -> Proto -> TC Proto
@@ -224,6 +224,9 @@ checkTerm = checkTerm' . pure
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp
 
+checkMaybeTyp :: Maybe Typ -> TC ()
+checkMaybeTyp = checkMaybeTerm TTyp
+
 checkTerm' :: Scoped Typ -> Term -> TC ()
 checkTerm' expectedTyp e = do
   inferredTyp <- inferTerm e
@@ -272,7 +275,7 @@ checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC (Scoped Typ)
 checkApp _ _ typ []     = return typ
 checkApp f n typ (e:es) =
   case reduceWHNF typ of
-    (Scoped defs _typ@(TFun (Arg x ty) s)) -> do
+    (Scoped defs _typ@(TFun (Arg x mty) s)) -> do
       debug . unlines $
         ["Check application:"
         ,"f:      " ++ pretty f
@@ -288,7 +291,12 @@ checkApp f n typ (e:es) =
         ,"s:    " ++ pretty s
         -}
         ]
-      checkTerm' (Scoped defs ty) e
+      case mty of
+        Nothing -> tcError $ unwords [ "Missing type annotation for argument"
+                                     , pretty x
+                                     , "of definition"
+                                     , pretty f ]
+        Just ty -> checkTerm' (Scoped defs ty) e
       checkApp f (n + 1) (subst1 f (x, e) (Scoped defs s)) es
     _ -> tcError ("Too many arguments given to " ++ pretty f ++ ", " ++
                      show n ++ " arguments expected and " ++
@@ -313,7 +321,7 @@ checkVarDef x mtyp mtm kont
          . (edefs . at x .~ mtm)) kont
 
 checkVarDec :: VarDec -> Endom (TC a)
-checkVarDec (Arg x typ) = checkVarDef x (Just typ) Nothing
+checkVarDec (Arg x mtyp) = checkVarDef x mtyp Nothing
 
 -- Check a "telescope", where bindings scope over the following ones
 checkVarDecs :: [VarDec] -> Endom (TC a)

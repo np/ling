@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Ling.Compile.C where
 
@@ -265,7 +266,7 @@ transAct env act =
     Recv c (Arg x typ) ->
       (addEVar x (transName x) env, (sDec ctyp y cinit ++))
       where
-        ctyp  = transCTyp env C.QConst typ
+        ctyp  = transMaybeCTyp env C.QConst typ
         y     = transName x
         cinit = C.SoInit (transLVal (env!c))
     NewSlice cs r xi ->
@@ -368,6 +369,11 @@ transTyp env e0 = case e0 of
 transCTyp :: Env -> C.Qual -> Typ -> AQTyp
 transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env . reduceWHNF' env
 
+transMaybeCTyp :: Env -> C.Qual -> Maybe Typ -> AQTyp
+transMaybeCTyp env qual = \case
+  Nothing -> error "transMabyeCTyp: Missing type annotation"
+  Just ty -> transCTyp env qual ty
+
 {-
 mapQTyp :: (C.Typ -> C.Typ) -> C.QTyp -> C.QTyp
 mapQTyp f (C.QTyp  q t) = C.QTyp q (f t)
@@ -380,7 +386,7 @@ mapAQTyp f (C.QTyp  q t , arrs) = (C.QTyp q t', arrs')
 transSession :: Env -> Session -> AQTyp
 transSession env x = case x of
   IO rw (Arg n ty) s
-    | n == anonName -> unionQ [transCTyp env (rwQual rw) ty, transSession env s]
+    | n == anonName -> unionQ [transMaybeCTyp env (rwQual rw) ty, transSession env s]
     | otherwise     -> transErr "Cannot compile a dependent session (yet): " x
   Array _ ss -> tupQ (transSessions env ss)
   TermS{} -> transErr "Cannot compile an abstract session: " x
@@ -437,7 +443,7 @@ transSig env0 f (Just ty0) Nothing =
   TFun{} -> go env0 [] ty0' where
     go env args t1 = case t1 of
       TFun (Arg n s) t -> go (addEVar n (transName n) env)
-                             (dDec (transCTyp env C.QConst s) (transName n) : args)
+                             (dDec (transMaybeCTyp env C.QConst s) (transName n) : args)
                              (reduceWHNF' env0 t)
       _                -> [C.DSig (dDec (transCTyp env C.NoQual t1) (transName f))
                                   (reverse args)]

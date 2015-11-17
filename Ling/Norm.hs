@@ -17,7 +17,7 @@ newtype RFactor = RFactor { _rterm :: Term }
   deriving (Eq, Ord, Read, Show)
 
 type ChanDec = Arg (Maybe RSession)
-type VarDec  = Arg Typ
+type VarDec  = Arg (Maybe Typ)
 
 data Program = Program { _prgDecs :: [Dec] }
   deriving (Eq,Ord,Show,Read)
@@ -109,8 +109,8 @@ depSend = IO Write
 depRecv = IO Read
 
 sendS, recvS :: Typ -> Session -> Session
-sendS = depSend . anonArg
-recvS = depRecv . anonArg
+sendS = depSend . anonArg . Just
+recvS = depRecv . anonArg . Just
 
 data RSession
   = Repl { _rsession :: Session
@@ -191,8 +191,12 @@ multName = Name "_*_"
 actVarDecs :: Act -> [VarDec]
 actVarDecs = \case
   Recv _ a       -> [a]
-  NewSlice _ _ x -> [Arg x intTyp]
-  _              -> []
+  NewSlice _ _ x -> [Arg x (Just intTyp)]
+  Nu{}           -> []
+  Split{}        -> []
+  Send{}         -> []
+  Ax{}           -> []
+  At{}           -> []
 
 kindSymbols :: TraverseKind -> String
 kindSymbols = \case
