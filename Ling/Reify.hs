@@ -233,22 +233,27 @@ instance Norm ATerm where
     Seq s      -> N.TSession $ N.Array N.SeqK (norm s)
     Paren t os -> N.optSig (norm t) (norm os)
 
-mkVsD :: ATerm -> Maybe VarsDec
-mkVsD = \case
-  Paren (RawApp (Var x) as) (SoSig s) ->
-    VsD x <$> traverse (preview _Var) as <*> pure s
+mkVDsA :: ATerm -> [VarDec]
+mkVDsA = \case
+  Paren (RawApp a as) (SoSig s) ->
+    VD <$> (a:as) ^.. each . _Var <*> [SoSig s]
   _ ->
-    Nothing
+    []
 
-mkVsDs :: Term -> [VarsDec]
-mkVsDs = \case
-  RawApp a as | Just vsds <- sequence (mkVsD <$> (a : as)) -> vsds
-  e -> [VsD anonName [] e]
+mkVDs :: Term -> [VarDec]
+mkVDs = \case
+  RawApp a as | vds@(_:_) <- mkVDsA =<< (a : as) -> vds
+  e -> [VD anonName (SoSig e)]
 
-mkVD :: ATerm -> VarDec
-mkVD = \case
-  Paren (RawApp (Var x) []) (SoSig s) -> VD x s
-  e -> VD anonName (aTerm e)
+mkVDsALam :: ATerm -> [VarDec]
+mkVDsALam = \case
+  Var x -> [VD x NoSig]
+  a     -> mkVDsA a
+
+mkVDsLam :: Term -> [VarDec]
+mkVDsLam = \case
+  RawApp a as | vds@(_:_) <- mkVDsALam =<< (a : as) -> vds
+  _ -> error "Unexpected "
 
 reifyDef :: Name -> [N.Term] -> Term
 reifyDef x es
@@ -258,7 +263,8 @@ reifyDef x es
   | otherwise = RawApp (Var x) (reify es)
 
 reifyVarDecA :: N.VarDec -> ATerm
-reifyVarDecA (Arg a t)
+reifyVarDecA (Arg _ Nothing) = error "reifyVarDecA: no type annotation"
+reifyVarDecA (Arg a (Just t))
   | a == anonName = Paren (reify t)            NoSig
   | otherwise     = Paren (RawApp (Var a) []) (SoSig (reify t))
 
@@ -268,27 +274,27 @@ reifyVarDec = aTerm . reifyVarDecA
 instance Norm Term where
   type Normalized Term = N.Term
   reify = \case
-    N.Def x es         -> reifyDef x es
-    N.Let defs t       -> error "reify/Term/Let"
-    N.Lit l            -> RawApp (Lit l) []
-    N.Con n            -> RawApp (Con (reify n)) []
-    N.TTyp             -> RawApp TTyp []
-    N.TProto ss        -> RawApp (TProto (reify ss)) []
-    N.Proc cs p        -> TProc (reify cs) (reify p)
-    N.Lam (Arg a t) s  -> Lam (VsD a [] (reify t)) [] (reify s)
-    N.TFun arg s       -> TFun (reifyVarDec arg) (reify s)
-    N.TSig arg s       -> TSig (reifyVarDec arg) (reify s)
-    N.Case t brs       -> Case (reify t) (reify brs)
-    N.TSession s       -> reifySession s
+    N.Def x es   -> reifyDef x es
+    N.Let _d _t  -> error "reify/Term/Let"
+    N.Lit l      -> RawApp (Lit l) []
+    N.Con n      -> RawApp (Con (reify n)) []
+    N.TTyp       -> RawApp TTyp []
+    N.TProto ss  -> RawApp (TProto (reify ss)) []
+    N.Proc cs p  -> TProc (reify cs) (reify p)
+    N.Lam  arg s -> Lam  (reifyVarDec arg) (reify s)
+    N.TFun arg s -> TFun (reifyVarDec arg) (reify s)
+    N.TSig arg s -> TSig (reifyVarDec arg) (reify s)
+    N.Case t brs -> Case (reify t) (reify brs)
+    N.TSession s -> reifySession s
   norm = \case
     RawApp e es  -> normRawApp (e : es)
     Case t brs   -> N.Case (norm t) (sort (norm brs))
     TProc cs p   -> N.Proc (norm cs) (norm p)
-    Lam xs xss t -> normVarsDecs N.Lam  (xs : xss) (norm t)
-    TFun u t     -> normVarsDecs N.TFun (mkVsDs u) (norm t)
-    TSig u t     -> normVarsDecs N.TSig (mkVsDs u) (norm t)
-    Snd t s      -> N.TSession $ normVarsDecs (N.IO N.Write) (mkVsDs t) (norm s)
-    Rcv t s      -> N.TSession $ normVarsDecs (N.IO N.Read ) (mkVsDs t) (norm s)
+    Lam  u t     -> normVarDecs N.Lam  (mkVDsLam u) t
+    TFun u t     -> normVarDecs N.TFun (mkVDs u) t
+    TSig u t     -> normVarDecs N.TSig (mkVDs u) t
+    Snd t s      -> N.TSession $ normVarDecs (N.IO N.Write) (mkVDs t) s
+    Rcv t s      -> N.TSession $ normVarDecs (N.IO N.Read ) (mkVDs t) s
     Loli s t     -> N.TSession $ norm (RawSession s) `loli` norm (RawSession t)
     Dual s       -> dual (norm s)
 
@@ -312,8 +318,8 @@ instance Norm ChanDec where
 
 instance Norm VarDec where
   type Normalized VarDec = N.VarDec
-  reify (Arg x s)        = VD x (reify s)
-  norm  (VD x s)         = Arg x (norm s)
+  reify (Arg x s) = VD  x (reify s)
+  norm  (VD x s)  = Arg x (norm  s)
 
 instance Norm OptSession where
   type Normalized OptSession = Maybe N.RSession
@@ -322,10 +328,8 @@ instance Norm OptSession where
   norm NoSession     = Nothing
   norm (SoSession s) = Just (norm s)
 
-normVarsDecs :: (Arg N.Term -> a -> a) -> [VarsDec] -> a -> a
-normVarsDecs f vsds z =
-  foldr f z [Arg y (norm s) | VsD x xs s <- vsds
-                            , y <- x : xs]
+normVarDecs :: (Norm a, Normalized a ~ b) => (N.VarDec -> b -> b) -> [VarDec] -> a -> b
+normVarDecs f vds z = foldr f (norm z) (norm vds)
 
 instance Norm Program where
   type Normalized Program = N.Program

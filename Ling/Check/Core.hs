@@ -243,11 +243,9 @@ checkMaybeTerm _   Nothing   = return ()
 checkMaybeTerm typ (Just tm) = checkTerm typ tm
 
 checkSig :: Maybe Typ -> Maybe Term -> TC Typ
-checkSig (Just typ) mtm = checkTyp typ >> checkMaybeTerm typ mtm $> typ
-checkSig Nothing    mtm =
-  case mtm of
-    Just tm -> inferTerm' tm
-    Nothing -> tcError "IMPOSSIBLE signature with no type nor definition"
+checkSig (Just typ) mtm       = checkTyp typ >> checkMaybeTerm typ mtm $> typ
+checkSig Nothing    (Just tm) = inferTerm' tm
+checkSig Nothing    Nothing   = tcError $ "Cannot infer or check, please add a type signature"
 
 inferDef :: Name -> [Term] -> TC (Scoped Typ)
 inferDef (Name "_:_") [a,t] = do

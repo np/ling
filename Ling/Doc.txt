@@ -80,10 +80,7 @@ All other symbols are terminals.
   | //[Dec]// | -> | **eps**
   |  |  **|**  | //Dec// 
   |  |  **|**  | //Dec// ``,`` //[Dec]// 
-  | //VarDec// | -> | ``(`` //Name// ``:`` //Term// ``)`` 
-  | //VarsDec// | -> | ``(`` //Name// //[Name]// ``:`` //Term// ``)`` 
-  | //[VarsDec]// | -> | **eps**
-  |  |  **|**  | //VarsDec// //[VarsDec]// 
+  | //VarDec// | -> | ``(`` //Name// //OptSig// ``)`` 
   | //ChanDec// | -> | //Name// //OptSession// 
   | //[ChanDec]// | -> | **eps**
   |  |  **|**  | //ChanDec// 
@@ -118,7 +115,7 @@ All other symbols are terminals.
   |  |  **|**  | //Term2// ``->`` //Term1// 
   |  |  **|**  | //Term2// ``**`` //Term1// 
   |  |  **|**  | //Term2// 
-  | //Term// | -> | ``\`` //VarsDec// //[VarsDec]// ``->`` //Term// 
+  | //Term// | -> | ``\`` //Term2// ``->`` //Term// 
   |  |  **|**  | ``proc`` ``(`` //[ChanDec]// ``)`` //Proc// 
   |  |  **|**  | //Term1// 
   | //Proc1// | -> | //Act// 

@@ -42,10 +42,7 @@ transOptSig x = case x of
   SoSig term -> failure x
 transVarDec :: VarDec -> Result
 transVarDec x = case x of
-  VD name term -> failure x
-transVarsDec :: VarsDec -> Result
-transVarsDec x = case x of
-  VsD name names term -> failure x
+  VD name optsig -> failure x
 transChanDec :: ChanDec -> Result
 transChanDec x = case x of
   CD name optsession -> failure x
@@ -80,7 +77,7 @@ transTerm x = case x of
   Loli term1 term2 -> failure x
   TFun term1 term2 -> failure x
   TSig term1 term2 -> failure x
-  Lam varsdec varsdecs term -> failure x
+  Lam term1 term2 -> failure x
   TProc chandecs proc -> failure x
 transProc :: Proc -> Result
 transProc x = case x of

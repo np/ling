@@ -1,0 +1,1 @@
+../../../fixtures/all/infer_recv.ll

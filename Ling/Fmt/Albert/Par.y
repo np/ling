@@ -19,8 +19,6 @@ import Ling.Fmt.Albert.ErrM
 %name pOptSig OptSig
 %name pListDec ListDec
 %name pVarDec VarDec
-%name pVarsDec VarsDec
-%name pListVarsDec ListVarsDec
 %name pChanDec ChanDec
 %name pListChanDec ListChanDec
 %name pBranch Branch
@@ -135,12 +133,7 @@ ListDec : {- empty -} { [] }
         | Dec { (:[]) $1 }
         | Dec ',' ListDec { (:) $1 $3 }
 VarDec :: { VarDec }
-VarDec : '(' Name ':' Term ')' { Ling.Fmt.Albert.Abs.VD $2 $4 }
-VarsDec :: { VarsDec }
-VarsDec : '(' Name ListName ':' Term ')' { Ling.Fmt.Albert.Abs.VsD $2 $3 $5 }
-ListVarsDec :: { [VarsDec] }
-ListVarsDec : {- empty -} { [] }
-            | ListVarsDec VarsDec { flip (:) $1 $2 }
+VarDec : '(' Name OptSig ')' { Ling.Fmt.Albert.Abs.VD $2 $3 }
 ChanDec :: { ChanDec }
 ChanDec : Name OptSession { Ling.Fmt.Albert.Abs.CD $1 $2 }
 ListChanDec :: { [ChanDec] }
@@ -185,7 +178,7 @@ Term1 : Term2 '-o' Term1 { Ling.Fmt.Albert.Abs.Loli $1 $3 }
       | Term2 '**' Term1 { Ling.Fmt.Albert.Abs.TSig $1 $3 }
       | Term2 { $1 }
 Term :: { Term }
-Term : '\\' VarsDec ListVarsDec '->' Term { Ling.Fmt.Albert.Abs.Lam $2 (reverse $3) $5 }
+Term : '\\' Term2 '->' Term { Ling.Fmt.Albert.Abs.Lam $2 $4 }
      | 'proc' '(' ListChanDec ')' Proc { Ling.Fmt.Albert.Abs.TProc $3 $5 }
      | Term1 { $1 }
 Proc1 :: { Proc }

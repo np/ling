@@ -40,11 +40,7 @@ transOptSig = \case
 
 transVarDec :: VarDec -> L.VarDec
 transVarDec = \case
-  VD name term -> L.VD (transName name) (transTerm term)
-
-transVarsDec :: VarsDec -> L.VarsDec
-transVarsDec = \case
-  VsD name names term -> L.VsD (transName name) (transName <$> names) (transTerm term)
+  VD name optsig -> L.VD (transName name) (transOptSig optsig)
 
 transChanDec :: ChanDec -> L.ChanDec
 transChanDec = \case
@@ -78,7 +74,7 @@ transTerm :: Term -> L.Term
 transTerm = \case
   RawApp aterm aterms    -> L.RawApp (transATerm aterm) (transATerm <$> aterms)
   Case term branchs      -> L.Case (transTerm term) (transBranch <$> branchs)
-  Lam vd vds tm          -> L.Lam (transVarsDec vd) (transVarsDec <$> vds) (transTerm tm)
+  Lam term1 term2        -> L.Lam (transTerm term1) (transTerm term2)
   TFun term1 term2       -> L.TFun (transTerm term1) (transTerm term2)
   TSig term1 term2       -> L.TSig (transTerm term1) (transTerm term2)
   TProc chandecs proc0   -> L.TProc (transChanDec <$> chandecs) (transProc proc0)

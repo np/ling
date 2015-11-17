@@ -11,7 +11,6 @@ makePrisms ''Assertion
 makePrisms ''ConName
 makePrisms ''OptSig
 makePrisms ''VarDec
-makePrisms ''VarsDec
 makePrisms ''ChanDec
 makePrisms ''Branch
 makePrisms ''Literal

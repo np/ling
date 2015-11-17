@@ -35,10 +35,7 @@ SoSig. OptSig ::= ":" Term ;
 
 separator Dec "," ;
 
-VD. VarDec ::= "(" Name ":" Term ")" ;
-
-VsD.      VarsDec ::= "(" Name [Name] ":" Term ")" ;
-separator VarsDec "" ;
+VD. VarDec ::= "(" Name OptSig ")" ;
 
 CD. ChanDec ::= Name OptSession ;
 
@@ -81,7 +78,8 @@ Loli.     Term1  ::= Term2 "-o" Term1 ;
 -- WARNING: Dependent `->`/`**` (e.g. Π/Σ) are recognized afterwards.
 -- Notice that `Term2` is used on the left of `->` and `**`.
 -- In Ling.Reify this `Term2` is analysed:
--- If it matches against `[VarsDec]` then this is a dependent (`->`/`**`)
+-- If it matches against `("(" Name [Name] ":" Term ")")+` then this is a
+-- dependent (`->`/`**`).
 -- Otherwise it is considered as a *non* dependent `->`/`**`.
 -- For instance `(Vec Int n : Type)-> F Vec Int n` is a dependent `->`
 -- which introduces 3 types `Vec`, `Int`, and `n`, while
@@ -91,7 +89,8 @@ TFun.     Term1  ::= Term2 "->" Term1 ;
 TSig.     Term1  ::= Term2 "**" Term1 ;
 _.        Term1  ::= Term2 ;
 
-Lam.      Term   ::= "\\" VarsDec [VarsDec] "->" Term ;
+-- WARNING: The `Term2` is further analysed as: `("(" Name [Name] ":" Term ")")+`
+Lam.      Term   ::= "\\" Term2 "->" Term ;
 TProc.    Term   ::= "proc" "(" [ChanDec] ")" Proc ;
 _.        Term   ::= Term1 ;
 

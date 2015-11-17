@@ -126,13 +126,8 @@ instance Print OptSig where
 
 instance Print VarDec where
   prt i e = case e of
-    VD name term -> prPrec i 0 (concatD [doc (showString "("), prt 0 name, doc (showString ":"), prt 0 term, doc (showString ")")])
+    VD name optsig -> prPrec i 0 (concatD [doc (showString "("), prt 0 name, prt 0 optsig, doc (showString ")")])
 
-instance Print VarsDec where
-  prt i e = case e of
-    VsD name names term -> prPrec i 0 (concatD [doc (showString "("), prt 0 name, prt 0 names, doc (showString ":"), prt 0 term, doc (showString ")")])
-  prtList _ [] = (concatD [])
-  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print ChanDec where
   prt i e = case e of
     CD name optsession -> prPrec i 0 (concatD [prt 0 name, prt 0 optsession])
@@ -176,7 +171,7 @@ instance Print Term where
     Loli term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "-o"), prt 1 term2])
     TFun term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "->"), prt 1 term2])
     TSig term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "**"), prt 1 term2])
-    Lam varsdec varsdecs term -> prPrec i 0 (concatD [doc (showString "\\"), prt 0 varsdec, prt 0 varsdecs, doc (showString "->"), prt 0 term])
+    Lam term1 term2 -> prPrec i 0 (concatD [doc (showString "\\"), prt 2 term1, doc (showString "->"), prt 0 term2])
     TProc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc"), doc (showString "("), prt 0 chandecs, doc (showString ")"), prt 0 proc])
 
 instance Print Proc where
