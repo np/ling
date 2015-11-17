@@ -37,6 +37,7 @@ fcAct = \case
   NewSlice cs _ _ -> l2s cs
   Ax _ cs         -> l2s cs
   At _ p          -> fcPat p
+  LetA{}          -> ø
 
 bcAct :: BoundChans Act
 bcAct = \case
@@ -47,6 +48,7 @@ bcAct = \case
   NewSlice{}   -> ø
   Ax{}         -> ø
   At{}         -> ø
+  LetA{}       -> ø
 
 bvAct :: BoundVars Act
 bvAct = \case
@@ -57,6 +59,7 @@ bvAct = \case
   NewSlice _ _ x -> l2s [x]
   Ax{}           -> ø
   At{}           -> ø
+  LetA defs      -> keysSet defs
 
 {-
 fvAct :: FreeVars Act

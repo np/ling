@@ -61,6 +61,7 @@ data Act
   | NewSlice [Channel] RFactor Name
   | Ax       Session [Channel]
   | At       Term CPatt
+  | LetA     Defs
   deriving (Eq,Ord,Show,Read)
 
 type ConName = Name
@@ -192,6 +193,7 @@ actVarDecs :: Act -> [VarDec]
 actVarDecs = \case
   Recv _ a       -> [a]
   NewSlice _ _ x -> [Arg x (Just intTyp)]
+  LetA defs      -> [Arg x Nothing | x <- keys defs]
   Nu{}           -> []
   Split{}        -> []
   Send{}         -> []
@@ -218,6 +220,7 @@ actLabel = \case
   NewSlice{}  -> "slice"
   Ax{}        -> "fwd"
   At{}        -> "@"
+  LetA{}      -> "let"
 
 actNeedsDot :: Act -> Bool
 actNeedsDot = \case
@@ -228,6 +231,7 @@ actNeedsDot = \case
   NewSlice{} -> True
   Ax{}       -> True
   At{}       -> True
+  LetA{}     -> True
 
 isSendRecv :: Act -> Bool
 isSendRecv = \case
@@ -238,6 +242,7 @@ isSendRecv = \case
   Nu{}       -> False
   Ax{}       -> False
   At{}       -> False
+  LetA{}     -> False
 
 allSndRcv :: Session -> Bool
 allSndRcv = \case

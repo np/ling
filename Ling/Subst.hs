@@ -96,6 +96,7 @@ instance Subst Act where
     Recv c arg      -> Recv c (subst f arg)
     Nu c d          -> Nu (subst f c) (subst f d)
     NewSlice cs t x -> NewSlice cs (subst f t) x
+    LetA{}          -> error "Subst/LetA"
     act@Ax{}        -> act
     At t cs         -> At (subst f t) cs
 

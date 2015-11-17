@@ -281,6 +281,8 @@ transAct env act =
       transErr "transAct/Ax" act
     At{} ->
       transErr "transAct/At" act
+    LetA{} ->
+      transErr "transAct/LetA" act
 
 -- The actions in this prefix are in parallel and thus can be reordered
 transPref :: Env -> Pref -> [Proc] -> [C.Stm]

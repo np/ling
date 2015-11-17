@@ -124,6 +124,7 @@ actIsReady env pref =
     Split{}    -> True
     Nu{}       -> True
     Ax{}       -> True
+    LetA{}     -> True
     -- `At` is considered non-ready. Therefor we cannot put
     -- a process like (@p0() | @p1()) in sequence.
     At{}       -> False
@@ -172,6 +173,8 @@ transAct act =
     Ax{} ->
       id
     At{} ->
+      id
+    LetA{} ->
       id
 
 -- Assumption input processes should not have zeros (filter0s)

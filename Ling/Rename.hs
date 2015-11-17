@@ -79,6 +79,7 @@ instance Rename Act where
     NewSlice cs t x -> NewSlice (rename f cs) (rename f t) (rename f x)
     Ax s cs         -> Ax (rename f s) (rename f cs)
     At t cs         -> At (rename f t) (rename f cs)
+    LetA defs       -> LetA (rename f defs)
 
 instance Rename Proc where
   rename f (pref `Dot` procs) =

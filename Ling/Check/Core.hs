@@ -153,6 +153,8 @@ checkAct act proto =
       ifor_ (proto^.chans) (checkSlice (`notElem` cs))
       return $ replProtoWhen (`elem` cs) r proto
     Ax s cs -> return $ protoAx s cs `dotProto` proto
+    LetA defs ->
+      checkDefs defs $> ø
     At e p -> do
       t <- inferTerm' e
       case t of
@@ -161,6 +163,9 @@ checkAct act proto =
           return $ proto' `dotProto` proto
         _ ->
           tcError . unlines $ ["Expected a protocol type, not:", pretty t]
+
+checkDefs :: Defs -> TC ()
+checkDefs defs = for_ defs inferTerm
 
 checkCPatt :: Session -> CPatt -> TC Proto
 checkCPatt s = \case

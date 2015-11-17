@@ -202,6 +202,12 @@ instance Equiv Act where
        cs0 == cs1 && equiv env r0 r1
     (Ax _s0 cs0, Ax _s1 cs1) ->
        cs0 == cs1
+
+    -- Equivalence of LetA is trivial since extensionally nothing is left
+    -- of LetA after its expansion.
+    (LetA{}, _)       -> True
+    (_,      LetA {}) -> True
+
     (Recv{} , _) -> False
     (Send{} , _) -> False
     (At{} , _) -> False

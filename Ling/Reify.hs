@@ -169,6 +169,7 @@ reifyAct = \case
   N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (reify (t ^. N.rterm)) x
   N.Ax       s cs     -> Ax          (reify s) ((`CD` NoSession) <$> cs)
   N.At       t ps     -> At          (reify t) (reify ps)
+  N.LetA{}            -> error "reifyAct/LetA"
 
 -- isInfix xs = match "_[^_]*_" xs
 isInfix :: Name -> Maybe Name
