@@ -19,6 +19,7 @@ instance Rename Name where
 instance Rename Term where
   rename f = \case
     Def x es   -> Def (rename f x) (rename f es)
+    Let defs t -> Let (rename f defs) (rename (hideDefs defs f) t)
     Lam arg t  -> Lam (rename f arg) (rename (hideArg arg f) t)
     TFun arg t -> TFun (rename f arg) (rename (hideArg arg f) t)
     TSig arg t -> TSig (rename f arg) (rename (hideArg arg f) t)
@@ -29,6 +30,9 @@ instance Rename Term where
     Proc cs p  -> Proc (rename f cs) (rename f p)
     TProto rs  -> TProto (rename f rs)
     TSession s -> TSession (rename f s)
+
+instance (Ord a, Rename a, Rename b) => Rename (Map a b) where
+  rename f = l2m . rename f . m2l
 
 instance Rename a => Rename (Arg a) where
   rename f (Arg x e) = Arg (rename f x) (rename f e)
@@ -51,6 +55,12 @@ hideArg (Arg x _) = hideName x
 
 hideArgs :: [Arg a] -> Endom Ren
 hideArgs = flip (foldr hideArg)
+
+hideNames :: [Name] -> Endom Ren
+hideNames = flip (foldr hideName)
+
+hideDefs :: Defs -> Endom Ren
+hideDefs = hideNames . keys
 
 hidePref :: Pref -> Endom Ren
 hidePref = hideArgs . concatMap actVarDecs

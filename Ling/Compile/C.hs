@@ -205,6 +205,7 @@ transTerm env x = case x of
        []                             -> C.EVar (transEVar env f)
        [e0,e1] | Just d <- transOp f  -> d e0 e1
        es                             -> C.EApp (C.EVar (transName f)) es
+  Let{}          -> error "IMPOSSIBLE: Let after reduce"
   Lit l          -> C.ELit (transLiteral l)
   Lam{}          -> transErr "transTerm/Lam"  x
   Con n          -> C.EVar (transCon n)
@@ -352,6 +353,7 @@ transTyp env e0 = case e0 of
       -- ("Vec", [a,e]) -> tArr (transTyp env a) (transTerm env e)
       ("Vec", [a,_e]) -> tPtr (transTyp env a)
       _ -> trace ("[WARNING] Unsupported type " ++ pretty x) tVoidPtr
+  Let{}    -> error "IMPOSSIBLE: Let after reduce"
   TTyp{}   -> tInt -- <- types are erased to 0
   Case{}   -> transErr "transTyp: Case" e0
   TProto{} -> transErr "transTyp: TProto" e0

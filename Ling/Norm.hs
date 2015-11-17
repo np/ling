@@ -69,6 +69,7 @@ type Branch = (ConName,Term)
 type Typ = Term
 data Term
   = Def Name [Term]
+  | Let Defs Term
   | Lit Literal
   | Lam VarDec Term
   | Con ConName

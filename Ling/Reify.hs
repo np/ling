@@ -269,6 +269,7 @@ instance Norm Term where
   type Normalized Term = N.Term
   reify = \case
     N.Def x es         -> reifyDef x es
+    N.Let defs t       -> error "reify/Term/Let"
     N.Lit l            -> RawApp (Lit l) []
     N.Con n            -> RawApp (Con (reify n)) []
     N.TTyp             -> RawApp TTyp []

@@ -56,6 +56,7 @@ substName f x = fromMaybe (Def x []) (f ^. at x)
 instance Subst Term where
   subst f = \case
     Def x es   -> app0 (substName f x) (subst f es)
+    Let defs t -> subst (defs `mergeDefs` f) t
     Lam arg t  -> Lam (subst f arg) (subst (hideArg arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hideArg arg f) t)

@@ -194,6 +194,7 @@ inferTerm' = fmap unScoped . inferTerm
 
 inferTerm :: Term -> TC (Scoped Typ)
 inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
+  Let _defs _t -> tcError "Unsupported `let`"
   Lit l        -> pure . pure $ literalType l
   TTyp         -> pure sTyp -- type-in-type
   Def x es     -> inferDef x es

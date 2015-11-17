@@ -149,17 +149,21 @@ equivRedTerm env s0 s1 =
         (Array{}, _) -> False
         (TermS{}, _) -> False
 
-      (Def{},        _)            -> False
-      (Lit{},        _)            -> False
-      (Con{},        _)            -> False
-      (Case{},       _)            -> False
-      (TTyp,         _)            -> False
-      (Lam{},        _)            -> False
-      (TFun{},       _)            -> False
-      (TSig{},       _)            -> False
-      (Proc{},       _)            -> False
-      (TProto{},     _)            -> False
-      (TSession{},   _)            -> False
+      (Let defs0 t0, Let defs1 t1) -> equiv env (Scoped defs0 t0) (Scoped defs1 t1)
+      (Let defs0 t0, _)            -> equiv env (Scoped defs0 t0) (pure s1)
+      (_,            Let defs1 t1) -> equiv env (pure s0)         (Scoped defs1 t1)
+
+      (Def{},        _) -> False
+      (Lit{},        _) -> False
+      (Con{},        _) -> False
+      (Case{},       _) -> False
+      (TTyp,         _) -> False
+      (Lam{},        _) -> False
+      (TFun{},       _) -> False
+      (TSig{},       _) -> False
+      (Proc{},       _) -> False
+      (TProto{},     _) -> False
+      (TSession{},   _) -> False
 
 instance Equiv RW where
   equiv _ = (==)
