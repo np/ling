@@ -1,2 +1,3 @@
-Expected an array splitting pattern with [ ... ] not { ... }
+While checking `wrong_ten_pat`
+  Expected an array splitting pattern with [ ... ] not { ... }
 

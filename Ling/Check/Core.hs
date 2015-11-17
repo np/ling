@@ -24,7 +24,7 @@ checkOptSession c ms0 ms1 =
     Just s0 ->
       case ms1 of
         Nothing -> checkUnused c Nothing s0
-        Just s1 -> checkRSession s0 >> checkEqSessions c s0 s1
+        Just s1 -> errorScope c (checkRSession s0) >> checkEqSessions c s0 s1
 
 checkProc :: Proc -> TC Proto
 checkProc (pref `Dot` procs) =
@@ -257,7 +257,7 @@ inferDef f es = do
   mtyp  <- view $ evars . at f
   defs  <- view edefs
   case mtyp of
-    Just typ -> checkApp f 0 (Scoped defs typ) es
+    Just typ -> errorScope f $ checkApp f 0 (Scoped defs typ) es
     Nothing  -> tcError $ "unknown definition " ++ unName f ++
                           if f == anonName then
                             "\n\nHint: While `_` is allowed as a name for a definition, one cannot reference it."
@@ -310,13 +310,12 @@ checkSession s0 = case s0 of
   Array _ ss  -> for_ ss checkRSession
 
 checkVarDef :: Name -> Maybe Typ -> Maybe Term -> Endom (TC a)
-checkVarDef x mtyp mtm kont
-  | x == anonName = checkSig mtyp mtm >> kont
-  | otherwise     = do
-    checkNotIn evars "name" x
-    typ <- checkSig mtyp mtm
-    local ((evars . at x .~ Just typ)
-         . (edefs . at x .~ mtm)) kont
+checkVarDef x mtyp mtm kont = do
+  checkNotIn evars "name" x
+  typ <- errorScope x $ checkSig mtyp mtm
+  (if x == anonName
+      then id
+      else local ((evars . at x .~ Just typ) . (edefs . at x .~ mtm))) kont
 
 checkVarDec :: VarDec -> Endom (TC a)
 checkVarDec (Arg x mtyp) = checkVarDef x mtyp Nothing

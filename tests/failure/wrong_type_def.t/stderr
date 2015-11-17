@@ -1,6 +1,7 @@
-Types are not equivalent.
-Expected:
-  Int
-Inferred:
-  Type
+While checking `wrong`
+  Types are not equivalent.
+  Expected:
+    Int
+  Inferred:
+    Type
 

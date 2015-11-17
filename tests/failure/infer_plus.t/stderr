@@ -1,1 +1,4 @@
-Cannot infer or check, please add a type signature
+While checking `infer_plus`
+  While checking `x`
+    Cannot infer or check, please add a type signature
+

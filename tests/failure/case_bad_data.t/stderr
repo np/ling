@@ -1,6 +1,7 @@
-Labels are not equal.
-Expected:
-  c, d
-Inferred:
-  e, f
+While checking `badTU`
+  Labels are not equal.
+  Expected:
+    c, d
+  Inferred:
+    e, f
 

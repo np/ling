@@ -1,6 +1,8 @@
-Types are not equivalent.
-Expected:
-  Type
-Inferred:
-  Int
+While checking `wrong_telescope`
+  While checking `_`
+    Types are not equivalent.
+    Expected:
+      Type
+    Inferred:
+      Int
 

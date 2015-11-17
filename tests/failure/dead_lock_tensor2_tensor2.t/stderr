@@ -1,3 +1,4 @@
-These channels should be used independently:
-c, d
+While checking `dead_lock_tensor2_tensor2`
+  These channels should be used independently:
+  c, d
 

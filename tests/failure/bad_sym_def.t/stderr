@@ -1,6 +1,7 @@
-Types are not equivalent.
-Expected:
-  (A : Type)-> (x : A)-> (y : A)-> (p : Id A x y)-> Id A y x
-Inferred:
-  (A : Type)-> (x : A)-> (y : A)-> (p : Id A x y)-> Id A x y
+While checking `sym`
+  Types are not equivalent.
+  Expected:
+    (A : Type)-> (x : A)-> (y : A)-> (p : Id A x y)-> Id A y x
+  Inferred:
+    (A : Type)-> (x : A)-> (y : A)-> (p : Id A x y)-> Id A x y
 

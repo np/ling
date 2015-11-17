@@ -17,9 +17,10 @@ checkDecs = foldr checkDec (return ())
 checkDec :: Dec -> TC () -> TC ()
 checkDec (Sig d typ mt)   kont = checkVarDef d typ mt kont
 checkDec (Dat d cs)       kont = do
-  checkNoDups ("in the definition of " ++ pretty d) cs
-  checkNotIn evars "name" d
-  for_ cs (checkNotIn ctyps "data constructor")
+  errorScope d $ do
+    checkNoDups ("in the definition of " ++ pretty d) cs
+    checkNotIn evars "name" d
+    for_ cs (checkNotIn ctyps "data constructor")
   local ((ctyps %~ union (l2m [ (c,d) | c <- cs ]))
         .(evars . at d .~ Just TTyp)
         .(ddefs . at d .~ Just cs)) kont

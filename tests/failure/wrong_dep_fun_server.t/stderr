@@ -1,6 +1,7 @@
-On channel c sessions are not equivalent.
-Given session (expanded):
-  ?(x : A).!B x
-Inferred session:
-  ?(x : A).!B y
+While checking `wrong_dep_fun_server`
+  On channel c sessions are not equivalent.
+  Given session (expanded):
+    ?(x : A).!B x
+  Inferred session:
+    ?(x : A).!B y
 

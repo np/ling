@@ -1,3 +1,4 @@
-These channels should be used independently:
-c, d
+While checking `dead_lock_new_new`
+  These channels should be used independently:
+  c, d
 

@@ -1,6 +1,7 @@
-Sessions are not dual.
-Given session (expanded):
-  ?(x : Int)
-Inferred dual session:
-  ?(y : Int)
+While checking `confuseSendRecv2_using_dual`
+  Sessions are not dual.
+  Given session (expanded):
+    ?(x : Int)
+  Inferred dual session:
+    ?(y : Int)
 

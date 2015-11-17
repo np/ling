@@ -1,6 +1,7 @@
-Types are not equivalent.
-Expected:
-  (Y : Type)-> Y
-Inferred:
-  (Y : Type)-> Int
+While checking `bad`
+  Types are not equivalent.
+  Expected:
+    (Y : Type)-> Y
+  Inferred:
+    (Y : Type)-> Int
 

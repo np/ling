@@ -1,6 +1,7 @@
-On channel d sessions are not equivalent.
-Given session (expanded):
-  !Int
-Inferred session:
-  ?(y : Int)
+While checking `confuseSendRecv2`
+  On channel d sessions are not equivalent.
+  Given session (expanded):
+    !Int
+  Inferred session:
+    ?(y : Int)
 

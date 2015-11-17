@@ -1,6 +1,7 @@
-Types are not equivalent.
-Expected:
-  Char
-Inferred:
-  Double
+While checking `wrong_double_literal`
+  Types are not equivalent.
+  Expected:
+    Char
+  Inferred:
+    Double
 

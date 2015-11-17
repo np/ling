@@ -1,6 +1,7 @@
-Sessions are not dual.
-Given session (expanded):
-  !Int
-Inferred dual session:
-  !Int
+While checking `wrong_feed_send_with_send`
+  Sessions are not dual.
+  Given session (expanded):
+    !Int
+  Inferred dual session:
+    !Int
 

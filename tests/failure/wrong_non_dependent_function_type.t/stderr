@@ -1,6 +1,7 @@
-Types are not equivalent.
-Expected:
-  Int -> Int
-Inferred:
-  (x : Bool)-> Int
+While checking `wrong_non_dependent_function_type`
+  Types are not equivalent.
+  Expected:
+    Int -> Int
+  Inferred:
+    (x : Bool)-> Int
 

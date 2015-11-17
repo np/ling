@@ -1,3 +1,4 @@
-These channels have not been introduced:
-(c : ?(x : Int))
+While checking `unboundChannel`
+  These channels have not been introduced:
+  (c : ?(x : Int))
 

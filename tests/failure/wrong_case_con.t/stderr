@@ -1,6 +1,8 @@
-Types are not equivalent.
-Expected:
-  Int
-Inferred:
-  Bool
+While checking `wrong_case_con`
+  While checking `_+_`
+    Types are not equivalent.
+    Expected:
+      Int
+    Inferred:
+      Bool
 

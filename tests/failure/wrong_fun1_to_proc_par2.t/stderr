@@ -1,6 +1,8 @@
-Types are not equivalent.
-Expected:
-  I
-Inferred:
-  O
+While checking `wrong_fun1_to_proc_par2`
+  While checking `f`
+    Types are not equivalent.
+    Expected:
+      I
+    Inferred:
+      O
 
