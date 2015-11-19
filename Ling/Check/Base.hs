@@ -235,9 +235,7 @@ caseType t ty brs = do
                      "Inferred:" (Comma (fst <$> brs))
 
           env <- tcEqEnv
-          return $
-            fromMaybe (mkCase t brs)
-                      (theUniqBy (equiv env) (snd <$> brs))
+          return $ mkCaseBy (equiv env) t brs
         _ -> tcError $ "Case on a non data type: " ++ pretty d
     _ -> tcError $ "Case on a non data type: " ++ pretty ty
 

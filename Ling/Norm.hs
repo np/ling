@@ -250,15 +250,37 @@ allSndRcv = \case
   Array _ [] -> True
   _          -> False
 
-branches :: Traversal' [Branch] Term
-branches = list . _2
 
-mkCase :: Term -> [Branch] -> Term
-mkCase e brs = case e of
-  Con c
-    | Just rhs <- lookup c brs -> rhs
-    | otherwise -> error $ "mkCase: IMPOSSIBLE no branch for constructor " ++ show c
-  _ -> Case e brs
+type Brs a = [(ConName, a)]
+
+branches :: Traversal (Brs a) (Brs b) a b
+branches = traverse . _2
+
+type MkCase a = Term -> Brs a -> a
+
+mkCaseBy :: Rel Term -> MkCase Term
+mkCaseBy rel t brs
+  | Con con <- t, Just rhs <- lookup con brs    = rhs
+  | Just (_, s) <- theUniqBy (rel `on` snd) brs = s
+  | otherwise                                   = Case t brs
+
+mkCase :: MkCase Term
+mkCase = mkCaseBy (==)
+
+mkCaseRSession :: Rel Term -> MkCase RSession
+mkCaseRSession rel u = repl . bimap h h . unzip . fmap unRepl
+  where
+    repl   (s, r)    = (s ^. from tSession) `Repl` (r ^. from rterm)
+    unRepl (con, rs) = ((con, rs ^. rsession . tSession),
+                        (con, rs ^. rfactor . rterm))
+    h                = mkCaseBy rel u
+
+mkCaseSessions :: Rel Term -> MkCase Sessions
+mkCaseSessions rel u brs =
+  [mkCaseRSession rel u (brs & branches %~ unSingleton)]
+  where
+    unSingleton [x] = x
+    unSingleton _   = error "mkCaseSessions"
 
 litR :: Integer -> RFactor
 litR = RFactor . Lit . LInteger

@@ -155,13 +155,20 @@ checkAct act proto =
     LetA defs ->
       checkDefs defs $> ø
     At e p -> do
-      t <- pushLetTerm . reduceTerm . pure <$> inferTerm e
-      case t of
-        TProto ss -> do
-          proto' <- checkCPatt (wrapSessions ss) p
-          return $ proto' `dotProto` proto
-        _ ->
-          tcError . unlines $ ["Expected a protocol type, not:", pretty t]
+      ss <- unTProto =<< inferTerm e
+      proto' <- checkCPatt (wrapSessions ss) p
+      return $ proto' `dotProto` proto
+
+unTProto :: Term -> TC Sessions
+unTProto t0 = do
+  case pushLetTerm (reduceTerm (pure t0)) of
+    TProto ss  -> return ss
+    Case u brs -> mkCaseSessions (==) u <$> branches unTProto brs
+  {-
+    Case u brs -> do env <- tcEqEnv
+                    mkCaseSessions (equiv env) u <$> branches unTProto brs
+  -}
+    t1         -> tcError . unlines $ ["Expected a protocol type, not:", pretty t1]
 
 checkDefs :: Defs -> TC ()
 checkDefs defs = for_ defs inferTerm

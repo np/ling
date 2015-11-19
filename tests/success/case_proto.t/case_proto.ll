@@ -1,0 +1,1 @@
+../../../fixtures/all/case_proto.ll
