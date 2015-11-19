@@ -64,8 +64,7 @@ instance Dual a => Dual (Scoped a) where
   sink = fmap sink
 
 scopedName :: Scoped Name -> Maybe (Scoped Term)
-scopedName (Scoped g l x) =
-  [l, g] ^? each . at x . _Just . to (Scoped g l)
+scopedName (Scoped g l x) = [l, g] ^? each . at x . _Just . to (Scoped g l)
 
 addEDef :: Name -> Term -> Endom Defs
 addEDef x e m
