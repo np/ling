@@ -308,10 +308,13 @@ instance Print a => Print (Err a) where
   prt i (Ok  res) = prt i res
 
 instance Print a => Print (Scoped a) where
-  prt _i (Scoped ld x) =
-    concatD [ doc (showString "let ") , prt 0 ld
-            , doc (showString "in")
-            , prt 0 x ]
+  prt i (Scoped _ ld x)
+    -- the global scope is not displayed
+    | nullDefs ld = prt i x
+    | otherwise   =
+        concatD [ doc (showString "let ") , prt 0 ld
+                , doc (showString "in")
+                , prt i x ]
 
 instance Print a => Print (Arg a) where
   prt _i (Arg ident x) =

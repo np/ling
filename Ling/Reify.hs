@@ -8,6 +8,8 @@ import qualified Ling.Norm    as N
 import           Ling.Prelude
 import           Ling.Proc
 import           Ling.Raw
+import           Ling.Reduce
+import           Ling.Scoped
 import           Ling.Session
 import           Prelude      hiding (log)
 
@@ -276,7 +278,7 @@ instance Norm Term where
   type Normalized Term = N.Term
   reify = \case
     N.Def x es   -> reifyDef x es
-    N.Let _d _t  -> error "reify/Term/Let"
+    N.Let d t    -> reify (pushLetTerm (Scoped ø d t))
     N.Lit l      -> RawApp (Lit l) []
     N.Con n      -> RawApp (Con (reify n)) []
     N.TTyp       -> RawApp TTyp []

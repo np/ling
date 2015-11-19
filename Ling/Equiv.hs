@@ -1,6 +1,6 @@
 {-# LANGUAGE Rank2Types      #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Ling.Equiv (Equiv(equiv), EqEnv, emptyEqEnv, swapEnv) where
+module Ling.Equiv (Equiv(equiv), EqEnv, eqEnv, swapEnv) where
 
 import           Ling.Norm
 import           Ling.Prelude
@@ -11,19 +11,24 @@ import           Ling.Scoped
 data EqEnv = EqEnv
   { _eqnms  :: [(Name,Name)]
   , _edefs0
-  , _edefs1 :: Defs
+  , _edefs1
+  , _egdefs :: Defs
   }
 
-$(makeLenses ''EqEnv)
+makeLenses ''EqEnv
 
-emptyEqEnv :: Map Name Term -> EqEnv
-emptyEqEnv x = EqEnv [] x x
+eqEnv :: MonadReader s m => Lens' s Defs -> m EqEnv
+eqEnv l = view (l . to (EqEnv [] ø ø))
 
 swapEnv :: Endom EqEnv
-swapEnv (EqEnv nms ds0 ds1) = EqEnv (map swap nms) ds1 ds0
+swapEnv (EqEnv nms gds ds0 ds1) = EqEnv (map swap nms) gds ds1 ds0
 
 ext :: EqEnv -> Name -> Name -> EqEnv
 ext env x0 x1
+  | env^.egdefs.hasKey x0 =
+      error $ "Name conflict: " ++ pretty x0 ++ " is already bound"
+  | env^.egdefs.hasKey x1 =
+      error $ "Name conflict: " ++ pretty x1 ++ " is already bound"
   | env^.edefs0.hasKey x0 =
       error $ "Name conflict: " ++ pretty x0 ++ " is already bound"
   | env^.edefs1.hasKey x1 =
@@ -51,7 +56,7 @@ reduceEquiv :: (Print a, Print b) =>
                (Scoped a -> Scoped b) -> IsEquiv b -> IsEquiv a
 reduceEquiv red eqv env a0 a1 = eqv env' (a0'^.scoped) (a1'^.scoped)
   where
-    red' l = red . Scoped (env^.l)
+    red' l = red . Scoped (env^.egdefs) (env^.l)
     a0'    = red' edefs0 a0
     a1'    = red' edefs1 a1
     env'  = env & edefs0 %~ mergeDefs (a0'^.ldefs)
@@ -119,7 +124,7 @@ instance Equiv Name where
       es = env ^. eqnms
 
 instance Equiv Term where
-  equiv env t0 t1 = equivDef env t0 t1 || reduceEquiv reduceWHNF equivRedTerm env t0 t1
+  equiv env t0 t1 = equivDef env t0 t1 || reduceEquiv reduceTerm equivRedTerm env t0 t1
 
 equivRedTerm :: IsEquiv Term
 equivRedTerm env s0 s1 =
@@ -148,9 +153,9 @@ equivRedTerm env s0 s1 =
         (Array{}, _) -> False
         (TermS{}, _) -> False
 
-      (Let defs0 t0, Let defs1 t1) -> equiv env (Scoped defs0 t0) (Scoped defs1 t1)
-      (Let defs0 t0, _)            -> equiv env (Scoped defs0 t0) (pure s1)
-      (_,            Let defs1 t1) -> equiv env (pure s0)         (Scoped defs1 t1)
+      (Let defs0 t0, Let defs1 t1) -> equiv env (Scoped ø defs0 t0) (Scoped ø defs1 t1)
+      (Let defs0 t0, _)            -> equiv env (Scoped ø defs0 t0) (pure s1)
+      (_,            Let defs1 t1) -> equiv env (pure s0)           (Scoped ø defs1 t1)
 
       (Def{},        _) -> False
       (Lit{},        _) -> False

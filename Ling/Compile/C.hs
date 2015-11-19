@@ -42,7 +42,7 @@ import qualified Data.Map        as Map
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
 import           Ling.Print
-import           Ling.Reduce     (reduceWHNF)
+import           Ling.Reduce     (reduceTerm)
 import           Ling.Scoped     (Scoped(Scoped))
 import           Ling.Session
 import           Ling.Subst      (unScoped)
@@ -369,7 +369,7 @@ transTyp env e0 = case e0 of
   TSession{}-> transErr "transTyp: Not a type: TSession" e0
 
 transCTyp :: Env -> C.Qual -> Typ -> AQTyp
-transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env . reduceWHNF' env
+transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env . reduceTerm' env
 
 transMaybeCTyp :: Env -> C.Qual -> Maybe Typ -> AQTyp
 transMaybeCTyp env qual = \case
@@ -440,13 +440,13 @@ transSig env0 f _ty0 (Just t) =
     _ -> trace ("[WARNING] Skipping compilation of unsupported definition " ++ pretty f) []
 -- Of course this does not properly handle dependent types
 transSig env0 f (Just ty0) Nothing =
-  let ty0' = reduceWHNF' env0 ty0 in
+  let ty0' = reduceTerm' env0 ty0 in
   case ty0' of
   TFun{} -> go env0 [] ty0' where
     go env args t1 = case t1 of
       TFun (Arg n s) t -> go (addEVar n (transName n) env)
                              (dDec (transMaybeCTyp env C.QConst s) (transName n) : args)
-                             (reduceWHNF' env0 t)
+                             (reduceTerm' env0 t)
       _                -> [C.DSig (dDec (transCTyp env C.NoQual t1) (transName f))
                                   (reverse args)]
   _ -> [C.DDec (dDec (transCTyp env0 C.NoQual ty0') (transName f))]
@@ -464,8 +464,8 @@ transProgram :: Program -> C.Prg
 transProgram (Program decs) =
   C.PPrg (mapAccumL transDec emptyEnv decs ^. _2 . to concat)
 
-reduceWHNF' :: Env -> Term -> Term
-reduceWHNF' env = unScoped . reduceWHNF . Scoped (env ^. edefs)
+reduceTerm' :: Env -> Term -> Term
+reduceTerm' env = unScoped . reduceTerm . Scoped (env ^. edefs) ø
 -- -}
 -- -}
 -- -}

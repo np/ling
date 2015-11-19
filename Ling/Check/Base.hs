@@ -60,7 +60,7 @@ emptyTCEnv :: TCEnv
 emptyTCEnv = TCEnv defaultTCOpts ø ø ø ø
 
 tcEqEnv :: MonadReader TCEnv m => m EqEnv
-tcEqEnv = emptyEqEnv <$> view edefs
+tcEqEnv = eqEnv edefs
 
 verbosity :: Lens' TCEnv Verbosity
 verbosity = tcOpts . debugChecker
@@ -153,7 +153,7 @@ isEquiv :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
         => Scoped a -> Scoped a -> m (Bool, a, a)
 isEquiv t0 t1 = do
   env <- tcEqEnv
-  whenDebug $ do
+  whenDebug $
     when (t0 /= t1) $ do
       debug . unlines $
         ["checkEquivalence:", "  " ++ pretty t0, "against", "  " ++ pretty t1]
@@ -179,11 +179,11 @@ assertDiff :: (MonadError TCErr m, Print a)
 assertDiff msg cond expected x0 inferred x1 =
   assert (cond x0 x1) [msg, expected, "  " ++ pretty x0, inferred, "  " ++ pretty x1]
 
-checkTypeEquivalence :: MonadTC m => Scoped Typ -> Scoped Typ -> m ()
+checkTypeEquivalence :: MonadTC m => Typ -> Typ -> m ()
 checkTypeEquivalence t0 t1 =
    checkEquivalence "Types are not equivalent."
-                    "Expected:" t0
-                    "Inferred:" t1
+                    "Expected:" (pure t0)
+                    "Inferred:" (pure t1)
 
 checkNotIn :: (Ord name, Print name, MonadTC m) => Lens' TCEnv (Map name v) -> String -> name -> m ()
 checkNotIn l msg c = do
@@ -219,9 +219,13 @@ literalType = \case
   LChar{}    -> charTyp
   LString{}  -> stringTyp
 
-caseType :: MonadTC m => Term -> Scoped Typ -> [(Name, Scoped Typ)] -> m (Scoped Typ)
-caseType t ty brs =
-  case reduceWHNF ty ^. scoped of
+tcScope :: MonadReader TCEnv m => a -> m (Scoped a)
+tcScope a = (\x -> Scoped x ø a) <$> view edefs
+
+caseType :: MonadTC m => Term -> Typ -> [(Name, Typ)] -> m Typ
+caseType t ty brs = do
+  sty <- reduceTerm <$> tcScope ty
+  case sty ^. scoped of
     Def d [] -> do
       def <- view $ ddefs . at d
       case def of
@@ -232,27 +236,18 @@ caseType t ty brs =
 
           env <- tcEqEnv
           return $
-            fromMaybe (pure (mkCase t (brs & mapped . _2 %~ unScoped)))
+            fromMaybe (mkCase t brs)
                       (theUniqBy (equiv env) (snd <$> brs))
         _ -> tcError $ "Case on a non data type: " ++ pretty d
-    _ -> tcError $ "Case on a non data type: " ++ pretty (ty ^. scoped)
+    _ -> tcError $ "Case on a non data type: " ++ pretty ty
 
 def0 :: Name -> Term
 def0 x = Def x []
 
-conType :: MonadTC m => Name -> m (Scoped Typ)
-conType = fmap (pure . def0) . conTypeName
+conType :: MonadTC m => Name -> m Typ
+conType = fmap def0 . conTypeName
 
-sTyp :: Scoped Typ
-sTyp = pure TTyp
 
-sFun :: VarDec -> Scoped Typ -> Scoped Typ
-sFun arg s
-  | s^.ldefs.hasKey(arg^.argName) = error "sFun: IMPOSSIBLE"
-  | otherwise                     = TFun arg <$> s
-
-sSession :: Scoped Typ
-sSession = pure sessionTyp
 
 {------}
 {- TC -}

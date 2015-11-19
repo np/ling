@@ -18,35 +18,16 @@ subst1 = subst . l2m . pure
 substi :: (Integral i, Subst a) => (Name, i) -> a -> a
 substi (x, i) = subst1 (x, Lit (LInteger (fromIntegral i)))
 
-appG :: (Term -> Term) -> Term -> [Term] -> Term
-appG g t [] = g t
-appG g t (u:us) =
-  case g t of
-    Lam (Arg x _) t' -> appG g (subst1 (x, u) t') us
+app :: Term -> [Term] -> Term
+app t0 []     = t0
+app t0 (u:us) =
+  case t0 of
+    Lam (Arg x _) t1 -> app (subst1 (x, u) t1) us
     Def x es         -> Def x (es ++ u : us)
     _                -> error "Ling.Subst.app: IMPOSSIBLE"
 
--- Spec: app0 = app Map.empty
-app0 :: Term -> [Term] -> Term
-app0 = appG id
-
-{-
-app0 t []     = t
-app0 t (u:us) = case t of
-                  Lam (Arg x _) t' -> app0 (subst1 (x,u) t') us
-                  Def x es         -> Def x (es ++ u:us)
-                  _                -> error "Ling.Subst.app0: IMPOSSIBLE"
--}
-{-
-unDef :: Defs -> Term -> Term
-unDef defs e0 =
-  case e0 of
-    Def x es -> fromMaybe e0 (app <$> (Scoped defs <$> defs ^. at x) <*> pure es)
-    _        -> e0
--}
-
 unScoped :: Subst a => Scoped a -> a
-unScoped s = subst (s ^. ldefs) (s ^. scoped)
+unScoped s = subst (allDefs s) (s ^. scoped)
 
 substName :: Defs -> Name -> Term
 substName f x = fromMaybe (Def x []) (f ^. at x)
@@ -55,7 +36,7 @@ substName f x = fromMaybe (Def x []) (f ^. at x)
 
 instance Subst Term where
   subst f = \case
-    Def x es   -> app0 (substName f x) (subst f es)
+    Def x es   -> app (substName f x) (subst f es)
     Let defs t -> subst (defs `mergeDefs` f) t
     Lam arg t  -> Lam (subst f arg) (subst (hideArg arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)

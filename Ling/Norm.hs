@@ -250,6 +250,9 @@ allSndRcv = \case
   Array _ [] -> True
   _          -> False
 
+branches :: Traversal' [Branch] Term
+branches = list . _2
+
 mkCase :: Term -> [Branch] -> Term
 mkCase e brs = case e of
   Con c

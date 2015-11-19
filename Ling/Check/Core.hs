@@ -11,7 +11,6 @@ import           Ling.Proto
 import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.Session
-import           Ling.Subst           (unScoped)
 import           Ling.Prelude         hiding (subst1)
 import           Prelude              hiding (log)
 
@@ -35,7 +34,7 @@ sendRecvSession :: Act -> TC (Channel, Session -> Session)
 sendRecvSession = \case
   -- TODO this cannot infer dependent sends!
   -- https://github.com/np/ling/issues/13
-  Send c e -> (,) c . sendS <$> inferTerm' e
+  Send c e -> (,) c . sendS <$> inferTerm e
   Recv c arg@(Arg _c typ) ->
     checkMaybeTyp typ $> (c, depRecv arg)
   _ -> tcError "typeSendRecv: Not Send/Recv"
@@ -156,7 +155,7 @@ checkAct act proto =
     LetA defs ->
       checkDefs defs $> ø
     At e p -> do
-      t <- inferTerm' e
+      t <- pushLetTerm . reduceTerm . pure <$> inferTerm e
       case t of
         TProto ss -> do
           proto' <- checkCPatt (wrapSessions ss) p
@@ -191,28 +190,25 @@ checkCPattR (s `Repl` r) pat
   | Just 1 <- isLitR r = checkCPatt s pat
   | otherwise          = tcError "Unexpected pattern for replicated session"
 
-inferBranch :: (name,Term) -> TC (name,Scoped Typ)
+inferBranch :: (name, Term) -> TC (name, Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
 
-inferTerm' :: Term -> TC Typ
-inferTerm' = fmap unScoped . inferTerm
-
-inferTerm :: Term -> TC (Scoped Typ)
+inferTerm :: Term -> TC Typ
 inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
   Let _defs _t -> tcError "Unsupported `let`"
-  Lit l        -> pure . pure $ literalType l
-  TTyp         -> pure sTyp -- type-in-type
+  Lit l        -> pure $ literalType l
+  TTyp         -> pure TTyp -- type-in-type
   Def x es     -> inferDef x es
-  Lam arg t    -> sFun arg <$> checkVarDec arg (inferTerm t)
+  Lam arg t    -> TFun arg <$> checkVarDec arg (inferTerm t)
   Con n        -> conType n
   Case t brs   -> join $ caseType t <$> inferTerm t <*> list inferBranch brs
   Proc cs proc -> inferProcTyp cs proc
-  TFun arg s   -> checkVarDec arg (checkTyp s) $> sTyp
-  TSig arg s   -> checkVarDec arg (checkTyp s) $> sTyp
-  TProto ss    -> for_ ss checkRSession        $> sTyp
-  TSession s   -> checkSession s               $> sSession
+  TFun arg s   -> checkVarDec arg (checkTyp s) $> TTyp
+  TSig arg s   -> checkVarDec arg (checkTyp s) $> TTyp
+  TProto ss    -> for_ ss checkRSession        $> TTyp
+  TSession s   -> checkSession s               $> sessionTyp
 
-inferProcTyp :: [ChanDec] -> Proc -> TC (Scoped Typ)
+inferProcTyp :: [ChanDec] -> Proc -> TC Typ
 inferProcTyp cds proc = do
   let cs  = _argName <$> cds
   proto <- checkProc proc
@@ -221,10 +217,7 @@ inferProcTyp cds proc = do
   assert (proto' ^. isEmptyProto) $
     "These channels have not been introduced:" :
     prettyChanDecs proto'
-  return . pure $ TProto rs
-
-checkTerm :: Typ -> Term -> TC ()
-checkTerm = checkTerm' . pure
+  return $ TProto rs
 
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp
@@ -232,8 +225,8 @@ checkTyp = checkTerm TTyp
 checkMaybeTyp :: Maybe Typ -> TC ()
 checkMaybeTyp = checkMaybeTerm TTyp
 
-checkTerm' :: Scoped Typ -> Term -> TC ()
-checkTerm' expectedTyp e = do
+checkTerm :: Typ -> Term -> TC ()
+checkTerm expectedTyp e = do
   inferredTyp <- inferTerm e
   debug . unlines $
     ["Checking term"
@@ -249,20 +242,18 @@ checkMaybeTerm typ (Just tm) = checkTerm typ tm
 
 checkSig :: Maybe Typ -> Maybe Term -> TC Typ
 checkSig (Just typ) mtm       = checkTyp typ >> checkMaybeTerm typ mtm $> typ
-checkSig Nothing    (Just tm) = inferTerm' tm
-checkSig Nothing    Nothing   = tcError $ "Cannot infer or check, please add a type signature"
+checkSig Nothing    (Just tm) = inferTerm tm
+checkSig Nothing    Nothing   = tcError "Cannot infer or check, please add a type signature"
 
-inferDef :: Name -> [Term] -> TC (Scoped Typ)
+inferDef :: Name -> [Term] -> TC Typ
 inferDef (Name "_:_") [a,t] = do
   checkTyp a
-  let a' = pure a
-  checkTerm' a' t
-  return a'
+  checkTerm a t
+  return a
 inferDef f es = do
-  mtyp  <- view $ evars . at f
-  defs  <- view edefs
+  mtyp <- view $ evars . at f
   case mtyp of
-    Just typ -> errorScope f $ checkApp f 0 (Scoped defs typ) es
+    Just typ -> errorScope f $ tcScope typ >>= \styp -> checkApp f 0 styp es
     Nothing  -> tcError $ "unknown definition " ++ unName f ++
                           if f == anonName then
                             "\n\nHint: While `_` is allowed as a name for a definition, one cannot reference it."
@@ -274,20 +265,19 @@ inferDef f es = do
 -- `n`   number of already checked arguments
 -- `typ` the type of definition (minus the previously checked arguments)
 -- `es`  the list of arguments
-checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC (Scoped Typ)
-checkApp _ _ typ []     = return typ
-checkApp f n typ (e:es) =
-  case reduceWHNF typ of
-    (Scoped defs _typ@(TFun (Arg x mty) s)) -> do
+checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC Typ
+checkApp _ _ ty0 []     = return $ unScopedTerm ty0
+checkApp f n ty0 (e:es) =
+  let ty1 = reduceTerm ty0 in
+  case ty1 ^. scoped of
+    TFun (Arg x mty) s -> do
       debug . unlines $
         ["Check application:"
-        ,"f:      " ++ pretty f
-        ,"ldefs:  " ++ pretty (typ ^. ldefs)
---        ,"ldefs': " ++ pretty defs
-        ,"typ:    " ++ pretty (typ ^. scoped)
-        ,"_typ:   " ++ pretty _typ
-        ,"e:      " ++ pretty e
-        ,"es:     " ++ pretty es
+        ,"f:   " ++ pretty f
+        ,"ty0: " ++ pretty ty0
+        ,"ty1: " ++ pretty ty1
+        ,"e:   " ++ pretty e
+        ,"es:  " ++ pretty es
         {-
         ,"x:    " ++ pretty x
         ,"ty:   " ++ pretty ty
@@ -299,8 +289,8 @@ checkApp f n typ (e:es) =
                                      , pretty x
                                      , "of definition"
                                      , pretty f ]
-        Just ty -> checkTerm' (Scoped defs ty) e
-      checkApp f (n + 1) (subst1 f (x, e) (Scoped defs s)) es
+        Just ty -> checkTerm (unScopedTerm (ty1 $> ty)) e
+      checkApp f (n + 1) (subst1 f (x, e) (ty1 $> s)) es
     _ -> tcError ("Too many arguments given to " ++ pretty f ++ ", " ++
                      show n ++ " arguments expected and " ++
                      show (n + 1 + length es) ++ " were given.")
