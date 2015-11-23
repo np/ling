@@ -282,30 +282,52 @@ mkCaseSessions rel u brs =
     unSingleton [x] = x
     unSingleton _   = error "mkCaseSessions"
 
-litR :: Integer -> RFactor
-litR = RFactor . Lit . LInteger
-
 int0, int1 :: Term
 int0 = Lit (LInteger 0)
 int1 = Lit (LInteger 1)
 
-multTerm :: Term -> Term -> Term
-multTerm x y
-  | x == int0 || y == int0 = int0
-  | x == int1              = y
-  | y == int1              = x
-  | Lit (LInteger i) <- x
-  , Lit (LInteger j) <- y  = Lit (LInteger $ i * j)
-  | otherwise              = Def multName [x,y]
+matchDef2 :: Name -> Term -> Either Term (Term, Term)
+matchDef2 n = \case
+  (Def d [x, y]) | d == n -> Right (x, y)
+  r                       -> Left r
+
+addTerm :: Prism' Term (Term, Term)
+addTerm = prism mk $ matchDef2 addName
+  where
+    mk (x, y)
+      | x == int0              = y
+      | y == int0              = x
+      | Lit (LInteger i) <- x
+      , Lit (LInteger j) <- y  = Lit (LInteger $ i + j)
+      | otherwise              = Def addName [x,y]
+
+multTerm :: Prism' Term (Term, Term)
+multTerm = prism mk $ matchDef2 multName
+  where
+    mk (x, y)
+      | x == int0 || y == int0 = int0
+      | x == int1              = y
+      | y == int1              = x
+      | Lit (LInteger i) <- x
+      , Lit (LInteger j) <- y  = Lit (LInteger $ i * j)
+      | otherwise              = Def multName [x,y]
+
+litR :: Prism' RFactor Integer
+litR = prism (RFactor . Lit . LInteger) $
+  \case
+    RFactor (Lit (LInteger i)) -> Right i
+    r                          -> Left  r
+
+litR0, litR1 :: Prism' RFactor ()
+litR0 = litR . only 0
+litR1 = litR . only 1
+
+addR :: Prism' RFactor (RFactor, RFactor)
+addR = rterm . addTerm . (from rterm `bimapping` from rterm)
+
+multR :: Prism' RFactor (RFactor, RFactor)
+multR = rterm . multTerm . (from rterm `bimapping` from rterm)
 
 instance Monoid RFactor where
-  mempty = litR 1
-  mappend (RFactor x) (RFactor y) = RFactor (multTerm x y)
-
-isLitR :: RFactor -> Maybe Integer
-isLitR (RFactor (Lit (LInteger i))) = Just i
-isLitR _                            = Nothing
-
-isAddR :: RFactor -> Maybe (RFactor, RFactor)
-isAddR (RFactor (Def ((== addName)->True) [x, y])) = Just (RFactor x, RFactor y)
-isAddR _ = Nothing
+  mempty      = litR # 1
+  mappend x y = multR # (x, y)

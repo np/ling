@@ -1,4 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
 module Ling.Proc
   ( asProcs
   , actP
@@ -131,8 +130,9 @@ split' :: TraverseKind -> Channel -> [Channel] -> Act
 split' k c = Split k c . map noSession
 
 unRSession :: RSession -> Session
-unRSession (Repl s (isLitR -> Just 1)) = s
-unRSession _                           = error "unRSession"
+unRSession (s `Repl` r)
+  | litR1 `is` r = s
+  | otherwise    = error "unRSession"
 
 type UsedNames = Set Name
 
@@ -186,8 +186,8 @@ fwdArray k = case k of
 fwdP :: UsedNames -> Session -> [Channel] -> Proc
 fwdP _    _  [] = ø
 fwdP used s0 cs
-  | isEnd s0    = ø
-  | otherwise   =
+  | endS `is` s0 = ø
+  | otherwise    =
   case s0 of
     Array k ss -> fwdArray k used ss cs
     IO p t s   -> fwdIO p used t s cs

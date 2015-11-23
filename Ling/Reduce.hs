@@ -134,12 +134,12 @@ reduce_ :: Traversal' s Term -> Scoped s -> Scoped s
 reduce_ trv s = trv (reduceTerm . (s $>)) (s ^. scoped)
 
 flatRSession :: Scoped RSession -> [Scoped RSession]
-flatRSession ssr =
-  case () of
-  _ | Just n <- isLitR r1       -> replicate (fromInteger n) (pure $ oneS s)
-  _ | Just (rL,rR) <- isAddR r1 -> flatRSession (sr1 $> s `Repl` rL)
-                                ++ flatRSession (sr1 $> s `Repl` rR)
-  _                             -> [ssr]
+flatRSession ssr
+  | Just n       <- r1 ^? litR = replicate (fromInteger n) (pure $ oneS s)
+  | Just (rL,rR) <- r1 ^? addR = flatRSession (sr1 $> s `Repl` rL)
+                              ++ flatRSession (sr1 $> s `Repl` rR)
+  | otherwise                  = [ssr]
+
   where sr1 = reduce_ rterm (ssr $> r0)
         s   = ssr ^. scoped . rsession
         r0  = ssr ^. scoped . rfactor

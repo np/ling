@@ -53,7 +53,7 @@ prettyProto p = concat
   ,("   - " ++) <$> prettyChanDecs p
   ,if p ^. skel == ø then [] else
    " skeleton:"
-   : (("   " ++) <$> p^.skel.to pretty.to lines)]
+   : p ^.. skel . to pretty . to lines . each . to ("   " ++)]
 
 -- toListOf chanDecs :: Proto -> [Arg Session]
 chanDecs :: Fold Proto (Arg RSession)
@@ -140,7 +140,7 @@ protoSendRecv :: [(Channel, Session -> Session)] -> Endom Proto
 protoSendRecv cfs p =
   p & composeMap addChanOnly crs
     & skel %~ prllActS cs
-  where crs = [ (c,mapR f (defaultEndR $ p ^. chanSession c)) | (c,f) <- cfs ]
+  where crs = [ (c,mapR f (p ^. chanSession c . endedRS)) | (c,f) <- cfs ]
         cs = fst <$> cfs
 
 assertAbsent :: MonadError TCErr m => Channel -> Proto -> m ()

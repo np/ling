@@ -60,9 +60,7 @@ rmChan :: Channel -> Env -> Env
 rmChan c = chans . at c .~ Nothing
 
 (!) :: Env -> Channel -> (Location, RSession)
-env ! i = fromMaybe err (env ^. chans . at i)
-  where err = error $ "lookup/env " ++ show i ++ " in "
-                   ++ show (unName <$> keys (env ^. chans))
+(!) = lookupEnv nameString chans
 
 addLoc :: (Location, Status) -> Env -> Env
 addLoc (l, s) = locs . at l .~ fromStatus s
@@ -98,9 +96,9 @@ sessionStatus dflt l = \case
   s          -> [(l, dflt s)]
 
 rsessionStatus :: (Session -> Status) -> Location -> RSession -> [(Location,Status)]
-rsessionStatus dflt l sr@(Repl s r)
-  | Just 1 <- isLitR r = sessionStatus  dflt l s
-  | otherwise          = sessionsStatus dflt l [sr]
+rsessionStatus dflt l sr@(s `Repl` r)
+  | litR1 `is` r = sessionStatus  dflt l s
+  | otherwise    = sessionsStatus dflt l [sr]
 
 statusAt :: Channel -> Env -> Maybe Status
 statusAt c env

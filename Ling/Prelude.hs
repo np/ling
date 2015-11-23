@@ -6,6 +6,7 @@ module Ling.Prelude (module Ling.Prelude, module X) where
 
 import           Control.Applicative       as X
 import           Control.Lens              as X hiding (Empty)
+import           Control.Lens.Extras       as X (is)
 import           Control.Monad             as X
 import           Control.Monad.Except      as X
 import           Control.Monad.Reader      as X
@@ -199,18 +200,26 @@ subst1 :: Eq a => (a, s) -> Endom (a -> s)
 subst1 (x, y) = substPred ((==) x, y)
 
 hasKey :: At m => Index m -> Getter m Bool
-hasKey k = at k . to (isn't _Nothing)
+hasKey k = to $ has (at k . _Just)
 
 hasNoKey :: At m => Index m -> Getter m Bool
-hasNoKey k = at k . to (isn't _Just)
+hasNoKey k = to $ has (at k . _Nothing)
 
--- The two setters must not overlap. If they do we can break the composition law: Given l, f, g such
--- that: f.g.f.g =/= f.f.g.g ll = mergeSetters l l (ll %~ f) . (ll %~ g) == l %~ f.f.g.g =/= l %~
--- f.g.f.g == ll %~ (f.g) mergeSetters :: (Profunctor p, Settable f)
---              => Setting p s t a b
---              -> Setting p t u a b
---              -> Over p f s u a b
--- mergeSetters l0 l1 = sets $ \f -> over l1 f . over l0 f
+{-
+  The two setters must not overlap.
+  If they do we can break the composition law:
+  Given l, f, g such that: f.g.f.g =/= f.f.g.g
+  ll = mergeSetters l l
+  (ll %~ f) . (ll %~ g)
+  ==
+  l %~ f.f.g.g
+  =/=
+  l %~ f.g.f.g
+  == ll %~ (f.g)
+-}
+mergeSetters :: ASetter s t a b -> ASetter t u a b -> Setter s u a b
+mergeSetters l0 l1 = sets $ \f -> over l1 f . over l0 f
+
 -- There must be something equivalent in lens
 composeMap :: (a -> Endom b) -> [a] -> Endom b
 composeMap f = foldr ((.) . f) id
@@ -229,3 +238,10 @@ q = (quasiQuoter "q") { quoteExp = stringE, quotePat = litP . stringL }
 
 qFile :: QuasiQuoter
 qFile = quoteFile q
+
+lookupEnv :: Ord key => Lens' key String -> Lens' env (Map key val)
+                     -> env -> key -> val
+lookupEnv keyString vals env k = fromMaybe err (env ^. vals . at k)
+  where
+    err = error $ "lookupEnv " ++ k ^. keyString . to show ++
+                  " in " ++ show (env ^.. vals . to keys . each . keyString)

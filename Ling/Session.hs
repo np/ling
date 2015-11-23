@@ -27,9 +27,6 @@ fwds n s
 fwd :: Int -> Session -> Session
 fwd n s = Array ParK $ fwds n s
 
-endS :: Session
-endS = Array SeqK []
-
 -- Here one can tune what we consider ended.
 -- Being ended implies:
 -- * No need to actually use the channel
@@ -37,18 +34,25 @@ endS = Array SeqK []
 -- For instance these could be ended.
 -- * `Array _ []` (thus `{}` and `[]`)
 -- * `Array _ [ended ,..., ended]`
-isEnd :: Session -> Bool
-isEnd = (==) endS
+endS :: Prism' Session ()
+endS = only (Array SeqK [])
 
-isEndR :: RSession -> Bool
-isEndR (s `Repl` r) = isEnd s && Just 1 == isLitR r
+endRS :: Prism' RSession ()
+endRS = nearly (oneS (endS # ())) $ \(s `Repl` r) -> endS `is` s && litR1 `is` r
+
+endedS :: Iso' (Maybe Session) Session
+endedS = non' endS
+
+endedRS :: Iso' (Maybe RSession) RSession
+endedRS = non' endRS
 
 unRepl :: RSession -> Session
-unRepl (s `Repl` (isLitR -> Just 1)) = s
-unRepl _                             = error "unRepl: unexpected replicated session"
+unRepl (s `Repl` r)
+  | litR1 `is` r = s
+  | otherwise    = error "unRepl: unexpected replicated session"
 
 wrapSessions :: [RSession] -> Session
-wrapSessions [s `Repl` (isLitR -> Just 1)] = s
+wrapSessions [s `Repl` (is litR1 -> True)] = s
 wrapSessions ss                            = Array ParK ss
 
 mapR :: (Session -> Session) -> RSession -> RSession
@@ -72,6 +76,9 @@ class Dual a where
   dualOp DualOp = dual
   dualOp LogOp  = log
   dualOp SinkOp = sink
+
+dualized :: (Dual a, Dual b) => Iso a b a b
+dualized = iso dual dual
 
 termS :: DualOp -> Term -> Session
 termS o (TSession s) = dualOp o s
@@ -141,14 +148,6 @@ instance Dual a => Dual [a] where
 instance Dual Term where
   dualOp o = view tSession . termS o
 
-defaultEnd :: Maybe Session -> Session
-defaultEnd Nothing  = endS
-defaultEnd (Just s) = s
-
-defaultEndR :: Maybe RSession -> RSession
-defaultEndR Nothing  = oneS endS
-defaultEndR (Just s) = s
-
 sessionStep :: Session -> Session
 sessionStep (IO _ _ s) = s
 sessionStep s          = error $ "sessionStep: no steps " ++ show s
@@ -169,8 +168,8 @@ extractSession l =
 -- See flatRSession in Ling.Reduce
 unsafeFlatRSession :: RSession -> [Session]
 unsafeFlatRSession (Repl s r)
-  | Just n <- isLitR r = replicate (fromInteger n) s
-  | otherwise          = error "unsafeFlatRSession"
+  | Just n <- r ^? litR = replicate (fromInteger n) s
+  | otherwise           = error "unsafeFlatRSession"
 
 -- See flatSessions in Ling.Reduce
 unsafeFlatSessions :: Sessions -> [Session]
@@ -179,10 +178,10 @@ unsafeFlatSessions = concatMap unsafeFlatRSession
 projRSessions :: Integer -> Sessions -> Session
 projRSessions _ [] = error "projRSessions: out of bound"
 projRSessions n (Repl s r:ss)
-  | Just i <- isLitR r = if n < i
+  | Just i <- r ^? litR = if n < i
                            then s
                            else projRSessions (n - i) ss
-  | otherwise = error "projRSessions/Repl: only integer literals are supported"
+  | otherwise           = error "projRSessions/Repl: only integer literals are supported"
 
 projSession :: Integer -> Session -> Session
 projSession n (Array _ ss) = projRSessions n ss

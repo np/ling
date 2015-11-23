@@ -123,7 +123,7 @@ checkEqSessions c s0 s1 =
 checkUnused :: (MonadError TCErr m, Print channel)
             => channel -> Maybe RSession -> RSession -> m ()
 checkUnused _ (Just _) _ = return ()
-checkUnused c Nothing  s = assert (isEndR s) ["Unused channel " ++ pretty c]
+checkUnused c Nothing  s = assert (endRS `is` s) ["Unused channel " ++ pretty c]
 
 checkOneR :: MonadError TCErr m => RFactor -> m ()
 checkOneR r = assert (r == ø) ["Unexpected replication:", pretty r]

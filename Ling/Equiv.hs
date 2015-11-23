@@ -18,7 +18,7 @@ data EqEnv = EqEnv
 makeLenses ''EqEnv
 
 eqEnv :: MonadReader s m => Lens' s Defs -> m EqEnv
-eqEnv l = view (l . to (EqEnv [] ø ø))
+eqEnv l = views l (EqEnv [] ø ø)
 
 swapEnv :: Endom EqEnv
 swapEnv (EqEnv nms gds ds0 ds1) = EqEnv (map swap nms) gds ds1 ds0

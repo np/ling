@@ -62,7 +62,7 @@ checkProcs :: [Proc] -> TC Proto
 checkProcs procs = mconcat <$> traverse checkProc procs
 
 checkChanDec :: Proto -> ChanDec -> TC RSession
-checkChanDec proto (Arg c s) = checkOptSession c s s' $> defaultEndR s'
+checkChanDec proto (Arg c s) = checkOptSession c s s' $> s' ^. endedRS
   where s' = proto ^. chanSession c
 
 checkRFactor :: RFactor -> TC ()
@@ -121,8 +121,8 @@ checkAct act proto =
     Nu (Arg c cOS) (Arg d dOS) -> do
       let ds = [c,d]
           [cSession,dSession] = chanSessions ds proto
-          cNSession = defaultEndR cSession
-          dNSession = defaultEndR dSession
+          cNSession = cSession ^. endedRS
+          dNSession = dSession ^. endedRS
       checkUnused c cSession dNSession
       checkUnused d dSession cNSession
       checkOptSession c cOS cSession
@@ -133,8 +133,8 @@ checkAct act proto =
       rmChans ds <$> checkConflictingChans proto Nothing ds
     Split k c dOSs -> do
       assertAbsent c proto
-      let ds         = dOSs^..each.argName
-          dsSessions = defaultEndR <$> chanSessions ds proto
+      let ds         = dOSs ^.. each . argName
+          dsSessions = chanSessions ds proto ^.. each . endedRS
           s          = array k dsSessions
       for_ dOSs $ checkChanDec proto
       proto' <-
@@ -194,8 +194,8 @@ checkCPatt s = \case
 
 checkCPattR :: RSession -> CPatt -> TC Proto
 checkCPattR (s `Repl` r) pat
-  | Just 1 <- isLitR r = checkCPatt s pat
-  | otherwise          = tcError "Unexpected pattern for replicated session"
+  | litR1 `is` r = checkCPatt s pat
+  | otherwise    = tcError "Unexpected pattern for replicated session"
 
 inferBranch :: (name, Term) -> TC (name, Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t

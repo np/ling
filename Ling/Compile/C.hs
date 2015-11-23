@@ -135,9 +135,7 @@ addEVar x y env
   | otherwise               = env & evars . at x .~ Just y
 
 (!) :: Env -> Name -> C.LVal
-env ! i = fromMaybe (error $ "lookup/env " ++ show i ++ " in " ++ show scope)
-                    (env ^. locs . at i)
-  where scope = unName <$> keys (env ^. locs)
+(!) = lookupEnv nameString locs
 
 transCon :: Name -> C.Ident
 transCon (Name x) = C.Ident ("con_" ++ x)
@@ -397,9 +395,9 @@ transRFactor :: Env -> RFactor -> C.Exp
 transRFactor env (RFactor t) = transTerm env t
 
 transRSession :: Env -> RSession -> AQTyp
-transRSession env (s `Repl` r) = case isLitR r of
-  Just 1 -> transSession env s
-  _      -> mapAQTyp (\t -> tArr t (transRFactor env r)) (transSession env s)
+transRSession env (s `Repl` r)
+  | litR1 `is` r = transSession env s
+  | otherwise    = mapAQTyp (\t -> tArr t (transRFactor env r)) (transSession env s)
 
 transSessions :: Env -> Sessions -> [AQTyp]
 transSessions = map . transRSession
@@ -462,7 +460,7 @@ transDec env x = case x of
 
 transProgram :: Program -> C.Prg
 transProgram (Program decs) =
-  C.PPrg (mapAccumL transDec emptyEnv decs ^. _2 . to concat)
+  C.PPrg (mapAccumL transDec emptyEnv decs ^.. _2 . each . each)
 
 reduceTerm' :: Env -> Term -> Term
 reduceTerm' env = unScoped . reduceTerm . Scoped (env ^. edefs) ø

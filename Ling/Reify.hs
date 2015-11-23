@@ -1,6 +1,5 @@
 {-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Ling.Reify where
 
@@ -23,6 +22,12 @@ class Norm a where
   normalize :: a -> a
   normalize = reify . norm
 
+normalized :: (Norm a, Norm b) => Iso a b (Normalized a) (Normalized b)
+normalized = iso norm reify
+
+reified :: (Norm a, Norm b) => Iso (Normalized a) (Normalized b) a b
+reified = from normalized
+
 instance Norm a => Norm [a] where
   type Normalized [a] = [Normalized a]
   reify = map reify
@@ -31,14 +36,14 @@ instance Norm a => Norm [a] where
 instance Norm CSession where
   type Normalized CSession = N.Session
   reify s
-    | s == endS = Done
-    | otherwise = Cont . rawSession $ reify s
-  norm Done = endS
+    | endS `is` s = Done
+    | otherwise   = Cont . rawSession $ reify s
+  norm Done = endS # ()
   norm (Cont s) = norm (RawSession s)
 
 instance Norm ASession where
   type Normalized ASession = N.Session
-  norm (AS s) = s ^. to norm . from N.tSession
+  norm (AS s) = s ^. normalized . from N.tSession
   reify = AS . paren . rawSession . reify
 
 instance Norm RawSession where
@@ -61,8 +66,9 @@ reifyDec = reify
 
 instance Norm OptRepl where
   type Normalized OptRepl = N.RFactor
-  reify (N.isLitR -> Just 1) = One
-  reify (N.RFactor t)        = Some (reify t)
+  reify r
+    | N.litR1 `is` r = One
+    | otherwise      = Some $ r ^. N.rterm . reified
   norm  One                  = ø
   norm (Some t)              = N.RFactor (norm t)
 
@@ -168,7 +174,7 @@ reifyAct = \case
   N.Split N.SeqK c ds -> SeqSplit c (reify ds)
   N.Send     c t      -> Send     c (reify t)
   N.Recv     c a      -> Recv     c (reify a)
-  N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (reify (t ^. N.rterm)) x
+  N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (t ^. N.rterm . reified) x
   N.Ax       s cs     -> Ax          (reify s) ((`CD` NoSession) <$> cs)
   N.At       t ps     -> At          (reify t) (reify ps)
   N.LetA{}            -> error "reifyAct/LetA"
@@ -230,7 +236,7 @@ instance Norm ATerm where
     Con n      -> N.Con (norm n)
     TTyp       -> N.TTyp
     TProto ss  -> N.TProto (norm ss)
-    End        -> N.TSession endS
+    End        -> N.TSession (endS # ())
     Par s      -> N.TSession $ N.Array N.ParK (norm s)
     Ten s      -> N.TSession $ N.Array N.TenK (norm s)
     Seq s      -> N.TSession $ N.Array N.SeqK (norm s)
