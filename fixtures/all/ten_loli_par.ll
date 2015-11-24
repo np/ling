@@ -6,3 +6,5 @@ ten_loli_par =
   o{a,b}
   ( fwd(A)(a,na)
   | fwd(B)(b,nb))
+
+ten_loli_par_sInt_sDouble = ten_loli_par (!Int) (!Double)

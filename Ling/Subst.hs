@@ -78,7 +78,7 @@ instance Subst Act where
     Nu c d          -> Nu (subst f c) (subst f d)
     NewSlice cs t x -> NewSlice cs (subst f t) x
     LetA{}          -> error "Subst/LetA"
-    act@Ax{}        -> act
+    Ax s cs         -> Ax (subst f s) cs
     At t cs         -> At (subst f t) cs
 
 instance Subst Proc where

@@ -7,7 +7,7 @@ import qualified Ling.Norm    as N
 import           Ling.Prelude
 import           Ling.Proc
 import           Ling.Raw
-import           Ling.Reduce
+import           Ling.Defs    (pushDefs)
 import           Ling.Scoped
 import           Ling.Session
 import           Prelude      hiding (log)
@@ -177,7 +177,7 @@ reifyAct = \case
   N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (t ^. N.rterm . reified) x
   N.Ax       s cs     -> Ax          (reify s) ((`CD` NoSession) <$> cs)
   N.At       t ps     -> At          (reify t) (reify ps)
-  N.LetA{}            -> error "reifyAct/LetA"
+  N.LetA{}            -> error "`let` is not supported in parallel actions"
 
 -- isInfix xs = match "_[^_]*_" xs
 isInfix :: Name -> Maybe Name
@@ -284,7 +284,7 @@ instance Norm Term where
   type Normalized Term = N.Term
   reify = \case
     N.Def x es   -> reifyDef x es
-    N.Let d t    -> reify (pushLetTerm (Scoped ø d t))
+    N.Let d t    -> reify (pushDefs (Scoped ø d t))
     N.Lit l      -> RawApp (Lit l) []
     N.Con n      -> RawApp (Con (reify n)) []
     N.TTyp       -> RawApp TTyp []

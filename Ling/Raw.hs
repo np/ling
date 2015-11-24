@@ -36,7 +36,6 @@ paren t             = Paren t NoSig
 
 mkProcs :: [Proc] -> Proc
 mkProcs = \case
-  []  -> PPrll []
   [p] -> p
   ps  -> PPrll ps
 

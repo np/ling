@@ -5,6 +5,7 @@
 module Ling.Check.Core where
 
 import           Ling.Check.Base
+import           Ling.Defs
 import           Ling.Norm
 import           Ling.Print
 import           Ling.Proto
@@ -160,8 +161,8 @@ checkAct act proto =
       return $ proto' `dotProto` proto
 
 unTProto :: Term -> TC Sessions
-unTProto t0 = do
-  case pushLetTerm (reduceTerm (pure t0)) of
+unTProto t0 =
+  case pushDefs (reduceTerm (pure t0)) of
     TProto ss  -> return ss
     Case u brs -> mkCaseSessions (==) u <$> branches unTProto brs
   {-

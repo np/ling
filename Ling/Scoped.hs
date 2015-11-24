@@ -73,7 +73,9 @@ addEDef x e m
   | otherwise         = Map.insert x e m
 
 subst1 :: Rename a => Name -> (Name, Term) -> Scoped a -> Scoped a
-subst1 d (x, e) (Scoped gs ls s) =
-  Scoped gs (addEDef x' e ls) (rename1 (x, x') s)
+subst1 d (x, e) _sa@(Scoped gs ls a) =
+  case e of
+--    Def y [] -> sa $> rename1 (x, y) a
+    _        -> Scoped gs (addEDef x' e ls) (rename1 (x, x') a)
   where
     x' = prefName (unName d ++ "#") x

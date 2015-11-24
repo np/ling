@@ -39,13 +39,15 @@ module Ling.Compile.C where
 import           Prelude         hiding (log)
 
 import qualified Data.Map        as Map
+import           Ling.Defs       (pushDefs)
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
 import           Ling.Print
+import           Ling.Proc       (fwdP)
 import           Ling.Reduce     (reduceTerm)
 import           Ling.Scoped     (Scoped(Scoped))
 import           Ling.Session
-import           Ling.Subst      (unScoped)
+-- import           Ling.Subst      (unScoped)
 import qualified MiniC.Abs       as C
 import qualified MiniC.Print     as C
 
@@ -98,6 +100,10 @@ sDec aqtyp cid ini
   | isEmptyAQTyp aqtyp = []
   | otherwise          = [C.SDec (dDec aqtyp cid) ini]
 
+dSig :: C.Dec -> [C.Dec] -> C.Def
+dSig d [] = C.DDec d
+dSig d ds = C.DSig d ds
+
 type EVar = Name
 
 data Env =
@@ -128,6 +134,10 @@ addChans xys env = env & locs %~ Map.union (l2m xys)
 
 rmChan :: Channel -> Env -> Env
 rmChan c env = env & locs . at c .~ Nothing
+
+renChan :: Channel -> Channel -> Env -> Env
+renChan c c' env = env & locs . at c' .~ (env ^. locs . at c)
+                       & locs . at c  .~ Nothing
 
 addEVar :: Name -> C.Ident -> Env -> Env
 addEVar x y env
@@ -196,7 +206,8 @@ transLiteral l = case l of
   LChar    c -> C.LChar    c
 
 transTerm :: Env -> Term -> C.Exp
-transTerm env x = case x of
+transTerm env t0 =
+  let t1 = reduceTerm' env t0 in case t1 of
   Def f es0
    | env ^. types . contains f -> dummyTyp
    | otherwise ->
@@ -206,11 +217,11 @@ transTerm env x = case x of
        es                             -> C.EApp (C.EVar (transName f)) es
   Let{}          -> error "IMPOSSIBLE: Let after reduce"
   Lit l          -> C.ELit (transLiteral l)
-  Lam{}          -> transErr "transTerm/Lam"  x
+  Lam{}          -> transErr "transTerm/Lam" t1
   Con n          -> C.EVar (transCon n)
   Case t brs     -> switchE (transTerm env t)
                             (bimap transCon (transTerm env) <$> brs)
-  Proc{}         -> transErr "transTerm/Proc" x
+  Proc{}         -> transErr "transTerm/Proc" t1
   TFun{}         -> dummyTyp
   TSig{}         -> dummyTyp
   TProto{}       -> dummyTyp
@@ -275,10 +286,22 @@ transAct env act =
                     | otherwise   = l
         env' = env & locs . imapped %@~ sliceIf
                    & addEVar xi i
-    Ax{} ->
-      transErr "transAct/Ax" act
-    At{} ->
-      transErr "transAct/At" act
+    Ax s cs ->
+      case fwdP ø s cs of
+        [Ax{}] `Dot` _ -> transErr "transAct/Ax" act
+        proc0 -> (foldr rmChan env cs, (transProc env proc0 ++))
+    At t p ->
+      case p of
+        ChanP (Arg c _) ->
+          case reduceTerm' env t of
+            Proc cs proc0 ->
+              case cs of
+                [Arg c' _] ->
+                  let env1 = renChan c c' env in
+                  (rmChan c env, (transMkProc env1 cs proc0 ^. _2 ++))
+                _ -> transErr "transAct/At/Non single proc" act
+            _ -> transErr "transAct/At/Non Proc" act
+        _ -> transErr "transAct/At/Non ChanP" act
     LetA{} ->
       transErr "transAct/LetA" act
 
@@ -345,29 +368,33 @@ tupQ ts = (C.QTyp (unionQuals [ q | (C.QTyp q _, _) <- ts ])
                   (C.TStr     [ C.FFld t (fldI i) arrs | (i,(C.QTyp _ t,arrs)) <- zip [0..] ts ])
           ,[])
 
+unsupportedTyp :: Typ -> ATyp
+unsupportedTyp ty = trace ("[WARNING] Unsupported type " ++ pretty ty) tVoidPtr
+
 transTyp :: Env -> Typ -> ATyp
-transTyp env e0 = case e0 of
+transTyp env ty0 =
+  let ty1 = reduceTerm' env ty0 in case ty1 of
   Def x es
     | null es, Just t <- Map.lookup x basicTypes -> (t, [])
     | otherwise ->
     case (unName x, es) of
       -- ("Vec", [a,e]) -> tArr (transTyp env a) (transTerm env e)
       ("Vec", [a,_e]) -> tPtr (transTyp env a)
-      _ -> trace ("[WARNING] Unsupported type " ++ pretty x) tVoidPtr
-  Let{}    -> error "IMPOSSIBLE: Let after reduce"
-  TTyp{}   -> tInt -- <- types are erased to 0
-  Case{}   -> transErr "transTyp: Case" e0
-  TProto{} -> transErr "transTyp: TProto" e0
-  TFun{}   -> transErr "transTyp: TFun" e0
-  TSig{}   -> transErr "transTyp: TSig" e0 -- TODO struct ?
-  Lam{}    -> transErr "transTyp: Not a type: Lam" e0
-  Lit{}    -> transErr "transTyp: Not a type: Lit" e0
-  Con{}    -> transErr "transTyp: Not a type: Con" e0
-  Proc{}   -> transErr "transTyp: Not a type: Proc" e0
-  TSession{}-> transErr "transTyp: Not a type: TSession" e0
+      _ -> unsupportedTyp ty0
+  Let{}      -> error "IMPOSSIBLE: Let after reduce"
+  TTyp{}     -> tInt -- <- types are erased to 0
+  Case{}     -> unsupportedTyp ty0
+  TProto{}   -> unsupportedTyp ty0
+  TFun{}     -> unsupportedTyp ty0
+  TSig{}     -> unsupportedTyp ty0
+  TSession{} -> unsupportedTyp ty0
+  Lam{}      -> transErr "transTyp: Not a type: Lam" ty0
+  Lit{}      -> transErr "transTyp: Not a type: Lit" ty0
+  Con{}      -> transErr "transTyp: Not a type: Con" ty0
+  Proc{}     -> transErr "transTyp: Not a type: Proc" ty0
 
 transCTyp :: Env -> C.Qual -> Typ -> AQTyp
-transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env . reduceTerm' env
+transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env
 
 transMaybeCTyp :: Env -> C.Qual -> Maybe Typ -> AQTyp
 transMaybeCTyp env qual = \case
@@ -389,7 +416,10 @@ transSession env x = case x of
     | n == anonName -> unionQ [transMaybeCTyp env (rwQual rw) ty, transSession env s]
     | otherwise     -> transErr "Cannot compile a dependent session (yet): " x
   Array _ ss -> tupQ (transSessions env ss)
-  TermS{} -> transErr "Cannot compile an abstract session: " x
+  TermS p t ->
+    case reduceTerm' env t of
+      TSession s -> transSession env (dualOp p s)
+      ty         -> unsupportedTyp ty & _1 %~ C.QTyp C.NoQual
 
 transRFactor :: Env -> RFactor -> C.Exp
 transRFactor env (RFactor t) = transTerm env t
@@ -425,29 +455,28 @@ transChanDec env (Arg c (Just session)) =
 transChanDec _   (Arg c Nothing)
   = transErr "transChanDec: TODO No Session for channel:" c
 
+transMkProc :: Env -> [ChanDec] -> Proc -> ([C.Dec], [C.Stm])
+transMkProc env0 cs proc0 = (fst <$> news, transProc env proc0)
+  where
+    news = transChanDec env0 <$> cs
+    env  = addChans (snd <$> news) env0
+
 transSig :: Env -> Name -> Maybe Typ -> Maybe Term -> [C.Def]
 transSig env0 f _ty0 (Just t) =
-  case t of
-    Proc cs proc ->
-      [C.DDef (C.Dec voidQ (transName f) [])
-              (fst <$> news)
-              (transProc env proc)]
-      where
-        news = transChanDec env0 <$> cs
-        env  = addChans (snd <$> news) env0
+  case reduceTerm' env0 t of
+    Proc cs proc0 ->
+      [uncurry (C.DDef (C.Dec voidQ (transName f) []))
+               (transMkProc env0 cs proc0)]
     _ -> trace ("[WARNING] Skipping compilation of unsupported definition " ++ pretty f) []
 -- Of course this does not properly handle dependent types
-transSig env0 f (Just ty0) Nothing =
-  let ty0' = reduceTerm' env0 ty0 in
-  case ty0' of
-  TFun{} -> go env0 [] ty0' where
-    go env args t1 = case t1 of
-      TFun (Arg n s) t -> go (addEVar n (transName n) env)
-                             (dDec (transMaybeCTyp env C.QConst s) (transName n) : args)
-                             (reduceTerm' env0 t)
-      _                -> [C.DSig (dDec (transCTyp env C.NoQual t1) (transName f))
-                                  (reverse args)]
-  _ -> [C.DDec (dDec (transCTyp env0 C.NoQual ty0') (transName f))]
+transSig env0 f (Just ty0) Nothing = go [] (reduceTerm' env0 ty0)
+  where
+    go args = \case
+      TFun (Arg n ms) t ->
+        go (dDec (transMaybeCTyp env0 C.QConst ms) (transName n) : args)
+           (reduceTerm' (addEVar n (transName n) env0) t)
+      t1 ->
+        [dSig (dDec (transCTyp env0 C.NoQual t1) (transName f)) (reverse args)]
 transSig _ _ Nothing Nothing = error "IMPOSSIBLE transSig no sig nor def"
 
 transDec :: Env -> Dec -> (Env, [C.Def])
@@ -463,7 +492,7 @@ transProgram (Program decs) =
   C.PPrg (mapAccumL transDec emptyEnv decs ^.. _2 . each . each)
 
 reduceTerm' :: Env -> Term -> Term
-reduceTerm' env = unScoped . reduceTerm . Scoped (env ^. edefs) ø
+reduceTerm' env = pushDefs . reduceTerm . Scoped (env ^. edefs) ø
 -- -}
 -- -}
 -- -}
