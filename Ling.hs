@@ -163,24 +163,37 @@ showTree opts tree = do
   when (opts ^. showPretty) $
     putStrLn $ "\n-- Pretty-printed program\n\n" ++ pretty tree
 
+flagSpec :: [(String, (Endom Opts, String))]
+flagSpec =
+  (\(x,y,z) -> (x,(y,z))) <$>
+  [ ("check"        , add check                   , "Type check the program")
+  , ("compile"      , add compile                 , "Compile the program to C")
+  , ("pretty"       , add showPretty              , "Pretty-print the program")
+  , ("norm"         , add doNorm                  , "Normalize the program")
+  , ("seq"          , add sequential              , "Sequentialize the program")
+  , ("tokens"       , add tokens                  , "Display the program as a list of tokens from the lexer")
+  , ("ast"          , add showAST                 , "Display the program as an Abstract Syntax Tree")
+  , ("debug-check"  , add debugCheck              , "Display debugging information while checking")
+  , ("compile-prims", add compilePrims            , "Also compile the primitive definitions")
+  , ("strict-par"   , add (checkOpts . strictPar) , "Make the checker stricter about pars (no mix rule)")
+  , ("no-prims"     , add noPrims                 , "Do not include the primitive definitions")
+  ] where add opt opts = opts & opt .~ True
+
+usage :: String -> IO a
+usage msg = failIO $ unlines (msg : "" : "Usage: Ling [option...] [file...]" : "" : "option ::=" : (fmtFlag <$> flagSpec))
+  where
+    fmtFlag (flag, (_, desc)) = "  | --" ++ pad flag ++ " # " ++ desc
+    Just maxlen = maximumOf (each . _1 . to length) flagSpec
+    pad s = take maxlen (s ++ repeat ' ')
+
 mainArgs :: Opts -> [String] -> IO ()
 mainArgs opts = \case
   [] -> getContents >>= run opts pProgram >>= transP opts
+  ("--help":_) -> usage ""
   ('-':'-':arg@(_:_)):args ->
-    case arg of
-      "tokens"        -> add tokens
-      "ast"           -> add showAST
-      "pretty"        -> add showPretty
-      "norm"          -> add doNorm
-      "check"         -> add check
-      "debug-check"   -> add debugCheck
-      "compile"       -> add compile
-      "compile-prims" -> add compilePrims
-      "strict-par"    -> add (checkOpts . strictPar)
-      "seq"           -> add sequential
-      "no-prims"      -> add noPrims
-      _               -> failIO $ "Unexpected flag --" ++ arg
-    where add opt = mainArgs (opts & opt .~ True) args
+    case lookup arg flagSpec of
+      Just (opt, _) -> mainArgs (opt opts) args
+      _             -> usage $ "Unexpected flag --" ++ arg
   [f] -> runProgram opts f
   fs  -> for_ fs $ \f -> putStrLn f >> runProgram opts f
 
