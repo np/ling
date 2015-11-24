@@ -1,0 +1,4 @@
+While checking `zap_ten_par`
+  These channels should be used in some order (not in parallel):
+  cfii cfio
+

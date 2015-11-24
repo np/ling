@@ -189,7 +189,7 @@ checkSomeOrderChans proto cs = do
     ["Selected ordering:"
     ,"  " ++ pretty my]
   assert (not b || Just cs == my)
-    ["These channels should be used in some order (not in parallel):", pretty cs]
+    ["These channels should be used in some order (not in parallel):", pretty (s2l cs)]
     where my = Skel.dotChannelSet $ Skel.select cs (proto^.skel)
 
 replProtoWhen :: (Channel -> Bool) -> RFactor -> Endom Proto

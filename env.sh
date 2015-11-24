@@ -1,5 +1,9 @@
 cmdr() {
-  local args="$1"
+  local args=()
+  while [ "$1" != -- ]; do
+    args=("$1" "${args[@]}")
+    shift
+  done
   shift
   local dir="$1"
   shift
@@ -8,7 +12,8 @@ cmdr() {
     i="$(basename "$i")"
     i="${i%.ll}"
     pushd fixtures/all/
-    cmdrecord ../../tests/"$dir/$i".t --no-stdin --source "$i".ll --env empty -- Ling $args "$i".ll
+    mkdir -p ../../tests/"$dir"
+    cmdrecord ../../tests/"$dir/$i".t --no-stdin --source "$i".ll --env empty -- Ling "${args[@]}" "$i".ll
     popd
     ln -s ../all/"$i".ll fixtures/"$dir"/
     rm tests/"$dir"/"$i".t/"$i".ll
@@ -17,22 +22,25 @@ cmdr() {
   done
 }
 cmdrsuccess(){
-  cmdr --check success "$@"
+  cmdr --check -- success "$@"
 }
 cmdrfailure(){
-  cmdr --check failure "$@"
+  cmdr --check -- failure "$@"
+}
+cmdrstrictparfailure(){
+  cmdr --strict-par --check -- strict-par-failure "$@"
 }
 cmdrseq(){
-  cmdr --seq sequence "$@"
+  cmdr --seq -- sequence "$@"
 }
 cmdrcompile(){
-  cmdr --compile compile "$@"
+  cmdr --compile -- compile "$@"
 }
 cmdrpretty(){
-  cmdr --pretty pretty "$@"
+  cmdr --pretty -- pretty "$@"
 }
 cmdrnorm(){
-  cmdr --norm norm "$@"
+  cmdr --norm -- norm "$@"
 }
 alias cmdrseqall='cmdrecord tests/sequence/all.t --env empty -- Ling --seq < fixtures/sequence/*.ll'
 alias cmdrcompileall='cmdrecord tests/compile/all.t  --env empty -- Ling --compile-prims --compile < fixtures/compile/*.ll'

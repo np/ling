@@ -1,0 +1,4 @@
+While checking `fwd2_par2_ten2`
+  These channels should be used in some order (not in parallel):
+  c0#0# c0#1#
+

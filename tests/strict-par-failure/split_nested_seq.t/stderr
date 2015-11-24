@@ -1,0 +1,4 @@
+While checking `split_nested_seq`
+  These channels should be used in some order (not in parallel):
+  i o
+

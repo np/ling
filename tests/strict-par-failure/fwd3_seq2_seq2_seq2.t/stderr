@@ -1,0 +1,4 @@
+While checking `fwd3_seq2_seq2_seq2`
+  These channels should be used in some order (not in parallel):
+  c0# c1# c2#
+

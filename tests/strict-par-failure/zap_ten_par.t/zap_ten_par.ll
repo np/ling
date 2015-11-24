@@ -1,0 +1,1 @@
+../../../fixtures/all/zap_ten_par.ll

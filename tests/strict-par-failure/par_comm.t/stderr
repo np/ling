@@ -1,0 +1,4 @@
+While checking `par_comm`
+  These channels should be used in some order (not in parallel):
+  a b
+

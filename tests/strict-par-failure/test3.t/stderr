@@ -1,0 +1,4 @@
+While checking `test3`
+  These channels should be used in some order (not in parallel):
+  d0 d1
+
