@@ -15,7 +15,7 @@ mkLet defs0 = \case
   TTyp                -> TTyp
   t0 | nullDefs defs0 -> t0
   Def d []            -> defs0 ^? at d . _Just . annotated ?| Def d []
-  Let defs1 t1        -> mkLet (mergeDefs defs0 defs1) t1
+  Let defs1 t1        -> mkLet (defs0 <> defs1) t1
   t0@Def{}            -> Let defs0 t0
   t0@Lam{}            -> Let defs0 t0
   t0@Case{}           -> Let defs0 t0

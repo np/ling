@@ -3,7 +3,6 @@
 module Ling.Scoped (
     allDefs,
     nullDefs,
-    mergeDefs,
     addEDef,
     Scoped(Scoped),
     gdefs,
@@ -35,22 +34,19 @@ instance Functor Scoped where
 instance Applicative Scoped where
   pure = Scoped ø ø
   Scoped gf lf f <*> Scoped gx lx x =
-    Scoped (mergeDefs gf gx) (mergeDefs lf lx) (f x)
+    Scoped (gf <> gx) (lf <> lx) (f x)
 
   Scoped gx lx _ *> Scoped gy ly y =
-    Scoped (mergeDefs gx gy) (mergeDefs lx ly) y
+    Scoped (gx <> gy) (lx <> ly) y
 
   Scoped gx lx x <* Scoped gy ly _ =
-    Scoped (mergeDefs gx gy) (mergeDefs lx ly) x
+    Scoped (gx <> gy) (lx <> ly) x
 
 allDefs :: Scoped a -> Defs
-allDefs (Scoped g l _) = mergeDefs g l
+allDefs (Scoped g l _) = g <> l
 
 nullDefs :: Defs -> Bool
 nullDefs = Map.null . _defsMap
-
-mergeDefs :: Defs -> Defs -> Defs
-mergeDefs = (<>)
 
 instance Monad Scoped where
   return  = pure

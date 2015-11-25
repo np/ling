@@ -35,7 +35,7 @@ substName f x = f ^? at x . _Just . annotated ?| Def x []
 instance Subst Term where
   subst f = \case
     Def x es   -> app (substName f x) (subst f es)
-    Let defs t -> subst (defs `mergeDefs` f) t
+    Let defs t -> subst (defs <> f) t
     Lam arg t  -> Lam (subst f arg) (subst (hideArg arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hideArg arg f) t)

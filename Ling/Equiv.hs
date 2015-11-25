@@ -59,8 +59,8 @@ reduceEquiv red eqv env a0 a1 = eqv env' (a0'^.scoped) (a1'^.scoped)
     red' l = red . Scoped (env^.egdefs) (env^.l)
     a0'    = red' edefs0 a0
     a1'    = red' edefs1 a1
-    env'  = env & edefs0 %~ mergeDefs (a0'^.ldefs)
-                & edefs1 %~ mergeDefs (a1'^.ldefs)
+    env'  = env & edefs0 <>~ a0' ^. ldefs
+                & edefs1 <>~ a1' ^. ldefs
 
 -- This type can be used on type or sessions annotations to ignore them during
 -- equivalence checking.
@@ -112,8 +112,8 @@ nameIndex x = maybe (Right x) Left . elemIndex x
 instance Equiv a => Equiv (Scoped a) where
   equiv env s0 s1 =
     equivAt scoped
-          (env & edefs0 %~ mergeDefs (s0 ^. ldefs)
-               & edefs1 %~ mergeDefs (s1 ^. ldefs))
+          (env & edefs0 <>~ s0 ^. ldefs
+               & edefs1 <>~ s1 ^. ldefs)
           s0 s1
 
 instance Equiv Name where
