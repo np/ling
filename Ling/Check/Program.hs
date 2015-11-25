@@ -22,8 +22,8 @@ checkDec (Dat d cs)       kont = do
     checkNotIn evars "name" d
     for_ cs (checkNotIn ctyps "data constructor")
   local ((ctyps %~ union (l2m [ (c,d) | c <- cs ]))
-        .(evars . at d .~ Just TTyp)
-        .(ddefs . at d .~ Just cs)) kont
+        .(evars . at d ?~ TTyp)
+        .(ddefs . at d ?~ cs)) kont
 checkDec (Assert a) kont = checkAsr a kont
 
 checkAsr :: Assertion -> TC () -> TC ()

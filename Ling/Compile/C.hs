@@ -142,7 +142,7 @@ renChan c c' env = env & locs . at c' .~ (env ^. locs . at c)
 addEVar :: Name -> C.Ident -> Env -> Env
 addEVar x y env
   | env ^. evars . hasKey x = error $ "addEVar/IMPOSSIBLE: " ++ show x ++ " is already bound"
-  | otherwise               = env & evars . at x .~ Just y
+  | otherwise               = env & evars . at x ?~ y
 
 (!) :: Env -> Name -> C.LVal
 (!) = lookupEnv nameString locs

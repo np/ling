@@ -94,7 +94,7 @@ isEmptyProto :: Getter Proto Bool
 isEmptyProto = chans . to Map.null
 
 addChanOnly :: (Channel,RSession) -> Endom Proto
-addChanOnly (c,s) = chans . at c .~ Just s
+addChanOnly (c,s) = chans . at c ?~ s
 
 rmChansOnly :: [Channel] -> Endom Proto
 rmChansOnly cs = chans %~ deleteList cs

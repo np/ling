@@ -318,7 +318,7 @@ checkVarDef x mtyp mtm kont = do
   typ <- errorScope x $ checkSig mtyp mtm
   (if x == anonName
       then id
-      else local ((evars . at x .~ Just typ) . (edefs . at x .~ mtm))) kont
+      else local ((evars . at x ?~ typ) . (edefs . at x .~ mtm))) kont
 
 checkVarDec :: VarDec -> Endom (TC a)
 checkVarDec (Arg x mtyp) = checkVarDef x mtyp Nothing
