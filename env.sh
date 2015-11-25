@@ -51,7 +51,7 @@ alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty
 current_nixpkgs=$HOME/hub/np/nixpkgs
 [ ! -d "$current_nixpkgs" ] || export NIX_PATH=nixpkgs=$current_nixpkgs
 DIST=`pwd`/dist
-export PATH="$DIST"/build/Ling:"$DIST"/build/ling-fmt:"$DIST"/shims/bin:$PATH
+export PATH="$DIST"/build/Ling:"$DIST"/build/ling-fmt:"$DIST"/shims:$PATH
 
 # error() @ https://gist.github.com/3736727 {{{
 error(){
