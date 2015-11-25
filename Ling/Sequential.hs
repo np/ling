@@ -57,7 +57,7 @@ addChans :: [(Channel, (Location, RSession))] -> Env -> Env
 addChans xys = chans %~ Map.union (l2m xys)
 
 rmChan :: Channel -> Env -> Env
-rmChan c = chans . at c .~ Nothing
+rmChan c = chans .\\ c
 
 (!) :: Env -> Channel -> (Location, RSession)
 (!) = lookupEnv nameString chans
@@ -133,7 +133,7 @@ actIsReady env pref =
 transSplit :: Channel -> [ChanDec] -> Env -> Env
 transSplit c dOSs env =
   rmChan c $
-  addChans [ (d, (Proj l n, oneS (projSession (fromIntegral n) (unRepl session))))
+  addChans [ (d, (Proj l n, oneS (projSession (integral # n) (unRepl session))))
            | (d, n) <- zip ds [(0 :: Int)..] ] env
   where (l, session) = env ! c
         ds = _argName <$> dOSs

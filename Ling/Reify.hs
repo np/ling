@@ -200,8 +200,11 @@ normRawApp (e0:Var (Name d):es)
   | d `elem` ["-", "+", "*", "/", "%", "-D", "+D", "*D", "/D", "++S"] =
       N.Def (Name ("_" ++ d ++ "_")) [norm e0, normRawApp es]
 normRawApp (Var (Name "Fwd"):es)
-  | [Lit (LInteger n), e] <- es = fwd (fromInteger n) (norm (AS e)) ^. N.tSession
-  | otherwise = error "invalid usage of Fwd"
+  | [e0, e1] <- es
+  , Just n <- e0 ^? normalized . N.litTerm . integral =
+      fwd n (norm (AS e1)) ^. N.tSession
+  | otherwise =
+      error "invalid usage of Fwd"
 normRawApp (Var (Name "Log"):es)
   | [e] <- es = log (norm (AS e)) ^. N.tSession
   | otherwise = error "invalid usage of Log"

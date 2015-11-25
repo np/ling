@@ -29,6 +29,7 @@ import           Debug.Trace               as X
 import           Language.Haskell.TH       (litP, stringE, stringL)
 import           Language.Haskell.TH.Quote
 import           Ling.Abs
+import           Numeric.Lens              as X
 
 type Endom a = a -> a
 
@@ -155,6 +156,9 @@ infixr 4 ?|
 -- Reverse infix form of "fromMaybe"
 (?|) :: Maybe a -> a -> a
 (?|) = flip fromMaybe
+
+(.\\) :: At m => Setter s t m m -> Index m -> s -> t
+l .\\ k = l . at k .~ Nothing
 
 theUniqBy :: Rel a -> [a] -> Maybe a
 theUniqBy eq (x:xs)

@@ -15,8 +15,8 @@ class Subst a where
 subst1 :: Subst a => (Name, Term) -> a -> a
 subst1 = subst . l2m . pure
 
-substi :: (Integral i, Subst a) => (Name, i) -> a -> a
-substi (x, i) = subst1 (x, Lit (LInteger (fromIntegral i)))
+substi :: (Integral i, Subst a) => (Name, i) -> Endom a
+substi (x, i) = subst1 (x, litTerm . integral # i)
 
 app :: Term -> [Term] -> Term
 app t0 []     = t0

@@ -312,11 +312,14 @@ multTerm = prism mk $ matchDef2 multName
       , Lit (LInteger j) <- y  = Lit (LInteger $ i * j)
       | otherwise              = Def multName [x,y]
 
-litR :: Prism' RFactor Integer
-litR = prism (RFactor . Lit . LInteger) $
+litTerm :: Prism' Term Integer
+litTerm = prism (Lit . LInteger) $
   \case
-    RFactor (Lit (LInteger i)) -> Right i
-    r                          -> Left  r
+    Lit (LInteger i) -> Right i
+    t                -> Left  t
+
+litR :: Prism' RFactor Integer
+litR = rterm . litTerm
 
 litR0, litR1 :: Prism' RFactor ()
 litR0 = litR . only 0

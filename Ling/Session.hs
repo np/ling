@@ -167,9 +167,8 @@ extractSession l =
 
 -- See flatRSession in Ling.Reduce
 unsafeFlatRSession :: RSession -> [Session]
-unsafeFlatRSession (Repl s r)
-  | Just n <- r ^? litR = replicate (fromInteger n) s
-  | otherwise           = error "unsafeFlatRSession"
+unsafeFlatRSession (s `Repl` r) =
+  replicate (r ^? litR . integral ?| error "unsafeFlatRSession") s
 
 -- See flatSessions in Ling.Reduce
 unsafeFlatSessions :: Sessions -> [Session]

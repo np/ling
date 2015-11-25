@@ -62,10 +62,10 @@ reduce_ trv s = trv (reduceTerm . (s $>)) (s ^. scoped)
 
 flatRSession :: Scoped RSession -> [Scoped RSession]
 flatRSession ssr
-  | Just n       <- r1 ^? litR = replicate (fromInteger n) (pure $ oneS s)
-  | Just (rL,rR) <- r1 ^? addR = flatRSession (sr1 $> s `Repl` rL)
-                              ++ flatRSession (sr1 $> s `Repl` rR)
-  | otherwise                  = [ssr]
+  | Just n <- r1 ^? litR . integral = replicate n (pure $ oneS s)
+  | Just (rL,rR) <- r1 ^? addR      = flatRSession (sr1 $> s `Repl` rL)
+                                   ++ flatRSession (sr1 $> s `Repl` rR)
+  | otherwise                       = [ssr]
 
   where sr1 = reduce_ rterm (ssr $> r0)
         s   = ssr ^. scoped . rsession

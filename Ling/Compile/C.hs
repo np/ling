@@ -133,11 +133,11 @@ addChans :: [(Name, C.LVal)] -> Env -> Env
 addChans xys env = env & locs %~ Map.union (l2m xys)
 
 rmChan :: Channel -> Env -> Env
-rmChan c env = env & locs . at c .~ Nothing
+rmChan c env = env & locs .\\ c
 
 renChan :: Channel -> Channel -> Env -> Env
 renChan c c' env = env & locs . at c' .~ (env ^. locs . at c)
-                       & locs . at c  .~ Nothing
+                       & rmChan c
 
 addEVar :: Name -> C.Ident -> Env -> Env
 addEVar x y env
