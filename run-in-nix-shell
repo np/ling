@@ -1,0 +1,4 @@
+#!/bin/sh
+CUR="$PWD"
+cd "$(dirname "$0")"/../..
+exec nix-shell --pure --run "cd $CUR; $(basename "$0") $*"

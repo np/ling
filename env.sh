@@ -50,4 +50,78 @@ alias cmdrnormall='cmdrecord tests/norm/all.t  --env empty -- Ling --norm < fixt
 alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty -- Ling --strict-par --check  < fixtures/strict-par-success/*.ll'
 current_nixpkgs=$HOME/hub/np/nixpkgs
 [ ! -d "$current_nixpkgs" ] || export NIX_PATH=nixpkgs=$current_nixpkgs
-export PATH=`pwd`/dist/build/Ling:`pwd`/dist/build/ling-fmt:`pwd`/env/bin:$PATH
+DIST=`pwd`/dist
+export PATH="$DIST"/build/Ling:"$DIST"/build/ling-fmt:"$DIST"/shims/bin:$PATH
+
+# error() @ https://gist.github.com/3736727 {{{
+error(){
+  local code="$1"
+  shift
+  echo "error: $@" >>/dev/stderr
+  exit "$code"
+}
+# }}}
+
+# Adapted from:
+# link() @ https://gist.github.com/3181899 {{{1
+# Example:
+# cd ~/configs
+# link .zshrc ~/.zshrc
+# link .vimrc ~/.vimrc
+link(){
+  # dst is the TARGET
+  # src is the LINK_NAME
+  local dst="$1"
+  local ldst="$1"
+  local src="$2"
+  case "$dst" in
+    /*) : ;;
+    *) ldst="$(realpath "$dst" --relative-to="$(dirname "$2")")";;
+  esac
+  if [ -L "$src" ]; then
+    # Check if the link is already as expected.
+    [ $(readlink "$src") != "$ldst" ] || return 0
+    rm "$src"
+  elif [ -e "$src" ]; then
+    if [ -e "$dst" ]; then
+      until cmp "$src" "$dst"; do
+        vimdiff "$src" "$dst"
+      done
+      if cmp "$src" "$dst"; then
+        if [ -L "$dst" ]; then
+          rm "$dst"
+          mv "$src" "$dst"
+        else
+          rm "$src"
+        fi
+      fi
+    else
+      echo "moving $src to $dst" >>/dev/stderr
+      mv "$src" "$dst"
+    fi
+  elif [ ! -e "$dst" ]; then
+    # if nothing exists we do nothing
+    return 0
+  fi
+  echo "linking $dst" >>/dev/stderr
+  ln -s "$ldst" "$src"
+}
+# }}}
+
+mkdir -p "$DIST"/shims
+
+for i in \
+  bnfc \
+  cabal \
+  gcc \
+  ghc \
+  ghci \
+  ghc-make \
+  ghc-mod \
+  ghc-modi \
+  ghc-pkg \
+  hlint \
+  stylish-haskell
+do
+  link 'run-in-nix-shell' "$DIST"/shims/"$i"
+done
