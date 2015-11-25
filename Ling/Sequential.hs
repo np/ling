@@ -24,13 +24,13 @@ import Ling.Norm
 
 data Status = Full | Empty deriving (Eq,Read,Show)
 
-toStatus :: Maybe () -> Status
-toStatus Nothing    = Empty
-toStatus (Just  ()) = Full
-
-fromStatus :: Status -> Maybe ()
-fromStatus Empty = Nothing
-fromStatus Full  = Just ()
+status :: Iso' (Maybe ()) Status
+status = iso toStatus fromStatus
+  where
+    toStatus Nothing    = Empty
+    toStatus (Just  ()) = Full
+    fromStatus Empty = Nothing
+    fromStatus Full  = Just ()
 
 data Location
   = Root Channel
@@ -63,20 +63,16 @@ rmChan c = chans .\\ c
 (!) = lookupEnv nameString chans
 
 addLoc :: (Location, Status) -> Env -> Env
-addLoc (l, s) = locs . at l .~ fromStatus s
+addLoc (l, s) = locs . at l . status .~ s
 
 addLocs :: [(Location, Status)] -> Env -> Env
-addLocs = flip (foldrOf each addLoc)
+addLocs = composeMapOf each addLoc
 
 {-
 statusStep :: Status -> Status
 statusStep Full  = Empty
 statusStep Empty = Full
 -}
-
-mnot :: a -> Maybe a -> Maybe a
-mnot a Nothing = Just a
-mnot _ Just{}  = Nothing
 
 actEnv :: Channel -> Env -> Env
 actEnv c env = env & chans   . at c . mapped . _2 %~ mapR sessionStep
@@ -106,7 +102,7 @@ statusAt c env
   | otherwise   = Just s
   where
     l = fst (env ! c)
-    s = env ^. locs . at l . to toStatus
+    s = env ^. locs . at l . status
     d = env ^. writers . at l
 
 -- TODO generalize by looking deeper at what is ready now

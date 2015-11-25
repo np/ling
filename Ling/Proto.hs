@@ -138,7 +138,7 @@ protoAx _ _              = error "protoAx: Not enough channels given to forward"
 
 protoSendRecv :: [(Channel, Session -> Session)] -> Endom Proto
 protoSendRecv cfs p =
-  p & composeMap addChanOnly crs
+  p & composeMapOf each addChanOnly crs
     & skel %~ prllActS cs
   where crs = [ (c,mapR f (p ^. chanSession c . endedRS)) | (c,f) <- cfs ]
         cs = fst <$> cfs

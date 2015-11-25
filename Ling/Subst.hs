@@ -63,7 +63,7 @@ hideArg :: Arg a -> Endom Defs
 hideArg (Arg k _) = sans k
 
 hideArgs :: [Arg a] -> Endom Defs
-hideArgs = flip (foldr hideArg)
+hideArgs = composeMapOf each hideArg
 
 hidePref :: Pref -> Endom Defs
 hidePref = hideArgs . concatMap actVarDecs

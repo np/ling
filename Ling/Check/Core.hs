@@ -330,4 +330,4 @@ checkVarDec (Arg x mtyp) = checkVarDef x mtyp Nothing
 
 -- Check a "telescope", where bindings scope over the following ones
 checkVarDecs :: [VarDec] -> Endom (TC a)
-checkVarDecs = composeMap checkVarDec
+checkVarDecs = composeMapOf each checkVarDec

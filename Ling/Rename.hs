@@ -60,10 +60,10 @@ hideArg :: Arg a -> Endom Ren
 hideArg (Arg x _) = hideName x
 
 hideArgs :: [Arg a] -> Endom Ren
-hideArgs = flip (foldr hideArg)
+hideArgs = composeMapOf each hideArg
 
 hideNames :: [Name] -> Endom Ren
-hideNames = flip (foldr hideName)
+hideNames = composeMapOf each hideName
 
 hideDefs :: Defs -> Endom Ren
 hideDefs = hideNames . keys . _defsMap

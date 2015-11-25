@@ -236,9 +236,11 @@ hasNoKey k = to $ has (at k . _Nothing)
 mergeSetters :: ASetter s t a b -> ASetter t u a b -> Setter s u a b
 mergeSetters l0 l1 = sets $ \f -> over l1 f . over l0 f
 
--- There must be something equivalent in lens
-composeMap :: (a -> Endom b) -> [a] -> Endom b
-composeMap f = foldr ((.) . f) id
+composeMapOf :: Getting (Endo r) s a -> (a -> Endom r) -> s -> Endom r
+composeMapOf l = flip . foldrOf l
+
+composeOf :: Getting (Endo r) s (Endom r) -> s -> Endom r
+composeOf l = appEndo . foldOf (l . to Endo)
 
 quasiQuoter :: String -> QuasiQuoter
 quasiQuoter qqName =
@@ -248,6 +250,10 @@ quasiQuoter qqName =
 
 list :: Traversal [a] [b] a b
 list = traverse
+
+mnot :: a -> Endom (Maybe a)
+mnot a Nothing = Just a
+mnot _ Just{}  = Nothing
 
 q :: QuasiQuoter
 q = (quasiQuoter "q") { quoteExp = stringE, quotePat = litP . stringL }

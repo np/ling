@@ -135,6 +135,9 @@ addChans xys env = env & locs %~ Map.union (l2m xys)
 rmChan :: Channel -> Env -> Env
 rmChan c env = env & locs .\\ c
 
+rmChans :: [Channel] -> Endom Env
+rmChans = composeMapOf each rmChan
+
 renChan :: Channel -> Channel -> Env -> Env
 renChan c c' env = env & locs . at c' .~ (env ^. locs . at c)
                        & rmChan c
@@ -289,7 +292,7 @@ transAct env act =
     Ax s cs ->
       case fwdP ø s cs of
         [Ax{}] `Dot` _ -> transErr "transAct/Ax" act
-        proc0 -> (foldr rmChan env cs, (transProc env proc0 ++))
+        proc0 -> (rmChans cs env, (transProc env proc0 ++))
     At t p ->
       case p of
         ChanP (Arg c _) ->
