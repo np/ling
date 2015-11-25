@@ -59,7 +59,7 @@ bvAct = \case
   NewSlice _ _ x -> l2s [x]
   Ax{}           -> ø
   At{}           -> ø
-  LetA defs      -> keysSet defs
+  LetA defs      -> keysSet (defs ^. defsMap)
 
 {-
 fvAct :: FreeVars Act

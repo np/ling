@@ -109,7 +109,7 @@ type EVar = Name
 data Env =
   Env { _locs  :: Map Channel C.LVal
       , _evars :: Map EVar C.Ident
-      , _edefs :: Map EVar Term
+      , _edefs :: Defs
       , _types :: Set Name
       }
   deriving (Show)
@@ -481,7 +481,7 @@ transSig _ _ Nothing Nothing = error "IMPOSSIBLE transSig no sig nor def"
 
 transDec :: Env -> Dec -> (Env, [C.Def])
 transDec env x = case x of
-  Sig d ty tm -> (env & edefs . at d .~ tm, transSig env d ty tm)
+  Sig d ty tm -> (env & edefs . at d .~ (Ann ty <$> tm), transSig env d ty tm)
   Dat _d _cs ->
     (env, []) -- TODO typedef ? => [C.TEnum (C.EEnm . transCon <$> cs)]
   Assert _a ->

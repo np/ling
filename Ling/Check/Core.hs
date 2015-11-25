@@ -172,7 +172,7 @@ unTProto t0 =
     t1         -> tcError . unlines $ ["Expected a protocol type, not:", pretty t1]
 
 checkDefs :: Defs -> TC ()
-checkDefs defs = for_ defs inferTerm
+checkDefs defs = forOf_ (defsMap . each) defs inferAnnTerm
 
 checkCPatt :: Session -> CPatt -> TC Proto
 checkCPatt s = \case
@@ -200,6 +200,9 @@ checkCPattR (s `Repl` r) pat
 
 inferBranch :: (name, Term) -> TC (name, Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
+
+inferAnnTerm :: Ann (Maybe Typ) Term -> TC Typ
+inferAnnTerm (Ann mty tm) = checkSig mty (Just tm)
 
 inferTerm :: Term -> TC Typ
 inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
@@ -297,8 +300,9 @@ checkApp f n ty0 (e:es) =
                                      , pretty x
                                      , "of definition"
                                      , pretty f ]
-        Just ty -> checkTerm (unScopedTerm (ty1 $> ty)) e
-      checkApp f (n + 1) (subst1 f (x, e) (ty1 $> s)) es
+        Just ty -> do
+          checkTerm (unScopedTerm (ty1 $> ty)) e
+          checkApp f (n + 1) (subst1 f (x, Ann (Just ty) e) (ty1 $> s)) es
     _ -> tcError ("Too many arguments given to " ++ pretty f ++ ", " ++
                      show n ++ " arguments expected and " ++
                      show (n + 1 + length es) ++ " were given.")
@@ -318,7 +322,8 @@ checkVarDef x mtyp mtm kont = do
   typ <- errorScope x $ checkSig mtyp mtm
   (if x == anonName
       then id
-      else local ((evars . at x ?~ typ) . (edefs . at x .~ mtm))) kont
+      else local ((evars . at x ?~ typ)
+                . (edefs . at x .~ (Ann (Just typ) <$> mtm)))) kont
 
 checkVarDec :: VarDec -> Endom (TC a)
 checkVarDec (Arg x mtyp) = checkVarDef x mtyp Nothing

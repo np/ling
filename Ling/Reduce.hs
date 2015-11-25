@@ -13,9 +13,9 @@ reduceApp d st0 = \case
   []     -> st1
   (u:us) ->
     case st1 ^. scoped of
-      Lam (Arg x _) t2 -> reduceApp d (subst1 d (x, u) (st1 $> t2)) us
-      Def x es         -> st1 $> Def x (es ++ u : us)
-      _                -> error "Ling.Reduce.reduceApp: IMPOSSIBLE"
+      Lam (Arg x mty) t2 -> reduceApp d (subst1 d (x, Ann mty u) (st1 $> t2)) us
+      Def x es           -> st1 $> Def x (es ++ u : us)
+      _                  -> error "Ling.Reduce.reduceApp: IMPOSSIBLE"
 
   where st1 = reduceTerm st0
 

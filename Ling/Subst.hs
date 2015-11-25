@@ -2,35 +2,33 @@
 
 module Ling.Subst where
 
-import qualified Data.Map     as Map
-
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Scoped  hiding (subst1)
 import           Ling.Session
 
 class Subst a where
-  subst :: Defs -> a -> a
+  subst :: Defs -> Endom a
 
-subst1 :: Subst a => (Name, Term) -> a -> a
-subst1 = subst . l2m . pure
+subst1 :: Subst a => (Name, AnnTerm) -> Endom a
+subst1 = subst . Defs . l2m . pure
 
 substi :: (Integral i, Subst a) => (Name, i) -> Endom a
-substi (x, i) = subst1 (x, litTerm . integral # i)
+substi (x, i) = subst1 (x, Ann (Just intTyp) (litTerm . integral # i))
 
 app :: Term -> [Term] -> Term
 app t0 []     = t0
 app t0 (u:us) =
   case t0 of
-    Lam (Arg x _) t1 -> app (subst1 (x, u) t1) us
-    Def x es         -> Def x (es ++ u : us)
-    _                -> error "Ling.Subst.app: IMPOSSIBLE"
+    Lam (Arg x mty) t1 -> app (subst1 (x, Ann mty u) t1) us
+    Def x es           -> Def x (es ++ u : us)
+    _                  -> error "Ling.Subst.app: IMPOSSIBLE"
 
 unScoped :: Subst a => Scoped a -> a
 unScoped s = subst (allDefs s) (s ^. scoped)
 
 substName :: Defs -> Name -> Term
-substName f x = f ^. at x ?| Def x []
+substName f x = f ^? at x . _Just . annotated ?| Def x []
 
 -- TODO binder: make an instance for Abs and use it for Lam,TFun,TSig
 
@@ -62,7 +60,7 @@ instance (Subst a, Subst b) => Subst (a, b) where
   subst f = bimap (subst f) (subst f)
 
 hideArg :: Arg a -> Endom Defs
-hideArg (Arg x _) = Map.delete x
+hideArg (Arg k _) = sans k
 
 hideArgs :: [Arg a] -> Endom Defs
 hideArgs = flip (foldr hideArg)

@@ -45,16 +45,16 @@ defaultTCOpts = TCOpts False False
 data TCEnv = TCEnv
   { _tcOpts    :: !TCOpts
   , _evars     :: Map Name Typ
-  -- ^ Term types
-  , _edefs     :: Map Name Term
+  -- ^ The type of term variables
+  , _edefs     :: Defs
   -- ^ Term definitions
-  , _ddefs     :: Map Name [Name]
+  , _ddefs     :: Map DataTypeName [Name]
   -- ^ Datatypes definitions
-  , _ctyps     :: Map Name Name
+  , _ctyps     :: Map ConName DataTypeName
   -- ^ Data constructor ↦ type name
   }
 
-$(makeLenses ''TCEnv)
+makeLenses ''TCEnv
 
 emptyTCEnv :: TCEnv
 emptyTCEnv = TCEnv defaultTCOpts ø ø ø ø

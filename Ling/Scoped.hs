@@ -47,12 +47,10 @@ allDefs :: Scoped a -> Defs
 allDefs (Scoped g l _) = mergeDefs g l
 
 nullDefs :: Defs -> Bool
-nullDefs = Map.null
+nullDefs = Map.null . _defsMap
 
 mergeDefs :: Defs -> Defs -> Defs
-mergeDefs = Map.unionWithKey mergeDef
-  where mergeDef k v w | v == w    = v
-                       | otherwise = error $ "Scoped.mergeDefs: " ++ show k
+mergeDefs = (<>)
 
 instance Monad Scoped where
   return  = pure
@@ -64,18 +62,20 @@ instance Dual a => Dual (Scoped a) where
   sink = fmap sink
 
 scopedName :: Scoped Name -> Maybe (Scoped Term)
-scopedName (Scoped g l x) = [l, g] ^? each . at x . _Just . to (Scoped g l)
+scopedName (Scoped g l x) =
+  [l, g] ^? each . at x . _Just . annotated . to (Scoped g l)
 
-addEDef :: Name -> Term -> Endom Defs
-addEDef x e m
-  | e == Def x []     = m
-  | x `Map.member` m  = error "addEDef: IMPOSSIBLE"
-  | otherwise         = Map.insert x e m
+addEDef :: Name -> Ann (Maybe Typ) Term -> Endom Defs
+addEDef x atm m
+  | atm ^. annotated == Def x [] = m
+  | m ^. hasKey x                = error "addEDef: IMPOSSIBLE"
+  | otherwise                    = m & at x ?~ atm
 
-subst1 :: Rename a => Name -> (Name, Term) -> Scoped a -> Scoped a
-subst1 d (x, e) _sa@(Scoped gs ls a) =
-  case e of
+subst1 :: Rename a => Name -> (Name, Ann (Maybe Typ) Term) -> Scoped a -> Scoped a
+-- subst1 _ (x, _, Nothing) _ = error $ "Missing type annotation for " ++ unName x
+subst1 d (x, atm) _sa@(Scoped gs ls a) =
+  case atm ^. annotated of
 --    Def y [] -> sa $> rename1 (x, y) a
-    _        -> Scoped gs (addEDef x' e ls) (rename1 (x, x') a)
+    _        -> Scoped gs (addEDef x' atm ls) (rename1 (x, x') a)
   where
     x' = prefName (unName d ++ "#") x

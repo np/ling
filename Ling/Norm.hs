@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE Rank2Types      #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies    #-}
 {-# LANGUAGE ViewPatterns    #-}
 module Ling.Norm
   ( module Ling.Norm
@@ -11,7 +12,10 @@ module Ling.Norm
 import           Ling.Abs     (Literal (..), Name (Name))
 import           Ling.Prelude
 
-type Defs = Map Name Term
+type AnnTerm = Ann (Maybe Typ) Term
+
+newtype Defs = Defs { _defsMap :: Map Name AnnTerm }
+  deriving (Eq, Ord, Read, Show)
 
 newtype RFactor = RFactor { _rterm :: Term }
   deriving (Eq, Ord, Read, Show)
@@ -64,6 +68,7 @@ data Act
   | LetA     Defs
   deriving (Eq,Ord,Show,Read)
 
+type DataTypeName = Name
 type ConName = Name
 type Branch = (ConName,Term)
 
@@ -122,6 +127,7 @@ data RSession
 type Sessions = [RSession]
 type NSession = Maybe Session
 
+makeLenses ''Defs
 makeLenses ''RFactor
 makeLenses ''Proc
 makeLenses ''Program
@@ -135,6 +141,22 @@ makePrisms ''Term
 makePrisms ''RW
 makePrisms ''DualOp
 makePrisms ''Session
+
+instance Monoid Defs where
+  mempty = Defs ø
+  mappend (Defs x) (Defs y) = Defs $ unionWithKey mergeDef x y
+    where
+      mergeDef k v w | v == w    = v
+                     | otherwise = error $ "Scoped.mergeDefs: " ++ show k
+
+type instance Index   Defs = Name
+type instance IxValue Defs = AnnTerm
+
+instance At Defs where
+  at x = defsMap . at x
+
+instance Ixed Defs where
+  ix = ixAt
 
 instance Monoid Program where
   mempty        = Program []
@@ -193,7 +215,7 @@ actVarDecs :: Act -> [VarDec]
 actVarDecs = \case
   Recv _ a       -> [a]
   NewSlice _ _ x -> [Arg x (Just intTyp)]
-  LetA defs      -> [Arg x Nothing | x <- keys defs]
+  LetA defs      -> [Arg x Nothing | x <- keys (defs ^. defsMap)]
   Nu{}           -> []
   Split{}        -> []
   Send{}         -> []

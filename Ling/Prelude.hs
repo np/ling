@@ -15,7 +15,8 @@ import           Data.Foldable             as X
 import           Data.Function             as X
 import           Data.Functor              as X
 import           Data.List                 as X (elemIndex, sort, transpose)
-import           Data.Map                  as X (Map, keys, keysSet)
+import           Data.Map                  as X (Map, keys, keysSet,
+                                                 unionWithKey)
 import qualified Data.Map                  as Map
 import           Data.Maybe                as X
 import           Data.Monoid               as X hiding (Dual)
@@ -47,8 +48,6 @@ anonName = Name "_"
 data Arg a = Arg { _argName :: Name, _argBody :: a }
   deriving (Eq, Ord, Show, Read)
 
-$(makeLenses ''Arg)
-
 instance Functor Arg where
   fmap f (Arg n x) = Arg n (f x)
 
@@ -56,8 +55,6 @@ anonArg :: a -> Arg a
 anonArg = Arg anonName
 
 data Abs a b = Abs { _argAbs :: Arg a, _bodyAbs :: b }
-
-$(makeLenses ''Abs)
 
 instance Functor (Abs a) where
   fmap f (Abs arg x) = Abs arg (f x)
@@ -68,13 +65,22 @@ instance Bifunctor Abs where
 -- TODO: Rename into something like 'Telescoped' instead
 data Telescope a b = Telescope { _argsTele :: [Arg a], _bodyTele :: b }
 
-$(makeLenses ''Telescope)
-
 instance Functor (Telescope a) where
   fmap f (Telescope args x) = Telescope args (f x)
 
 instance Bifunctor Telescope where
   bimap f g (Telescope args x) = Telescope (fmap f <$> args) (g x)
+
+data Ann a b = Ann { _annotation :: a, _annotated :: b }
+  deriving (Eq, Ord, Read, Show)
+
+instance Bifunctor Ann where
+  bimap f g (Ann a b) = Ann (f a) (g b)
+
+makeLenses ''Arg
+makeLenses ''Abs
+makeLenses ''Telescope
+makeLenses ''Ann
 
 type Channel = Name
 

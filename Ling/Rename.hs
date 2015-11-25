@@ -31,6 +31,12 @@ instance Rename Term where
     TProto rs  -> TProto (rename f rs)
     TSession s -> TSession (rename f s)
 
+instance Rename Defs where
+  rename f = Defs . rename f . _defsMap
+
+instance (Rename a, Rename b) => Rename (Ann a b) where
+  rename f = bimap (rename f) (rename f)
+
 instance (Ord a, Rename a, Rename b) => Rename (Map a b) where
   rename f = l2m . rename f . m2l
 
@@ -60,7 +66,7 @@ hideNames :: [Name] -> Endom Ren
 hideNames = flip (foldr hideName)
 
 hideDefs :: Defs -> Endom Ren
-hideDefs = hideNames . keys
+hideDefs = hideNames . keys . _defsMap
 
 hidePref :: Pref -> Endom Ren
 hidePref = hideArgs . concatMap actVarDecs

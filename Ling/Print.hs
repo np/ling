@@ -307,6 +307,12 @@ instance Print a => Print (Err a) where
   prt _ (Bad err) = txt ("Error: " ++ err)
   prt i (Ok  res) = prt i res
 
+instance (Print a, Print b) => Print (Ann a b) where
+  prt i (Ann a b) = prPrec i 1 (prt i b . txt ": " . prt i a)
+
+instance Print N.Defs where
+  prt i = prt i . N._defsMap
+
 instance Print a => Print (Scoped a) where
   prt i (Scoped _ ld x)
     -- the global scope is not displayed
