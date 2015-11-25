@@ -150,6 +150,12 @@ mx <&&> my = do
     then my
     else return False
 
+infixr 4 ?|
+
+-- Reverse infix form of "fromMaybe"
+(?|) :: Maybe a -> a -> a
+(?|) = flip fromMaybe
+
 theUniqBy :: Rel a -> [a] -> Maybe a
 theUniqBy eq (x:xs)
   | all (eq x) xs = Just x
@@ -241,7 +247,7 @@ qFile = quoteFile q
 
 lookupEnv :: Ord key => Lens' key String -> Lens' env (Map key val)
                      -> env -> key -> val
-lookupEnv keyString vals env k = fromMaybe err (env ^. vals . at k)
+lookupEnv keyString vals env k = env ^. vals . at k ?| err
   where
     err = error $ "lookupEnv " ++ k ^. keyString . to show ++
                   " in " ++ show (env ^.. vals . to keys . each . keyString)

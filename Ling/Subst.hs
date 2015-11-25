@@ -30,7 +30,7 @@ unScoped :: Subst a => Scoped a -> a
 unScoped s = subst (allDefs s) (s ^. scoped)
 
 substName :: Defs -> Name -> Term
-substName f x = fromMaybe (Def x []) (f ^. at x)
+substName f x = f ^. at x ?| Def x []
 
 -- TODO binder: make an instance for Abs and use it for Lam,TFun,TSig
 

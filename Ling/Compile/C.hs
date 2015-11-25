@@ -173,7 +173,7 @@ transOp (Name v) = case v of
   _      -> Nothing
 
 transEVar :: Env -> EVar -> C.Ident
-transEVar env y = fromMaybe (transName y) (env ^. evars . at y)
+transEVar env y = env ^. evars . at y ?| transName y
 
 mkCase :: C.Ident -> [C.Stm] -> C.Branch
 mkCase = C.Case . C.EVar
