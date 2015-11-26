@@ -8,14 +8,15 @@ mkDerivation {
   sha256 = "0d3zcxspxcpnifv3kqg8d6gp01wxybakcbw7jh69gqg8rzfmzgi1";
   isLibrary = true;
   isExecutable = true;
-  buildDepends = [
+  libraryHaskellDepends = [ array base ];
+  executableHaskellDepends = [
     array base containers deepseq directory filepath mtl pretty process
   ];
-  testDepends = [
+  executableToolDepends = [ alex happy ];
+  testHaskellDepends = [
     array base containers deepseq directory doctest filepath hspec
     HUnit mtl pretty process QuickCheck temporary
   ];
-  buildTools = [ alex happy ];
   homepage = "http://bnfc.digitalgrammars.com/";
   description = "A compiler front-end generator";
   license = stdenv.lib.licenses.gpl2;
