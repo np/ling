@@ -5,7 +5,7 @@ module Ling.Rename where
 import           Ling.Norm
 import           Ling.Prelude
 
-type Ren = Name -> Name
+type Ren = Endom Name
 
 class Rename a where
   rename :: Ren -> Endom a

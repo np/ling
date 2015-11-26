@@ -39,7 +39,7 @@ acts `prllActP` procs = acts `Dot` procs
 
 infixr 4 `prllActPs`
 
-prllActPs :: [Act] -> Procs -> Procs
+prllActPs :: [Act] -> Endom Procs
 []   `prllActPs` procs = procs
 acts `prllActPs` procs = [acts `prllActP` procs]
 
@@ -56,18 +56,18 @@ act:acts `actsP` procs = act `actP` asProcs (acts `actsP` procs)
 
 infixr 4 `actPs`
 
-actPs :: Act -> Procs -> Procs
+actPs :: Act -> Endom Procs
 act `actPs` procs = [act `actP` procs]
 
 infixr 4 `actsPs`
 
-actsPs :: [Act] -> Procs -> Procs
+actsPs :: [Act] -> Endom Procs
 []   `actsPs` procs = procs
 acts `actsPs` procs = [acts `actsP` procs]
 
 infixr 4 `dotP`
 
-dotP :: Proc -> Proc -> Proc
+dotP :: Op2 Proc
 (pref0 `Dot` procs0) `dotP` proc1 = pref0 `prllActP` (procs0 `prllDotP` proc1)
 
 infixr 4 `dotsP`
@@ -97,12 +97,12 @@ justPref _               = Nothing
 
 infixr 4 `nxtP`
 
-nxtP :: Proc -> Proc -> Proc
+nxtP :: Proc -> Endom Proc
 (pref0 `Dot` procs0) `nxtP` p1 = pref0 `prllActP` [procs0 `prllNxtP` p1]
 
 infixr 4 `prllNxtP`
 
-prllNxtP :: Procs -> Proc -> Proc
+prllNxtP :: Procs -> Endom Proc
 prllNxtP ps p = case ps of
   []   -> p
   [p0] -> p0 `nxtP` p
@@ -208,7 +208,7 @@ splitAx n s c = [split' ParK c cs, ax s cs]
   where cs = suffChans n c
 
 {-
-replProcs :: (Show i, Integral i) => i -> Name -> Procs -> Procs
+replProcs :: (Show i, Integral i) => i -> Name -> Endom Procs
 replProcs n = concatMap . replProc n
 
 replArg :: (Show i, Integral i) => i -> Name -> ChanDec -> [ChanDec]
@@ -219,7 +219,7 @@ replProc' :: Integral i => i -> Name -> Proc -> Procs
 replProc' n x p = go <$> [0..n-1] where
   go i = substi (x, i) p
 
-replPref :: (Show i, Integral i) => i -> Name -> Act -> Proc -> Proc
+replPref :: (Show i, Integral i) => i -> Name -> Act -> Endom Proc
 replPref n x pref p =
   case pref of
     Split k c [a]  -> [Split k c (replArg n x a)] `actP` replProc' n x p

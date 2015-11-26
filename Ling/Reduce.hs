@@ -35,7 +35,7 @@ reduceDef sd es
 
   where d = sd ^. scoped
 
-reduceTerm :: Scoped Term -> Scoped Term
+reduceTerm :: Endom (Scoped Term)
 reduceTerm st0 =
   case t0 of
     Let defs t  -> reduceTerm (st0 *> Scoped ø defs () $> t)
@@ -57,7 +57,7 @@ reduceTerm st0 =
 
   where t0 = st0 ^. scoped
 
-reduce_ :: Traversal' s Term -> Scoped s -> Scoped s
+reduce_ :: Traversal' s Term -> Endom (Scoped s)
 reduce_ trv s = trv (reduceTerm . (s $>)) (s ^. scoped)
 
 flatRSession :: Scoped RSession -> [Scoped RSession]
@@ -72,5 +72,5 @@ flatRSession ssr
         r0  = ssr ^. scoped . rfactor
         r1  = sr1 ^. scoped
 
-flatSessions :: Scoped Sessions -> Scoped Sessions
+flatSessions :: Endom (Scoped Sessions)
 flatSessions ss = sequenceA $ (ss ^. scoped) >>= flatRSession . (ss $>)

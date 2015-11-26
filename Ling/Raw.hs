@@ -4,6 +4,7 @@ module Ling.Raw (module Ling.Abs, module Ling.Raw) where
 
 import           Control.Lens
 import           Ling.Abs
+import           Ling.Prelude
 
 makePrisms ''Program
 makePrisms ''Dec
@@ -39,10 +40,10 @@ mkProcs = \case
   [p] -> p
   ps  -> PPrll ps
 
-pNxt :: Proc -> Proc -> Proc
+pNxt :: Op2 Proc
 pNxt proc0 (PPrll []) = proc0
 pNxt proc0 proc1      = proc0 `PNxt` proc1
 
-pDot :: Proc -> Proc -> Proc
+pDot :: Op2 Proc
 pDot proc0 (PPrll []) = proc0
 pDot proc0 proc1      = proc0 `PDot` proc1

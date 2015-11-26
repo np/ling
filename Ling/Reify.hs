@@ -19,7 +19,7 @@ class Norm a where
   norm  :: a -> Normalized a
   reify :: Normalized a -> a
 
-  normalize :: a -> a
+  normalize :: Endom a
   normalize = reify . norm
 
 normalized :: (Norm a, Norm b) => Iso a b (Normalized a) (Normalized b)

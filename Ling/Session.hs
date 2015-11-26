@@ -14,7 +14,7 @@ array = Array
 oneS :: Session -> RSession
 oneS s = Repl s ø
 
-loli :: Session -> Session -> Session
+loli :: Op2 Session
 loli s t = Array ParK $ oneS <$> [dual s, t]
 
 fwds :: Int -> Session -> Sessions
@@ -24,7 +24,7 @@ fwds n s
   | n == 1    = [oneS s]
   | otherwise = oneS <$> s : dual s : replicate (n - 2) (log s)
 
-fwd :: Int -> Session -> Session
+fwd :: Int -> Endom Session
 fwd n s = Array ParK $ fwds n s
 
 -- Here one can tune what we consider ended.
@@ -55,23 +55,25 @@ wrapSessions :: [RSession] -> Session
 wrapSessions [s `Repl` (is litR1 -> True)] = s
 wrapSessions ss                            = Array ParK ss
 
-mapR :: (Session -> Session) -> RSession -> RSession
+-- LENS ME
+mapR :: Endom Session -> Endom RSession
 mapR f (Repl s a) = Repl (f s) a
 
-mapSessions :: (Session -> Session) -> Sessions -> Sessions
+-- LENS ME
+mapSessions :: Endom Session -> Endom Sessions
 mapSessions = map . mapR
 
 class Dual a where
-  dual :: a -> a
+  dual :: Endom a
   dual = dualOp DualOp
 
-  log :: a -> a
+  log :: Endom a
   log = dualOp LogOp
 
-  sink :: Dual a => a -> a
+  sink :: Dual a => Endom a
   sink = dual . log
 
-  dualOp :: Dual a => DualOp -> a -> a
+  dualOp :: Dual a => DualOp -> Endom a
   dualOp NoOp   = id
   dualOp DualOp = dual
   dualOp LogOp  = log
@@ -148,7 +150,7 @@ instance Dual a => Dual [a] where
 instance Dual Term where
   dualOp o = view tSession . termS o
 
-sessionStep :: Session -> Session
+sessionStep :: Endom Session
 sessionStep (IO _ _ s) = s
 sessionStep s          = error $ "sessionStep: no steps " ++ show s
 
@@ -182,11 +184,11 @@ projRSessions n (Repl s r:ss)
                            else projRSessions (n - i) ss
   | otherwise           = error "projRSessions/Repl: only integer literals are supported"
 
-projSession :: Integer -> Session -> Session
+projSession :: Integer -> Endom Session
 projSession n (Array _ ss) = projRSessions n ss
 projSession _ _            = error "projSession: not an array (par,tensor,seq) session"
 
-replRSession :: RFactor -> RSession -> RSession
+replRSession :: RFactor -> Endom RSession
 replRSession r (Repl s t) = Repl s (r <> t)
 
 -- -}

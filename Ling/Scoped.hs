@@ -67,7 +67,7 @@ addEDef x atm m
   | m ^. hasKey x                = error "addEDef: IMPOSSIBLE"
   | otherwise                    = m & at x ?~ atm
 
-subst1 :: Rename a => Name -> (Name, Ann (Maybe Typ) Term) -> Scoped a -> Scoped a
+subst1 :: Rename a => Name -> (Name, Ann (Maybe Typ) Term) -> Endom (Scoped a)
 -- subst1 _ (x, _, Nothing) _ = error $ "Missing type annotation for " ++ unName x
 subst1 d (x, atm) _sa@(Scoped gs ls a) =
   case atm ^. annotated of

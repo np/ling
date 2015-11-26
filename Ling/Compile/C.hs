@@ -57,7 +57,7 @@ type AQTyp = (C.QTyp, [C.Arr])
 voidQ :: C.QTyp
 voidQ = C.QTyp C.NoQual C.TVoid
 
-tPtr :: ATyp -> ATyp
+tPtr :: Endom ATyp
 tPtr = _1 %~ C.TPtr
 
 tVoidPtr :: ATyp
@@ -129,20 +129,20 @@ primTypes = l2s (Name "Vec" : keys basicTypes)
 emptyEnv :: Env
 emptyEnv = Env ø ø ø primTypes
 
-addChans :: [(Name, C.LVal)] -> Env -> Env
+addChans :: [(Name, C.LVal)] -> Endom Env
 addChans xys env = env & locs %~ Map.union (l2m xys)
 
-rmChan :: Channel -> Env -> Env
+rmChan :: Channel -> Endom Env
 rmChan c env = env & locs .\\ c
 
 rmChans :: [Channel] -> Endom Env
 rmChans = composeMapOf each rmChan
 
-renChan :: Channel -> Channel -> Env -> Env
+renChan :: Channel -> Channel -> Endom Env
 renChan c c' env = env & locs . at c' .~ (env ^. locs . at c)
                        & rmChan c
 
-addEVar :: Name -> C.Ident -> Env -> Env
+addEVar :: Name -> C.Ident -> Endom Env
 addEVar x y env
   | env ^. evars . hasKey x = error $ "addEVar/IMPOSSIBLE: " ++ show x ++ " is already bound"
   | otherwise               = env & evars . at x ?~ y
@@ -163,7 +163,7 @@ transName (Name x) = C.Ident (concatMap f x ++ "_lin") where
   f '-'  = "_sub_"
   f  c   = [c]
 
-transOp :: EVar -> Maybe (C.Exp -> C.Exp -> C.Exp)
+transOp :: EVar -> Maybe (Op2 C.Exp)
 transOp (Name v) = case v of
   "_+_"  -> Just C.Add
   "_+D_" -> Just C.Add
@@ -245,7 +245,7 @@ transLVal (C.LArw l f) = C.EArw (transLVal l) f
 transLVal (C.LArr l i) = C.EArr (transLVal l) i
 transLVal (C.LPtr l)   = ePtr   (transLVal l)
 
-ePtr :: C.Exp -> C.Exp
+ePtr :: Endom C.Exp
 ePtr = C.UOp C.UPtr
 
 transErr :: Print a => String -> a -> b
@@ -324,7 +324,7 @@ stdFor i t =
 {- Special case:
    {S}/[S] has the same implementation as S.
    See tupQ -}
-transSplit :: Name -> [ChanDec] -> Env -> Env
+transSplit :: Name -> [ChanDec] -> Endom Env
 transSplit c dOSs env = rmChan c $ addChans newChans env
   where
     lval = env ! c
@@ -353,7 +353,7 @@ rwQual :: RW -> C.Qual
 rwQual Read  = C.QConst
 rwQual Write = C.NoQual
 
-unionQual :: C.Qual -> C.Qual -> C.Qual
+unionQual :: Op2 C.Qual
 unionQual C.QConst C.QConst = C.QConst
 unionQual _        _        = C.NoQual
 
@@ -405,11 +405,12 @@ transMaybeCTyp env qual = \case
   Just ty -> transCTyp env qual ty
 
 {-
-mapQTyp :: (C.Typ -> C.Typ) -> C.QTyp -> C.QTyp
+mapQTyp :: Endom C.Typ -> Endom C.QTyp
 mapQTyp f (C.QTyp  q t) = C.QTyp q (f t)
 -}
 
-mapAQTyp :: (ATyp -> ATyp) -> AQTyp -> AQTyp
+-- LENSME
+mapAQTyp :: Endom ATyp -> Endom AQTyp
 mapAQTyp f (C.QTyp  q t , arrs) = (C.QTyp q t', arrs')
   where (t', arrs') = f (t, arrs)
 
@@ -444,7 +445,7 @@ isPtrQTyp (C.QTyp _ t, []) = isPtrTyp t
 isPtrQTyp _                = True
 
 -- Turns a type into a pointer unless it is one already.
-mkPtrTyp :: AQTyp -> (AQTyp, C.LVal -> C.LVal)
+mkPtrTyp :: AQTyp -> (AQTyp, Endom C.LVal)
 mkPtrTyp ctyp
   | isPtrQTyp ctyp = (ctyp, id)
   | otherwise      = (mapAQTyp tPtr ctyp, C.LPtr)
@@ -494,7 +495,7 @@ transProgram :: Program -> C.Prg
 transProgram (Program decs) =
   C.PPrg (mapAccumL transDec emptyEnv decs ^.. _2 . each . each)
 
-reduceTerm' :: Env -> Term -> Term
+reduceTerm' :: Env -> Endom Term
 reduceTerm' env = pushDefs . reduceTerm . Scoped (env ^. edefs) ø
 -- -}
 -- -}

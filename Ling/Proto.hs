@@ -70,10 +70,10 @@ instance Monoid Proto where
   -- If the processes are in sequence use dotProto instead.
   mappend = combineProto TenK
 
-dotProto :: Proto -> Proto -> Proto
+dotProto :: Op2 Proto
 dotProto = combineProto SeqK
 
-combineProto :: TraverseKind -> Proto -> Proto -> Proto
+combineProto :: TraverseKind -> Op2 Proto
 combineProto k proto0 proto1 =
   if Set.null common then
     MkProto (proto0^.chans <> proto1^.chans)
@@ -136,7 +136,7 @@ protoAx s [c] | isSink s = pureProto c s
 protoAx s (c:d:es)       = mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
 protoAx _ _              = error "protoAx: Not enough channels given to forward"
 
-protoSendRecv :: [(Channel, Session -> Session)] -> Endom Proto
+protoSendRecv :: [(Channel, Endom Session)] -> Endom Proto
 protoSendRecv cfs p =
   p & composeMapOf each addChanOnly crs
     & skel %~ prllActS cs

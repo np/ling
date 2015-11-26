@@ -21,7 +21,7 @@ import           Ling.Prelude hiding (q)
 pretty :: Print a => a -> String
 pretty = render . prt 0
 
-tracePretty :: Print a => String -> a -> a
+tracePretty :: Print a => String -> Endom a
 tracePretty msg x = trace (msg ++ " " ++ pretty x) x
 
 type Doc = [ShowS] -> [ShowS]
@@ -56,7 +56,7 @@ render d = rend 0 (($ "") <$> d []) "" where
     | null s || head s `elem` xs = s
     | otherwise                  = f s
 
-parenth :: Doc -> Doc
+parenth :: Endom Doc
 parenth ss = doc (showChar '(') . ss . doc (showChar ')')
 
 concatS :: [ShowS] -> ShowS
@@ -65,7 +65,7 @@ concatS = foldr (.) id
 concatD :: [Doc] -> Doc
 concatD = foldr (.) id
 
-replicateS :: Int -> ShowS -> ShowS
+replicateS :: Int -> Endom ShowS
 replicateS n f = concatS (replicate n f)
 
 -- the printer class does the job
@@ -89,7 +89,7 @@ mkEsc q s = case s of
   '\t' -> showString "\\t"
   _ -> showChar s
 
-prPrec :: Int -> Int -> Doc -> Doc
+prPrec :: Int -> Int -> Endom Doc
 prPrec i j = if j<i then parenth else id
 
 

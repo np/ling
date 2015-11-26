@@ -8,7 +8,7 @@ import Ling.Scoped
 import Ling.Session
 import Ling.SubTerms
 
-mkLet :: Defs -> Term -> Term
+mkLet :: Defs -> Endom Term
 mkLet defs0 = \case
   Lit l               -> Lit l
   Con n               -> Con n

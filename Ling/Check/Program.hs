@@ -14,7 +14,7 @@ checkProgram (Program decs) = checkDecs decs
 checkDecs :: [Dec] -> TC ()
 checkDecs = foldr checkDec (return ())
 
-checkDec :: Dec -> TC () -> TC ()
+checkDec :: Dec -> Endom (TC a)
 checkDec (Sig d typ mt)   kont = checkVarDef d typ mt kont
 checkDec (Dat d cs)       kont = do
   errorScope d $ do
@@ -26,7 +26,7 @@ checkDec (Dat d cs)       kont = do
         .(ddefs . at d ?~ cs)) kont
 checkDec (Assert a) kont = checkAsr a kont
 
-checkAsr :: Assertion -> TC () -> TC ()
+checkAsr :: Assertion -> Endom (TC a)
 checkAsr (Equal t1 t2 ty) kont = do
   checkTyp ty
   checkTerm ty t1

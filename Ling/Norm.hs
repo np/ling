@@ -110,11 +110,11 @@ data Session
   | Array TraverseKind Sessions
   deriving (Eq,Ord,Show,Read)
 
-depSend, depRecv :: VarDec -> Session -> Session
+depSend, depRecv :: VarDec -> Endom Session
 depSend = IO Write
 depRecv = IO Read
 
-sendS, recvS :: Typ -> Session -> Session
+sendS, recvS :: Typ -> Endom Session
 sendS = depSend . anonArg . Just
 recvS = depRecv . anonArg . Just
 

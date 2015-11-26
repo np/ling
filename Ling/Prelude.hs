@@ -36,6 +36,8 @@ type Endom a = a -> a
 
 type EndoM m a = a -> m a
 
+type Op2 a = a -> a -> a
+
 type Rel a = a -> a -> Bool
 
 type Msg = String
@@ -96,10 +98,10 @@ prefName s n = n & nameString %~ (s ++)
 suffName :: String -> Endom Name
 suffName s n = n & nameString %~ (++ s)
 
-traceShowMsg :: Show a => String -> a -> a
+traceShowMsg :: Show a => String -> Endom a
 traceShowMsg msg x = trace (msg ++ " " ++ show x) x
 
-debugTraceWhen :: Bool -> Msg -> a -> a
+debugTraceWhen :: Bool -> Msg -> Endom a
 debugTraceWhen b s =
   if b
     then trace (unlines . map ("[DEBUG]  " ++) . lines $ s)
@@ -133,7 +135,7 @@ False ||> my = my
 
 infixr 3 <||>
 
-(<||>) :: Monad m => m Bool -> m Bool -> m Bool
+(<||>) :: Monad m => Op2 (m Bool)
 mx <||> my = do
   x <- mx
   if x
@@ -150,7 +152,7 @@ False &&> _ = return False
 
 infixr 3 <&&>
 
-(<&&>) :: Monad m => m Bool -> m Bool -> m Bool
+(<&&>) :: Monad m => Op2 (m Bool)
 mx <&&> my = do
   x <- mx
   if x
@@ -160,7 +162,7 @@ mx <&&> my = do
 infixr 4 ?|
 
 -- Reverse infix form of "fromMaybe"
-(?|) :: Maybe a -> a -> a
+(?|) :: Maybe a -> Endom a
 (?|) = flip fromMaybe
 
 (.\\) :: At m => Setter s t m m -> Index m -> s -> t

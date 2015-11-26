@@ -53,28 +53,28 @@ transErr msg v = error $ msg ++ "\n" ++ pretty v
 emptyEnv :: Env
 emptyEnv = Env ø ø ø
 
-addChans :: [(Channel, (Location, RSession))] -> Env -> Env
+addChans :: [(Channel, (Location, RSession))] -> Endom Env
 addChans xys = chans %~ Map.union (l2m xys)
 
-rmChan :: Channel -> Env -> Env
+rmChan :: Channel -> Endom Env
 rmChan c = chans .\\ c
 
 (!) :: Env -> Channel -> (Location, RSession)
 (!) = lookupEnv nameString chans
 
-addLoc :: (Location, Status) -> Env -> Env
+addLoc :: (Location, Status) -> Endom Env
 addLoc (l, s) = locs . at l . status .~ s
 
-addLocs :: [(Location, Status)] -> Env -> Env
+addLocs :: [(Location, Status)] -> Endom Env
 addLocs = composeMapOf each addLoc
 
 {-
-statusStep :: Status -> Status
+statusStep :: Endom Status
 statusStep Full  = Empty
 statusStep Empty = Full
 -}
 
-actEnv :: Channel -> Env -> Env
+actEnv :: Channel -> Endom Env
 actEnv c env = env & chans   . at c . mapped . _2 %~ mapR sessionStep
                    & locs    . at l %~ mnot ()
                    & writers . at l %~ mnot c
@@ -126,7 +126,7 @@ actIsReady env pref =
     Recv c _   -> statusAt c env == Just Full
     NewSlice{} -> error "actIsReady: IMPOSSIBLE"
 
-transSplit :: Channel -> [ChanDec] -> Env -> Env
+transSplit :: Channel -> [ChanDec] -> Endom Env
 transSplit c dOSs env =
   rmChan c $
   addChans [ (d, (Proj l n, oneS (projSession (integral # n) (unRepl session))))
@@ -145,7 +145,7 @@ transPref env pref0 procs k =
     act:pref -> transPref (transAct act env) pref procs $ \env' proc' ->
                   k env' (act `actP` [proc'])
 
-transAct :: Act -> Env -> Env
+transAct :: Act -> Endom Env
 transAct act =
   case act of
     Nu (Arg c0 c0ORS) (Arg c1 c1ORS) ->
@@ -192,7 +192,7 @@ transProcs env (p0:p0s) waiting k =
     [] `Dot` _procs0 ->
       error "transProcs: impossible" -- filter0s prevents that
 
-transDec :: Dec -> Dec
+transDec :: Endom Dec
 transDec x = case x of
   Sig d oty (Just (Proc cs proc)) -> transProc env proc (const $ Sig d oty . Just . Proc cs)
     where
@@ -207,7 +207,7 @@ transDec x = case x of
   Sig{} -> x
   Assert{} -> x -- probably wrong!
 
-transProgram :: Program -> Program
+transProgram :: Endom Program
 transProgram (Program decs) = Program (transDec <$> decs)
 -- -}
 -- -}

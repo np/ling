@@ -42,7 +42,7 @@ data Skel a = Act a
             | Op !Op (Skel a) (Skel a)
   deriving (Eq, Ord, Read, Show)
 
-mkOp :: Eq a => Op -> Skel a -> Skel a -> Skel a
+mkOp :: Eq a => Op -> Op2 (Skel a)
 mkOp op = go where
   Zero  `go` p     = p
   p     `go` Zero  = p
@@ -73,13 +73,13 @@ mkOp op = go where
 
 infixr 4 `dotS`
 
-dotS :: Eq a => Skel a -> Skel a -> Skel a
+dotS :: Eq a => Op2 (Skel a)
 dotS = mkOp Dot
 
-unknownS :: Eq a => Skel a -> Skel a -> Skel a
+unknownS :: Eq a => Op2 (Skel a)
 unknownS = mkOp Unknown
 
-combineS :: Eq a => TraverseKind -> Skel a -> Skel a -> Skel a
+combineS :: Eq a => TraverseKind -> Op2 (Skel a)
 combineS = \case
   ParK -> unknownS
   TenK -> mappend
@@ -111,19 +111,19 @@ instance Print a => Print (Skel a) where
 
 infixr 4 `actS`
 
-actS :: Eq a => a -> Skel a -> Skel a
+actS :: Eq a => a -> Endom (Skel a)
 actS act sk = Act act `dotS` sk
 
 
 infixr 4 `prllActS`
 
-prllActS :: Eq a => [a] -> Skel a -> Skel a
+prllActS :: Eq a => [a] -> Endom (Skel a)
 prllActS [act] sk = act `actS` sk
 prllActS acts  sk = mconcat (Act <$> acts) `dotS` sk
 
 infixr 4 `dotActS`
 
-dotActS :: Eq a => [a] -> Skel a -> Skel a
+dotActS :: Eq a => [a] -> Endom (Skel a)
 dotActS []         sk = sk
 dotActS (act:acts) sk = act `actS` acts `dotActS` sk
 
@@ -169,7 +169,7 @@ mAct :: Maybe channel -> Skel channel
 mAct Nothing  = Zero
 mAct (Just c) = Act c
 
-prllFalse :: Ord a => Maybe a -> [a] -> Skel a -> Skel a -> Skel a
+prllFalse :: Ord a => Maybe a -> [a] -> Op2 (Skel a)
 prllFalse c cs sk0 sk1 = mkOp (Prll False) (go sk0) (go sk1)
   where scs  = l2s cs
         go   = subst (substMember (scs, mAct c) Act)
