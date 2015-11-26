@@ -7,8 +7,6 @@ import qualified Ling.Norm    as N
 import           Ling.Prelude
 import           Ling.Proc
 import           Ling.Raw
-import           Ling.Defs    (pushDefs)
-import           Ling.Scoped
 import           Ling.Session
 import           Prelude      hiding (log)
 
@@ -85,7 +83,7 @@ reifyRSessions = reify
 
 instance Norm Proc where
   type Normalized Proc        = N.Proc
-  reify (N.Dot pref procs)    = reifyPref pref (mkProcs $ reify procs)
+  reify (N.Dot pref procs)    = reifyPref pref (pPrll $ reify procs)
   norm = \case
     PAct act         -> normAct act
     PNxt proc0 proc1 -> norm proc0 `nxtP` norm proc1
@@ -125,16 +123,11 @@ instance Norm TopCPatt where
     ParTopPatt ps   -> N.ArrayP N.ParK (norm ps)
     SeqTopPatt ps   -> N.ArrayP N.SeqK (norm ps)
 
-pAct :: N.Act -> Proc
-pAct = PAct . reifyAct
-
 reifyPref :: N.Pref -> Endom Proc
-reifyPref = \case
-  [] -> id
-  [act]
-    | N.actNeedsDot act -> pDot (pAct act)
-    | otherwise -> pNxt (pAct act)
-  acts -> pDot (PPrll (pAct <$> acts))
+reifyPref acts = f (pPrll (reifyAct <$> acts))
+  where
+    f | [act] <- acts, not (N.actNeedsDot act) = pNxt
+      | otherwise                              = pDot
 
 noSoSession :: ChanDec -> Name
 noSoSession (CD x NoSession) = x
@@ -161,23 +154,30 @@ normAct = \case
     Recv     c a      -> go [N.Recv         c (norm a)]
     NewSlice cs t x   -> go [N.NewSlice (noSoSession <$> cs) (norm (Some t)) x]
     At       t pa     -> go [N.At                            (norm t) (norm pa)]
+    LetA     x os t   -> go [N.LetA (N.aDef x (norm os) (norm t))]
   where go = (`actsP` [])
 
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
 
-reifyAct :: N.Act -> Act
+reifyLetA :: (Name, N.AnnTerm) -> Act
+reifyLetA (x, Ann os tm) = LetA x (reify os) (reify tm)
+
+reifyDefsA :: N.Defs -> Proc
+reifyDefsA defs = pDots $ defs ^.. each . to reifyLetA . to PAct
+
+reifyAct :: N.Act -> Proc
 reifyAct = \case
-  N.Nu c d            -> Nu (reify c) (reify d)
-  N.Split N.ParK c ds -> ParSplit c (reify ds)
-  N.Split N.TenK c ds -> TenSplit c (reify ds)
-  N.Split N.SeqK c ds -> SeqSplit c (reify ds)
-  N.Send     c t      -> Send     c (reify t)
-  N.Recv     c a      -> Recv     c (reify a)
-  N.NewSlice cs t x   -> NewSlice ((`CD` NoSession) <$> cs) (t ^. N.rterm . reified) x
-  N.Ax       s cs     -> Ax          (reify s) ((`CD` NoSession) <$> cs)
-  N.At       t ps     -> At          (reify t) (reify ps)
-  N.LetA{}            -> error "`let` is not supported in parallel actions"
+  N.Nu c d            -> PAct $ Nu (reify c) (reify d)
+  N.Split N.ParK c ds -> PAct $ ParSplit c (reify ds)
+  N.Split N.TenK c ds -> PAct $ TenSplit c (reify ds)
+  N.Split N.SeqK c ds -> PAct $ SeqSplit c (reify ds)
+  N.Send     c t      -> PAct $ Send     c (reify t)
+  N.Recv     c a      -> PAct $ Recv     c (reify a)
+  N.NewSlice cs t x   -> PAct $ NewSlice ((`CD` NoSession) <$> cs) (t ^. N.rterm . reified) x
+  N.Ax       s cs     -> PAct $ Ax          (reify s) ((`CD` NoSession) <$> cs)
+  N.At       t ps     -> PAct $ At          (reify t) (reify ps)
+  N.LetA defs         -> reifyDefsA defs
 
 -- isInfix xs = match "_[^_]*_" xs
 isInfix :: Name -> Maybe Name
@@ -283,11 +283,15 @@ reifyVarDecA (Arg a (Just t))
 reifyVarDec :: N.VarDec -> Term
 reifyVarDec = aTerm . reifyVarDecA
 
+reifyDefs :: N.Defs -> Endom Term
+reifyDefs = composeMapOf each $ \case
+  (x, Ann mty tm) -> Let x (reify mty) (reify tm)
+
 instance Norm Term where
   type Normalized Term = N.Term
   reify = \case
     N.Def x es   -> reifyDef x es
-    N.Let d t    -> reify (pushDefs (Scoped ø d t))
+    N.Let d t    -> reifyDefs d (reify t)
     N.Lit l      -> RawApp (Lit l) []
     N.Con n      -> RawApp (Con (reify n)) []
     N.TTyp       -> RawApp TTyp []
@@ -309,6 +313,7 @@ instance Norm Term where
     Rcv t s      -> N.TSession $ normVarDecs (N.IO N.Read ) (mkVDs t) s
     Loli s t     -> N.TSession $ norm (RawSession s) `loli` norm (RawSession t)
     Dual s       -> dual (norm s)
+    Let x os t u -> N.Let (N.aDef x (norm os) (norm t)) (norm u)
 
 instance Norm Branch where
   type Normalized Branch = (Name, N.Term)

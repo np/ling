@@ -75,16 +75,18 @@ import Ling.Fmt.Albert.ErrM
   'data' { PT _ (TS _ 26) }
   'end' { PT _ (TS _ 27) }
   'fwd' { PT _ (TS _ 28) }
-  'new' { PT _ (TS _ 29) }
-  'of' { PT _ (TS _ 30) }
-  'proc' { PT _ (TS _ 31) }
-  'recv' { PT _ (TS _ 32) }
-  'send' { PT _ (TS _ 33) }
-  'slice' { PT _ (TS _ 34) }
-  '{' { PT _ (TS _ 35) }
-  '|' { PT _ (TS _ 36) }
-  '}' { PT _ (TS _ 37) }
-  '~' { PT _ (TS _ 38) }
+  'in' { PT _ (TS _ 29) }
+  'let' { PT _ (TS _ 30) }
+  'new' { PT _ (TS _ 31) }
+  'of' { PT _ (TS _ 32) }
+  'proc' { PT _ (TS _ 33) }
+  'recv' { PT _ (TS _ 34) }
+  'send' { PT _ (TS _ 35) }
+  'slice' { PT _ (TS _ 36) }
+  '{' { PT _ (TS _ 37) }
+  '|' { PT _ (TS _ 38) }
+  '}' { PT _ (TS _ 39) }
+  '~' { PT _ (TS _ 40) }
 
 L_integ  { PT _ (TI $$) }
 L_doubl  { PT _ (TD $$) }
@@ -176,6 +178,7 @@ Term1 :: { Term }
 Term1 : Term2 '-o' Term1 { Ling.Fmt.Albert.Abs.Loli $1 $3 }
       | Term2 '->' Term1 { Ling.Fmt.Albert.Abs.TFun $1 $3 }
       | Term2 '**' Term1 { Ling.Fmt.Albert.Abs.TSig $1 $3 }
+      | 'let' Name OptSig '=' Term 'in' Term { Ling.Fmt.Albert.Abs.Let $2 $3 $5 $7 }
       | Term2 { $1 }
 Term :: { Term }
 Term : '\\' Term2 '->' Term { Ling.Fmt.Albert.Abs.Lam $2 $4 }
@@ -203,6 +206,7 @@ Act : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Fmt.Albert.Abs.Nu $3 $5 }
     | 'fwd' ASession '(' ListChanDec ')' { Ling.Fmt.Albert.Abs.Ax $2 $4 }
     | 'fwd' Integer ASession Name { Ling.Fmt.Albert.Abs.SplitAx $2 $3 $4 }
     | '@' ATerm TopCPatt { Ling.Fmt.Albert.Abs.At $2 $3 }
+    | 'let' Name OptSig '=' ATerm { Ling.Fmt.Albert.Abs.LetA $2 $3 $5 }
 ASession :: { ASession }
 ASession : ATerm { Ling.Fmt.Albert.Abs.AS $1 }
 TopCPatt :: { TopCPatt }

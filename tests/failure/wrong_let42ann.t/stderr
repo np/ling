@@ -1,0 +1,8 @@
+While checking `wrong_let42ann`
+  While checking `x`
+    Types are not equivalent.
+    Expected:
+      Bool
+    Inferred:
+      Int
+

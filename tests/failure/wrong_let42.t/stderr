@@ -1,0 +1,4 @@
+While checking `wrong_let42`
+  While checking `x`
+    Too many arguments given to x, 0 arguments expected and 1 were given.
+

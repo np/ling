@@ -35,15 +35,20 @@ paren :: Term -> ATerm
 paren (RawApp t []) = t
 paren t             = Paren t NoSig
 
-mkProcs :: [Proc] -> Proc
-mkProcs = \case
+pPrll :: [Proc] -> Proc
+pPrll = \case
   [p] -> p
   ps  -> PPrll ps
 
 pNxt :: Op2 Proc
+pNxt (PPrll []) proc1 = proc1
 pNxt proc0 (PPrll []) = proc0
 pNxt proc0 proc1      = proc0 `PNxt` proc1
 
 pDot :: Op2 Proc
+pDot (PPrll []) proc1 = proc1
 pDot proc0 (PPrll []) = proc0
 pDot proc0 proc1      = proc0 `PDot` proc1
+
+pDots :: [Proc] -> Proc
+pDots = foldr pDot (PPrll [])

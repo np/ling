@@ -1,6 +1,9 @@
-{-# LANGUAGE LambdaCase      #-}
-{-# LANGUAGE Rank2Types      #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE Rank2Types            #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Ling.Prelude (module Ling.Prelude, module X) where
 
@@ -79,10 +82,29 @@ data Ann a b = Ann { _annotation :: a, _annotated :: b }
 instance Bifunctor Ann where
   bimap f g (Ann a b) = Ann (f a) (g b)
 
+makePrisms ''Arg
+makePrisms ''Abs
+makePrisms ''Telescope
+makePrisms ''Ann
 makeLenses ''Arg
 makeLenses ''Abs
 makeLenses ''Telescope
 makeLenses ''Ann
+
+instance t ~ Arg a' => Rewrapped (Arg a) t
+instance Wrapped (Arg a) where
+  type Unwrapped (Arg a) = (Name, a)
+  _Wrapped' = _Arg
+
+instance t ~ Abs a' b' => Rewrapped (Abs a b) t
+instance Wrapped (Abs a b) where
+  type Unwrapped (Abs a b) = (Arg a, b)
+  _Wrapped' = _Abs
+
+instance t ~ Ann a' b' => Rewrapped (Ann a b) t
+instance Wrapped (Ann a b) where
+  type Unwrapped (Ann a b) = (a, b)
+  _Wrapped' = _Ann
 
 type Channel = Name
 
@@ -248,6 +270,7 @@ quasiQuoter :: String -> QuasiQuoter
 quasiQuoter qqName =
   QuasiQuoter (err "expressions") (err "patterns") (err "types") (err "declarations")
   where
+    err :: Monad m => String -> a -> m b
     err kind _ = fail $ qqName ++ ": not available in " ++ kind
 
 list :: Traversal [a] [b] a b

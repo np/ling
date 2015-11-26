@@ -41,9 +41,9 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 
 The reserved words used in Albert are the following:
   | ``Type`` | ``as`` | ``assert`` | ``case``
-  | ``data`` | ``end`` | ``fwd`` | ``new``
-  | ``of`` | ``proc`` | ``recv`` | ``send``
-  | ``slice`` |  |  | 
+  | ``data`` | ``end`` | ``fwd`` | ``in``
+  | ``let`` | ``new`` | ``of`` | ``proc``
+  | ``recv`` | ``send`` | ``slice`` | 
 
 The symbols used in Albert are the following:
   | ( | ) | = | :
@@ -119,6 +119,7 @@ All other symbols are terminals.
   | //Term1// | -> | //Term2// ``-o`` //Term1// 
   |  |  **|**  | //Term2// ``->`` //Term1// 
   |  |  **|**  | //Term2// ``**`` //Term1// 
+  |  |  **|**  | ``let`` //Name// //OptSig// ``=`` //Term// ``in`` //Term// 
   |  |  **|**  | //Term2// 
   | //Term// | -> | ``\`` //Term2// ``->`` //Term// 
   |  |  **|**  | ``proc`` ``(`` //[ChanDec]// ``)`` //Proc// 
@@ -141,6 +142,7 @@ All other symbols are terminals.
   |  |  **|**  | ``fwd`` //ASession// ``(`` //[ChanDec]// ``)`` 
   |  |  **|**  | ``fwd`` //Integer// //ASession// //Name// 
   |  |  **|**  | ``@`` //ATerm// //TopCPatt// 
+  |  |  **|**  | ``let`` //Name// //OptSig// ``=`` //ATerm// 
   | //ASession// | -> | //ATerm// 
   | //TopCPatt// | -> | ``(`` //[ChanDec]// ``)`` 
   |  |  **|**  | ``{`` //[CPatt]// ``}`` 

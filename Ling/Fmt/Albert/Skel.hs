@@ -77,6 +77,7 @@ transTerm x = case x of
   Loli term1 term2 -> failure x
   TFun term1 term2 -> failure x
   TSig term1 term2 -> failure x
+  Let name optsig term1 term2 -> failure x
   Lam term1 term2 -> failure x
   TProc chandecs proc -> failure x
 transProc :: Proc -> Result
@@ -97,6 +98,7 @@ transAct x = case x of
   Ax asession chandecs -> failure x
   SplitAx integer asession name -> failure x
   At aterm topcpatt -> failure x
+  LetA name optsig aterm -> failure x
 transASession :: ASession -> Result
 transASession x = case x of
   AS aterm -> failure x

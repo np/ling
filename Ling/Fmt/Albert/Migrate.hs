@@ -82,6 +82,8 @@ transTerm = \case
   Rcv term csession      -> L.Rcv (transTerm term) (transCSession csession)
   Dual session           -> L.Dual (transTerm session)
   Loli session1 session2 -> L.Loli (transTerm session1) (transTerm session2)
+  Let x os t u           -> L.Let (transName x) (transOptSig os)
+                                  (transTerm t) (transTerm u)
 
 transProc :: Proc -> L.Proc
 transProc = \case
@@ -103,6 +105,7 @@ transAct = \case
   Ax session chandecs -> L.Ax (transASession session) (transChanDec <$> chandecs)
   SplitAx integer session name -> L.SplitAx integer (transASession session) (transName name)
   At aterm topcpatt -> L.At (transATerm aterm) (transTopCPatt topcpatt)
+  LetA x os t -> L.LetA (transName x) (transOptSig os) (transATerm t)
 
 transOptSession :: OptSession -> L.OptSession
 transOptSession = \case

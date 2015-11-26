@@ -62,6 +62,7 @@ data Term
     | Loli Term Term
     | TFun Term Term
     | TSig Term Term
+    | Let Name OptSig Term Term
     | Lam Term Term
     | TProc [ChanDec] Proc
   deriving (Eq, Ord, Show, Read)
@@ -81,6 +82,7 @@ data Act
     | Ax ASession [ChanDec]
     | SplitAx Integer ASession Name
     | At ATerm TopCPatt
+    | LetA Name OptSig ATerm
   deriving (Eq, Ord, Show, Read)
 
 data ASession = AS ATerm

@@ -1,8 +1,9 @@
-{-# LANGUAGE LambdaCase      #-}
-{-# LANGUAGE Rank2Types      #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE ViewPatterns    #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE Rank2Types            #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 module Ling.Norm
   ( module Ling.Norm
   , Name(..)
@@ -132,6 +133,7 @@ makeLenses ''RFactor
 makeLenses ''Proc
 makeLenses ''Program
 makeLenses ''RSession
+makePrisms ''Defs
 makePrisms ''Dec
 makePrisms ''Assertion
 makePrisms ''TraverseKind
@@ -141,6 +143,9 @@ makePrisms ''Term
 makePrisms ''RW
 makePrisms ''DualOp
 makePrisms ''Session
+
+aDef :: Name -> Maybe Typ -> Term -> Defs
+aDef x mty tm = _Wrapped . _Wrapped # [(x, Ann mty tm)]
 
 instance Monoid Defs where
   mempty = Defs ø
@@ -157,6 +162,15 @@ instance At Defs where
 
 instance Ixed Defs where
   ix = ixAt
+
+instance t ~ Defs => Rewrapped Defs t
+instance Wrapped Defs where
+  type Unwrapped Defs = Map Name AnnTerm
+  _Wrapped' = _Defs
+
+instance Each Defs Defs (Name, AnnTerm) (Name, AnnTerm) where
+  -- TODO,LENS: I would prefer to avoid the conversion to a list
+  each = defsMap . _Wrapped . each
 
 instance Monoid Program where
   mempty        = Program []
@@ -215,7 +229,7 @@ actVarDecs :: Act -> [VarDec]
 actVarDecs = \case
   Recv _ a       -> [a]
   NewSlice _ _ x -> [Arg x (Just intTyp)]
-  LetA defs      -> [Arg x Nothing | x <- keys (defs ^. defsMap)]
+  LetA defs      -> [Arg x mty | (x, Ann mty _) <- defs ^.. each]
   Nu{}           -> []
   Split{}        -> []
   Send{}         -> []

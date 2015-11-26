@@ -81,6 +81,7 @@ Loli.     Term1  ::= Term2 "-o" Term1 ;
 -- an annotation.
 TFun.     Term1  ::= Term2 "->" Term1 ;
 TSig.     Term1  ::= Term2 "**" Term1 ;
+Let.      Term1  ::= "let" Name OptSig "=" Term "in" Term ;
 _.        Term1  ::= Term2 ;
 
 -- WARNING: The `Term2` is further analysed as: `("(" Name [Name] ":" Term ")")+`
@@ -106,6 +107,7 @@ NewSlice. Act ::= "slice" "(" [ChanDec] ")" ATerm "as" Name ;
 Ax.       Act ::= "fwd" ASession "(" [ChanDec] ")" ;
 SplitAx.  Act ::= "fwd" Integer ASession Name ;
 At.       Act ::= "@" ATerm TopCPatt ;
+LetA.     Act ::= "let" Name OptSig "=" ATerm ;
 
 AS.       ASession ::= ATerm ;
 

@@ -154,7 +154,7 @@ checkAct act proto =
       return $ replProtoWhen (`elem` cs) r proto
     Ax s cs -> return $ protoAx s cs `dotProto` proto
     LetA defs ->
-      checkDefs defs $> ø
+      checkDefs_ defs $> proto
     At e p -> do
       ss <- unTProto =<< inferTerm e
       proto' <- checkCPatt (wrapSessions ss) p
@@ -171,8 +171,8 @@ unTProto t0 =
   -}
     t1         -> tcError . unlines $ ["Expected a protocol type, not:", pretty t1]
 
-checkDefs :: Defs -> TC ()
-checkDefs defs = forOf_ (defsMap . each) defs inferAnnTerm
+checkDefs_ :: Defs -> TC ()
+checkDefs_ defs = forOf_ (defsMap . each) defs inferAnnTerm
 
 checkCPatt :: Session -> CPatt -> TC Proto
 checkCPatt s = \case
@@ -198,6 +198,13 @@ checkCPattR (s `Repl` r) pat
   | litR1 `is` r = checkCPatt s pat
   | otherwise    = tcError "Unexpected pattern for replicated session"
 
+checkDefs :: Defs -> Endom (TC a)
+checkDefs defs kont
+  | [(x,Ann mty tm)] <- toListOf each defs =
+      checkVarDef x mty (Just tm) kont
+  | otherwise =
+      tcError "IMPOSSIBLE non-singleton `let`"
+
 inferBranch :: (name, Term) -> TC (name, Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
 
@@ -206,7 +213,7 @@ inferAnnTerm (Ann mty tm) = checkSig mty (Just tm)
 
 inferTerm :: Term -> TC Typ
 inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
-  Let _defs _t -> tcError "Unsupported `let`"
+  Let defs t   -> checkDefs defs $ inferTerm t
   Lit l        -> pure $ literalType l
   TTyp         -> pure TTyp -- type-in-type
   Def x es     -> inferDef x es
