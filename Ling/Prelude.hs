@@ -18,6 +18,7 @@ import           Data.Foldable             as X
 import           Data.Function             as X
 import           Data.Functor              as X
 import           Data.List                 as X (elemIndex, sort, transpose)
+import           Data.List.Lens            as X
 import           Data.Map                  as X (Map, keys, keysSet,
                                                  unionWithKey)
 import qualified Data.Map                  as Map
@@ -36,6 +37,8 @@ import           Ling.Abs
 import           Numeric.Lens              as X
 
 type Endom a = a -> a
+
+type EndoPrism a = Prism' a a
 
 type EndoM m a = a -> m a
 
@@ -114,11 +117,20 @@ type Channel = Name
 nameString :: Iso' Name String
 nameString = iso unName Name
 
-prefName :: String -> Endom Name
-prefName s n = n & nameString %~ (s ++)
+indented :: Int -> Fold String String
+indented n = lined . re (prefixed (replicate n ' '))
 
-suffName :: String -> Endom Name
-suffName s n = n & nameString %~ (++ s)
+prefixedName :: String -> EndoPrism Name
+prefixedName s = nameString . prefixed s . from nameString
+
+suffixedName :: String -> EndoPrism Name
+suffixedName s = nameString . suffixed s . from nameString
+
+suffixedChan :: String -> EndoPrism Channel
+suffixedChan = suffixedName
+
+prefixedChan :: String -> EndoPrism Channel
+prefixedChan = prefixedName
 
 traceShowMsg :: Show a => String -> Endom a
 traceShowMsg msg x = trace (msg ++ " " ++ show x) x

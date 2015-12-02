@@ -20,6 +20,9 @@ import           Ling.Prelude hiding (q)
 pretty :: Print a => a -> String
 pretty = render . prt 0
 
+prettied :: Print a => Getter a String
+prettied = to pretty
+
 tracePretty :: Print a => String -> Endom a
 tracePretty msg x = trace (msg ++ " " ++ pretty x) x
 
@@ -301,7 +304,7 @@ instance Print a => Print (Comma a) where
 
 prettyError :: (a -> [String]) -> Err a -> [String]
 prettyError prettyA = \case
-  Bad e -> "  Error: " : map ("  "++) (lines e)
+  Bad e -> "  Error: " : e ^.. indented 2
   Ok x  -> prettyA x
 
 instance Print a => Print (Err a) where

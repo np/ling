@@ -92,4 +92,4 @@ subst1 d (x, atm) _sa@(Scoped gs ls a) =
 --    Def y [] -> sa $> rename1 (x, y) a
     _        -> Scoped gs (addEDef x' atm ls) (rename1 (x, x') a)
   where
-    x' = prefName (unName d ++ "#") x
+    x' = prefixedName (unName d ++ "#") # x

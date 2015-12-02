@@ -205,8 +205,7 @@ debugCheck fmt k =
 
 errorScope :: (Print name, MonadError TCErr m) => name -> Endom (m a)
 errorScope name ma =
-  ma `catchError` \err -> throwError (unlines (("While checking `" ++ pretty name ++ "`") : indent err))
-  where indent = map ("  "++) . lines
+  ma `catchError` \err -> throwError (unlines (("While checking `" ++ pretty name ++ "`") : err ^.. indented 2))
 
 {-----------------------}
 {- Basic type checking -}

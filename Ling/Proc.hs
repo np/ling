@@ -12,8 +12,6 @@ module Ling.Proc
   , prllNxtP
   , filter0s
   , filter0
-  , suffChan
-  , suffChans
   , split'
   , fwdP
   , fwdProc
@@ -117,11 +115,8 @@ filter0 :: Proc -> Procs
 filter0 ([]   `Dot` procs) = filter0s procs
 filter0 (acts `Dot` procs) = acts `prllActPs` filter0s procs
 
-suffChan :: String -> Endom Channel
-suffChan s = suffName $ s ++ "#"
-
-suffChans :: (Show i, Integral i) => i -> Channel -> [Channel]
-suffChans n c = (`suffChan` c) . show <$> [0..n-1]
+subChans :: (Show i, Integral i) => i -> Channel -> [Channel]
+subChans n c = [ suffixedChan (show i ++ "#") # c | i <- [0..n-1] ]
 
 noSession :: Channel -> ChanDec
 noSession c = Arg c Nothing
@@ -140,7 +135,7 @@ avoidUsed :: Name -> Name -> UsedNames -> (Name, UsedNames)
 avoidUsed suggestion basename used = go allNames where
   allPrefixes = ["x#", "y#", "z#"] ++ (((++"#") . ("x"++) . show) <$> [0 :: Int ..])
   allNames = (if suggestion == anonName then id else (suggestion :)) $
-             (`prefName` basename) <$> allPrefixes
+             [ prefixedName p # basename | p <- allPrefixes ]
   go names | x `member` used = go (tail names)
            | otherwise       = (x, insert x used)
     where x = head names
@@ -154,7 +149,7 @@ fwdSplit ks fprocs used rss cs
   -- splitting always commutes anyway.
   where
     ss   = unRSession <$> rss
-    dss  = suffChans (length ss) <$> cs
+    dss  = subChans (length ss) <$> cs
     ps   = zipWith     (fwdP used) ss (transpose dss)
     pref = zipWith3 id (split' <$> ks) cs dss
 
@@ -197,7 +192,7 @@ fwdP used s0 cs
 -- This function builds a process which first splits this par.
 fwdProc :: (Show i, Integral i) => i -> Session -> Channel -> Proc
 fwdProc n s c = split' ParK c cs `actP` [fwdP ø s cs]
-  where cs = suffChans n c
+  where cs = subChans n c
 
 ax :: Session -> [Channel] -> Act
 ax s cs | validAx s cs = Ax s cs
@@ -205,7 +200,7 @@ ax s cs | validAx s cs = Ax s cs
 
 splitAx :: (Show i, Integral i) => i -> Session -> Channel -> [Act]
 splitAx n s c = [split' ParK c cs, ax s cs]
-  where cs = suffChans n c
+  where cs = subChans n c
 
 {-
 replProcs :: (Show i, Integral i) => i -> Name -> Endom Procs
@@ -213,7 +208,7 @@ replProcs n = concatMap . replProc n
 
 replArg :: (Show i, Integral i) => i -> Name -> ChanDec -> [ChanDec]
 replArg n x (Arg d s) = go <$> [0..n-1] where
-  go i = Arg (suffChan (show i) d) (substi (x, i) s)
+  go i = Arg (suffChan (show i ++ "#") d) (substi (x, i) s)
 
 replProc' :: Integral i => i -> Name -> Proc -> Procs
 replProc' n x p = go <$> [0..n-1] where

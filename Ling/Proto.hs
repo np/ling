@@ -55,14 +55,14 @@ prettyProto p = concat
   ,("   - " ++) <$> prettyChanDecs p
   ,if p ^. skel == ø then [] else
    " skeleton:"
-   : p ^.. skel . to pretty . to lines . each . to ("   " ++)]
+   : p ^.. skel . prettied . indented 3]
 
 -- toListOf chanDecs :: Proto -> [Arg Session]
 chanDecs :: Fold Proto (Arg RSession)
 chanDecs = chans . to m2l . each . to (uncurry Arg)
 
 prettyChanDecs :: Proto -> [String]
-prettyChanDecs = toListOf (chanDecs . to pretty)
+prettyChanDecs = toListOf (chanDecs . prettied)
 
 instance Monoid Proto where
   mempty = MkProto ø ø
@@ -177,7 +177,7 @@ checkOrderedChans proto cs = do
     ,"Protocol:"
     ] ++ prettyProto proto ++
     ["Selected ordering:"
-    ] ++ (map ("  "++) . lines . pretty $ my)
+    ] ++ (my ^.. prettied . indented 2)
   assert (ref == my)
     ["These channels should be used in-order:", pretty (Comma cs)]
     where ref = cs `dotActS` ø
