@@ -1,7 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE Rank2Types #-}
 
 module Ling.Rename where
 
+import           Ling.Free
 import           Ling.Norm
 import           Ling.Prelude
 
@@ -19,10 +21,10 @@ instance Rename Name where
 instance Rename Term where
   rename f = \case
     Def x es   -> Def (rename f x) (rename f es)
-    Let defs t -> Let (rename f defs) (rename (hideDefs defs f) t)
-    Lam arg t  -> Lam (rename f arg) (rename (hideArg arg f) t)
-    TFun arg t -> TFun (rename f arg) (rename (hideArg arg f) t)
-    TSig arg t -> TSig (rename f arg) (rename (hideArg arg f) t)
+    Let defs t -> Let (rename f defs) (rename (hide (defsMap . to keys . each) defs f) t)
+    Lam arg t  -> Lam (rename f arg) (rename (hide argName arg f) t)
+    TFun arg t -> TFun (rename f arg) (rename (hide argName arg f) t)
+    TSig arg t -> TSig (rename f arg) (rename (hide argName arg f) t)
     Con x      -> Con (rename f x)
     Case t brs -> Case (rename f t) (rename f brs)
     e0@TTyp    -> e0
@@ -56,20 +58,8 @@ hideName :: Name -> Endom Ren
 hideName x f y | x == y    = y
                | otherwise = f y
 
-hideArg :: Arg a -> Endom Ren
-hideArg (Arg x _) = hideName x
-
-hideArgs :: [Arg a] -> Endom Ren
-hideArgs = composeMapOf each hideArg
-
-hideNames :: [Name] -> Endom Ren
-hideNames = composeMapOf each hideName
-
-hideDefs :: Defs -> Endom Ren
-hideDefs = hideNames . keys . _defsMap
-
-hidePref :: Pref -> Endom Ren
-hidePref = hideArgs . concatMap actVarDecs
+hide :: Fold s Name -> s -> Endom Ren
+hide f = composeMapOf f hideName
 
 instance Rename CPatt where
   rename f = \case
@@ -89,12 +79,12 @@ instance Rename Act where
 
 instance Rename Proc where
   rename f (pref `Dot` procs) =
-    rename f pref `Dot` rename (hidePref pref f) procs
+    rename f pref `Dot` rename (hide (to bvPref . folded) pref f) procs
 
 instance Rename Session where
   rename f = \case
     Array k ss -> Array k (rename f ss)
-    IO p arg s -> IO p (rename f arg) (rename (hideArg arg f) s)
+    IO p arg s -> IO p (rename f arg) (rename (hide argName arg f) s)
     TermS p t  -> TermS p (rename f t)
 
 instance Rename RSession where

@@ -1,7 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE Rank2Types #-}
 
 module Ling.Subst where
 
+import           Ling.Free
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Scoped  hiding (subst1)
@@ -36,9 +38,9 @@ instance Subst Term where
   subst f = \case
     Def x es   -> app (substName f x) (subst f es)
     Let defs t -> subst (defs <> f) t
-    Lam arg t  -> Lam (subst f arg) (subst (hideArg arg f) t)
-    TFun arg t -> TFun (subst f arg) (subst (hideArg arg f) t)
-    TSig arg t -> TSig (subst f arg) (subst (hideArg arg f) t)
+    Lam arg t  -> Lam (subst f arg) (subst (hide argName arg f) t)
+    TFun arg t -> TFun (subst f arg) (subst (hide argName arg f) t)
+    TSig arg t -> TSig (subst f arg) (subst (hide argName arg f) t)
     Case t brs -> mkCase (subst f t) (second (subst f) <$> brs)
     e0@Con{}   -> e0
     e0@TTyp    -> e0
@@ -59,14 +61,8 @@ instance Subst a => Subst (Maybe a) where
 instance (Subst a, Subst b) => Subst (a, b) where
   subst f = bimap (subst f) (subst f)
 
-hideArg :: Arg a -> Endom Defs
-hideArg (Arg k _) = sans k
-
-hideArgs :: [Arg a] -> Endom Defs
-hideArgs = composeMapOf each hideArg
-
-hidePref :: Pref -> Endom Defs
-hidePref = hideArgs . concatMap actVarDecs
+hide :: Fold s Name -> s -> Endom Defs
+hide f = composeMapOf f sans
 
 instance Subst Act where
   subst f = \case
@@ -81,12 +77,12 @@ instance Subst Act where
 
 instance Subst Proc where
   subst f (pref `Dot` procs) =
-    subst f pref `Dot` subst (hidePref pref f) procs
+    subst f pref `Dot` subst (hide (to bvPref . folded) pref f) procs
 
 instance Subst Session where
   subst f = \case
     Array k ss -> Array k (subst f ss)
-    IO p arg s -> IO p (subst f arg) (subst (hideArg arg f) s)
+    IO p arg s -> IO p (subst f arg) (subst (hide argName arg f) s)
     TermS p t  -> termS p (subst f t)
 
 instance Subst RSession where
