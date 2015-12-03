@@ -254,6 +254,10 @@ conType = fmap def0 . conTypeName
 newtype TC a = MkTC { unTC :: ReaderT TCEnv (Except TCErr) a }
   deriving (Functor, Applicative, Monad, MonadReader TCEnv, MonadError TCErr)
 
+instance Monoid a => Monoid (TC a) where
+  mempty = pure mempty
+  mappend = liftM2 mappend
+
 runTC :: TCOpts -> TC a -> Err a
 runTC opts tc = either Bad Ok
               . runExcept
