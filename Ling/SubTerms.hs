@@ -24,8 +24,11 @@ instance SubTerms Session where
     Array k ss -> Array k <$> subTerms f ss
     IO rw vd s -> IO rw <$> varDecTerms f vd <*> subTerms f s
 
+instance SubTerms RFactor where
+  subTerms = _RFactor
+
 instance SubTerms RSession where
-  subTerms f (s `Repl` RFactor r) = Repl <$> subTerms f s <*> (RFactor <$> f r)
+  subTerms f (s `Repl` r) = Repl <$> subTerms f s <*> subTerms f r
 
 instance SubTerms a => SubTerms (Arg a) where
   subTerms = argTerms subTerms

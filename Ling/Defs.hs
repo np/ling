@@ -29,6 +29,9 @@ mkLet defs0 = \case
 mkLet_ :: Traversal s t Term Term -> Scoped s -> t
 mkLet_ trv s = (s ^. scoped) & trv %~ mkLet (s ^. ldefs)
 
+mkLet__ :: SubTerms a => Scoped a -> a
+mkLet__ = mkLet_ subTerms
+
 -- If one considers this layer of definitions to be local definitions.
 unScopedTerm :: Scoped Term -> Term
 unScopedTerm (Scoped _ defs t) = mkLet defs t
@@ -52,19 +55,22 @@ instance PushDefs Term where
       TTyp         -> TTyp
       Con n        -> Con n
       Def{}        -> unScopedTerm st0 -- this might leave a let
-      Case t brs   -> uncurry Case $ mkLet_ (id `beside` branches) (st0 $> (t, brs))
-      Lam arg t    -> uncurry Lam $ mkLet_ absTerms (st0 $> (arg, t))
-      Proc cs p    -> Proc (mkLet_ subTerms (st0 $> cs)) (pushDefs (st0 $> p))
-      TFun arg s   -> uncurry TFun $ mkLet_ absTerms (st0 $> (arg, s))
-      TSig arg s   -> uncurry TSig $ mkLet_ absTerms (st0 $> (arg, s))
-      TProto ss    -> TProto $ mkLet_ (list . subTerms) (st0 $> ss)
+      Case t brs   -> _Case # mkLet_ (id `beside` branches) (st0 $> (t, brs))
+      Proc cs p    -> Proc (mkLet__ (st0 $> cs)) (pushDefs (st0 $> p))
+      Lam  arg t   -> _Lam  # mkLet_ absTerms (st0 $> (arg, t))
+      TFun arg t   -> _TFun # mkLet_ absTerms (st0 $> (arg, t))
+      TSig arg t   -> _TSig # mkLet_ absTerms (st0 $> (arg, t))
+      TProto ss    -> TProto $ mkLet__ (st0 $> ss)
       TSession s   -> pushDefs (st0 $> s) ^. tSession
+
+instance PushDefs RSession where
+  pushDefs = mkLet__
 
 instance PushDefs Session where
   pushDefs s0 =
     case s0 ^. scoped of
       TermS p t  -> termS p $ pushDefs (s0 $> t)
-      Array k ss -> Array k $ mkLet_ (list . subTerms) (s0 $> ss)
+      Array k ss -> Array k $ mkLet__ (s0 $> ss)
       IO rw vd s -> uncurry (IO rw) $
                       mkLet_ (varDecTerms `beside` subTerms) (s0 $> (vd, s))
 
@@ -76,16 +82,16 @@ instance PushDefs Proc where
           [LetA defs] ->
             mconcat $ pushDefs (sp0 *> Scoped ø defs procs)
           _ ->
-            uncurry Dot $ pushDefs (sp0 $> (acts, procs))
+            _Dot # pushDefs (sp0 $> (acts, procs))
 
 instance PushDefs Act where
   pushDefs sa =
     case sa ^. scoped of
-      Split k c ds    -> Split k c $ mkLet_ subTerms (sa $> ds)
+      Split k c ds    -> Split k c $ mkLet__ (sa $> ds)
       Send c e        -> Send c $ mkLet_ id (sa $> e)
       Recv c arg      -> Recv c $ mkLet_ varDecTerms (sa $> arg)
-      Nu c d          -> uncurry Nu $ mkLet_ subTerms (sa $> (c, d))
-      NewSlice cs t x -> NewSlice cs (mkLet_ rterm (sa $> t)) x
-      LetA{}          -> error "`let` is not supported in parallel actions (pushLetAct)"
-      Ax s cs         -> uncurry Ax $ mkLet_ (subTerms `beside` ignored) (sa $> (s, cs))
-      At t pat        -> uncurry At $ mkLet_ (id `beside` subTerms) (sa $> (t, pat))
+      Nu c d          -> _Nu # mkLet__ (sa $> (c, d))
+      NewSlice cs t x -> NewSlice cs (mkLet__ (sa $> t)) x
+      LetA{}          -> error "`let` is not supported in parallel actions (pushDefs)"
+      Ax s cs         -> _Ax # mkLet_ (subTerms `beside` ignored) (sa $> (s, cs))
+      At t pat        -> _At # mkLet_ (id `beside` subTerms) (sa $> (t, pat))

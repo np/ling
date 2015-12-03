@@ -133,16 +133,20 @@ makeLenses ''RFactor
 makeLenses ''Proc
 makeLenses ''Program
 makeLenses ''RSession
-makePrisms ''Defs
-makePrisms ''Dec
-makePrisms ''Assertion
-makePrisms ''TraverseKind
-makePrisms ''CPatt
 makePrisms ''Act
-makePrisms ''Term
-makePrisms ''RW
+makePrisms ''Assertion
+makePrisms ''CPatt
+makePrisms ''Dec
+makePrisms ''Defs
 makePrisms ''DualOp
+makePrisms ''Proc
+makePrisms ''Program
+makePrisms ''RFactor
+makePrisms ''RSession
+makePrisms ''RW
 makePrisms ''Session
+makePrisms ''Term
+makePrisms ''TraverseKind
 
 aDef :: Name -> Maybe Typ -> Term -> Defs
 aDef x mty tm = _Wrapped . _Wrapped # [(x, Ann mty tm)]
