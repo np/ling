@@ -49,7 +49,7 @@ executable Ling
    MiniC.Print
 
   -- other-extensions:
-  build-depends:       base >=4.7 && <4.9, array, containers,
+  build-depends:       base >=4.7 && <4.9, array, containers, SHA,
                        lens, mtl >=2.2.1, template-haskell, ghci-pretty
   build-tools:         alex, happy
   -- hs-source-dirs:
@@ -78,7 +78,7 @@ executable ling-fmt
    Ling.Session
 
   -- other-extensions:
-  build-depends:       base >=4.7 && <4.9, array, containers,
+  build-depends:       base >=4.7 && <4.9, array, containers, SHA,
                        lens, mtl >=2.2.1, template-haskell
   build-tools:         alex, happy
   -- hs-source-dirs:

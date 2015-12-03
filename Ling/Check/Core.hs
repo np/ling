@@ -311,7 +311,7 @@ checkApp f n ty0 (e:es) =
                                      , pretty f ]
         Just ty -> do
           checkTerm (unScopedTerm (ty1 $> ty)) e
-          checkApp f (n + 1) (subst1 f (x, Ann (Just ty) e) (ty1 $> s)) es
+          checkApp f (n + 1) (ty1 *> subst1 (x, Ann (Just ty) e) s) es
     _ -> tcError ("Too many arguments given to " ++ pretty f ++ ", " ++
                      show n ++ " arguments expected and " ++
                      show (n + 1 + length es) ++ " were given.")

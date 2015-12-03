@@ -14,6 +14,8 @@ import           Control.Monad             as X
 import           Control.Monad.Except      as X
 import           Control.Monad.Reader      as X
 import           Data.Bifunctor            as X
+import           Data.ByteString.Lazy.Lens as BL
+import           Data.Digest.Pure.SHA      (sha256, showDigest)
 import           Data.Foldable             as X
 import           Data.Function             as X
 import           Data.Functor              as X
@@ -52,6 +54,12 @@ type Verbosity = Bool
 
 anonName :: Name
 anonName = Name "_"
+
+isInternalName :: Name -> Bool
+isInternalName (Name s) = '#' `elem` s
+
+internalNameFor :: Show a => a -> EndoPrism Name
+internalNameFor a = suffixedName ("#" ++ hash256 (show a))
 
 data Arg a = Arg { _argName :: Name, _argBody :: a }
   deriving (Eq, Ord, Show, Read)
@@ -304,3 +312,6 @@ lookupEnv keyString vals env k = env ^. vals . at k ?| err
   where
     err = error $ "lookupEnv " ++ k ^. keyString . to show ++
                   " in " ++ show (env ^.. vals . to keys . each . keyString)
+
+hash256 :: String -> String
+hash256 = showDigest . sha256 . view BL.packedChars

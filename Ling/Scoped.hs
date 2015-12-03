@@ -3,7 +3,6 @@
 module Ling.Scoped (
     allDefs,
     nullDefs,
-    addEDef,
     Scoped(Scoped),
     gdefs,
     ldefs,
@@ -79,17 +78,11 @@ scopedName :: Scoped Name -> Maybe (Scoped Term)
 scopedName (Scoped g l x) =
   [l, g] ^? each . at x . _Just . annotated . to (Scoped g l)
 
-addEDef :: Name -> Ann (Maybe Typ) Term -> Endom Defs
-addEDef x atm m
-  | atm ^. annotated == Def x [] = m
-  | m ^. hasKey x                = error $ "addEDef: IMPOSSIBLE " ++ pretty (x, atm, m)
-  | otherwise                    = m & at x ?~ atm
-
-subst1 :: Rename a => Name -> (Name, Ann (Maybe Typ) Term) -> Endom (Scoped a)
--- subst1 _ (x, _, Nothing) _ = error $ "Missing type annotation for " ++ unName x
-subst1 d (x, atm) _sa@(Scoped gs ls a) =
-  case atm ^. annotated of
---    Def y [] -> sa $> rename1 (x, y) a
-    _        -> Scoped gs (addEDef x' atm ls) (rename1 (x, x') a)
-  where
-    x' = prefixedName (unName d ++ "#") # x
+subst1 :: Rename s => (Name, Ann (Maybe Typ) Term) -> s -> Scoped s
+subst1 (x, Ann mty tm) s =
+  case tm of
+    Def y [] | isInternalName y ->
+      pure $ rename1 (x, y) s
+    _ ->
+      let hx = internalNameFor tm # x in
+      Scoped ø (aDef hx mty tm) (rename1 (x, hx) s)

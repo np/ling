@@ -8,12 +8,12 @@ import           Ling.Prelude hiding (subst1)
 import           Ling.Scoped
 import           Ling.Session
 
-reduceApp :: Name -> Scoped Term -> [Term] -> Scoped Term
-reduceApp d st0 = \case
+reduceApp :: Scoped Term -> [Term] -> Scoped Term
+reduceApp st0 = \case
   []     -> st1
   (u:us) ->
     case st1 ^. scoped of
-      Lam (Arg x mty) t2 -> reduceApp d (subst1 d (x, Ann mty u) (st1 $> t2)) us
+      Lam (Arg x mty) t2 -> reduceApp (st1 *> subst1 (x, Ann mty u) t2) us
       Def x es           -> st1 $> Def x (es ++ u : us)
       _                  -> error "Ling.Reduce.reduceApp: IMPOSSIBLE"
 
@@ -30,7 +30,7 @@ reduceCase st0 brs =
 
 reduceDef :: Scoped Name -> [Term] -> Scoped Term
 reduceDef sd es
-  | Just st <- scopedName sd = reduceApp d st es
+  | Just st <- scopedName sd = reduceApp st es
   | otherwise                = sd $> Def d es
 
   where d = sd ^. scoped
