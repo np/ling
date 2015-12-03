@@ -116,7 +116,7 @@ filter0 ([]   `Dot` procs) = filter0s procs
 filter0 (acts `Dot` procs) = acts `prllActPs` filter0s procs
 
 subChans :: (Show i, Integral i) => i -> Channel -> [Channel]
-subChans n c = [ suffixedChan (show i ++ "#") # c | i <- [0..n-1] ]
+subChans n c = [ suffixedChan (show i) # c | i <- [0..n-1] ]
 
 noSession :: Channel -> ChanDec
 noSession c = Arg c Nothing
@@ -133,7 +133,7 @@ type UsedNames = Set Name
 
 avoidUsed :: Name -> Name -> UsedNames -> (Name, UsedNames)
 avoidUsed suggestion basename used = go allNames where
-  allPrefixes = ["x#", "y#", "z#"] ++ (((++"#") . ("x"++) . show) <$> [0 :: Int ..])
+  allPrefixes = ["x", "y", "z"] ++ ["x" ++ show (i :: Int) | i <- [0..]]
   allNames = (if suggestion == anonName then id else (suggestion :)) $
              [ prefixedName p # basename | p <- allPrefixes ]
   go names | x `member` used = go (tail names)

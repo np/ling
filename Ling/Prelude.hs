@@ -121,10 +121,10 @@ indented :: Int -> Fold String String
 indented n = lined . re (prefixed (replicate n ' '))
 
 prefixedName :: String -> EndoPrism Name
-prefixedName s = nameString . prefixed s . from nameString
+prefixedName s = nameString . prefixed (s++"#") . from nameString
 
 suffixedName :: String -> EndoPrism Name
-suffixedName s = nameString . suffixed s . from nameString
+suffixedName s = nameString . suffixed ('#':s) . from nameString
 
 suffixedChan :: String -> EndoPrism Channel
 suffixedChan = suffixedName
