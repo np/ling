@@ -17,6 +17,7 @@ import           Prelude      hiding (log)
 
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
+import           Ling.Print
 import           Ling.Rename
 import           Ling.Session
 
@@ -57,6 +58,15 @@ instance Dual a => Dual (Scoped a) where
   log  = fmap log
   sink = fmap sink
 
+instance Print a => Print (Scoped a) where
+  prt i (Scoped _ ld x)
+    -- the global scope is not displayed
+    | nullDefs ld = prt i x
+    | otherwise   =
+        concatD [ doc (showString "let ") , prt 0 ld
+                , doc (showString "in")
+                , prt i x ]
+
 scopedName :: Scoped Name -> Maybe (Scoped Term)
 scopedName (Scoped g l x) =
   [l, g] ^? each . at x . _Just . annotated . to (Scoped g l)
@@ -64,7 +74,7 @@ scopedName (Scoped g l x) =
 addEDef :: Name -> Ann (Maybe Typ) Term -> Endom Defs
 addEDef x atm m
   | atm ^. annotated == Def x [] = m
-  | m ^. hasKey x                = error "addEDef: IMPOSSIBLE"
+  | m ^. hasKey x                = error $ "addEDef: IMPOSSIBLE " ++ pretty (x, atm, m)
   | otherwise                    = m & at x ?~ atm
 
 subst1 :: Rename a => Name -> (Name, Ann (Maybe Typ) Term) -> Endom (Scoped a)

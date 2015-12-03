@@ -13,7 +13,6 @@ import           Ling.Abs
 import           Ling.ErrM
 import qualified Ling.Norm as N
 import           Ling.Reify
-import           Ling.Scoped
 import           Ling.Prelude hiding (q)
 
 
@@ -313,16 +312,13 @@ instance (Print a, Print b) => Print (Ann a b) where
   prt i (Ann a b) = prPrec i 1 (prt i b . txt ": " . prt i a)
 
 instance Print N.Defs where
-  prt i = prt i . N._defsMap
-
-instance Print a => Print (Scoped a) where
-  prt i (Scoped _ ld x)
-    -- the global scope is not displayed
-    | nullDefs ld = prt i x
-    | otherwise   =
-        concatD [ doc (showString "let ") , prt 0 ld
-                , doc (showString "in")
-                , prt i x ]
+  prt _ = prtSeq id id (txt "⦃") (txt ",") (txt "⦄") . map prettyDef . m2l . N._defsMap
+    where prettyDef (x, Ann mty tm) =
+            prt 0 x .
+            (case mty of
+              Nothing -> id
+              Just ty -> txt " : " . prt 0 ty) .
+            txt " = " . prt 0 tm
 
 instance Print a => Print (Arg a) where
   prt _i (Arg ident x) =
