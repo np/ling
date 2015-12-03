@@ -190,10 +190,7 @@ extractDuals (Just s0, Just s1) = Just (s0, s1)
 
 -- TODO: would it be nicer with the First monoid
 extractSession :: [Maybe a] -> a
-extractSession l =
-  case catMaybes l of
-    s:_ -> s
-    _   -> error "Missing type signature in `new`"
+extractSession l = l ^? each . _Just ?| error "Missing type signature in `new`"
 
 -- See flatRSession in Ling.Reduce
 unsafeFlatRSession :: RSession -> [Session]
