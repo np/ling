@@ -20,4 +20,6 @@ mkDerivation {
   homepage = "http://bnfc.digitalgrammars.com/";
   description = "A compiler front-end generator";
   license = stdenv.lib.licenses.gpl2;
+  doCheck = false;
+  patches = [ patches/bnfc-161.diff ];
 }
