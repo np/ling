@@ -221,52 +221,52 @@ fwd0_snd0 =
 
 fwd1_rcv =
   proc (c : {?Int})
-  c {c0#}
-  recv c0# (x#c0# : Int)
+  c {c#0}
+  recv c#0 (x#c#0 : Int)
 
 fwd2_par2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int]})
-  c {c0#, c1#}
-  c1# [c1#0#, c1#1#]
-  c0# {c0#0#, c0#1#}
-  ( recv c0#0# (x#c0#0# : Int).
-    send c1#0# x#c0#0#
-  | recv c1#1# (x#c1#1# : Int).
-    send c0#1# x#c1#1#.
-    recv c0#1# (x#c0#1# : Int).
-    send c1#1# x#c0#1# )
+  c {c#0, c#1}
+  c#1 [c#1#0, c#1#1]
+  c#0 {c#0#0, c#0#1}
+  ( recv c#0#0 (x#c#0#0 : Int).
+    send c#1#0 x#c#0#0
+  | recv c#1#1 (x#c#1#1 : Int).
+    send c#0#1 x#c#1#1.
+    recv c#0#1 (x#c#0#1 : Int).
+    send c#1#1 x#c#0#1 )
 
 fwd3_par2_ten2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int],{!Int, !Int.!Int}})
-  c {c0#, c1#, c2#}
-  c1# [c1#0#, c1#1#]
-  c0# {c0#0#, c0#1#}
-  c2# {c2#0#, c2#1#}
-  ( recv c0#0# (x#c0#0# : Int).
-    ( send c1#0# x#c0#0#
-    | send c2#0# x#c0#0# )
-  | recv c1#1# (x#c1#1# : Int).
-    ( send c0#1# x#c1#1#
-    | send c2#1# x#c1#1# ).
-    recv c0#1# (x#c0#1# : Int).
-    ( send c1#1# x#c0#1#
-    | send c2#1# x#c0#1# ))
+  c {c#0, c#1, c#2}
+  c#1 [c#1#0, c#1#1]
+  c#0 {c#0#0, c#0#1}
+  c#2 {c#2#0, c#2#1}
+  ( recv c#0#0 (x#c#0#0 : Int).
+    ( send c#1#0 x#c#0#0
+    | send c#2#0 x#c#0#0 )
+  | recv c#1#1 (x#c#1#1 : Int).
+    ( send c#0#1 x#c#1#1
+    | send c#2#1 x#c#1#1 ).
+    recv c#0#1 (x#c#0#1 : Int).
+    ( send c#1#1 x#c#0#1
+    | send c#2#1 x#c#0#1 ))
 
 fwd3_seq2_seq2_seq2 =
   proc (c : {[: ?Int, !Int.?Int :], [: !Int, ?Int.!Int :], [: !Int, !Int.!Int :]})
-  c {c0#, c1#, c2#}
-  c0# [: c0#0#, c0#1# :]
-  c1# [: c1#0#, c1#1# :]
-  c2# [: c2#0#, c2#1# :]
-  recv c0#0# (x#c0#0# : Int).
-  ( send c1#0# x#c0#0#
-  | send c2#0# x#c0#0# ).
-  recv c1#1# (x#c1#1# : Int).
-  ( send c0#1# x#c1#1#
-  | send c2#1# x#c1#1# ).
-  recv c0#1# (x#c0#1# : Int).
-  ( send c1#1# x#c0#1#
-  | send c2#1# x#c0#1# )
+  c {c#0, c#1, c#2}
+  c#0 [: c#0#0, c#0#1 :]
+  c#1 [: c#1#0, c#1#1 :]
+  c#2 [: c#2#0, c#2#1 :]
+  recv c#0#0 (x#c#0#0 : Int).
+  ( send c#1#0 x#c#0#0
+  | send c#2#0 x#c#0#0 ).
+  recv c#1#1 (x#c#1#1 : Int).
+  ( send c#0#1 x#c#1#1
+  | send c#2#1 x#c#1#1 ).
+  recv c#0#1 (x#c#0#1 : Int).
+  ( send c#1#1 x#c#0#1
+  | send c#2#1 x#c#0#1 )
 
 fwd_par0_ten0 =
   proc (i : {}, o : [])
@@ -286,48 +286,48 @@ fwd_par2_ten2_expanded =
 
 fwd_par2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
-  o [o0#, o1#]
-  i {i0#, i1#}
-  ( recv i0# (x#i0# : Int).
-    send o0# x#i0#
-  | recv o1# (x#o1# : Int).
-    send i1# x#o1#.
-    recv i1# (x#i1# : Int).
-    send o1# x#i1# )
+  o [o#0, o#1]
+  i {i#0, i#1}
+  ( recv i#0 (x#i#0 : Int).
+    send o#0 x#i#0
+  | recv o#1 (x#o#1 : Int).
+    send i#1 x#o#1.
+    recv i#1 (x#i#1 : Int).
+    send o#1 x#i#1 )
 
 fwd_par2_ten2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int})
-  o [o0#, o1#]
-  i {i0#, i1#}
-  l {l0#, l1#}
-  ( recv i0# (x#i0# : Int).
-    ( send o0# x#i0#
-    | send l0# x#i0# )
-  | recv o1# (x#o1# : Int).
-    ( send i1# x#o1#
-    | send l1# x#o1# ).
-    recv i1# (x#i1# : Int).
-    ( send o1# x#i1#
-    | send l1# x#i1# ))
+  o [o#0, o#1]
+  i {i#0, i#1}
+  l {l#0, l#1}
+  ( recv i#0 (x#i#0 : Int).
+    ( send o#0 x#i#0
+    | send l#0 x#i#0 )
+  | recv o#1 (x#o#1 : Int).
+    ( send i#1 x#o#1
+    | send l#1 x#o#1 ).
+    recv i#1 (x#i#1 : Int).
+    ( send o#1 x#i#1
+    | send l#1 x#i#1 ))
 
 fwd_par2_ten2_ten2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int},m : {!Int, !Int.!Int})
-  o [o0#, o1#]
-  i {i0#, i1#}
-  l {l0#, l1#}
-  m {m0#, m1#}
-  ( recv i0# (x#i0# : Int).
-    ( send o0# x#i0#
-    | send l0# x#i0#
-    | send m0# x#i0# )
-  | recv o1# (x#o1# : Int).
-    ( send i1# x#o1#
-    | send l1# x#o1#
-    | send m1# x#o1# ).
-    recv i1# (x#i1# : Int).
-    ( send o1# x#i1#
-    | send l1# x#i1#
-    | send m1# x#i1# ))
+  o [o#0, o#1]
+  i {i#0, i#1}
+  l {l#0, l#1}
+  m {m#0, m#1}
+  ( recv i#0 (x#i#0 : Int).
+    ( send o#0 x#i#0
+    | send l#0 x#i#0
+    | send m#0 x#i#0 )
+  | recv o#1 (x#o#1 : Int).
+    ( send i#1 x#o#1
+    | send l#1 x#o#1
+    | send m#1 x#o#1 ).
+    recv i#1 (x#i#1 : Int).
+    ( send o#1 x#i#1
+    | send l#1 x#i#1
+    | send m#1 x#i#1 ))
 
 fwd_send_recv =
   proc (i : ?Int, o : !Int)
@@ -385,29 +385,29 @@ fwd_send_recv_recv_with_listener_manually =
 
 fwd_seq2_seq2_seq2 =
   proc (i : [: ?Int, !Int.?Int :], o : [: !Int, ?Int.!Int :], l : [: !Int, !Int.!Int :])
-  i [: i0#, i1# :]
-  o [: o0#, o1# :]
-  l [: l0#, l1# :]
-  recv i0# (x#i0# : Int).
-  ( send o0# x#i0#
-  | send l0# x#i0# ).
-  recv o1# (x#o1# : Int).
-  ( send i1# x#o1#
-  | send l1# x#o1# ).
-  recv i1# (x#i1# : Int).
-  ( send o1# x#i1#
-  | send l1# x#i1# )
+  i [: i#0, i#1 :]
+  o [: o#0, o#1 :]
+  l [: l#0, l#1 :]
+  recv i#0 (x#i#0 : Int).
+  ( send o#0 x#i#0
+  | send l#0 x#i#0 ).
+  recv o#1 (x#o#1 : Int).
+  ( send i#1 x#o#1
+  | send l#1 x#o#1 ).
+  recv i#1 (x#i#1 : Int).
+  ( send o#1 x#i#1
+  | send l#1 x#i#1 )
 
 fwd_ten2_par2 =
   proc (i : [?Int, !Int.?Int],o : {!Int, ?Int.!Int})
-  i [i0#, i1#]
-  o {o0#, o1#}
-  ( recv i0# (x#i0# : Int).
-    send o0# x#i0#
-  | recv o1# (x#o1# : Int).
-    send i1# x#o1#.
-    recv i1# (x#i1# : Int).
-    send o1# x#i1# )
+  i [i#0, i#1]
+  o {o#0, o#1}
+  ( recv i#0 (x#i#0 : Int).
+    send o#0 x#i#0
+  | recv o#1 (x#o#1 : Int).
+    send i#1 x#o#1.
+    recv i#1 (x#i#1 : Int).
+    send o#1 x#i#1 )
 
 split_nested_seq_core =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (i : [: ~ A, ~ B, ~ C, ~ D :], o : [: [: A, B :], [: C, D :] :])
@@ -750,9 +750,9 @@ par_loli_ten_send_v2 =
 par_pat =
   proc (d : !Int, e : ?Int)
   @ (proc (f)
-  f {f0#, f1#}
-  recv f1# (x#f1# : Int).
-  send f0# x#f1#){d, e}
+  f {f#0, f#1}
+  recv f#1 (x#f#1 : Int).
+  send f#0 x#f#1){d, e}
 
 par_seq_back =
   proc (a : {[: !Int, !Int :], !Int})
@@ -834,12 +834,12 @@ pattern_example_expanded =
   ( send a 1
   | send b 2.
     send c 3
-  | d [d0#, d1#]
-    e {e0#, e1#}
-    ( recv e0# (x#e0# : Int).
-      send d0# x#e0#
-    | recv e1# (x#e1# : Int).
-      send d1# x#e1# ))
+  | d [d#0, d#1]
+    e {e#0, e#1}
+    ( recv e#0 (x#e#0 : Int).
+      send d#0 x#e#0
+    | recv e#1 (x#e#1 : Int).
+      send d#1 x#e#1 ))
 
 plug_compose =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < A, B >)-> \ (q : < ~ B, C >)-> proc (a : A, c : C)
@@ -1127,12 +1127,12 @@ test_pat_term =
   ( send a 1
   | send b 2.
     send c 3
-  | d [d0#, d1#]
-    e {e0#, e1#}
-    ( recv e0# (x#e0# : Int).
-      send d0# x#e0#
-    | recv e1# (x#e1# : Int).
-      send d1# x#e1# ))
+  | d [d#0, d#1]
+    e {e#0, e#1}
+    ( recv e#0 (x#e#0 : Int).
+      send d#0 x#e#0
+    | recv e#1 (x#e#1 : Int).
+      send d#1 x#e#1 ))
 
 test_pat =
   proc (bcaed : [[: !Int, !Int :], !Int, {{?Int, ?Int},[!Int, !Int]}])
