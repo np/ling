@@ -18,7 +18,7 @@ import           Ling.Print
 import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.Session
-import           Ling.Subst   (Subst, unScoped)
+import           Ling.Subst   (Subst, substScoped)
 
 import qualified Data.Set     as Set
 
@@ -162,8 +162,8 @@ isEquiv t0 t1 = do
   return (equiv env t0 t1, ut0, ut1)
 
   where
-    ut0 = unScoped t0
-    ut1 = unScoped t1
+    ut0 = substScoped t0
+    ut1 = substScoped t1
 
 checkEquivalence :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
                  => String -> String -> Scoped a -> String -> Scoped a -> m ()
