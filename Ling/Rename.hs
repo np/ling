@@ -34,7 +34,7 @@ instance Rename Term where
     TSession s -> TSession (rename f s)
 
 instance Rename Defs where
-  rename f = Defs . rename f . _defsMap
+  rename = over defsMap . rename
 
 instance (Rename a, Rename b) => Rename (Ann a b) where
   rename f = bimap (rename f) (rename f)
