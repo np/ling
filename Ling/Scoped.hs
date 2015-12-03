@@ -59,9 +59,12 @@ instance Monad Scoped where
   s >>= f = s *> f (s ^. scoped)
 
 instance Dual a => Dual (Scoped a) where
-  dual = fmap dual
-  log  = fmap log
-  sink = fmap sink
+  dualOp = fmap . dualOp
+  dual   = fmap dual
+  log    = fmap log
+  sink   = fmap sink
+  isLog  = isLog  . view scoped
+  isSink = isSink . view scoped
 
 instance Print a => Print (Scoped a) where
   prt i (Scoped _ ld x)

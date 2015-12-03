@@ -79,18 +79,19 @@ class Dual a where
   dualOp LogOp  = log
   dualOp SinkOp = sink
 
+  -- Laws:
+  --   isLog . log  == const True
+  --   isLog . dual == isSink
+  isLog, isSink :: a -> Bool
+
+  isSink = isLog . dual
+
 dualized :: (Dual a, Dual b) => Iso a b a b
 dualized = iso dual dual
 
 termS :: DualOp -> Term -> Session
 termS o (TSession s) = dualOp o s
 termS o           t  = TermS  o t
-
--- Sub-optimal but concise
-isLog, isSink :: (Eq session, Dual session) => session -> Bool
-
-isLog  s = s ==  log s
-isSink s = s == sink s
 
 validAx :: (Eq session, Dual session) => session -> [channel] -> Bool
 -- Forwarding anything between no channels is always possible
@@ -106,6 +107,7 @@ instance Dual RW where
   dual Read  = Write
   dual Write = Read
   log _      = Write
+  isLog      = (== Write)
 
 instance Dual DualOp where
   dual DualOp = NoOp
@@ -113,6 +115,7 @@ instance Dual DualOp where
   dual LogOp  = SinkOp
   dual SinkOp = LogOp
   log  _      = LogOp
+  isLog      = (== LogOp)
 
 instance Dual TraverseKind where
   dual ParK = TenK
@@ -121,11 +124,22 @@ instance Dual TraverseKind where
   log  SeqK = SeqK
   log  _    = ParK
 
+  isLog  k = k == log  k
+  isSink k = k == sink k
+  -- TODO: can we relax those to:
+  -- isLog  _  = True
+  -- isSink _  = True
+
 instance Dual Session where
   dualOp f = \case
     Array k s -> Array (dualOp f k) (dualOp f s)
     IO p a s  -> IO (dualOp f p) a (dualOp f s)
     TermS p t -> TermS (dualOp f p) t
+
+  isLog = \case
+    Array k s -> isLog (k, s)
+    IO p _ s  -> isLog (p, s)
+    TermS p _ -> isLog p
 
 instance Dual Raw.Term where
   dual (Raw.Dual s) =          s
@@ -137,18 +151,32 @@ instance Dual Raw.Term where
     | otherwise =
         Raw.RawApp (Raw.Var (Raw.Name "Log")) [Raw.paren s]
 
+  isLog = error "Raw.Term.isLog: not implemented"
+
 instance Dual RSession where
   dual   = mapR dual
   log    = mapR log
   dualOp = mapR . dualOp
+  isLog  = isLog  . view rsession
+  isSink = isSink . view rsession
+
+instance (Dual a, Dual b) => Dual (a, b) where
+  dual          = bimap dual dual
+  log           = bimap log  log
+  dualOp f      = bimap (dualOp f) (dualOp f)
+  isLog  (x, y) = isLog  x && isLog  y
+  isSink (x, y) = isSink x && isSink y
 
 instance Dual a => Dual [a] where
   dual   = map dual
   log    = map log
   dualOp = map . dualOp
+  isLog  = all isLog
+  isSink = all isSink
 
 instance Dual Term where
   dualOp o = view tSession . termS o
+  isLog    = isLog . view (from tSession)
 
 sessionStep :: Endom Session
 sessionStep (IO _ _ s) = s
