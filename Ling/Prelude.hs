@@ -55,12 +55,6 @@ type Verbosity = Bool
 anonName :: Name
 anonName = Name "_"
 
-isInternalName :: Name -> Bool
-isInternalName (Name s) = '#' `elem` s
-
-internalNameFor :: Show a => a -> EndoPrism Name
-internalNameFor a = suffixedName ("#" ++ hash256 (show a))
-
 data Arg a = Arg { _argName :: Name, _argBody :: a }
   deriving (Eq, Ord, Show, Read)
 
@@ -127,6 +121,12 @@ nameString = iso unName Name
 
 indented :: Int -> Fold String String
 indented n = lined . re (prefixed (replicate n ' '))
+
+isInternalName :: Name -> Bool
+isInternalName (Name s) = '#' `elem` s
+
+internalNameFor :: Show a => a -> EndoPrism Name
+internalNameFor a = suffixedName ("#" ++ hash256 (show a))
 
 prefixedName :: String -> EndoPrism Name
 prefixedName s = nameString . prefixed (s++"#") . from nameString
