@@ -27,9 +27,14 @@ checkOptSession c ms0 ms1 =
         Just s1 -> errorScope c (checkRSession s0) >> checkEqSessions c s0 s1
 
 checkProc :: Proc -> TC Proto
-checkProc (pref `Dot` procs) =
-  checkPrefWellFormness pref >>
-  checkVarDecs (pref >>= actVarDecs) (checkProcs procs) >>= checkPref pref
+checkProc (pref `Dot` procs) = do
+  debug $ "Checking proc: `" ++ pretty (pref `Dot` procs) ++ "`"
+  checkPrefWellFormness pref
+  let defs = pref ^. each . to actDefs
+  pushDefs . Scoped ø defs <$>
+    (checkPref pref =<<
+        checkDefs defs
+           (checkVarDecs (pref >>= actVarDecs) (checkProcs procs)))
 
 sendRecvSession :: Act -> TC (Channel, Endom Session)
 sendRecvSession = \case
@@ -50,7 +55,7 @@ checkPref pref proto
       css <- mapM sendRecvSession pref
       let proto' = protoSendRecv css proto
       debug . unlines $
-        [ "Checking parallel prefix: `" ++ pretty (pref `Dot` []) ++ "`"
+        [ "Checked parallel prefix: `" ++ pretty (pref `Dot` []) ++ "`"
         , "Inferred protocol for the sub-process:"
         ] ++ prettyProto proto ++
         [ "Inferred protocol for the whole process:"
@@ -153,8 +158,8 @@ checkAct act proto =
       ifor_ (proto^.chans) (checkSlice (`notElem` cs))
       return $ replProtoWhen (`elem` cs) r proto
     Ax s cs -> return $ protoAx s cs `dotProto` proto
-    LetA defs ->
-      checkDefs_ defs $> proto
+    LetA{} ->
+      return proto
     At e p -> do
       ss <- unTProto =<< inferTerm e
       proto' <- checkCPatt (wrapSessions ss) p
@@ -170,9 +175,6 @@ unTProto t0 =
                     mkCaseSessions (equiv env) u <$> branches unTProto brs
   -}
     t1         -> tcError . unlines $ ["Expected a protocol type, not:", pretty t1]
-
-checkDefs_ :: Defs -> TC ()
-checkDefs_ defs = forOf_ (defsMap . each) defs inferAnnTerm
 
 checkCPatt :: Session -> CPatt -> TC Proto
 checkCPatt s = \case
@@ -198,12 +200,12 @@ checkCPattR (s `Repl` r) pat
   | litR1 `is` r = checkCPatt s pat
   | otherwise    = tcError "Unexpected pattern for replicated session"
 
+-- Note that this is up to you to make the definitions in scope of the
+-- result if necessary.
 checkDefs :: Defs -> Endom (TC a)
-checkDefs defs kont
-  | [(x,Ann mty tm)] <- toListOf each defs =
-      checkVarDef x mty (Just tm) kont
-  | otherwise =
-      tcError "IMPOSSIBLE non-singleton `let`"
+checkDefs = composeMapOf each checkDef
+  where
+    checkDef (x,Ann mty tm) = checkVarDef x mty (Just tm)
 
 inferBranch :: (name, Term) -> TC (name, Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
@@ -213,7 +215,7 @@ inferAnnTerm (Ann mty tm) = checkSig mty (Just tm)
 
 inferTerm :: Term -> TC Typ
 inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
-  Let defs t   -> checkDefs defs $ inferTerm t
+  Let defs t   -> mkLet defs <$> checkDefs defs (inferTerm t)
   Lit l        -> pure $ literalType l
   TTyp         -> pure TTyp -- type-in-type
   Def x es     -> inferDef x es

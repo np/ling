@@ -229,11 +229,24 @@ addName = Name "_+_"
 multName :: Name
 multName = Name "_*_"
 
+actDefs :: Act -> Defs
+actDefs = \case
+  LetA defs  -> defs
+  Recv{}     -> ø
+  NewSlice{} -> ø
+  Nu{}       -> ø
+  Split{}    -> ø
+  Send{}     -> ø
+  Ax{}       -> ø
+  At{}       -> ø
+
+-- WARNING: this does not include `let` definitions, these
+-- should be handled with their definitions.
 actVarDecs :: Act -> [VarDec]
 actVarDecs = \case
   Recv _ a       -> [a]
   NewSlice _ _ x -> [Arg x (Just intTyp)]
-  LetA defs      -> [Arg x mty | (x, Ann mty _) <- defs ^.. each]
+  LetA{}         -> []
   Nu{}           -> []
   Split{}        -> []
   Send{}         -> []

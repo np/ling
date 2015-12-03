@@ -30,12 +30,14 @@ module Ling.Proto
   where
 
 import           Ling.Check.Base
+import           Ling.Defs
 import           Ling.Norm
+import           Ling.Prelude
 import           Ling.Print
 import           Ling.Proto.Skel      (Skel, actS, prllActS, dotActS)
 import qualified Ling.Proto.Skel      as Skel
 import           Ling.Session
-import           Ling.Prelude
+import           Ling.SubTerms
 
 import qualified Data.Map             as Map
 import qualified Data.Set             as Set
@@ -69,6 +71,9 @@ instance Monoid Proto where
   -- **parallel** (namely tensor).
   -- If the processes are in sequence use dotProto instead.
   mappend = combineProto TenK
+
+instance PushDefs Proto where
+  pushDefs = mkLet_ (chans . each . subTerms)
 
 dotProto :: Op2 Proto
 dotProto = combineProto SeqK

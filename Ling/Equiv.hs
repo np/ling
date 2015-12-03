@@ -222,7 +222,9 @@ instance Equiv Act where
 
 instance Equiv Proc where
   equiv env (pr0 `Dot` pp0) (pr1 `Dot` pp1) =
-      equiv env (pr0, Telescope vd0 pp0) (pr1, Telescope vd1 pp1)
+      equiv env (pr0, Telescope vd0 (Scoped ø (pr0 ^. prefDefs) pp0))
+                (pr1, Telescope vd1 (Scoped ø (pr1 ^. prefDefs) pp1))
     where
+      prefDefs = each . to actDefs
       vd0 = ignoreArgBody <$> (actVarDecs =<< pr0)
       vd1 = ignoreArgBody <$> (actVarDecs =<< pr1)
