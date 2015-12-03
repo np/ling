@@ -1,0 +1,24 @@
+diff --git source/src/BNFC/Backend/Haskell/CFtoAlex3.hs source/src/BNFC/Backend/Haskell/CFtoAlex3.hs
+index 1d5e156..054d576 100644
+--- source/src/BNFC/Backend/Haskell/CFtoAlex3.hs
++++ source/src/BNFC/Backend/Haskell/CFtoAlex3.hs
+@@ -51,6 +51,7 @@ prelude name _ shareMod shareStrings byteStrings = [
+   if byteStrings  then "import qualified Data.ByteString.Char8 as BS" else "",
+   "import qualified Data.Bits",
+   "import Data.Word (Word8)",
++  "import Data.Char (ord)",
+   "}",
+   ""
+   ]
+diff --git source/src/LexBNF.x source/src/LexBNF.x
+index 177eb2a..ea904b1 100644
+--- source/src/LexBNF.x
++++ source/src/LexBNF.x
+@@ -9,6 +9,7 @@ module LexBNF where
+ 
+ import qualified Data.Bits
+ import Data.Word (Word8)
++import Data.Char (ord)
+ }
+ 
+ 
