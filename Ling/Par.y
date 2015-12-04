@@ -111,7 +111,7 @@ Dec : Name OptSig '=' Term { Ling.Abs.DDef $1 $2 $4 }
     | 'data' Name '=' ListConName { Ling.Abs.DDat $2 $4 }
     | 'assert' Assertion { Ling.Abs.DAsr $2 }
 Assertion :: { Assertion }
-Assertion : Term '=' Term ':' Term { Ling.Abs.AEq $1 $3 $5 }
+Assertion : Term '=' Term OptSig { Ling.Abs.AEq $1 $3 $4 }
 ConName :: { ConName }
 ConName : '`' Name { Ling.Abs.CN $2 }
 ListConName :: { [ConName] }

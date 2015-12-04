@@ -34,7 +34,7 @@ data Dec
   deriving (Eq,Ord,Show,Read)
 
 data Assertion
-  = Equal Term Term Typ
+  = Equal Term Term (Maybe Typ)
   deriving (Eq,Ord,Show,Read)
 
 infixr 4 `Dot`

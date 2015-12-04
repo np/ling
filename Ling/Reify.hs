@@ -380,7 +380,7 @@ instance Norm Dec where
 
 instance Norm Assertion where
   type Normalized Assertion = N.Assertion
-  norm  (AEq t1 t2 ty)      = N.Equal (norm t1) (norm t2) (norm ty)
-  reify (N.Equal t1 t2 ty)  = AEq (reify t1) (reify t2) (reify ty)
+  norm  (AEq t1 t2 os)      = N.Equal (norm t1) (norm t2) (norm os)
+  reify (N.Equal t1 t2 mty) = AEq (reify t1) (reify t2) (reify mty)
 
 -- -}

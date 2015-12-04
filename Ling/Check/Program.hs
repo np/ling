@@ -24,16 +24,13 @@ checkDec (Dat d cs)       kont = do
   local ((ctyps %~ union (l2m [ (c,d) | c <- cs ]))
         .(evars . at d ?~ TTyp)
         .(ddefs . at d ?~ cs)) kont
-checkDec (Assert a) kont = checkAsr a kont
+checkDec (Assert a) kont = checkAsr a >> kont
 
-checkAsr :: Assertion -> Endom (TC a)
-checkAsr (Equal t1 t2 ty) kont = do
-  checkTyp ty
-  checkTerm ty t1
+checkAsr :: Assertion -> TC ()
+checkAsr (Equal t1 t2 mty) = do
+  ty <- checkSig mty (Just t1)
   checkTerm ty t2
 
   checkEquivalence "Terms are not equivalent."
     "Left side:"  (pure t1)
     "Right side:" (pure t2)
-
-  kont

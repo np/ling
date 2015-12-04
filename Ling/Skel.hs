@@ -23,7 +23,7 @@ transDec x = case x of
   DAsr assertion -> failure x
 transAssertion :: Assertion -> Result
 transAssertion x = case x of
-  AEq term1 term2 term3 -> failure x
+  AEq term1 term2 optsig -> failure x
 transConName :: ConName -> Result
 transConName x = case x of
   CN name -> failure x

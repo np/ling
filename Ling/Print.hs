@@ -125,7 +125,7 @@ instance Print Dec where
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ",\n\n"), prt 0 xs])
 instance Print Assertion where
   prt i e = case e of
-    AEq term1 term2 term3 -> prPrec i 0 (concatD [prt 0 term1, doc (showString "="), prt 0 term2, doc (showString ":"), prt 0 term3])
+    AEq term1 term2 optsig -> prPrec i 0 (concatD [prt 0 term1, doc (showString "="), prt 0 term2, prt 0 optsig])
 
 instance Print ConName where
   prt i e = case e of

@@ -18,7 +18,7 @@ DDat. Dec ::= "data" Name "=" [ConName] ;
 
 DAsr. Dec ::= "assert" Assertion ;
 
-AEq. Assertion ::= Term "=" Term ":" Term ;
+AEq. Assertion ::= Term "=" Term OptSig ;
 
 CN. ConName ::= "`" Name ;
 

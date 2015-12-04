@@ -18,7 +18,7 @@ data Dec
     | DAsr Assertion
   deriving (Eq, Ord, Show, Read)
 
-data Assertion = AEq Term Term Term
+data Assertion = AEq Term Term OptSig
   deriving (Eq, Ord, Show, Read)
 
 data ConName = CN Name

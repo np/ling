@@ -114,7 +114,7 @@ Dec : Name '(' ListChanDec ')' '=' Proc OptDot { Ling.Fmt.Albert.Abs.DPrc $1 $3 
     | 'data' Name '=' ListConName OptDot { Ling.Fmt.Albert.Abs.DDat $2 $4 $5 }
     | 'assert' Assertion { Ling.Fmt.Albert.Abs.DAsr $2 }
 Assertion :: { Assertion }
-Assertion : Term '=' Term ':' Term { Ling.Fmt.Albert.Abs.AEq $1 $3 $5 }
+Assertion : Term '=' Term OptSig { Ling.Fmt.Albert.Abs.AEq $1 $3 $4 }
 ConName :: { ConName }
 ConName : '`' Name { Ling.Fmt.Albert.Abs.CN $2 }
 OptDot :: { OptDot }

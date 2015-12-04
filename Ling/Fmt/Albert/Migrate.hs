@@ -27,7 +27,7 @@ transDec = \case
 
 transAssertion :: Assertion -> L.Assertion
 transAssertion = \case
-  AEq term1 term2 term3 -> L.AEq (transTerm term1) (transTerm term2) (transTerm term3)
+  AEq term1 term2 optsig -> L.AEq (transTerm term1) (transTerm term2) (transOptSig optsig)
 
 transConName :: ConName -> L.ConName
 transConName = \case

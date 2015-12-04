@@ -71,7 +71,7 @@ All other symbols are terminals.
   |  |  **|**  | //Name// ``:`` //Term// //OptDot// 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// //OptDot// 
   |  |  **|**  | ``assert`` //Assertion// 
-  | //Assertion// | -> | //Term// ``=`` //Term// ``:`` //Term// 
+  | //Assertion// | -> | //Term// ``=`` //Term// //OptSig// 
   | //ConName// | -> | ````` //Name// 
   | //OptDot// | -> | **eps**
   |  |  **|**  | ``.`` 

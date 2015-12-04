@@ -70,7 +70,7 @@ All other symbols are terminals.
   |  |  **|**  | //Name// ``:`` //Term// 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// 
   |  |  **|**  | ``assert`` //Assertion// 
-  | //Assertion// | -> | //Term// ``=`` //Term// ``:`` //Term// 
+  | //Assertion// | -> | //Term// ``=`` //Term// //OptSig// 
   | //ConName// | -> | ````` //Name// 
   | //[ConName]// | -> | **eps**
   |  |  **|**  | //ConName// 
