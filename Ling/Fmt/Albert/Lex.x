@@ -9,7 +9,6 @@ module Ling.Fmt.Albert.Lex where
 
 import qualified Data.Bits
 import Data.Word (Word8)
-import Data.Char (ord)
 }
 
 
@@ -29,7 +28,7 @@ $u = [\0-\255]          -- universal: any character
 
 $white+ ;
 @rsyms { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
-($l | [\_ \- \+ \* \/ \' \%]| $d)* ($l | [\_ \- \+ \* \/ \' \%]) ($l | [\_ \- \+ \* \/ \' \%]| $d)* { tok (\p s -> PT p (eitherResIdent (T_Name . share) s)) }
+($l | [\_ \- \+ \* \/ \%]| $d)* ($l | [\_ \- \+ \* \/ \%]) ($l | [\_ \- \+ \* \/ \% \']| $d)* { tok (\p s -> PT p (eitherResIdent (T_Name . share) s)) }
 
 $l $i*   { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
 \" ([$u # [\" \\ \n]] | (\\ (\" | \\ | \' | n | t)))* \"{ tok (\p s -> PT p (TL $ share $ unescapeInitTail s)) }
