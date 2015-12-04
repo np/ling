@@ -94,7 +94,7 @@ transProc = \case
 
 transAct :: Act -> L.Act
 transAct = \case
-  Nu chandec1 chandec2 -> L.Nu (transChanDec chandec1) (transChanDec chandec2)
+  Nu chandecs -> L.Nu (transChanDec <$> chandecs)
   ParSplit name chandecs -> L.ParSplit (transName name) (transChanDec <$> chandecs)
   TenSplit name chandecs -> L.TenSplit (transName name) (transChanDec <$> chandecs)
   SeqSplit name chandecs -> L.SeqSplit (transName name) (transChanDec <$> chandecs)

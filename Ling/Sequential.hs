@@ -148,14 +148,16 @@ transPref env pref0 procs k =
 transAct :: Act -> Endom Env
 transAct act =
   case act of
-    Nu (Arg c0 c0ORS) (Arg c1 c1ORS) ->
-      let c0OS = unRepl <$> c0ORS
-          c1OS = unRepl <$> c1ORS
-          Just (c0S , c1S) = extractDuals (c0OS, c1OS)
-          l = Root c0
+    Nu [] ->
+      id
+    Nu cds ->
+      let
+        cds'@(Arg c0 c0S:_) = cds & each . argBody . _Just %~ unRepl
+                                  & unsafePartsOf (each . argBody) %~ extractDuals
+        l = Root c0
       in
       addLocs  (sessionStatus (const Empty) l c0S) .
-      addChans [(c0,(l,oneS c0S)),(c1,(l,oneS c1S))]
+      addChans [(c,(l,oneS cS)) | Arg c cS <- cds']
     Split _ c ds ->
       transSplit c ds
     Send c _ ->

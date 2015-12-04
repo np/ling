@@ -63,7 +63,7 @@ instance Subst Act where
     Split k c ds    -> Split k c (subst f ds)
     Send c e        -> Send c (subst f e)
     Recv c arg      -> Recv c (subst f arg)
-    Nu c d          -> Nu (subst f c) (subst f d)
+    Nu cs           -> Nu (subst f cs)
     NewSlice cs t x -> NewSlice cs (subst f t) x
     LetA{}          -> error "Subst/LetA"
     Ax s cs         -> Ax (subst f s) cs

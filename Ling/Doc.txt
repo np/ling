@@ -127,7 +127,7 @@ All other symbols are terminals.
   | //[Proc]// | -> | **eps**
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
-  | //Act// | -> | ``new`` ``(`` //ChanDec// ``,`` //ChanDec// ``)`` 
+  | //Act// | -> | ``new`` ``(`` //[ChanDec]// ``)`` 
   |  |  **|**  | //Name// ``{`` //[ChanDec]// ``}`` 
   |  |  **|**  | //Name// ``[`` //[ChanDec]// ``]`` 
   |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 

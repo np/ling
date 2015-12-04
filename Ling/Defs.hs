@@ -90,7 +90,7 @@ instance PushDefs Act where
       Split k c ds    -> Split k c $ mkLet__ (sa $> ds)
       Send c e        -> Send c $ mkLet_ id (sa $> e)
       Recv c arg      -> Recv c $ mkLet_ varDecTerms (sa $> arg)
-      Nu c d          -> _Nu # mkLet__ (sa $> (c, d))
+      Nu cs           -> Nu $ mkLet__ (sa $> cs)
       NewSlice cs t x -> NewSlice cs (mkLet__ (sa $> t)) x
       LetA{}          -> error "`let` is not supported in parallel actions (pushDefs)"
       Ax s cs         -> _Ax # mkLet_ (subTerms `beside` ignored) (sa $> (s, cs))

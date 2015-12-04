@@ -72,7 +72,7 @@ data Proc
   deriving (Eq, Ord, Show, Read)
 
 data Act
-    = Nu ChanDec ChanDec
+    = Nu [ChanDec]
     | ParSplit Name [ChanDec]
     | TenSplit Name [ChanDec]
     | SeqSplit Name [ChanDec]

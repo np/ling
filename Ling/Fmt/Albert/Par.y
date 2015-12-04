@@ -196,7 +196,7 @@ ListProc : {- empty -} { [] }
          | Proc { (:[]) $1 }
          | Proc '|' ListProc { (:) $1 $3 }
 Act :: { Act }
-Act : 'new' '(' ChanDec ',' ChanDec ')' { Ling.Fmt.Albert.Abs.Nu $3 $5 }
+Act : 'new' '(' ListChanDec ')' { Ling.Fmt.Albert.Abs.Nu $3 }
     | Name '{' ListChanDec '}' { Ling.Fmt.Albert.Abs.ParSplit $1 $3 }
     | Name '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.TenSplit $1 $3 }
     | Name '[:' ListChanDec ':]' { Ling.Fmt.Albert.Abs.SeqSplit $1 $3 }

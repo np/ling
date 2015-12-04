@@ -23,6 +23,7 @@ module Ling.Proto
   , protoAx
   , protoSendRecv
   , replProtoWhen
+  , assertUsed
   , assertAbsent
   , checkOrderedChans
   , checkSomeOrderChans
@@ -148,9 +149,16 @@ protoSendRecv cfs p =
   where crs = [ (c,mapR f (p ^. chanSession c . endedRS)) | (c,f) <- cfs ]
         cs = fst <$> cfs
 
-assertAbsent :: MonadError TCErr m => Channel -> Proto -> m ()
-assertAbsent c p =
-  assert (p ^. chans . hasNoKey c)
+-- Make sure the channel is used.
+-- When the session is ended we want to skip this check and allow the
+-- the channel to be unused.
+assertUsed :: MonadError TCErr m => Proto -> Channel -> m ()
+assertUsed proto c = assert (_Just `is` s) ["Unused channel " ++ pretty c]
+  where s = proto ^. chanSession c
+
+assertAbsent :: MonadError TCErr m => Proto -> Channel -> m ()
+assertAbsent proto c =
+  assert (proto ^. chans . hasNoKey c)
     ["The channel " ++ pretty c ++ " has been re-used"]
 
 checkConflictingChans :: MonadTC m => Proto -> Maybe Channel -> [Channel] -> m Proto

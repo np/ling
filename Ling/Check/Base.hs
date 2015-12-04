@@ -118,18 +118,11 @@ checkEqSessions c s0 s1 =
     "Given session (expanded):" (pure s0)
     "Inferred session:"         (pure s1)
 
--- checkUnused c ms s: Check if the channel c is used given the inferred session ms, and its dual
--- ds.
-checkUnused :: (MonadError TCErr m, Print channel)
-            => channel -> Maybe RSession -> RSession -> m ()
-checkUnused _ (Just _) _ = return ()
-checkUnused c Nothing  s = assert (endRS `is` s) ["Unused channel " ++ pretty c]
-
 checkOneR :: MonadError TCErr m => RFactor -> m ()
 checkOneR r = assert (r == ø) ["Unexpected replication:", pretty r]
 
-checkDual :: MonadTC m => RSession -> RSession -> m ()
-checkDual (Repl s0 r0) (Repl s1 r1) = do
+checkDual :: MonadTC m => [RSession] -> m ()
+checkDual [Repl s0 r0, Repl s1 r1] = do
   checkOneR r0
   checkOneR r1
   (b, us0, us1) <- isEquiv (pure s0) (pure (dual s1))
@@ -137,6 +130,7 @@ checkDual (Repl s0 r0) (Repl s1 r1) = do
     "Sessions are not dual." (\_ _ -> b)
     "Given session (expanded):" us0
     "Inferred dual session:"    (dual us1)
+checkDual _ = error "checkDual"
 
 checkSlice :: (Print channel, MonadError TCErr m) => (channel -> Bool) -> channel -> RSession -> m ()
 checkSlice cond c (s `Repl` r) = when (cond c) $ do

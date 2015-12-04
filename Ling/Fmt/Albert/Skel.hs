@@ -88,7 +88,7 @@ transProc x = case x of
   PDot proc1 proc2 -> failure x
 transAct :: Act -> Result
 transAct x = case x of
-  Nu chandec1 chandec2 -> failure x
+  Nu chandecs -> failure x
   ParSplit name chandecs -> failure x
   TenSplit name chandecs -> failure x
   SeqSplit name chandecs -> failure x

@@ -58,7 +58,7 @@ data CPatt
   deriving (Eq, Ord, Show, Read)
 
 data Act
-  = Nu       ChanDec ChanDec
+  = Nu       [ChanDec]
   -- TODO? Split Channel CPatt
   | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term

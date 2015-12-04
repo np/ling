@@ -186,7 +186,7 @@ instance Print Proc where
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "|"), prt 0 xs])
 instance Print Act where
   prt i e = case e of
-    Nu chandec1 chandec2 -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandec1, doc (showString ","), prt 0 chandec2, doc (showString ")")])
+    Nu chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandecs, doc (showString ")")])
     ParSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "{"), prt 0 chandecs, doc (showString "}")])
     TenSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "["), prt 0 chandecs, doc (showString "]")])
     SeqSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "[:"), prt 0 chandecs, doc (showString ":]")])

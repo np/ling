@@ -146,7 +146,7 @@ normAct = \case
     SplitAx  n s c    -> go (splitAx        n (norm s) c)
 -}
 
-    Nu c d            -> go [N.Nu (norm c) (norm d)]
+    Nu cs             -> go [N.Nu (norm cs)]
     ParSplit c ds     -> go [N.Split N.ParK c (norm ds)]
     TenSplit c ds     -> go [N.Split N.TenK c (norm ds)]
     SeqSplit c ds     -> go [N.Split N.SeqK c (norm ds)]
@@ -168,7 +168,7 @@ reifyDefsA defs = pDots $ defs ^.. each . to reifyLetA . to PAct
 
 reifyAct :: N.Act -> Proc
 reifyAct = \case
-  N.Nu c d            -> PAct $ Nu (reify c) (reify d)
+  N.Nu cs             -> PAct $ Nu (reify cs)
   N.Split N.ParK c ds -> PAct $ ParSplit c (reify ds)
   N.Split N.TenK c ds -> PAct $ TenSplit c (reify ds)
   N.Split N.SeqK c ds -> PAct $ SeqSplit c (reify ds)

@@ -15,16 +15,19 @@ import           Ling.Session
 import           Ling.Prelude         hiding (subst1)
 import           Prelude              hiding (log)
 
--- The first session is the potential annotation.
--- The second session is inferred or absent.
-checkOptSession :: Print channel => channel -> Maybe RSession -> Maybe RSession -> TC ()
-checkOptSession c ms0 ms1 =
+-- The protocol is the result of inferrence.
+-- The channel has a potential session annotation.
+checkChanDec :: Proto -> ChanDec -> TC RSession
+checkChanDec proto (Arg c ms0) = do
   case ms0 of
     Nothing -> return ()
     Just s0 ->
       case ms1 of
-        Nothing -> checkUnused c Nothing s0
+        Nothing -> assert (endRS `is` s0) ["Unused channel " ++ pretty c]
         Just s1 -> errorScope c (checkRSession s0) >> checkEqSessions c s0 s1
+  return $ ms1 ^. endedRS
+
+  where ms1 = proto ^. chanSession c
 
 checkProc :: Proc -> TC Proto
 checkProc (pref `Dot` procs) = do
@@ -66,10 +69,6 @@ checkPref pref proto
 
 checkProcs :: [Proc] -> TC Proto
 checkProcs procs = mconcat <$> traverse checkProc procs
-
-checkChanDec :: Proto -> ChanDec -> TC RSession
-checkChanDec proto (Arg c s) = checkOptSession c s s' $> s' ^. endedRS
-  where s' = proto ^. chanSession c
 
 checkRFactor :: RFactor -> TC ()
 checkRFactor (RFactor t) = checkTerm intTyp t
@@ -124,23 +123,20 @@ checkAct act proto =
               [ "Inferred protocol for the whole process:"
               ] ++ prettyError prettyProto proto') $
   case act of
-    Nu (Arg c cOS) (Arg d dOS) -> do
-      let ds = [c,d]
-          [cSession,dSession] = chanSessions ds proto
-          cNSession = cSession ^. endedRS
-          dNSession = dSession ^. endedRS
-      checkUnused c cSession dNSession
-      checkUnused d dSession cNSession
-      checkOptSession c cOS cSession
-      checkOptSession d dOS dSession
-      checkDual cNSession dNSession
+    Nu cds -> do
+      let cs = cds ^.. each . argName
+          csNSession = [ proto ^. chanSession c . endedRS | Arg c _ <- cds ]
+      unless (all (is endRS) csNSession) $
+        for_ cs $ assertUsed proto
+      for_ cds $ checkChanDec proto
+      checkDual csNSession
       -- This rmChans is potentially partly redundant.
-      -- We might `assert` that `ds` is no longer in the `skel`
-      rmChans ds <$> checkConflictingChans proto Nothing ds
+      -- We might `assert` that `cs` is no longer in the `skel`
+      rmChans cs <$> checkConflictingChans proto Nothing cs
     Split k c dOSs -> do
-      assertAbsent c proto
+      assertAbsent proto c
       let ds         = dOSs ^.. each . argName
-          dsSessions = chanSessions ds proto ^.. each . endedRS
+          dsSessions = ds & each %~ \d -> proto ^. chanSession d . endedRS
           s          = array k dsSessions
       for_ dOSs $ checkChanDec proto
       proto' <-

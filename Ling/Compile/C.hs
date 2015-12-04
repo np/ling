@@ -263,14 +263,16 @@ transProcs = concatMap . transProc
 transAct :: Env -> Act -> (Env, Endom [C.Stm])
 transAct env act =
   case act of
-    Nu (Arg c0 c0OS) (Arg c1 c1OS) ->
+    Nu cds ->
       (env', (sDec typ cid C.NoInit ++))
       where
-        s    = log $ extractSession [c0OS, c1OS]
-        cid  = transName c0
+        cs   = cds ^.. each . argName
+        cOSs = cds ^.. each . argBody
+        s    = log $ extractSession cOSs
+        cid  = transName (cs ^?! _head)
         l    = C.LVar cid
         typ  = transRSession env s
-        env' = addChans [(c0,l),(c1,l)] env
+        env' = addChans [(c,l) | c <- cs] env
     Split _ c ds ->
       (transSplit c ds env, id)
     Send c expr ->

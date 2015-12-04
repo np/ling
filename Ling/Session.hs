@@ -182,15 +182,18 @@ sessionStep :: Endom Session
 sessionStep (IO _ _ s) = s
 sessionStep s          = error $ "sessionStep: no steps " ++ show s
 
-extractDuals :: Dual a => (Maybe a, Maybe a) -> Maybe (a, a)
-extractDuals (Nothing, Nothing) = Nothing
-extractDuals (Just s0, Nothing) = Just (s0, dual s0)
-extractDuals (Nothing, Just s1) = Just (dual s1, s1)
-extractDuals (Just s0, Just s1) = Just (s0, s1)
+-- Should be length preserving
+extractDuals :: Dual a => [Maybe a] -> [a]
+extractDuals = \case
+  [Just s0, Nothing] -> [s0, dual s0]
+  [Nothing, Just s1] -> [dual s1, s1]
 
--- TODO: would it be nicer with the First monoid
+  -- Appart from the two cases above the general rule
+  -- so far is that all sessions should be annotated
+  mas -> mas ^? below _Just ?| error "Missing type signature in `new` (extractDuals)"
+
 extractSession :: [Maybe a] -> a
-extractSession l = l ^? each . _Just ?| error "Missing type signature in `new`"
+extractSession l = l ^? each . _Just ?| error "Missing type signature in `new` (extractSession)"
 
 -- See flatRSession in Ling.Reduce
 unsafeFlatRSession :: RSession -> [Session]

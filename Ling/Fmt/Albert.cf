@@ -103,7 +103,7 @@ PDot.     Proc ::= Proc1 "." Proc ;
 _.        Proc ::= Proc1 ;
 separator Proc "|" ;
 
-Nu.       Act ::= "new" "(" ChanDec "," ChanDec ")" ;
+Nu.       Act ::= "new" "(" [ChanDec] ")" ;
 ParSplit. Act ::= Name "{" [ChanDec] "}" ;
 TenSplit. Act ::= Name "[" [ChanDec] "]" ;
 SeqSplit. Act ::= Name "[:" [ChanDec] ":]" ;
