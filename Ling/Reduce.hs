@@ -28,10 +28,32 @@ reduceCase st0 brs =
   where st1   = reduceTerm st0
         scase = (`mkCase` brs) <$> st1
 
+reducePrim :: String -> [Literal] -> Maybe Literal
+reducePrim "_+_"        [LInteger x, LInteger y] = Just $ LInteger (x + y)
+reducePrim "_-_"        [LInteger x, LInteger y] = Just $ LInteger (x - y)
+reducePrim "_*_"        [LInteger x, LInteger y] = Just $ LInteger (x * y)
+reducePrim "_/_"        [LInteger x, LInteger y] = Just $ LInteger (x `div` y)
+reducePrim "_%_"        [LInteger x, LInteger y] = Just $ LInteger (x `mod` y)
+reducePrim "pow"        [LInteger x, LInteger y] = Just $ LInteger (x ^ y)
+reducePrim "_+D_"       [LDouble  x, LDouble  y] = Just $ LDouble  (x + y)
+reducePrim "_-D_"       [LDouble  x, LDouble  y] = Just $ LDouble  (x - y)
+reducePrim "_*D_"       [LDouble  x, LDouble  y] = Just $ LDouble  (x * y)
+reducePrim "_/D_"       [LDouble  x, LDouble  y] = Just $ LDouble  (x / y)
+reducePrim "powD"       [LDouble  x, LDouble  y] = Just $ LDouble  (x ** y)
+reducePrim "_++S_"      [LString  x, LString  y] = Just $ LString  (x ++ y)
+reducePrim "Int2Double" [LInteger x]             = Just $ LDouble  (fromInteger x)
+reducePrim "showInt"    [LInteger x]             = Just $ LString  (show x)
+reducePrim "showDouble" [LDouble  x]             = Just $ LString  (show x)
+reducePrim "showChar"   [LChar    x]             = Just $ LString  (show x)
+reducePrim "showString" [LString  x]             = Just $ LString  (show x)
+reducePrim _            _                        = Nothing
+
 reduceDef :: Scoped Name -> [Term] -> Scoped Term
 reduceDef sd es
-  | Just st <- scopedName sd = reduceApp st es
-  | otherwise                = sd $> Def d es
+  | Just st <- scopedName sd            = reduceApp st es
+  | Just ls <- es ^? below _Lit
+  , Just  l <- reducePrim (unName d) ls = pure $ Lit l
+  | otherwise                           = sd $> Def d es
 
   where d = sd ^. scoped
 

@@ -1,0 +1,1 @@
+../../../fixtures/all/reduce_primops.ll
