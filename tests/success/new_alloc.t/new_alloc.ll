@@ -1,0 +1,1 @@
+../../../fixtures/all/new_alloc.ll

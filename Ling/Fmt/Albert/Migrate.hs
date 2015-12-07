@@ -97,7 +97,7 @@ transProc = \case
 
 transAct :: Act -> L.Act
 transAct = \case
-  Nu chandecs -> L.Nu (transChanDec <$> chandecs)
+  Nu newalloc -> L.Nu (transNewAlloc newalloc)
   ParSplit name chandecs -> L.ParSplit (transName name) (transChanDec <$> chandecs)
   TenSplit name chandecs -> L.TenSplit (transName name) (transChanDec <$> chandecs)
   SeqSplit name chandecs -> L.SeqSplit (transName name) (transChanDec <$> chandecs)
@@ -107,6 +107,16 @@ transAct = \case
   SplitAx integer session name -> L.SplitAx integer (transASession session) (transName name)
   At aterm topcpatt -> L.At (transATerm aterm) (transTopCPatt topcpatt)
   LetA x os t -> L.LetA (transName x) (transOptSig os) (transATerm t)
+
+transAllocTerm :: AllocTerm -> L.AllocTerm
+transAllocTerm (AVar d es) = L.AVar (transName d) (transAllocTerm <$> es)
+transAllocTerm (ALit lit) = L.ALit (transLiteral lit)
+transAllocTerm (AParen t os) = L.AParen (transTerm t) (transOptSig os)
+
+transNewAlloc :: NewAlloc -> L.NewAlloc
+transNewAlloc (New chandecs) = L.New (transChanDec <$> chandecs)
+transNewAlloc (OldNew chandecs) = L.OldNew (transChanDec <$> chandecs)
+transNewAlloc (NewAnn allocterm chandecs) = L.NewAnn (transAllocTerm allocterm) (transChanDec <$> chandecs)
 
 transOptSession :: OptSession -> L.OptSession
 transOptSession = \case

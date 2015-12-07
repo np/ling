@@ -14,6 +14,11 @@ void * * drop_lin (const int A_lin, const int m_lin, const int n_lin, const void
 int * merge_lin (const int m_lin, const int n_lin, const int * v0_lin, const int * v1_lin);
 int * sort_lin (const int n_lin, const int * v_lin);
 int Session_lin ;
+int Allocation_lin ;
+void * auto_lin ;
+void * alloc_lin ;
+void * fused_lin ;
+void * fuse_lin (const int depth_lin);
 int Double_lin ;
 double Int2Double_lin (const int n_lin);
 double __plus_D__lin (const double m_lin, const double n_lin);

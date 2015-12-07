@@ -242,15 +242,16 @@ sToken p s = PT p (TS s i)
       "in" -> 29
       "let" -> 30
       "new" -> 31
-      "of" -> 32
-      "proc" -> 33
-      "recv" -> 34
-      "send" -> 35
-      "slice" -> 36
-      "{" -> 37
-      "|" -> 38
-      "}" -> 39
-      "~" -> 40
+      "new/" -> 32
+      "of" -> 33
+      "proc" -> 34
+      "recv" -> 35
+      "send" -> 36
+      "slice" -> 37
+      "{" -> 38
+      "|" -> 39
+      "}" -> 40
+      "~" -> 41
       _ -> error $ "not a reserved word: " ++ show s
 
 -- | Get the position of a token.

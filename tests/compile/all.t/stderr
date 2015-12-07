@@ -21,6 +21,10 @@
 [WARNING] Skipping compilation of unsupported definition DotSort
 [WARNING] Skipping compilation of unsupported definition ParSort
 [WARNING] Skipping compilation of unsupported definition SeqSort
+[WARNING] Unsupported type Allocation
+[WARNING] Unsupported type Allocation
+[WARNING] Unsupported type Allocation
+[WARNING] Unsupported type Allocation
 [WARNING] Skipping compilation of unsupported definition ap
 [WARNING] Skipping compilation of unsupported definition not
 [WARNING] Skipping compilation of unsupported definition not

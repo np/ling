@@ -137,7 +137,8 @@ checkAct act proto =
               [ "Inferred protocol for the whole process:"
               ] ++ prettyError prettyProto proto') $
   case act of
-    Nu cds -> do
+    Nu anns cds -> do
+      for_ anns $ checkTerm allocationTyp
       let cs = cds ^.. each . argName
           csNSession = [ proto ^. chanSession c . endedRS | Arg c _ <- cds ]
       unless (all (is endRS) csNSession) $

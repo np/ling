@@ -62,7 +62,7 @@ data CPatt
   deriving (Eq, Ord, Show, Read)
 
 data Act
-  = Nu       [ChanDec]
+  = Nu       { _newAnns :: [Term], _newChans :: [ChanDec] }
   -- TODO? Split Channel CPatt
   | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term
@@ -221,6 +221,9 @@ charTyp = Def (Name "Char") []
 
 sessionTyp :: Typ
 sessionTyp = Def (Name "Session") []
+
+allocationTyp :: Typ
+allocationTyp = Def (Name "Allocation") []
 
 addName :: Name
 addName = Name "_+_"

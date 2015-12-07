@@ -43,6 +43,9 @@ import Ling.Fmt.Albert.ErrM
 %name pListRSession ListRSession
 %name pOptRepl OptRepl
 %name pCSession CSession
+%name pAllocTerm AllocTerm
+%name pListAllocTerm ListAllocTerm
+%name pNewAlloc NewAlloc
 -- no lexer declaration
 %monad { Err } { thenM } { returnM }
 %tokentype {Token}
@@ -78,15 +81,16 @@ import Ling.Fmt.Albert.ErrM
   'in' { PT _ (TS _ 29) }
   'let' { PT _ (TS _ 30) }
   'new' { PT _ (TS _ 31) }
-  'of' { PT _ (TS _ 32) }
-  'proc' { PT _ (TS _ 33) }
-  'recv' { PT _ (TS _ 34) }
-  'send' { PT _ (TS _ 35) }
-  'slice' { PT _ (TS _ 36) }
-  '{' { PT _ (TS _ 37) }
-  '|' { PT _ (TS _ 38) }
-  '}' { PT _ (TS _ 39) }
-  '~' { PT _ (TS _ 40) }
+  'new/' { PT _ (TS _ 32) }
+  'of' { PT _ (TS _ 33) }
+  'proc' { PT _ (TS _ 34) }
+  'recv' { PT _ (TS _ 35) }
+  'send' { PT _ (TS _ 36) }
+  'slice' { PT _ (TS _ 37) }
+  '{' { PT _ (TS _ 38) }
+  '|' { PT _ (TS _ 39) }
+  '}' { PT _ (TS _ 40) }
+  '~' { PT _ (TS _ 41) }
 
 L_integ  { PT _ (TI $$) }
 L_doubl  { PT _ (TD $$) }
@@ -197,7 +201,7 @@ ListProc : {- empty -} { [] }
          | Proc { (:[]) $1 }
          | Proc '|' ListProc { (:) $1 $3 }
 Act :: { Act }
-Act : 'new' '(' ListChanDec ')' { Ling.Fmt.Albert.Abs.Nu $3 }
+Act : NewAlloc { Ling.Fmt.Albert.Abs.Nu $1 }
     | Name '{' ListChanDec '}' { Ling.Fmt.Albert.Abs.ParSplit $1 $3 }
     | Name '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.TenSplit $1 $3 }
     | Name '[:' ListChanDec ':]' { Ling.Fmt.Albert.Abs.SeqSplit $1 $3 }
@@ -238,6 +242,17 @@ OptRepl : {- empty -} { Ling.Fmt.Albert.Abs.One }
 CSession :: { CSession }
 CSession : '.' Term1 { Ling.Fmt.Albert.Abs.Cont $2 }
          | {- empty -} { Ling.Fmt.Albert.Abs.Done }
+AllocTerm :: { AllocTerm }
+AllocTerm : Name ListAllocTerm { Ling.Fmt.Albert.Abs.AVar $1 (reverse $2) }
+          | Literal { Ling.Fmt.Albert.Abs.ALit $1 }
+          | '(' Term OptSig ')' { Ling.Fmt.Albert.Abs.AParen $2 $3 }
+ListAllocTerm :: { [AllocTerm] }
+ListAllocTerm : {- empty -} { [] }
+              | ListAllocTerm AllocTerm { flip (:) $1 $2 }
+NewAlloc :: { NewAlloc }
+NewAlloc : 'new' '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.New $3 }
+         | 'new' '(' ListChanDec ')' { Ling.Fmt.Albert.Abs.OldNew $3 }
+         | 'new/' AllocTerm '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.NewAnn $2 $4 }
 {
 
 returnM :: a -> Err a

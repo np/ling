@@ -199,7 +199,8 @@ instance Equiv Act where
     (Recv c0 _b0, Recv c1 _b1) -> c0 == c1
     (Send c0 t0, Send c1 t1) -> c0 == c1 && equiv env t0 t1
     (At t0 p0, At t1 p1) -> equiv env t0 t1 && p0 == p1
-    (Nu cds0, Nu cds1) ->
+    (Nu _ann0 cds0, Nu _ann1 cds1) ->
+       -- Annotations are ignored as they are semantic preserving
        on (==) (each %~ _argName) cds0 cds1
     (Split k0 c0 cds0, Split k1 c1 cds1) ->
        (k0, c0) == (k1, c1) && on (==) (_argName <$>) cds0 cds1

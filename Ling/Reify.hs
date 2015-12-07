@@ -151,7 +151,7 @@ normAct = \case
     SplitAx  n s c    -> toProc ... (splitAx        n (norm s) c)
 -}
 
-    Nu cs             -> toProc $ N.Nu (norm cs)
+    Nu newalloc       -> toProc $ N._Nu # norm newalloc
     ParSplit c ds     -> toProc $ N.Split N.ParK c (norm ds)
     TenSplit c ds     -> toProc $ N.Split N.TenK c (norm ds)
     SeqSplit c ds     -> toProc $ N.Split N.SeqK c (norm ds)
@@ -171,7 +171,7 @@ reifyDefsA defs = pDots $ defs ^.. each . to reifyLetA . to PAct
 
 reifyAct :: N.Act -> Proc
 reifyAct = \case
-  N.Nu cs             -> PAct $ Nu (reify cs)
+  N.Nu anns cs        -> PAct $ Nu (reify (anns, cs))
   N.Split N.ParK c ds -> PAct $ ParSplit c (reify ds)
   N.Split N.TenK c ds -> PAct $ TenSplit c (reify ds)
   N.Split N.SeqK c ds -> PAct $ SeqSplit c (reify ds)
@@ -329,6 +329,24 @@ instance Norm ConName where
 
 reifyTerm :: N.Term -> Term
 reifyTerm = reify
+
+instance Norm AllocTerm where
+  type Normalized AllocTerm = N.Term
+  reify (N.Lit lit)  = ALit lit
+  reify (N.Def d es) = AVar d (reify es)
+  reify t            = AParen (reify t) NoSig
+  norm (ALit lit)    = N.Lit lit
+  norm (AVar d es)   = N.Def d (norm es)
+  norm (AParen t os) = N.optSig (norm t) (norm os)
+
+instance Norm NewAlloc where
+  type Normalized NewAlloc = ([N.Term], [N.ChanDec])
+  reify ([], cds) = OldNew (reify cds)
+  reify ([t], cds) = NewAnn (reify t) (reify cds)
+  reify _ = error "Norm NewAlloc reify IMPOSSIBLE"
+  norm (New cds) = ([], norm cds)
+  norm (OldNew cds) = ([], norm cds)
+  norm (NewAnn t cds) = ([norm t], norm cds)
 
 instance Norm ChanDec where
   type Normalized ChanDec = N.ChanDec

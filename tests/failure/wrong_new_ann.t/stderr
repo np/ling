@@ -1,0 +1,7 @@
+While checking `wrong_new_ann`
+  Types are not equivalent.
+  Expected:
+    Allocation
+  Inferred:
+    Int
+

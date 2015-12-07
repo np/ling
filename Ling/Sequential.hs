@@ -177,9 +177,9 @@ transPref env (Prll pref0) procs k =
 transAct :: Defs -> Act -> Endom Env
 transAct defs act =
   case act of
-    Nu [] ->
+    Nu _ [] ->
       id
-    Nu cds ->
+    Nu _ cds ->
       let
         cds'@(Arg c0 c0S:_) = cds & each . argBody . _Just %~ unRepl
                                   & unsafePartsOf (each . argBody) %~ extractDuals

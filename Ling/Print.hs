@@ -203,7 +203,7 @@ instance Print Proc where
   prtList _ (x:xs) = (concatD [prt 0 x, txt "\n|", prt 0 xs])
 instance Print Act where
   prt i e = case e of
-    Nu chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandecs, doc (showString ")")])
+    Nu newalloc -> prPrec i 0 (concatD [prt 0 newalloc])
     ParSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "{"), prt 0 chandecs, doc (showString "}")])
     TenSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "["), prt 0 chandecs, doc (showString "]")])
     SeqSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "[:"), prt 0 chandecs, doc (showString ":]")])
@@ -254,6 +254,22 @@ instance Print CSession where
   prt i e = case e of
     Cont term -> prPrec i 0 (concatD [doc (showString "."), prt 1 term])
     Done -> prPrec i 0 (concatD [])
+
+instance Print AllocTerm where
+  prt i e = case e of
+    AVar name allocterms -> prPrec i 0 (concatD [prt 0 name, prt 0 allocterms])
+    ALit literal -> prPrec i 0 (concatD [prt 0 literal])
+    AParen term optsig -> prPrec i 0 (concatD [doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")")])
+  prtList _ [] = (concatD [])
+  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+instance Print NewAlloc where
+  prt i e = case e of
+    New chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "["), prt 0 chandecs, doc (showString "]")])
+    OldNew chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandecs, doc (showString ")")])
+    NewAnn allocterm chandecs -> prPrec i 0 (concatD [doc (showString "new/"), prt 0 allocterm, doc (showString "["), prt 0 chandecs, doc (showString "]")])
+
+
+
 
 txt :: String -> Doc
 txt = doc . showString

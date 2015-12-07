@@ -84,6 +84,11 @@ EndoSeqIO = \(T : Type)-> SeqIO T T
 DotSort = \(A : Type)(n : Int)-> EndoIO (Vec A n)
 ParSort = \(A : Type)(n : Int)-> EndoLoli (!Vec A n)
 SeqSort = \(A : Type)(n : Int)-> [: ?Vec A n, !Vec A n :]
+Allocation : Type
+auto : Allocation
+alloc : Allocation
+fused : Allocation
+fuse : (depth : Int)-> Allocation
 Double : Type
 Int2Double : (n : Int) -> Double
 _+D_ : (m : Double)(n : Double) -> Double
@@ -116,7 +121,7 @@ run :: (Print a, Show a) => Opts -> ParseFun a -> String -> IO a
 run opts p s = do
   when (opts ^. tokens) $ do
     putStrLn "Tokens:"
-    print ts
+    for_ ts cpprint
   case p ts of
     Bad e -> failIO $ "Parse Failed: " ++ e
     Ok tree -> do

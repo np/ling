@@ -5,3 +5,4 @@ Doc.txt  -whitespace
 Lex.x    -whitespace
 Par.y    -whitespace
 Print.hs -whitespace
+Abs.hs   -whitespace

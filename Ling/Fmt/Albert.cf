@@ -104,7 +104,7 @@ NewSlice. Proc ::= "slice" "(" [ChanDec] ")" ATerm "as" Name Proc ;
 _.        Proc ::= Proc1 ;
 separator Proc "|" ;
 
-Nu.       Act ::= "new" "(" [ChanDec] ")" ;
+Nu.       Act ::= NewAlloc ;
 ParSplit. Act ::= Name "{" [ChanDec] "}" ;
 TenSplit. Act ::= Name "[" [ChanDec] "]" ;
 SeqSplit. Act ::= Name "[:" [ChanDec] ":]" ;
@@ -140,3 +140,12 @@ Some. OptRepl  ::= "^" ATerm ;
 
 Cont. CSession ::= "." Term1 ;
 Done. CSession ::= ;
+
+AVar.     AllocTerm ::= Name [AllocTerm] ;
+ALit.     AllocTerm ::= Literal ;
+AParen.   AllocTerm ::= "(" Term OptSig ")" ;
+separator AllocTerm "" ;
+
+New.      NewAlloc ::= "new" "[" [ChanDec] "]"  ;
+OldNew.   NewAlloc ::= "new" "(" [ChanDec] ")"  ;
+NewAnn.   NewAlloc ::= "new/" AllocTerm "[" [ChanDec] "]" ;

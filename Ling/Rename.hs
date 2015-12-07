@@ -71,7 +71,7 @@ instance Rename Act where
     Split k c ds    -> Split k (rename f c) (rename f ds)
     Send c e        -> Send (rename f c) (rename f e)
     Recv c arg      -> Recv (rename f c) (rename f arg)
-    Nu cs           -> Nu (rename f cs)
+    Nu ann cs       -> Nu (rename f ann) (rename f cs)
     Ax s cs         -> Ax (rename f s) (rename f cs)
     At t cs         -> At (rename f t) (rename f cs)
     LetA defs       -> LetA (rename f defs)

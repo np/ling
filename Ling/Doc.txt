@@ -52,7 +52,7 @@ The symbols used in Ling are the following:
   | [ | ] | [: | :]
   | ! | ? | ~ | -o
   | ** | \ | . | @
-  | ^ |  |  | 
+  | ^ | new/ |  | 
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {- and -}.
@@ -128,7 +128,7 @@ All other symbols are terminals.
   | //[Proc]// | -> | **eps**
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
-  | //Act// | -> | ``new`` ``(`` //[ChanDec]// ``)`` 
+  | //Act// | -> | //NewAlloc// 
   |  |  **|**  | //Name// ``{`` //[ChanDec]// ``}`` 
   |  |  **|**  | //Name// ``[`` //[ChanDec]// ``]`` 
   |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 
@@ -160,5 +160,13 @@ All other symbols are terminals.
   |  |  **|**  | ``^`` //ATerm// 
   | //CSession// | -> | ``.`` //Term1// 
   |  |  **|**  | **eps**
+  | //AllocTerm// | -> | //Name// //[AllocTerm]// 
+  |  |  **|**  | //Literal// 
+  |  |  **|**  | ``(`` //Term// //OptSig// ``)`` 
+  | //[AllocTerm]// | -> | **eps**
+  |  |  **|**  | //AllocTerm// //[AllocTerm]// 
+  | //NewAlloc// | -> | ``new`` ``[`` //[ChanDec]// ``]`` 
+  |  |  **|**  | ``new`` ``(`` //[ChanDec]// ``)`` 
+  |  |  **|**  | ``new/`` //AllocTerm// ``[`` //[ChanDec]// ``]`` 
 
 

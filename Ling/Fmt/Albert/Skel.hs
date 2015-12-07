@@ -89,7 +89,7 @@ transProc x = case x of
   NewSlice chandecs aterm name proc -> failure x
 transAct :: Act -> Result
 transAct x = case x of
-  Nu chandecs -> failure x
+  Nu newalloc -> failure x
   ParSplit name chandecs -> failure x
   TenSplit name chandecs -> failure x
   SeqSplit name chandecs -> failure x
@@ -129,4 +129,14 @@ transCSession :: CSession -> Result
 transCSession x = case x of
   Cont term -> failure x
   Done -> failure x
+transAllocTerm :: AllocTerm -> Result
+transAllocTerm x = case x of
+  AVar name allocterms -> failure x
+  ALit literal -> failure x
+  AParen term optsig -> failure x
+transNewAlloc :: NewAlloc -> Result
+transNewAlloc x = case x of
+  New chandecs -> failure x
+  OldNew chandecs -> failure x
+  NewAnn allocterm chandecs -> failure x
 

@@ -83,7 +83,7 @@ data Proc
   deriving (Eq, Ord, Show, Read)
 
 data Act
-    = Nu [ChanDec]
+    = Nu NewAlloc
     | ParSplit Name [ChanDec]
     | TenSplit Name [ChanDec]
     | SeqSplit Name [ChanDec]
@@ -122,5 +122,13 @@ data OptRepl = One | Some ATerm
   deriving (Eq, Ord, Show, Read)
 
 data CSession = Cont Term | Done
+  deriving (Eq, Ord, Show, Read)
+
+data AllocTerm
+    = AVar Name [AllocTerm] | ALit Literal | AParen Term OptSig
+  deriving (Eq, Ord, Show, Read)
+
+data NewAlloc
+    = New [ChanDec] | OldNew [ChanDec] | NewAnn AllocTerm [ChanDec]
   deriving (Eq, Ord, Show, Read)
 
