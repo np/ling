@@ -21,6 +21,10 @@ import Ling.Print
 import Ling.Session
 import Ling.Proc
 import Ling.Norm
+import Ling.Rename
+import Ling.Scoped (Scoped(Scoped))
+import Ling.Defs (pushDefs)
+import Ling.Reduce (reduceTerm)
 
 data Status = Full | Empty deriving (Eq,Read,Show)
 
@@ -35,9 +39,11 @@ status = iso toStatus fromStatus
 data Location
   = Root Channel
   | Proj Location Int
+  | Next Location
   deriving (Read,Show,Ord,Eq)
 
 data Env = Env { _chans   :: Map Channel (Location, RSession)
+               , _edefs   :: Defs
                , _locs    :: Map Location ()
                , _writers :: Map Location Channel }
                -- writers ^. at l == Just c
@@ -51,7 +57,7 @@ transErr :: Print a => String -> a -> b
 transErr msg v = error $ msg ++ "\n" ++ pretty v
 
 emptyEnv :: Env
-emptyEnv = Env ø ø ø
+emptyEnv = Env ø ø ø ø
 
 addChans :: [(Channel, (Location, RSession))] -> Endom Env
 addChans xys = chans %~ Map.union (l2m xys)
@@ -75,26 +81,31 @@ statusStep Empty = Full
 -}
 
 actEnv :: Channel -> Endom Env
-actEnv c env = env & chans   . at c . mapped . _2 %~ mapR sessionStep
+actEnv c env = env & chans   . at c . mapped %~ bimap Next (mapR sessionStep)
                    & locs    . at l %~ mnot ()
                    & writers . at l %~ mnot c
   where l = fst (env!c)
 
-sessionsStatus :: (Session -> Status) -> Location -> Sessions -> [(Location,Status)]
-sessionsStatus dflt l ss =
+sessionsStatus :: Defs -> (RW -> Status) -> Location -> Sessions -> [(Location,Status)]
+sessionsStatus defs dflt l ss =
   [ ls
   | (i,s) <- zip [0..] (unsafeFlatSessions ss)
-  , ls <- sessionStatus dflt (Proj l i) s ]
+  , ls <- sessionStatus defs dflt (Proj l i) s ]
 
-sessionStatus :: (Session -> Status) -> Location -> Session -> [(Location,Status)]
-sessionStatus dflt l = \case
-  Array _ ss -> sessionsStatus dflt l ss
-  s          -> [(l, dflt s)]
+sessionStatus :: Defs -> (RW -> Status) -> Location -> Session -> [(Location,Status)]
+sessionStatus defs dflt l = \case
+  Array _ ss -> sessionsStatus defs dflt l ss
+  IO rw _ s  -> (l, dflt rw) : sessionStatus defs dflt (Next l) s
+  TermS p t ->
+    case reduceTerm' defs t of
+      TSession s -> sessionStatus defs dflt l (dualOp p s)
+      t'         -> trace ("[WARNING] Skipping abstract session " ++ pretty t')
+                    [(l, Empty)]
 
-rsessionStatus :: (Session -> Status) -> Location -> RSession -> [(Location,Status)]
-rsessionStatus dflt l sr@(s `Repl` r)
-  | litR1 `is` r = sessionStatus  dflt l s
-  | otherwise    = sessionsStatus dflt l [sr]
+rsessionStatus :: Defs -> (RW -> Status) -> Location -> RSession -> [(Location,Status)]
+rsessionStatus defs dflt l sr@(s `Repl` r)
+  | litR1 `is` r = sessionStatus  defs dflt l s
+  | otherwise    = sessionsStatus defs dflt l [sr]
 
 statusAt :: Channel -> Env -> Maybe Status
 statusAt c env
@@ -106,25 +117,43 @@ statusAt c env
     d = env ^. writers . at l
 
 -- TODO generalize by looking deeper at what is ready now
-isReady :: Env -> Pref -> Maybe (Pref, Pref)
-isReady _ [] = error "isReady: impossible"
-isReady env (act : pref)
-  | actIsReady env act = Just ([act], pref)
-  | otherwise          = Nothing
+splitReady :: Env -> Pref -> (Pref, Pref)
+splitReady env = bimap Prll Prll . partition (isReady env) . _unPrll
 
-actIsReady :: Env -> Act -> Bool
-actIsReady env pref =
-  case pref of
-    Split{}    -> True
-    Nu{}       -> True
-    Ax{}       -> True
-    LetA{}     -> True
-    -- `At` is considered non-ready. Therefor we cannot put
-    -- a process like (@p0() | @p1()) in sequence.
-    At{}       -> False
-    Send c _   -> statusAt c env == Just Empty
-    Recv c _   -> statusAt c env == Just Full
-    NewSlice{} -> error "actIsReady: IMPOSSIBLE"
+reduceProc :: Defs -> Endom Proc
+reduceProc defs = \case
+  Act act -> reduceAct defs act
+  proc0 `Dot` proc1 -> reduceProc defs proc0 `dotP` reduceProc defs proc1 -- TODO add the LetA defs from proc0
+  Procs (Prll procs) -> procs ^. each . to (reduceProc defs)
+  NewSlice cs t x p -> NewSlice cs t x (reduceProc defs p)
+
+reduceAct :: Defs -> Act -> Proc
+reduceAct defs act =
+  case act of
+    At t p ->
+      case p of
+        ChanP (Arg c _) ->
+          case reduceTerm' defs t of
+            Proc cs proc0 ->
+              case cs of
+                [Arg c' _] ->
+                  rename1 (c', c) proc0
+                _ -> transErr "reduceAct/At/Non single proc" act
+            _ -> transErr "reduceAct/At/Non Proc" act
+        _ -> transErr "reduceAct/At/Non ChanP" act
+    _ -> Act act
+
+isReady :: Env -> Act -> Bool
+isReady env = \case
+  Split{}    -> True
+  Nu{}       -> True
+  Ax{}       -> True
+  LetA{}     -> True
+  -- `At` is considered non-ready. Therefor we cannot put
+  -- a process like (@p0() | @p1()) in sequence.
+  At{}       -> False
+  Send c _   -> statusAt c env == Just Empty
+  Recv c _   -> statusAt c env == Just Full
 
 transSplit :: Channel -> [ChanDec] -> Endom Env
 transSplit c dOSs env =
@@ -135,18 +164,18 @@ transSplit c dOSs env =
         ds = _argName <$> dOSs
 
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
-transProc env (pref `Dot` procs) = transPref env pref procs
+transProc env proc0 = transProcs env [proc0] []
 
 -- All these prefixes can be reordered as they are in parallel
 transPref :: Env -> Pref -> [Proc] -> (Env -> Proc -> r) -> r
-transPref env pref0 procs k =
+transPref env (Prll pref0) procs k =
   case pref0 of
-    []       -> transProcs env (filter0s procs) [] k
-    act:pref -> transPref (transAct act env) pref procs $ \env' proc' ->
-                  k env' (act `actP` [proc'])
+    []       -> transProcs env procs [] k
+    act:pref -> transPref (transAct (env ^. edefs) act env) (Prll pref) procs $ \env' proc' ->
+                  k env' (act `dotP` proc')
 
-transAct :: Act -> Endom Env
-transAct act =
+transAct :: Defs -> Act -> Endom Env
+transAct defs act =
   case act of
     Nu [] ->
       id
@@ -156,7 +185,7 @@ transAct act =
                                   & unsafePartsOf (each . argBody) %~ extractDuals
         l = Root c0
       in
-      addLocs  (sessionStatus (const Empty) l c0S) .
+      addLocs  (sessionStatus defs (const Empty) l c0S) .
       addChans [(c,(l,oneS cS)) | Arg c cS <- cds']
     Split _ c ds ->
       transSplit c ds
@@ -164,53 +193,73 @@ transAct act =
       actEnv c
     Recv c _ ->
       actEnv c
-    NewSlice{} ->
-      id
     Ax{} ->
       id
     At{} ->
       id
-    LetA{} ->
-      id
+    LetA ldefs ->
+      edefs <>~ ldefs
 
--- Assumption input processes should not have zeros (filter0s)
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
-transProcs env []       []      k = k env ø
-transProcs _   []       waiting _ = transErr "transProcs: impossible all the processes are stuck:" waiting
-transProcs env [p]      []      k = transProc env p k
-transProcs env (p0:p0s) waiting k =
-  case p0 of
-    pref@(act:_) `Dot` procs0 ->
-      case () of
-        _ | NewSlice{} <- act ->
-          transPref env pref procs0 $ \env' p' ->
-            transProcs env' (p0s ++ reverse waiting) [] $ \env'' ps' ->
-              k env'' (p' <> ps')
-        _ | Just (readyPis,restPis) <- isReady env pref ->
-          transPref env readyPis (p0s ++ reverse waiting ++ [restPis `prllActP` procs0]) k
+transProcs env p0s waiting k =
+  case p0s of
+    [] ->
+      case waiting of
+        []     -> k env ø
+        [p]    -> transProcs env [p] [] k
+        _   -> transErr "All the processes are stuck" waiting
+
+    p0':ps ->
+      let p0 = reduceProc (env ^. edefs) p0' in
+      case p0 of
+        NewSlice cs t x p ->
+          transProc env p $ \env' p' ->
+            transProcs env' (ps ++ reverse waiting) [] $ \env'' ps' ->
+              k env'' (NewSlice cs t x p' `dotP` ps')
+
+        Procs (Prll ps0) ->
+          transProcs env (ps0 ++ ps) waiting k
+
+        _ | Just (pref, p1) <- p0 ^? _PrefDotProc ->
+            case () of
+            _ | pref == ø -> transErr "transProcs: pref == ø IMPOSSIBLE" p0
+            _ | (readyPis@(Prll(_:_)),restPis) <- splitReady env pref ->
+              transPref env readyPis (ps ++ reverse waiting ++ [restPis `dotP` p1]) k
+
+            _ | null ps && null waiting ->
+              trace ("[WARNING] Sequencing a non-ready prefix " ++ pretty pref)
+              transPref env pref [p1] k
+
+            _ ->
+              transProcs env ps (p0 : waiting) k
+
         _ ->
-          transProcs env p0s (p0 : waiting) k
+          transProcs env ps (p0 : waiting) k
 
-    [] `Dot` _procs0 ->
-      error "transProcs: impossible" -- filter0s prevents that
-
-transDec :: Endom Dec
-transDec x = case x of
-  Sig d oty (Just (Proc cs proc)) -> transProc env proc (const $ Sig d oty . Just . Proc cs)
+transDec :: Defs -> Dec -> (Defs, Dec)
+transDec gdefs = \case
+  Sig d oty mtm -> (gdefs & at d .~ (Ann oty <$> mtm'), Sig d oty mtm')
     where
-      decSt (IO Write _ _) = Empty
-      decSt (IO Read  _ _) = Full
-      decSt (Array _ [])   = Empty
-      decSt _              = error "transDec.decSt: impossible"
-      env = addLocs  [ ls          | Arg c (Just s) <- cs, ls <- rsessionStatus decSt (Root c) s ] $
-            addChans [ (c, (l, s)) | Arg c (Just s) <- cs, let l = Root c ]
-            emptyEnv
-  Dat{} -> x
-  Sig{} -> x
-  Assert{} -> x -- probably wrong!
+      decSt Write = Empty
+      decSt Read  = Full
+      mtm' =
+        case reduceTerm' gdefs <$> mtm of
+          Just (Proc cs proc0) -> transProc env proc0 (const $ Just . Proc cs)
+            where
+              env = emptyEnv
+                      & edefs .~ gdefs
+                      & addLocs  [ ls | Arg c (Just s) <- cs
+                                 , ls <- rsessionStatus gdefs decSt (Root c) s ]
+                      & addChans [ (c, (Root c, s)) | Arg c (Just s) <- cs ]
+          _ -> mtm
+  dec@Dat{} -> (gdefs, dec)
+  dec@Assert{} -> (gdefs, dec)
 
 transProgram :: Endom Program
-transProgram (Program decs) = Program (transDec <$> decs)
+transProgram (Program decs) = Program (mapAccumL transDec ø decs ^. _2)
+
+reduceTerm' :: Defs -> Endom Term
+reduceTerm' defs = pushDefs . reduceTerm . Scoped defs ø
 -- -}
 -- -}
 -- -}

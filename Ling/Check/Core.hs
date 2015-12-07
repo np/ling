@@ -8,6 +8,7 @@ import           Ling.Check.Base
 import           Ling.Defs
 import           Ling.Norm
 import           Ling.Print
+import           Ling.Proc
 import           Ling.Proto
 import           Ling.Reduce
 import           Ling.Scoped
@@ -30,14 +31,27 @@ checkChanDec proto (Arg c ms0) = do
   where ms1 = proto ^. chanSession c
 
 checkProc :: Proc -> TC Proto
-checkProc (pref `Dot` procs) = do
-  debug $ "Checking proc: `" ++ pretty (pref `Dot` procs) ++ "`"
-  checkPrefWellFormness pref
-  let defs = pref ^. each . to actDefs
-  pushDefs . Scoped ø defs <$>
-    (checkPref pref =<<
-        checkDefs defs
-           (checkVarDecs (pref >>= actVarDecs) (checkProcs procs)))
+checkProc proc0 = do
+  debug $ "Checking proc: `" ++ pretty proc0 ++ "`"
+  case proc0 of
+    Procs procs -> checkProcs procs
+
+    NewSlice cs r i proc1 -> do
+      checkRFactor r
+      proto <- local (scopeVarDef i intTyp Nothing) $
+                 checkProc proc1
+      ifor_ (proto^.chans) (checkSlice (`notElem` cs))
+      return $ replProtoWhen (`elem` cs) r proto
+
+    _ | Just (pref@(Prll acts), proc1) <- proc0 ^? _PrefDotProc -> do
+      checkPrefWellFormness pref
+      let defs = acts ^. each . to actDefs
+      pushDefs . Scoped ø defs <$>
+        (checkPref pref =<<
+            checkDefs defs
+              (checkVarDecs (acts >>= actVarDecs) (checkProc proc1)))
+
+    _ -> error $ "checkProc: IMPOSSIBLE " ++ show proc0
 
 sendRecvSession :: Act -> TC (Channel, Endom Session)
 sendRecvSession = \case
@@ -49,7 +63,7 @@ sendRecvSession = \case
   _ -> tcError "typeSendRecv: Not Send/Recv"
 
 checkPref :: Pref -> Proto -> TC Proto
-checkPref pref proto
+checkPref (Prll pref) proto
   | null pref =
       return proto
   | [act] <- pref =
@@ -58,7 +72,7 @@ checkPref pref proto
       css <- mapM sendRecvSession pref
       let proto' = protoSendRecv css proto
       debug . unlines $
-        [ "Checked parallel prefix: `" ++ pretty (pref `Dot` []) ++ "`"
+        [ "Checked parallel prefix: `" ++ pretty pref ++ "`"
         , "Inferred protocol for the sub-process:"
         ] ++ prettyProto proto ++
         [ "Inferred protocol for the whole process:"
@@ -67,8 +81,8 @@ checkPref pref proto
   | otherwise =
       tcError $ "Unsupported parallel prefix " ++ pretty pref
 
-checkProcs :: [Proc] -> TC Proto
-checkProcs procs = mconcat <$> traverse checkProc procs
+checkProcs :: Procs -> TC Proto
+checkProcs (Prll procs) = mconcat <$> traverse checkProc procs
 
 checkRFactor :: RFactor -> TC ()
 checkRFactor (RFactor t) = checkTerm intTyp t
@@ -149,10 +163,6 @@ checkAct act proto =
       (`protoSendRecv` proto) . pure <$> sendRecvSession act
     Recv{} ->
       (`protoSendRecv` proto) . pure <$> sendRecvSession act
-    NewSlice cs r _i -> do
-      checkRFactor r
-      ifor_ (proto^.chans) (checkSlice (`notElem` cs))
-      return $ replProtoWhen (`elem` cs) r proto
     Ax s cs -> return $ protoAx s cs `dotProto` proto
     LetA{} ->
       return proto
@@ -321,14 +331,20 @@ checkSession s0 = case s0 of
   IO _ arg s  -> checkVarDec arg $ checkSession s
   Array _ ss  -> for_ ss checkRSession
 
+-- The arguments are assumed to be already checked,
+-- otherwise use `checkVarDef`.
+scopeVarDef :: Name -> Typ -> Maybe Term -> Endom TCEnv
+scopeVarDef x typ mtm
+  | x == anonName = id
+  | otherwise     =
+      (evars . at x ?~ typ)
+    . (edefs . at x .~ (Ann (Just typ) <$> mtm))
+
 checkVarDef :: Name -> Maybe Typ -> Maybe Term -> Endom (TC a)
 checkVarDef x mtyp mtm kont = do
   checkNotIn evars "name" x
   typ <- errorScope x $ checkSig mtyp mtm
-  (if x == anonName
-      then id
-      else local ((evars . at x ?~ typ)
-                . (edefs . at x .~ (Ann (Just typ) <$> mtm)))) kont
+  local (scopeVarDef x typ mtm) kont
 
 checkVarDec :: VarDec -> Endom (TC a)
 checkVarDec (Arg x mtyp) = checkVarDef x mtyp Nothing

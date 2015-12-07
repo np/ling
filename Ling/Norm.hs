@@ -40,11 +40,15 @@ data Assertion
 infixr 4 `Dot`
 
 -- See `Ling.WellFormed` for the conditions on Proc
-data Proc = Dot { _procPref :: Pref, _procProcs :: Procs }
+data Proc
+  = Act Act
+  | Procs (Prll Proc)
+  | Dot Proc Proc
+  | NewSlice [Channel] RFactor Name Proc
   deriving (Eq,Ord,Show,Read)
 
-type Pref  = [Act]
-type Procs = [Proc]
+type Pref  = Prll Act
+type Procs = Prll Proc
 
 data TraverseKind
   = ParK
@@ -63,7 +67,6 @@ data Act
   | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term
   | Recv     Channel VarDec
-  | NewSlice [Channel] RFactor Name
   | Ax       Session [Channel]
   | At       Term CPatt
   | LetA     Defs
@@ -181,17 +184,13 @@ instance Monoid Program where
   mappend p0 p1 = Program $ p0^.prgDecs ++ p1^.prgDecs
 
 instance Monoid Proc where
-  mempty         = [] `Dot` []
-  mappend        = parP
+  mempty        = Procs ø
+  mappend p0 p1 = mconcat ((p0,p1)^. both . to asProcs)
     where
-      ([] `Dot` ps) `parP` ([] `Dot` qs) = mconcat $ ps ++ qs
-      ([] `Dot` ps) `parP` p             = mconcat $ ps ++ [p]
-      p             `parP` ([] `Dot` ps) = mconcat $ p : ps
-      (ps `Dot` []) `parP` (qs `Dot` []) = (ps ++ qs) `Dot` []
-      p0            `parP` p1            = mconcat   [p0,p1]
-  mconcat []     = mempty
-  mconcat [proc] = proc
-  mconcat procs  = [] `Dot` procs
+      asProcs (Procs (Prll procs)) = procs
+      asProcs p                    = [p]
+  mconcat [p] = p
+  mconcat ps  = Procs (Prll ps)
 
 -- Arbitrary type annotations can be seen as the use of the
 -- following definition (the identity function)
@@ -233,7 +232,6 @@ actDefs :: Act -> Defs
 actDefs = \case
   LetA defs  -> defs
   Recv{}     -> ø
-  NewSlice{} -> ø
   Nu{}       -> ø
   Split{}    -> ø
   Send{}     -> ø
@@ -245,7 +243,6 @@ actDefs = \case
 actVarDecs :: Act -> [VarDec]
 actVarDecs = \case
   Recv _ a       -> [a]
-  NewSlice _ _ x -> [Arg x (Just intTyp)]
   LetA{}         -> []
   Nu{}           -> []
   Split{}        -> []
@@ -270,7 +267,6 @@ actLabel = \case
   Split k _ _ -> "split:" ++ kindLabel k
   Send{}      -> "send"
   Recv{}      -> "recv"
-  NewSlice{}  -> "slice"
   Ax{}        -> "fwd"
   At{}        -> "@"
   LetA{}      -> "let"
@@ -281,7 +277,6 @@ actNeedsDot = \case
   Split{}    -> False
   Send{}     -> True
   Recv{}     -> True
-  NewSlice{} -> True
   Ax{}       -> True
   At{}       -> True
   LetA{}     -> True
@@ -291,7 +286,6 @@ isSendRecv = \case
   Recv{}     -> True
   Send{}     -> True
   Split{}    -> False
-  NewSlice{} -> False
   Nu{}       -> False
   Ax{}       -> False
   At{}       -> False

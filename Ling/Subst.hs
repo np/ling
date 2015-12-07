@@ -49,6 +49,9 @@ instance Subst a => Subst (Arg a) where
 instance Subst a => Subst [a] where
   subst = map . subst
 
+instance Subst a => Subst (Prll a) where
+  subst = over unPrll . subst
+
 instance Subst a => Subst (Maybe a) where
   subst = fmap . subst
 
@@ -64,14 +67,17 @@ instance Subst Act where
     Send c e        -> Send c (subst f e)
     Recv c arg      -> Recv c (subst f arg)
     Nu cs           -> Nu (subst f cs)
-    NewSlice cs t x -> NewSlice cs (subst f t) x
     LetA{}          -> error "Subst/LetA"
     Ax s cs         -> Ax (subst f s) cs
     At t cs         -> At (subst f t) cs
 
 instance Subst Proc where
-  subst f (pref `Dot` procs) =
-    subst f pref `Dot` subst (hide (to bvPref . folded) pref f) procs
+  subst f = \case
+    Act act -> Act (subst f act)
+    proc0 `Dot` proc1 ->
+      subst f proc0 `Dot` subst (hide (to bvProc . folded) proc0 f) proc1
+    Procs procs -> Procs $ subst f procs
+    NewSlice cs t x p -> NewSlice cs (subst f t) x (subst (hide id x f) p)
 
 instance Subst Session where
   subst f = \case

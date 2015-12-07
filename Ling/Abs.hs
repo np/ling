@@ -68,7 +68,11 @@ data Term
   deriving (Eq, Ord, Show, Read)
 
 data Proc
-    = PAct Act | PPrll [Proc] | PNxt Proc Proc | PDot Proc Proc
+    = PAct Act
+    | PPrll [Proc]
+    | PNxt Proc Proc
+    | PDot Proc Proc
+    | NewSlice [ChanDec] ATerm Name Proc
   deriving (Eq, Ord, Show, Read)
 
 data Act
@@ -78,7 +82,6 @@ data Act
     | SeqSplit Name [ChanDec]
     | Send Name ATerm
     | Recv Name VarDec
-    | NewSlice [ChanDec] ATerm Name
     | Ax ASession [ChanDec]
     | SplitAx Integer ASession Name
     | At ATerm TopCPatt

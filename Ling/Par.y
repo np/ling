@@ -181,6 +181,7 @@ Proc1 : Act { Ling.Abs.PAct $1 }
 Proc :: { Proc }
 Proc : Proc1 Proc { Ling.Abs.PNxt $1 $2 }
      | Proc1 '.' Proc { Ling.Abs.PDot $1 $3 }
+     | 'slice' '(' ListChanDec ')' ATerm 'as' Name Proc { Ling.Abs.NewSlice $3 $5 $7 $8 }
      | Proc1 { $1 }
 ListProc :: { [Proc] }
 ListProc : {- empty -} { [] }
@@ -193,7 +194,6 @@ Act : 'new' '(' ListChanDec ')' { Ling.Abs.Nu $3 }
     | Name '[:' ListChanDec ':]' { Ling.Abs.SeqSplit $1 $3 }
     | 'send' Name ATerm { Ling.Abs.Send $2 $3 }
     | 'recv' Name VarDec { Ling.Abs.Recv $2 $3 }
-    | 'slice' '(' ListChanDec ')' ATerm 'as' Name { Ling.Abs.NewSlice $3 $5 $7 }
     | 'fwd' ASession '(' ListChanDec ')' { Ling.Abs.Ax $2 $4 }
     | 'fwd' Integer ASession Name { Ling.Abs.SplitAx $2 $3 $4 }
     | '@' ATerm TopCPatt { Ling.Abs.At $2 $3 }

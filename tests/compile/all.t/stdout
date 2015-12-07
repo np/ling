@@ -200,8 +200,8 @@ void fwd3_par2_ten2_ten2_lin (struct {
   const int x__c__0__0_lin = c_lin -> f0 . f0 ;
   const int x__c__1__1_lin = c_lin -> f1 . f1 ;
   c_lin -> f1 . f0 = x__c__0__0_lin ;
-  c_lin -> f0 . f1 = x__c__1__1_lin ;
   c_lin -> f2 . f0 = x__c__0__0_lin ;
+  c_lin -> f0 . f1 = x__c__1__1_lin ;
   c_lin -> f2 . f1 = x__c__1__1_lin ;
   const int x__c__0__1_lin = c_lin -> f0 . f1 ;
   c_lin -> f1 . f1 = x__c__0__1_lin ;
@@ -289,8 +289,8 @@ void fwd_par2_ten2_ten2_lin (struct {
   const int x__i__0_lin = i_lin -> f0 ;
   const int x__o__1_lin = o_lin -> f1 ;
   o_lin -> f0 = x__i__0_lin ;
-  i_lin -> f1 = x__o__1_lin ;
   l_lin -> f0 = x__i__0_lin ;
+  i_lin -> f1 = x__o__1_lin ;
   l_lin -> f1 = x__o__1_lin ;
   const int x__i__1_lin = i_lin -> f1 ;
   o_lin -> f1 = x__i__1_lin ;
@@ -316,10 +316,10 @@ void fwd_par2_ten2_ten2_ten2_lin (struct {
   const int x__i__0_lin = i_lin -> f0 ;
   const int x__o__1_lin = o_lin -> f1 ;
   o_lin -> f0 = x__i__0_lin ;
-  i_lin -> f1 = x__o__1_lin ;
   l_lin -> f0 = x__i__0_lin ;
-  l_lin -> f1 = x__o__1_lin ;
   m_lin -> f0 = x__i__0_lin ;
+  i_lin -> f1 = x__o__1_lin ;
+  l_lin -> f1 = x__o__1_lin ;
   m_lin -> f1 = x__o__1_lin ;
   const int x__i__1_lin = i_lin -> f1 ;
   o_lin -> f1 = x__i__1_lin ;
@@ -371,8 +371,8 @@ void fwd_send_recv_recv_with_listener_manually_lin (int * c_lin, int * d_lin, in
   * d_lin = y_lin ;
   * e_lin = y_lin ;
   const int z_lin = * c_lin ;
-  * e_lin = z_lin ;
   * d_lin = z_lin ;
+  * e_lin = z_lin ;
   }
 void fwd_seq2_seq2_seq2_lin (struct {
   int f0 ;

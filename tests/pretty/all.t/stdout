@@ -988,13 +988,13 @@ replicate_par =
   proc (c : {!Int ^ 10})
   c {d}
   slice (d)10 as i
-  send d i
+    send d i
 
 replicate_ten =
   proc (c : [!Int ^ 10])
   c [d]
   slice (d)10 as i
-  send d i
+    send d i
 
 reusedParChannel =
   proc (c : {})
@@ -1130,9 +1130,9 @@ sum_int =
     fwd (?Int)(itmp, r)
   | a {ai}
     slice (ai)10 as i
-    recv ai (x : Int)
-    recv tmp (y : Int)
-    send tmp (x + y))
+      recv ai (x : Int)
+      recv tmp (y : Int)
+      send tmp (x + y))
 
 switch : (A B C : Session)-> < [A, {B, C}] -o {[A, B],C}> =
   \ (A B C : Session)-> proc (c : {{~ A, [~ B, ~ C]}, {[A, B],C}})
@@ -1614,8 +1614,8 @@ wrong_plug_send_recv =
 wrong_repeat_par =
   proc (c : {!Int})
   slice () 10 as i
-  c {d}
-  send d 1
+    c {d}
+    send d 1
 
 wrong_seq_pat =
   proc (c : [: ?Int, !Int :])
@@ -1695,9 +1695,9 @@ zap_ten_fwd =
   cn {cni}
   co [coi]
   slice (cfi, cni, coi)10 as i
-  cfi {cfii, cfio}
-  ( fwd (?Int)(cni, cfii)
-  | fwd (?Int)(cfio, coi))
+    cfi {cfii, cfio}
+    ( fwd (?Int)(cni, cfii)
+    | fwd (?Int)(cfio, coi))
 
 zap_ten_par =
   proc (cf : {(?Int -o ?Int)^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
@@ -1705,11 +1705,11 @@ zap_ten_par =
   cn {cni}
   co [coi]
   slice (cfi, cni, coi)10 as i
-  cfi {cfii, cfio}
-  ( recv cni (x : Int)
-    send cfii x
-  | recv cfio (y : Int)
-    send coi y )
+    cfi {cfii, cfio}
+    ( recv cni (x : Int)
+      send cfii x
+    | recv cfio (y : Int)
+      send coi y )
 
 zap_ten_seq =
   proc (cf : {?Int -o ?Int ^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
@@ -1717,11 +1717,11 @@ zap_ten_seq =
   cn {cni}
   co [coi]
   slice (cfi, cni, coi)10 as i
-  cfi {cfii, cfio}
-  recv cni (x : Int)
-  send cfii x
-  recv cfio (y : Int)
-  send coi y
+    cfi {cfii, cfio}
+    recv cni (x : Int)
+    send cfii x
+    recv cfio (y : Int)
+    send coi y
 
 zip_add =
   proc (xs : {?Int ^ 10},ys : {?Int ^ 10},zs : [!Int ^ 10])
@@ -1729,6 +1729,6 @@ zip_add =
   ys {y}
   zs [z]
   slice (x, y, z)10 as i
-  recv x (a : Int)
-  recv y (b : Int)
-  send z (a + b)
+    recv x (a : Int)
+    recv y (b : Int)
+    send z (a + b)

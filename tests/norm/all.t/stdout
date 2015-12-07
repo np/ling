@@ -863,14 +863,14 @@ _ =
 replicate_par =
   proc (c : {!Int ^ 10})
   c {d}
-  slice (d)10 as i.
-  send d i
+  slice (d)10 as i
+    send d i
 
 replicate_ten =
   proc (c : [!Int ^ 10])
   c [d]
-  slice (d)10 as i.
-  send d i
+  slice (d)10 as i
+    send d i
 
 seq0_explicit =
   proc (c : [: :])
@@ -996,10 +996,10 @@ sum_int =
     recv itmp (x#itmp : Int).
     send r x#itmp
   | a {ai}
-    slice (ai)10 as i.
-    recv ai (x : Int).
-    recv tmp (y : Int).
-    send tmp (x + y))
+    slice (ai)10 as i
+      recv ai (x : Int).
+      recv tmp (y : Int).
+      send tmp (x + y))
 
 switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {[A, B],C}} > =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (c : {{~ A, [~ B, ~ C]}, {[A, B],C}})
@@ -1229,43 +1229,43 @@ zap_ten_fwd =
   cf {cfi}
   cn {cni}
   co [coi]
-  slice (cfi, cni, coi)10 as i.
-  cfi {cfii, cfio}
-  ( recv cni (x#cni : Int).
-    send cfii x#cni
-  | recv cfio (x#cfio : Int).
-    send coi x#cfio )
+  slice (cfi, cni, coi)10 as i
+    cfi {cfii, cfio}
+    ( recv cni (x#cni : Int).
+      send cfii x#cni
+    | recv cfio (x#cfio : Int).
+      send coi x#cfio )
 
 zap_ten_par =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   cf {cfi}
   cn {cni}
   co [coi]
-  slice (cfi, cni, coi)10 as i.
-  cfi {cfii, cfio}
-  ( recv cni (x : Int).
-    send cfii x
-  | recv cfio (y : Int).
-    send coi y )
+  slice (cfi, cni, coi)10 as i
+    cfi {cfii, cfio}
+    ( recv cni (x : Int).
+      send cfii x
+    | recv cfio (y : Int).
+      send coi y )
 
 zap_ten_seq =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   cf {cfi}
   cn {cni}
   co [coi]
-  slice (cfi, cni, coi)10 as i.
-  cfi {cfii, cfio}
-  recv cni (x : Int).
-  send cfii x.
-  recv cfio (y : Int).
-  send coi y
+  slice (cfi, cni, coi)10 as i
+    cfi {cfii, cfio}
+    recv cni (x : Int).
+    send cfii x.
+    recv cfio (y : Int).
+    send coi y
 
 zip_add =
   proc (xs : {?Int ^ 10},ys : {?Int ^ 10},zs : [!Int ^ 10])
   xs {x}
   ys {y}
   zs [z]
-  slice (x, y, z)10 as i.
-  recv x (a : Int).
-  recv y (b : Int).
-  send z (a + b)
+  slice (x, y, z)10 as i
+    recv x (a : Int).
+    recv y (b : Int).
+    send z (a + b)

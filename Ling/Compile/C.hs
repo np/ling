@@ -43,7 +43,7 @@ import           Ling.Defs       (pushDefs)
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
 import           Ling.Print
-import           Ling.Proc       (fwdP)
+import           Ling.Proc       (fwdP, _Pref)
 import           Ling.Reduce     (reduceTerm)
 import           Ling.Scoped     (Scoped(Scoped))
 import           Ling.Session
@@ -236,7 +236,25 @@ dummyTyp :: C.Exp
 dummyTyp = C.ELit (C.LInteger 0)
 
 transProc :: Env -> Proc -> [C.Stm]
-transProc env (pref `Dot` procs) = transPref env pref procs
+transProc env = \case
+  proc0 `Dot` proc1
+    | Just pref <- proc0 ^? _Pref -> transPref env pref proc1
+    | otherwise                   -> transProc env proc0 ++ transProc env proc1
+  Act act -> transAct env act ^. _2
+  Procs (Prll procs) ->
+    case procs of
+      [] -> []
+      [p] -> transErr "transProc/Procs/[_] not a normal form" p
+      _   -> transErr "transProc/Procs: parallel processes should be in sequence" (Prll procs)
+  NewSlice cs r xi proc0 ->
+    [stdFor (transName xi) (transRFactor env r) $
+       transProc env' proc0]
+    where
+      i = transName xi
+      sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
+                  | otherwise   = l
+      env' = env & locs . imapped %@~ sliceIf
+                  & addEVar xi i
 
 transLVal :: C.LVal -> C.Exp
 transLVal (C.LVar x)   = C.EVar x
@@ -254,17 +272,14 @@ transErr msg v = error $ msg ++ "\n" ++ pretty v
 transErrC :: C.Print a => String -> a -> b
 transErrC msg v = error $ msg ++ "\n" ++ C.render (C.prt 0 v)
 
-transProcs :: Env -> [Proc] -> [C.Stm]
-transProcs = concatMap . transProc
-
 -- Implement the effect of an action over:
 -- * an environment
 -- * a list of statements
-transAct :: Env -> Act -> (Env, Endom [C.Stm])
+transAct :: Env -> Act -> (Env, [C.Stm])
 transAct env act =
   case act of
     Nu cds ->
-      (env', (sDec typ cid C.NoInit ++))
+      (env', sDec typ cid C.NoInit)
       where
         cs   = cds ^.. each . argName
         cOSs = cds ^.. each . argBody
@@ -274,27 +289,19 @@ transAct env act =
         typ  = transRSession env s
         env' = addChans [(c,l) | c <- cs] env
     Split _ c ds ->
-      (transSplit c ds env, id)
+      (transSplit c ds env, [])
     Send c expr ->
-      (env, (C.SPut (env ! c) (transTerm env expr) :))
+      (env, [C.SPut (env ! c) (transTerm env expr)])
     Recv c (Arg x typ) ->
-      (addEVar x (transName x) env, (sDec ctyp y cinit ++))
+      (addEVar x (transName x) env, sDec ctyp y cinit)
       where
         ctyp  = transMaybeCTyp env C.QConst typ
         y     = transName x
         cinit = C.SoInit (transLVal (env!c))
-    NewSlice cs r xi ->
-      (env', pure . stdFor (transName xi) (transRFactor env r))
-      where
-        i = transName xi
-        sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
-                    | otherwise   = l
-        env' = env & locs . imapped %@~ sliceIf
-                   & addEVar xi i
     Ax s cs ->
       case fwdP ø s cs of
-        [Ax{}] `Dot` _ -> transErr "transAct/Ax" act
-        proc0 -> (rmChans cs env, (transProc env proc0 ++))
+        Act (Ax{}) -> transErr "transAct/Ax" act
+        proc0 -> (rmChans cs env, transProc env proc0)
     At t p ->
       case p of
         ChanP (Arg c _) ->
@@ -303,18 +310,21 @@ transAct env act =
               case cs of
                 [Arg c' _] ->
                   let env1 = renChan c c' env in
-                  (rmChan c env, (transMkProc env1 cs proc0 ^. _2 ++))
+                  (rmChan c env, transMkProc env1 cs proc0 ^. _2)
                 _ -> transErr "transAct/At/Non single proc" act
             _ -> transErr "transAct/At/Non Proc" act
         _ -> transErr "transAct/At/Non ChanP" act
-    LetA{} ->
-      transErr "transAct/LetA" act
+    LetA defs ->
+      (env & edefs <>~ defs, [])
 
 -- The actions in this prefix are in parallel and thus can be reordered
-transPref :: Env -> Pref -> [Proc] -> [C.Stm]
-transPref env []         = transProcs env
-transPref env (act:pref) = actStm . transPref env' pref
-    where (env', actStm) = transAct env act
+transPref :: Env -> Pref -> Proc -> [C.Stm]
+transPref env (Prll acts0) proc1 =
+  case acts0 of
+    [] -> transProc env proc1
+    act:acts ->
+      let (env', actStm) = transAct env act in
+      actStm ++ transPref env' (Prll acts) proc1
 
 {- stdFor i t body ~~~> for (int i = 0; i < t; i = i + 1) { body } -}
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm

@@ -32,6 +32,9 @@ mkLet_ trv s = (s ^. scoped) & trv %~ mkLet (s ^. ldefs)
 mkLet__ :: SubTerms a => Scoped a -> a
 mkLet__ = mkLet_ subTerms
 
+pushDefs__ :: PushDefs a => ASetter s t a a -> Scoped s -> t
+pushDefs__ l ss = (ss ^. scoped) & l %~ pushDefs . (ss $>)
+
 -- If one considers this layer of definitions to be local definitions.
 unScopedTerm :: Scoped Term -> Term
 unScopedTerm (Scoped _ defs t) = mkLet defs t
@@ -40,7 +43,10 @@ class PushDefs a where
   pushDefs :: Scoped a -> a
 
 instance PushDefs a => PushDefs [a] where
-  pushDefs sxs = pushDefs . (sxs $>) <$> sxs ^. scoped
+  pushDefs = pushDefs__ list
+
+instance PushDefs a => PushDefs (Prll a) where
+  pushDefs = pushDefs__ unPrll
 
 instance (PushDefs a, PushDefs b) => PushDefs (a, b) where
   pushDefs sxy =
@@ -77,12 +83,13 @@ instance PushDefs Session where
 instance PushDefs Proc where
   pushDefs sp0 =
     case sp0 ^. scoped of
-      acts `Dot` procs ->
-        case acts of
-          [LetA defs] ->
-            mconcat $ pushDefs (sp0 *> Scoped ø defs procs)
-          _ ->
-            _Dot # pushDefs (sp0 $> (acts, procs))
+      Act act -> Act (pushDefs (sp0 $> act))
+      Procs procs -> Procs (pushDefs (sp0 $> procs))
+      NewSlice cs t x proc0 -> NewSlice cs (mkLet__ (sp0 $> t)) x (pushDefs (sp0 $> proc0))
+      proc0 `Dot` proc1 ->
+        case proc0 of
+          Act (LetA defs) -> Act (LetA (sp0 ^. ldefs <> defs)) `Dot` proc1
+          _ -> Act (LetA (sp0 ^. ldefs)) `Dot` proc0 `Dot` proc1
 
 instance PushDefs Act where
   pushDefs sa =
@@ -91,7 +98,6 @@ instance PushDefs Act where
       Send c e        -> Send c $ mkLet_ id (sa $> e)
       Recv c arg      -> Recv c $ mkLet_ varDecTerms (sa $> arg)
       Nu cs           -> Nu $ mkLet__ (sa $> cs)
-      NewSlice cs t x -> NewSlice cs (mkLet__ (sa $> t)) x
       LetA{}          -> error "`let` is not supported in parallel actions (pushDefs)"
       Ax s cs         -> _Ax # mkLet_ (subTerms `beside` ignored) (sa $> (s, cs))
       At t pat        -> _At # mkLet_ (id `beside` subTerms) (sa $> (t, pat))

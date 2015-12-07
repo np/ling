@@ -83,12 +83,18 @@ reifyRSessions = reify
 
 instance Norm Proc where
   type Normalized Proc        = N.Proc
-  reify (N.Dot pref procs)    = reifyPref pref (pPrll $ reify procs)
+  reify = \case
+    N.Act act -> reifyAct act
+    proc0 `N.Dot` proc1 -> reifyDot proc0 (reify proc1)
+    N.Procs (Prll procs) -> pPrll $ reify procs
+    N.NewSlice cs t x p ->
+      NewSlice ((`CD` NoSession) <$> cs) (t ^. N.rterm . reified) x (reify p)
   norm = \case
     PAct act         -> normAct act
-    PNxt proc0 proc1 -> norm proc0 `nxtP` norm proc1
+    PNxt proc0 proc1 -> norm proc0 `dotP` norm proc1
     PDot proc0 proc1 -> norm proc0 `dotP` norm proc1
     PPrll procs      -> mconcat $ norm procs
+    NewSlice cs t x p -> N.NewSlice (noSoSession <$> cs) (norm (Some t)) x (norm p)
 
 kCPatt :: N.TraverseKind -> [CPatt] -> CPatt
 kCPatt = \case
@@ -123,11 +129,10 @@ instance Norm TopCPatt where
     ParTopPatt ps   -> N.ArrayP N.ParK (norm ps)
     SeqTopPatt ps   -> N.ArrayP N.SeqK (norm ps)
 
-reifyPref :: N.Pref -> Endom Proc
-reifyPref acts = f (pPrll (reifyAct <$> acts))
-  where
-    f | [act] <- acts, not (N.actNeedsDot act) = pNxt
-      | otherwise                              = pDot
+reifyDot :: N.Proc -> Endom Proc
+reifyDot = \case
+  N.Act act | not (N.actNeedsDot act) -> pNxt (reifyAct act)
+  proc0 -> pDot (reify proc0)
 
 noSoSession :: ChanDec -> Name
 noSoSession (CD x NoSession) = x
@@ -142,20 +147,18 @@ normAct = \case
 
     -- TODO make a flag to turn these on
 {-
-    Ax       s cs     -> go [ax               (norm s) cs]
-    SplitAx  n s c    -> go (splitAx        n (norm s) c)
+    Ax       s cs     -> toProc $ ax               (norm s) cs
+    SplitAx  n s c    -> toProc ... (splitAx        n (norm s) c)
 -}
 
-    Nu cs             -> go [N.Nu (norm cs)]
-    ParSplit c ds     -> go [N.Split N.ParK c (norm ds)]
-    TenSplit c ds     -> go [N.Split N.TenK c (norm ds)]
-    SeqSplit c ds     -> go [N.Split N.SeqK c (norm ds)]
-    Send     c t      -> go [N.Send         c (norm t)]
-    Recv     c a      -> go [N.Recv         c (norm a)]
-    NewSlice cs t x   -> go [N.NewSlice (noSoSession <$> cs) (norm (Some t)) x]
-    At       t pa     -> go [N.At                            (norm t) (norm pa)]
-    LetA     x os t   -> go [N.LetA (N.aDef x (norm os) (norm t))]
-  where go = (`actsP` [])
+    Nu cs             -> toProc $ N.Nu (norm cs)
+    ParSplit c ds     -> toProc $ N.Split N.ParK c (norm ds)
+    TenSplit c ds     -> toProc $ N.Split N.TenK c (norm ds)
+    SeqSplit c ds     -> toProc $ N.Split N.SeqK c (norm ds)
+    Send     c t      -> toProc $ N.Send         c (norm t)
+    Recv     c a      -> toProc $ N.Recv         c (norm a)
+    At       t pa     -> toProc $ N.At   (norm t) (norm pa)
+    LetA     x os t   -> toProc $ N.LetA (N.aDef x (norm os) (norm t))
 
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
@@ -174,9 +177,8 @@ reifyAct = \case
   N.Split N.SeqK c ds -> PAct $ SeqSplit c (reify ds)
   N.Send     c t      -> PAct $ Send     c (reify t)
   N.Recv     c a      -> PAct $ Recv     c (reify a)
-  N.NewSlice cs t x   -> PAct $ NewSlice ((`CD` NoSession) <$> cs) (t ^. N.rterm . reified) x
-  N.Ax       s cs     -> PAct $ Ax          (reify s) ((`CD` NoSession) <$> cs)
-  N.At       t ps     -> PAct $ At          (reify t) (reify ps)
+  N.Ax       s cs     -> PAct $ Ax (reify s) ((`CD` NoSession) <$> cs)
+  N.At       t ps     -> PAct $ At (reify t) (reify ps)
   N.LetA defs         -> reifyDefsA defs
 
 -- isInfix xs = match "_[^_]*_" xs

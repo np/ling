@@ -72,14 +72,24 @@ instance Rename Act where
     Send c e        -> Send (rename f c) (rename f e)
     Recv c arg      -> Recv (rename f c) (rename f arg)
     Nu cs           -> Nu (rename f cs)
-    NewSlice cs t x -> NewSlice (rename f cs) (rename f t) (rename f x)
     Ax s cs         -> Ax (rename f s) (rename f cs)
     At t cs         -> At (rename f t) (rename f cs)
     LetA defs       -> LetA (rename f defs)
 
 instance Rename Proc where
-  rename f (pref `Dot` procs) =
-    rename f pref `Dot` rename (hide (to bvPref . folded) pref f) procs
+  rename f = \case
+    Act act ->
+      Act (rename f act)
+    proc0 `Dot` proc1 ->
+      rename f proc0 `Dot`
+        rename (hide (to bvProc . folded) proc0 f) proc1
+    Procs procs ->
+      Procs (rename f procs)
+    NewSlice cs t x proc0 ->
+      NewSlice (rename f cs) (rename f t) (rename f x) (rename f proc0)
+
+instance Rename a => Rename (Prll a) where
+  rename = over unPrll . rename
 
 instance Rename Session where
   rename f = \case

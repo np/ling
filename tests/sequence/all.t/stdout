@@ -79,8 +79,8 @@ fwd3_par2_ten2_ten2 =
   recv c#0#0 (x#c#0#0 : Int).
   recv c#1#1 (x#c#1#1 : Int).
   send c#1#0 x#c#0#0.
-  send c#0#1 x#c#1#1.
   send c#2#0 x#c#0#0.
+  send c#0#1 x#c#1#1.
   send c#2#1 x#c#1#1.
   recv c#0#1 (x#c#0#1 : Int).
   send c#1#1 x#c#0#1.
@@ -121,8 +121,8 @@ fwd_par2_ten2_ten2 =
   recv i#0 (x#i#0 : Int).
   recv o#1 (x#o#1 : Int).
   send o#0 x#i#0.
-  send i#1 x#o#1.
   send l#0 x#i#0.
+  send i#1 x#o#1.
   send l#1 x#o#1.
   recv i#1 (x#i#1 : Int).
   send o#1 x#i#1.
@@ -137,10 +137,10 @@ fwd_par2_ten2_ten2_ten2 =
   recv i#0 (x#i#0 : Int).
   recv o#1 (x#o#1 : Int).
   send o#0 x#i#0.
-  send i#1 x#o#1.
   send l#0 x#i#0.
-  send l#1 x#o#1.
   send m#0 x#i#0.
+  send i#1 x#o#1.
+  send l#1 x#o#1.
   send m#1 x#o#1.
   recv i#1 (x#i#1 : Int).
   send o#1 x#i#1.
@@ -352,14 +352,14 @@ par_ten_ten_v2 =
 replicate_par =
   proc (c : {!Int ^ 10})
   c {d}
-  slice (d)10 as i.
-  send d i
+  slice (d)10 as i
+    send d i
 
 replicate_ten =
   proc (c : [!Int ^ 10])
   c [d]
-  slice (d)10 as i.
-  send d i
+  slice (d)10 as i
+    send d i
 
 seq3 =
   proc (c : [: !Int, !Int, !Int :])
@@ -397,12 +397,12 @@ sum_int =
   new (itmp : !Int.?Int, tmp)
   send itmp 0.
   a {ai}
-  ( slice (ai)10 as i.
+  (slice (ai)10 as i
     recv ai (x : Int).
     recv tmp (y : Int).
-    send tmp (x + y)
-  | recv itmp (x#itmp : Int).
-    send r x#itmp )
+    send tmp (x + y)).
+  recv itmp (x#itmp : Int).
+  send r x#itmp
 
 ten_loli_par =
   \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})
@@ -497,43 +497,43 @@ zap_ten_fwd =
   cf {cfi}
   cn {cni}
   co [coi]
-  slice (cfi, cni, coi)10 as i.
-  cfi {cfii, cfio}
-  recv cni (x#cni : Int).
-  recv cfio (x#cfio : Int).
-  send cfii x#cni.
-  send coi x#cfio
+  slice (cfi, cni, coi)10 as i
+    cfi {cfii, cfio}
+    recv cni (x#cni : Int).
+    recv cfio (x#cfio : Int).
+    send cfii x#cni.
+    send coi x#cfio
 
 zap_ten_par =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   cf {cfi}
   cn {cni}
   co [coi]
-  slice (cfi, cni, coi)10 as i.
-  cfi {cfii, cfio}
-  recv cni (x : Int).
-  recv cfio (y : Int).
-  send cfii x.
-  send coi y
+  slice (cfi, cni, coi)10 as i
+    cfi {cfii, cfio}
+    recv cni (x : Int).
+    recv cfio (y : Int).
+    send cfii x.
+    send coi y
 
 zap_ten_seq =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   cf {cfi}
   cn {cni}
   co [coi]
-  slice (cfi, cni, coi)10 as i.
-  cfi {cfii, cfio}
-  recv cni (x : Int).
-  send cfii x.
-  recv cfio (y : Int).
-  send coi y
+  slice (cfi, cni, coi)10 as i
+    cfi {cfii, cfio}
+    recv cni (x : Int).
+    send cfii x.
+    recv cfio (y : Int).
+    send coi y
 
 zip_add =
   proc (xs : {?Int ^ 10},ys : {?Int ^ 10},zs : [!Int ^ 10])
   xs {x}
   ys {y}
   zs [z]
-  slice (x, y, z)10 as i.
-  recv x (a : Int).
-  recv y (b : Int).
-  send z (a + b)
+  slice (x, y, z)10 as i
+    recv x (a : Int).
+    recv y (b : Int).
+    send z (a + b)

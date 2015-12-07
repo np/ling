@@ -128,6 +128,7 @@ All other symbols are terminals.
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
   | //Proc// | -> | //Proc1// //Proc// 
   |  |  **|**  | //Proc1// ``.`` //Proc// 
+  |  |  **|**  | ``slice`` ``(`` //[ChanDec]// ``)`` //ATerm// ``as`` //Name// //Proc// 
   |  |  **|**  | //Proc1// 
   | //[Proc]// | -> | **eps**
   |  |  **|**  | //Proc// 
@@ -138,7 +139,6 @@ All other symbols are terminals.
   |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 
   |  |  **|**  | ``send`` //Name// //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
-  |  |  **|**  | ``slice`` ``(`` //[ChanDec]// ``)`` //ATerm// ``as`` //Name// 
   |  |  **|**  | ``fwd`` //ASession// ``(`` //[ChanDec]// ``)`` 
   |  |  **|**  | ``fwd`` //Integer// //ASession// //Name// 
   |  |  **|**  | ``@`` //ATerm// //TopCPatt// 

@@ -21,10 +21,10 @@ sum_int = proc(a : {?Int ^ 10}, r : !Int)
   ( send itmp 0.
     fwd(?Int)(itmp, r)
   | a{ai}
-    slice (ai) 10 as i.
-    recv ai  (x : Int).
-    recv tmp (y : Int).
-    send tmp (x + y))
+    slice (ai) 10 as i
+      recv ai  (x : Int).
+      recv tmp (y : Int).
+      send tmp (x + y))
 ```
 
 On the process above, the compiler yields the following `C` program:

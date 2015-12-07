@@ -94,6 +94,7 @@ PPrll.    Proc1 ::= "(" [Proc] ")" ;
 
 PNxt.     Proc ::= Proc1 Proc ;
 PDot.     Proc ::= Proc1 "." Proc ;
+NewSlice. Proc ::= "slice" "(" [ChanDec] ")" ATerm "as" Name Proc ;
 _.        Proc ::= Proc1 ;
 separator Proc "|" ;
 
@@ -103,7 +104,6 @@ TenSplit. Act ::= Name "[" [ChanDec] "]" ;
 SeqSplit. Act ::= Name "[:" [ChanDec] ":]" ;
 Send.     Act ::= "send" Name ATerm ;
 Recv.     Act ::= "recv" Name VarDec ;
-NewSlice. Act ::= "slice" "(" [ChanDec] ")" ATerm "as" Name ;
 Ax.       Act ::= "fwd" ASession "(" [ChanDec] ")" ;
 SplitAx.  Act ::= "fwd" Integer ASession Name ;
 At.       Act ::= "@" ATerm TopCPatt ;

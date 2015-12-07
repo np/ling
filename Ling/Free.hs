@@ -34,7 +34,6 @@ fcAct = \case
   Split _ c _     -> l2s [c]
   Send c _        -> l2s [c]
   Recv c _        -> l2s [c]
-  NewSlice cs _ _ -> l2s cs
   Ax _ cs         -> l2s cs
   At _ p          -> fcPat p
   LetA{}          -> ø
@@ -45,7 +44,6 @@ bcAct = \case
   Split _ _ ds -> bcChanDecs ds
   Send{}       -> ø
   Recv{}       -> ø
-  NewSlice{}   -> ø
   Ax{}         -> ø
   At{}         -> ø
   LetA{}       -> ø
@@ -56,7 +54,6 @@ bvAct = \case
   Split{}        -> ø
   Send{}         -> ø
   Recv _ x       -> bvVarDec x
-  NewSlice _ _ x -> l2s [x]
   Ax{}           -> ø
   At{}           -> ø
   LetA defs      -> keysSet (defs ^. defsMap)
@@ -76,15 +73,38 @@ fvAct = \case
 bvPref :: BoundVars Pref
 bcPref :: BoundChans Pref
 fcPref :: FreeChans Pref
-bvPref = mconcat . map bvAct
+bvPref = mconcat . map bvAct . view unPrll
 
-bcPref = mconcat . map bcAct
+bcPref = mconcat . map bcAct . view unPrll
 
-fcPref = mconcat . map fcAct
+fcPref = mconcat . map fcAct . view unPrll
+
+bcProc :: BoundChans Proc
+bcProc = \case
+  Act act     -> bcAct act
+  Procs procs -> bcProcs procs
+  NewSlice{}  -> ø
+  Dot{}       -> error "bcProc: Dot"
+
+bcProcs :: BoundChans Procs
+bcProcs = mconcat . map bcProc . view unPrll
+
+bvProc :: BoundVars Proc
+bvProc = \case
+  Act act     -> bvAct act
+  Procs procs -> bvProcs procs
+  NewSlice{}  -> ø
+  Dot{}       -> error "bvProc: Dot"
+
+bvProcs :: BoundVars Procs
+bvProcs = mconcat . map bvProc . view unPrll
 
 fcProc :: FreeChans Proc
-fcProc (pref `Dot` procs) =
-  fcPref pref <> (fcProcs procs `Set.difference` bcPref pref)
+fcProc = \case
+  Act act           -> fcAct act
+  proc0 `Dot` proc1 -> fcProc proc0 <> (fcProc proc1 `Set.difference` bcProc proc0)
+  NewSlice cs _ _ p -> l2s cs <> fcProc p
+  Procs procs       -> fcProcs procs
 
 fcProcs :: FreeChans Procs
-fcProcs = mconcat . map fcProc
+fcProcs = mconcat . map fcProc . view unPrll

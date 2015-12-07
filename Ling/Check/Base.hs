@@ -105,8 +105,8 @@ checkDisjointness k ss =
     rs = redundant ss
 
 checkPrefWellFormness :: MonadError TCErr m => Pref -> m ()
-checkPrefWellFormness pref = do
-  checkDisjointness "free channels" $ fcAct <$> pref
+checkPrefWellFormness (Prll pref) = do
+  checkDisjointness "free channels"  $ fcAct <$> pref
   checkDisjointness "bound channels" $ bcAct <$> pref
   checkDisjointness "bound names"    $ bvAct <$> pref
 

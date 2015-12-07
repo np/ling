@@ -77,6 +77,7 @@ transProc x = case x of
   PPrll procs -> failure x
   PNxt proc1 proc2 -> failure x
   PDot proc1 proc2 -> failure x
+  NewSlice chandecs aterm name proc -> failure x
 transAct :: Act -> Result
 transAct x = case x of
   Nu chandecs -> failure x
@@ -85,7 +86,6 @@ transAct x = case x of
   SeqSplit name chandecs -> failure x
   Send name aterm -> failure x
   Recv name vardec -> failure x
-  NewSlice chandecs aterm name -> failure x
   Ax asession chandecs -> failure x
   SplitAx integer asession name -> failure x
   At aterm topcpatt -> failure x

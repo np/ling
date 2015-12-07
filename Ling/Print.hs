@@ -35,6 +35,8 @@ render :: Doc -> String
 render d = rend 0 (($ "") <$> d []) "" where
   rend i ss = case ss of
     "\n"        :ts -> new i . rend i ts
+    "+\n"       :ts -> new (i+1) . rend (i+1) ts
+    "-\n"       :ts -> rend (i-1) ts
     [c]         :ts | c `elem` "{[(.?!`" -> showChar c . dropWhile isSpace . rend i ts
     ": "        :ts -> space ":" . rend (i `max` 1) ts
     "=\n"       :ts -> showString "=" . new 1 . rend 1 ts
@@ -116,13 +118,13 @@ instance Print Program where
 
 instance Print Dec where
   prt i e = case e of
-    DDef name optsig term -> prPrec i 0 (concatD [prt 0 name, prt 0 optsig, doc (showString "=\n"), prt 0 term])
-    DSig name term -> prPrec i 0 (concatD [prt 0 name, doc (showString ": "), prt 0 term])
+    DDef name optsig term -> prPrec i 0 (concatD [prt 0 name, prt 0 optsig, txt "=\n", prt 0 term])
+    DSig name term -> prPrec i 0 (concatD [prt 0 name, txt ": ", prt 0 term])
     DDat name connames -> prPrec i 0 (concatD [doc (showString "data"), prt 0 name, doc (showString "="), prt 0 connames])
     DAsr assertion -> prPrec i 0 (concatD [doc (showString "assert"), prt 0 assertion])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
-  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ",\n\n"), prt 0 xs])
+  prtList _ (x:xs) = (concatD [prt 0 x, txt ",\n\n", prt 0 xs])
 instance Print Assertion where
   prt i e = case e of
     AEq term1 term2 optsig -> prPrec i 0 (concatD [prt 0 term1, doc (showString "="), prt 0 term2, prt 0 optsig])
@@ -136,7 +138,7 @@ instance Print ConName where
 instance Print OptSig where
   prt i e = case e of
     NoSig -> prPrec i 0 (concatD [])
-    SoSig term -> prPrec i 0 (concatD [doc (showString ": "), prt 0 term])
+    SoSig term -> prPrec i 0 (concatD [txt ": ", prt 0 term])
 
 instance Print VarDec where
   prt i e = case e of
@@ -153,7 +155,7 @@ instance Print Branch where
     Br conname term -> prPrec i 0 (concatD [prt 0 conname, doc (showString "->"), prt 0 term])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
-  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ",\n"), prt 0 xs])
+  prtList _ (x:xs) = (concatD [prt 0 x, txt ",\n", prt 0 xs])
 instance Print Literal where
   prt i e = case e of
     LInteger n -> prPrec i 0 (concatD [prt 0 n])
@@ -178,7 +180,7 @@ instance Print ATerm where
 instance Print Term where
   prt i e = case e of
     RawApp aterm aterms -> prPrec i 3 (concatD [prt 0 aterm, prt 0 aterms])
-    Case term branchs -> prPrec i 2 (concatD [doc (showString "case"), prt 0 term, doc (showString "of"), doc (showString "{\n"), prt 0 branchs, doc (showString "\n}")])
+    Case term branchs -> prPrec i 2 (concatD [txt "case", prt 0 term, txt "of", txt "{\n", prt 0 branchs, txt "\n}"])
     Snd term csession -> prPrec i 2 (concatD [doc (showString "!"), prt 3 term, prt 0 csession])
     Rcv term csession -> prPrec i 2 (concatD [doc (showString "?"), prt 3 term, prt 0 csession])
     Dual term -> prPrec i 2 (concatD [doc (showString "~"), prt 2 term])
@@ -187,17 +189,18 @@ instance Print Term where
     TSig term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "**"), prt 1 term2])
     Let name optsig term1 term2 -> prPrec i 1 (concatD [doc (showString "let"), prt 0 name, prt 0 optsig, doc (showString "="), prt 0 term1, doc (showString "in"), prt 0 term2])
     Lam term1 term2 -> prPrec i 0 (concatD [doc (showString "\\"), prt 2 term1, doc (showString "->"), prt 0 term2])
-    TProc chandecs proc -> prPrec i 0 (concatD [doc (showString "proc"), doc (showString "("), prt 0 chandecs, doc (showString ")"), nl, prt 0 proc])
+    TProc chandecs proc -> prPrec i 0 (concatD [txt "proc", txt "(", prt 0 chandecs, txt ")", nl, prt 0 proc])
 
 instance Print Proc where
   prt i e = case e of
     PAct act -> prPrec i 1 (concatD [prt 0 act])
-    PPrll procs -> prPrec i 1 (concatD [doc (showString "(\n"), prt 0 procs, doc (showString "\n)")])
-    PNxt proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, doc (showString "\n"), prt 0 proc2])
-    PDot proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, doc (showString ".\n"), prt 0 proc2])
+    PPrll procs -> prPrec i 1 (concatD [txt "(\n", prt 0 procs, txt "\n)"])
+    PNxt proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, txt "\n", prt 0 proc2])
+    PDot proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, txt ".\n", prt 0 proc2])
+    NewSlice chandecs aterm name proc -> prPrec i 0 (concatD [txt "slice", txt "(", prt 0 chandecs, txt ")", prt 0 aterm, txt "as", prt 0 name, txt "+\n", prt 0 proc, txt "-\n"])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
-  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "\n|"), prt 0 xs])
+  prtList _ (x:xs) = (concatD [prt 0 x, txt "\n|", prt 0 xs])
 instance Print Act where
   prt i e = case e of
     Nu chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandecs, doc (showString ")")])
@@ -206,7 +209,6 @@ instance Print Act where
     SeqSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "[:"), prt 0 chandecs, doc (showString ":]")])
     Send name aterm -> prPrec i 0 (concatD [doc (showString "send"), prt 0 name, prt 0 aterm])
     Recv name vardec -> prPrec i 0 (concatD [doc (showString "recv"), prt 0 name, prt 0 vardec])
-    NewSlice chandecs aterm name -> prPrec i 0 (concatD [doc (showString "slice"), doc (showString "("), prt 0 chandecs, doc (showString ")"), prt 0 aterm, doc (showString "as"), prt 0 name])
     Ax asession chandecs -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 asession, doc (showString "("), prt 0 chandecs, doc (showString ")")])
     SplitAx n asession name -> prPrec i 0 (concatD [doc (showString "fwd"), prt 0 n, prt 0 asession, prt 0 name])
     At aterm topcpatt -> prPrec i 0 (concatD [doc (showString "@"), prt 0 aterm, prt 0 topcpatt])
@@ -286,12 +288,8 @@ newtype Lst a = Lst { _unLst :: [a] }
 instance Print a => Print (Lst a) where
   prt _i = prtSeq id id (txt "[") (txt ",") (txt "]") . map (prt 0) . _unLst
 
-newtype Prll a = Prll { _unPrll :: [a] }
-
 instance Print a => Print (Prll a) where
   prt _i = prtSeq id id (txt "(") (txt "|") (txt ")") . map (prt 0) . _unPrll
-
-newtype Order a = Order { _unOrder :: [a] }
 
 instance Print a => Print (Order a) where
   prt _i = prtSeq id id id (txt ".") id . map (prt 0) . _unOrder
@@ -325,40 +323,39 @@ instance Print N.Defs where
 
 instance Print a => Print (Arg a) where
   prt _i (Arg ident x) =
-    concatD [ doc (showString "(") , prt 0 ident , doc (showString ":")
-            , prt 0 x , doc (showString ")") ]
+    concatD [ txt "(", prt 0 ident, txt ":", prt 0 x, txt ")" ]
 
   prtList _ = concatD . map (prt 0)
 
 instance (Print a,Print b) => Print (a,b) where
   prt _i (a,b) =
-    concatD [ doc (showString "(") , prt 0 a
-            , doc (showString ",") , prt 0 b
-            , doc (showString ")") ]
+    concatD [ txt "(" , prt 0 a
+            , txt "," , prt 0 b
+            , txt ")" ]
 
 instance (Print a,Print b,Print c) => Print (a,b,c) where
   prt _i (a,b,c) =
-    concatD [ doc (showString "(") , prt 0 a
-            , doc (showString ",") , prt 0 b
-            , doc (showString ",") , prt 0 c
-            , doc (showString ")") ]
+    concatD [ txt "(" , prt 0 a
+            , txt "," , prt 0 b
+            , txt "," , prt 0 c
+            , txt ")" ]
 
 instance (Print a,Print b,Print c,Print d) => Print (a,b,c,d) where
   prt _i (a,b,c,d) =
-    concatD [ doc (showString "(") , prt 0 a
-            , doc (showString ",") , prt 0 b
-            , doc (showString ",") , prt 0 c
-            , doc (showString ",") , prt 0 d
-            , doc (showString ")") ]
+    concatD [ txt "(" , prt 0 a
+            , txt "," , prt 0 b
+            , txt "," , prt 0 c
+            , txt "," , prt 0 d
+            , txt ")" ]
 
 instance (Print a,Print b,Print c,Print d,Print e) => Print (a,b,c,d,e) where
   prt _i (a,b,c,d,e) =
-    concatD [ doc (showString "(") , prt 0 a
-            , doc (showString ",") , prt 0 b
-            , doc (showString ",") , prt 0 c
-            , doc (showString ",") , prt 0 d
-            , doc (showString ",") , prt 0 e
-            , doc (showString ")") ]
+    concatD [ txt "(" , prt 0 a
+            , txt "," , prt 0 b
+            , txt "," , prt 0 c
+            , txt "," , prt 0 d
+            , txt "," , prt 0 e
+            , txt ")" ]
 
 instance Print N.Session where
   prt     i = prt i . reifySession

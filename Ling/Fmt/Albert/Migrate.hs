@@ -91,6 +91,9 @@ transProc = \case
   PNxt proc0 proc1 -> transProc proc0 `L.PNxt` transProc proc1
   PDot proc0 proc1 -> transProc proc0 `L.PDot` transProc proc1
   PPrll procs      -> L.PPrll $ transProc <$> procs
+  NewSlice chandecs aterm name proc0 ->
+    L.NewSlice (transChanDec <$> chandecs) (transATerm aterm)
+               (transName name) (transProc proc0)
 
 transAct :: Act -> L.Act
 transAct = \case
@@ -100,8 +103,6 @@ transAct = \case
   SeqSplit name chandecs -> L.SeqSplit (transName name) (transChanDec <$> chandecs)
   Send name aterm -> L.Send (transName name) (transATerm aterm)
   Recv name vardec -> L.Recv (transName name) (transVarDec vardec)
-  NewSlice chandecs aterm name -> L.NewSlice (transChanDec <$> chandecs) (transATerm aterm)
-                                    (transName name)
   Ax session chandecs -> L.Ax (transASession session) (transChanDec <$> chandecs)
   SplitAx integer session name -> L.SplitAx integer (transASession session) (transName name)
   At aterm topcpatt -> L.At (transATerm aterm) (transTopCPatt topcpatt)

@@ -46,9 +46,10 @@ pNxt proc0 (PPrll []) = proc0
 pNxt proc0 proc1      = proc0 `PNxt` proc1
 
 pDot :: Op2 Proc
-pDot (PPrll []) proc1 = proc1
-pDot proc0 (PPrll []) = proc0
-pDot proc0 proc1      = proc0 `PDot` proc1
+pDot (PPrll [])       proc1      = proc1
+pDot (p00 `PDot` p01) proc1      = p00 `pDot` (p01 `pDot` proc1)
+pDot proc0            (PPrll []) = proc0
+pDot proc0            proc1      = proc0 `PDot` proc1
 
 pDots :: [Proc] -> Proc
 pDots = foldr pDot (PPrll [])

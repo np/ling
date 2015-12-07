@@ -19,7 +19,8 @@ import           Data.Digest.Pure.SHA      (sha256, showDigest)
 import           Data.Foldable             as X
 import           Data.Function             as X
 import           Data.Functor              as X
-import           Data.List                 as X (elemIndex, sort, transpose)
+import           Data.List                 as X (elemIndex, partition, sort,
+                                                 transpose)
 import           Data.List.Lens            as X
 import           Data.Map                  as X (Map, keys, keysSet,
                                                  unionWithKey)
@@ -28,7 +29,7 @@ import           Data.Maybe                as X
 import           Data.Monoid               as X hiding (Dual)
 import           Data.Set                  as X (Set)
 import           Data.Set                  (intersection, member, notMember,
-                                            union)
+                                            union, insert)
 import qualified Data.Set                  as Set
 import           Data.Traversable          as X
 import           Data.Tuple                as X
@@ -51,6 +52,19 @@ type Rel a = a -> a -> Bool
 type Msg = String
 
 type Verbosity = Bool
+
+newtype Prll a = Prll { _unPrll :: [a] }
+  deriving (Eq, Ord, Show, Read)
+
+ø :: Monoid a => a
+ø = mempty
+
+instance Monoid (Prll a) where
+  mempty                    = Prll ø
+  Prll ps `mappend` Prll qs = Prll (ps <> qs)
+
+newtype Order a = Order { _unOrder :: [a] }
+  deriving (Eq, Ord, Show, Read)
 
 anonName :: Name
 anonName = Name "_"
@@ -87,10 +101,14 @@ data Ann a b = Ann { _annotation :: a, _annotated :: b }
 instance Bifunctor Ann where
   bimap f g (Ann a b) = Ann (f a) (g b)
 
+makePrisms ''Prll
+makePrisms ''Order
 makePrisms ''Arg
 makePrisms ''Abs
 makePrisms ''Telescope
 makePrisms ''Ann
+makeLenses ''Prll
+makeLenses ''Order
 makeLenses ''Arg
 makeLenses ''Abs
 makeLenses ''Telescope
@@ -112,9 +130,6 @@ instance Wrapped (Ann a b) where
   _Wrapped' = _Ann
 
 type Channel = Name
-
-ø :: Monoid a => a
-ø = mempty
 
 nameString :: Iso' Name String
 nameString = iso unName Name
@@ -151,6 +166,17 @@ debugTraceWhen b s =
 
 unName :: Name -> String
 unName (Name x) = x
+
+type UsedNames = Set Name
+
+avoidUsed :: Name -> Name -> UsedNames -> (Name, UsedNames)
+avoidUsed suggestion basename used = go allNames where
+  allPrefixes = ["x", "y", "z"] ++ ["x" ++ show (i :: Int) | i <- [0..]]
+  allNames = (if suggestion == anonName then id else (suggestion :)) $
+             [ prefixedName p # basename | p <- allPrefixes ]
+  go names | x `member` used = go (tail names)
+           | otherwise       = (x, insert x used)
+    where x = head names
 
 l2s :: Ord a => [a] -> Set a
 l2s = Set.fromList
