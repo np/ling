@@ -3,10 +3,10 @@
 testname=cut_send_recv_recv_send_with_log.t
 command=Ling
 args=( --seq cut_send_recv_recv_send_with_log.ll )
-exit_code=1
+exit_code=0
 stdin_file=/dev/null
-stdout_file=/dev/null
-stderr_file=stderr
+stdout_file=stdout
+stderr_file=/dev/null
 sources=( cut_send_recv_recv_send_with_log.ll )
 products=( )
 

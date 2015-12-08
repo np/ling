@@ -156,6 +156,18 @@ cut_send_recv_recv_send_v2 =
   send d 2.
   recv c (x : Int)
 
+cut_send_recv_recv_send_with_log =
+  proc (logc : !String.!String, logd : !String.!String)
+  new (c : !Int.?Int, d : ?Int.!Int)
+  send logd "recv d".
+  send logc "send c 1".
+  send c 1.
+  recv d (y : Int).
+  send logc "recv c".
+  send logd "send d 2".
+  send d 2.
+  recv c (x : Int)
+
 cut_send_recv_recv_send_with_log_prll =
   proc (logc : !String.!String, logd : !String.!String)
   new (c : !Int.?Int, d : ?Int.!Int)
@@ -829,6 +841,56 @@ new_fuse1_recv_send_send_recv =
   send d 2.
   recv c (x : Int)
 
+new_ann_ten_recv =
+  \ (ann : Allocation)-> proc ()
+  new/ann [c : [!Int, ?Int],d : {?Int, !Int}]
+  ( c [co, ci]
+    ( send co 42
+    | recv ci (y : Int))
+  | d {di, do}
+    recv di (x : Int).
+    send do (x + x))
+
+new_fuse1_ten_recv =
+  proc ()
+  new/fuse 1 [c : [!Int, ?Int],d : {?Int, !Int}]
+  c [co, ci]
+  d {di, do}
+  send co 42.
+  recv di (x : Int).
+  send do (x + x).
+  recv ci (y : Int)
+
+new_fuse2_ten_recv =
+  proc ()
+  new/fuse 2 [c : [!Int, ?Int],d : {?Int, !Int}]
+  c [co, ci]
+  d {di, do}
+  send co 42.
+  recv di (x : Int).
+  send do (x + x).
+  recv ci (y : Int)
+
+new_fuse3_ten_recv =
+  proc ()
+  new/fuse 3 [c : [!Int, ?Int],d : {?Int, !Int}]
+  c [co, ci]
+  d {di, do}
+  send co 42.
+  recv di (x : Int).
+  send do (x + x).
+  recv ci (y : Int)
+
+new_fused_ten_recv =
+  proc ()
+  new/fused [c : [!Int, ?Int],d : {?Int, !Int}]
+  c [co, ci]
+  d {di, do}
+  send co 42.
+  recv di (x : Int).
+  send do (x + x).
+  recv ci (y : Int)
+
 no_dead_lock_new_new =
   proc ()
   new (c : ?Int, d)
@@ -1371,7 +1433,7 @@ split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new (itmp : !Int.?Int, tmp)
+  new/alloc [itmp : !Int.?Int, tmp]
   send itmp 0.
   a {ai}
   (slice (ai)10 as i

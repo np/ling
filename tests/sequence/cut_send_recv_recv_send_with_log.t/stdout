@@ -1,0 +1,14 @@
+
+{- Sequential process -}
+
+cut_send_recv_recv_send_with_log =
+  proc (logc : !String.!String, logd : !String.!String)
+  new (c : !Int.?Int, d : ?Int.!Int)
+  send logd "recv d".
+  send logc "send c 1".
+  send c 1.
+  recv d (y : Int).
+  send logc "recv c".
+  send logd "send d 2".
+  send d 2.
+  recv c (x : Int)

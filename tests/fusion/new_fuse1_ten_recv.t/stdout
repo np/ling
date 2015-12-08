@@ -1,6 +1,16 @@
 
 {- Fused process -}
 
+new_ann_ten_recv =
+  \ (ann : Allocation)-> proc ()
+  new/ann [c : [!Int, ?Int],d : {?Int, !Int}]
+  ( c [co, ci]
+    ( send co 42
+    | recv ci (y : Int))
+  | d {di, do}
+    recv di (x : Int).
+    send do (x + x))
+
 new_fuse1_ten_recv =
   proc ()
   new/fuse 0 [co, di]
@@ -9,3 +19,20 @@ new_fuse1_ten_recv =
   recv di (x : Int).
   send do (x + x).
   recv ci (y : Int)
+
+new_fuse2_ten_recv =
+  proc ()
+  let x : Int = 42.
+  new/fuse 0 [co, di]
+  let y : Int = (x + x).
+  new/fuse 0 [do, ci]
+
+new_fuse3_ten_recv =
+  proc ()
+  let x : Int = 42.
+  let y : Int = (x + x)
+
+new_fused_ten_recv =
+  proc ()
+  let x : Int = 42.
+  let y : Int = (x + x)

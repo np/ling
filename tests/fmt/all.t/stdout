@@ -939,6 +939,56 @@ new_fuse1_recv_send_send_recv =
   | recv d (y : Int)
     send d 2 )
 
+new_ann_ten_recv =
+  \ (ann : Allocation)-> proc ()
+  new/ann [c : [!Int, ?Int],d : {?Int, !Int}]
+  ( c [co, ci]
+    ( send co 42
+    | recv ci (y : Int))
+  | d {di, do}
+    recv di (x : Int).
+    send do (x + x))
+
+new_fuse1_ten_recv =
+  proc ()
+  new/fuse 1 [c : [!Int, ?Int],d : {?Int, !Int}]
+  ( c [co, ci]
+    ( send co 42
+    | recv ci (y : Int))
+  | d {di, do}
+    recv di (x : Int).
+    send do (x + x))
+
+new_fuse2_ten_recv =
+  proc ()
+  new/fuse 2 [c : [!Int, ?Int],d : {?Int, !Int}]
+  ( c [co, ci]
+    ( send co 42
+    | recv ci (y : Int))
+  | d {di, do}
+    recv di (x : Int).
+    send do (x + x))
+
+new_fuse3_ten_recv =
+  proc ()
+  new/fuse 3 [c : [!Int, ?Int],d : {?Int, !Int}]
+  ( c [co, ci]
+    ( send co 42
+    | recv ci (y : Int))
+  | d {di, do}
+    recv di (x : Int).
+    send do (x + x))
+
+new_fused_ten_recv =
+  proc ()
+  new/fused [c : [!Int, ?Int],d : {?Int, !Int}]
+  ( c [co, ci]
+    ( send co 42
+    | recv ci (y : Int))
+  | d {di, do}
+    recv di (x : Int).
+    send do (x + x))
+
 no_dead_lock_new_new =
   proc ()
   new (c : ?Int, d)
@@ -1531,7 +1581,7 @@ split_nested_seq : (A B C D : Session)-> < [: A, B, C, D :] -o [: [: A, B :], [:
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new (itmp : !Int.?Int, tmp)
+  new/alloc [itmp : !Int.?Int, tmp]
   ( send itmp 0
     fwd (?Int)(itmp, r)
   | a {ai}

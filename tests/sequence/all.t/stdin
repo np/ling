@@ -131,6 +131,17 @@ cut_send_recv_recv_send_v2 = proc() new (c : !Int.?Int, d : ?Int.!Int)
     recv c (x : Int)
   )
 
+cut_send_recv_recv_send_with_log =
+  proc(logc : !String.!String, logd : !String.!String)
+  new (c : !Int.?Int, d : ?Int.!Int)
+  ( send logd "recv d".
+    recv d (y : Int).
+    send logd "send d 2".
+    send d 2
+  | send logc "send c 1".
+    send c 1.
+    send logc "recv c".
+    recv c (x : Int))
 cut_send_recv_recv_send_with_log_prll =
   proc(logc : !String.!String, logd : !String.!String)
   new (c : !Int.?Int, d : ?Int.!Int)
@@ -672,6 +683,63 @@ new_fuse1_recv_send_send_recv = proc()
   | recv d (y : Int)
     send d 2
   )
+new_ann_ten_recv = \(ann : Allocation)->
+  proc()
+    new/ann [c : [!Int, ?Int], d : {?Int, !Int}]
+    ( c[co,ci]
+      ( send co 42
+      | recv ci (y : Int))
+    | d{di,do}
+      recv di (x : Int).
+      send do (x + x))
+
+{- Soon...
+new_fuse_ten_recv = \(depth : Int)-> new_ann_ten_recv (fuse depth)
+new_fuse1_ten_recv = new_fuse_ten_recv 1
+new_fuse2_ten_recv = new_fuse_ten_recv 2
+new_fuse3_ten_recv = new_fuse_ten_recv 3
+new_fused_ten_recv = new_ann_ten_recv fused
+-}
+
+new_fuse1_ten_recv =
+  proc()
+    new/fuse 1 [c : [!Int, ?Int], d : {?Int, !Int}]
+    ( c[co,ci]
+      ( send co 42
+      | recv ci (y : Int))
+    | d{di,do}
+      recv di (x : Int).
+      send do (x + x))
+
+new_fuse2_ten_recv =
+  proc()
+    new/fuse 2 [c : [!Int, ?Int], d : {?Int, !Int}]
+    ( c[co,ci]
+      ( send co 42
+      | recv ci (y : Int))
+    | d{di,do}
+      recv di (x : Int).
+      send do (x + x))
+
+new_fuse3_ten_recv =
+  proc()
+    new/fuse 3 [c : [!Int, ?Int], d : {?Int, !Int}]
+    ( c[co,ci]
+      ( send co 42
+      | recv ci (y : Int))
+    | d{di,do}
+      recv di (x : Int).
+      send do (x + x))
+
+new_fused_ten_recv =
+  proc()
+    new/fused [c : [!Int, ?Int], d : {?Int, !Int}]
+    ( c[co,ci]
+      ( send co 42
+      | recv ci (y : Int))
+    | d{di,do}
+      recv di (x : Int).
+      send do (x + x))
 -- Requires a mix
 no_dead_lock_new_new = proc()
   new (c : ?Int, d)
