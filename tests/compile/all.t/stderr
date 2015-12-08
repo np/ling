@@ -25,7 +25,7 @@
 [WARNING] Unsupported type Allocation
 [WARNING] Unsupported type Allocation
 [WARNING] Unsupported type Allocation
-[WARNING] Unsupported type Allocation
+[WARNING] Skipping compilation of unsupported definition alloc
 [WARNING] Skipping compilation of unsupported definition ap
 [WARNING] Skipping compilation of unsupported definition another_not
 [WARNING] Unsupported type Bool

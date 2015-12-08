@@ -16,7 +16,6 @@ int * sort_lin (const int n_lin, const int * v_lin);
 int Session_lin ;
 int Allocation_lin ;
 void * auto_lin ;
-void * alloc_lin ;
 void * fused_lin ;
 void * fuse_lin (const int depth_lin);
 int Double_lin ;

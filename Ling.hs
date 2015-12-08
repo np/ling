@@ -88,9 +88,9 @@ ParSort = \(A : Type)(n : Int)-> EndoLoli (!Vec A n)
 SeqSort = \(A : Type)(n : Int)-> [: ?Vec A n, !Vec A n :]
 Allocation : Type
 auto : Allocation
-alloc : Allocation
 fused : Allocation
 fuse : (depth : Int)-> Allocation
+alloc : Allocation = fuse 0
 Double : Type
 Int2Double : (n : Int) -> Double
 _+D_ : (m : Double)(n : Double) -> Double

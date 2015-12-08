@@ -1534,7 +1534,7 @@ split_nested_seq : (A B C D : Session)-> < [: A, B, C, D :] -o [: [: A, B :], [:
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new (itmp : !Int.?Int, tmp)
+  new/alloc [itmp : !Int.?Int, tmp]
   ( send itmp 0
     fwd (?Int)(itmp, r)
   | a {ai}
