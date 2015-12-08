@@ -1,4 +1,7 @@
-assert 'a' = 'a' : Char
+assert
+  'a'
+  =
+  'a' : Char
 
 ap =
   \ (S : Session)-> \ (T : Session)-> proc (c : {[S, ~ T],{~ S, T}})
@@ -8,21 +11,36 @@ ap =
   ( fwd S (fi, x)
   | fwd T (o, fo))
 
-assert `false = `false : Bool
+assert
+  `false
+  =
+  `false : Bool
 
-assert \ (x : Bool)-> x = \ (y : Bool)-> y : (b : Bool)-> Bool
+assert
+  \ (x : Bool)-> x
+  =
+  \ (y : Bool)-> y : (b : Bool)-> Bool
 
-assert not `true = `false : Bool
+assert
+  not `true
+  =
+  `false : Bool
 
-assert proc (r : ?Bool.!Bool)
-recv r (x : Bool).
-  send r x = proc (r : ?Bool.!Bool)
+assert
+  proc (r : ?Bool.!Bool)
+  recv r (x : Bool).
+  send r x
+  =
+  proc (r : ?Bool.!Bool)
   recv r (y : Bool).
   send r y : < ?Bool.!Bool >
 
-assert proc (r : !Bool)
-send r (not `true)= proc (r : !Bool)
-send r `false : < !Bool >
+assert
+  proc (r : !Bool)
+  send r (not `true)
+  =
+  proc (r : !Bool)
+  send r `false : < !Bool >
 
 another_not : (x : Bool)-> Bool =
   \ (x : Bool)-> case x of {
@@ -243,9 +261,15 @@ dual_dual =
 my_zero =
   0
 
-assert (S : Session)-> (T : Session)-> < S ^ 5, T ^ (0 + my_zero)> = (S : Session)-> (T : Session)-> < S ^ 2, T ^ 0, S, S, S > : Type
+assert
+  (S : Session)-> (T : Session)-> < S ^ 5, T ^ (0 + my_zero)>
+  =
+  (S : Session)-> (T : Session)-> < S ^ 2, T ^ 0, S, S, S > : Type
 
-assert (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (m + n)> = (S : Session)-> (m : Int)-> (n : Int)-> < S ^ m, S ^ n > : Type
+assert
+  (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (m + n)>
+  =
+  (S : Session)-> (m : Int)-> (n : Int)-> < S ^ m, S ^ n > : Type
 
 fake_div_mod_server_ten2 =
   proc (r : [?Int, ?Int],s : [!Int, !Int])
@@ -537,7 +561,10 @@ idproc =
   recv c (y : Int).
   send d (id Int y)
 
-assert 42 = let x = 42 in x
+assert
+  42
+  =
+  let x = 42 in x
 
 i42 : Int =
   42
@@ -595,7 +622,10 @@ letsession =
 lettype : (P : (A : Type)-> (B : Type)-> Type)-> (p : (A : Type)-> P A A)-> (A : Type)-> P (P (P (P A A)(P A A)) (P (P A A)(P A A)))(P (P (P A A)(P A A)) (P (P A A)(P A A)))=
   \ (P : (A : Type)-> (B : Type)-> Type)-> \ (p : (A : Type)-> P A A)-> \ (A : Type)-> let B = P A A in let C = P B B in let D = P C C in p D
 
-assert 1 = let f = \ (x : Int)-> x in f (f 1): Int
+assert
+  1
+  =
+  let f = \ (x : Int)-> x in f (f 1): Int
 
 showMult =
   \ (m : Int)-> \ (n : Int)-> (showInt m)++S " * " ++S (showInt n)++S " = " ++S showInt (m * n)
@@ -762,7 +792,10 @@ mk_tensor2 =
   ( @ p0 (c0)
   | @ p1 (c1))
 
-assert ?(A : Type).?(B : Type).?(C : Type)= ?(A : Type).?(B : Type).?(C : Type): Session
+assert
+  ?(A : Type).?(B : Type).?(C : Type)
+  =
+  ?(A : Type).?(B : Type).?(C : Type): Session
 
 my_dual =
   \ (S : Session)-> ~ S
@@ -816,17 +849,21 @@ no_dead_lock_new_new_v2 =
 non_dependent_function_type : Int -> Int =
   \ (x : Int)-> x + 1
 
-assert (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> B a0 -> Type = (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> (b : B a0)-> Type : Type
+assert
+  (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> B a0 -> Type
+  =
+  (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> (b : B a0)-> Type : Type
 
-assert (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> < ?B a0 > = (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> < ?(b : B a0)> : Type
+assert
+  (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> < ?B a0 >
+  =
+  (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> < ?(b : B a0)> : Type
 
 some_type : Type =
   Int
 
 some_value : some_type =
   42
-
-assert (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (m + n)> = (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (n + m)> : Type
 
 par0 =
   proc (c : {})
@@ -1095,39 +1132,90 @@ _ =
 _ =
   "Hello!"
 
-assert 16 % 33 = 16
+assert
+  16 % 33
+  =
+  16
 
-assert 30 + 2 = 32
+assert
+  30 + 2
+  =
+  32
 
-assert 86 - 22 = 64
+assert
+  86 - 22
+  =
+  64
 
-assert 4 * 32 = 128
+assert
+  4 * 32
+  =
+  128
 
-assert 512 / 2 = 256
+assert
+  512 / 2
+  =
+  256
 
-assert pow 2 9 = 512
+assert
+  pow 2 9
+  =
+  512
 
-assert 3.03 +D 0.11000000000000032 = 3.14
+assert
+  3.03 +D 0.11000000000000032
+  =
+  3.14
 
-assert 3.28 -D 0.13999999999999968 = 3.14
+assert
+  3.28 -D 0.13999999999999968
+  =
+  3.14
 
-assert 6.28 *D 0.5 = 3.14
+assert
+  6.28 *D 0.5
+  =
+  3.14
 
-assert 1.57 /D 0.5 = 3.14
+assert
+  1.57 /D 0.5
+  =
+  3.14
 
-assert powD 0.1 1.0e-3 = 0.9977000638225533
+assert
+  powD 0.1 1.0e-3
+  =
+  0.9977000638225533
 
-assert Int2Double 42 = 42.0
+assert
+  Int2Double 42
+  =
+  42.0
 
-assert showInt 42 = "42"
+assert
+  showInt 42
+  =
+  "42"
 
-assert showDouble 3.14 = "3.14"
+assert
+  showDouble 3.14
+  =
+  "3.14"
 
-assert showChar 'a' = "'a'"
+assert
+  showChar 'a'
+  =
+  "'a'"
 
-assert showString "Hello \"World\"!" = "\"Hello \\\"World\\\"!\""
+assert
+  showString "Hello \"World\"!"
+  =
+  "\"Hello \\\"World\\\"!\""
 
-assert "Hello " ++S "World!" = "Hello World!"
+assert
+  "Hello " ++S "World!"
+  =
+  "Hello World!"
 
 replicate =
   \ (A : Type)-> \ (n : Int)-> \ (x : A)-> proc (os : [!A ^ n])
