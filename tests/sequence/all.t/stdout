@@ -1,6 +1,98 @@
 
 {- Sequential process -}
 
+assert 'a' = 'a' : Char
+
+ap =
+  \ (S : Session)-> \ (T : Session)-> proc (c : {[S, ~ T],{~ S, T}})
+  c {f, xo}
+  xo {x, o}
+  f [fi, fo]
+  ( fwd S (fi, x)
+  | fwd T (o, fo))
+
+assert `false = `false : Bool
+
+assert \ (x : Bool)-> x = \ (y : Bool)-> y : (b : Bool)-> Bool
+
+assert not `true = `false : Bool
+
+assert proc (r : ?Bool.!Bool)
+recv r (x : Bool).
+  send r x = proc (r : ?Bool.!Bool)
+  recv r (y : Bool).
+  send r y : < ?Bool.!Bool >
+
+assert proc (r : !Bool)
+send r (not `true)= proc (r : !Bool)
+send r `false : < !Bool >
+
+another_not : (x : Bool)-> Bool =
+  \ (x : Bool)-> case x of {
+    `false -> `true ,
+    `true -> `false
+  }
+
+pnot =
+  proc (c : ?Bool.!Bool)
+  recv c (x : Bool).
+  send c (case x of {
+    `false -> `true ,
+    `true -> `false
+  } )
+
+if : (b : Bool)-> (A : Type)-> (t : A)-> (e : A)-> A =
+  \ (b : Bool)-> \ (A : Type)-> \ (t : A)-> \ (e : A)-> case b of {
+    `false -> e ,
+    `true -> t
+  }
+
+If : (b : Bool)-> (A : Type)-> (B : Type)-> (t : A)-> (e : B)-> case b of {
+    `false -> B ,
+    `true -> A
+  } =
+  \ (b : Bool)-> \ (A : Type)-> \ (B : Type)-> \ (t : A)-> \ (e : B)-> case b of {
+    `false -> e ,
+    `true -> t
+  }
+
+case_con : case `true of {
+    `false -> Bool ,
+    `true -> Int
+  } =
+  1
+
+com_new =
+  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
+  new (c : S, d : ~ S)
+  ( @ p (c)
+  | @ q (d))
+
+com_new_mk_ten2 =
+  let mk_tensor2 = \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
+  c [c0, c1]
+  ( @ p0 (c0)
+  | @ p1 (c1))in \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
+  new (c : S, d : ~ S)
+  @ (mk_tensor2 S (~ S)p q)[c, d]
+
+conv_fun =
+  \ (A : Type)-> \ (A' : Type)-> \ (B : Type)-> \ (S : Session)-> \ (dom : A' -> A)-> \ (cod : B -> < S >)-> \ (f : A -> B)-> proc (c : {?A', S})
+  c {i, o}
+  recv i (p : A').
+  @ (cod (f (dom p)))(o)
+
+curry =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> proc (c : {[[S, T],~ U],{~ S, {~ T, U}}})
+  c {f, xyo}
+  xyo {x, yo}
+  yo {y, o}
+  f [fxy, fo]
+  fxy [fx, fy]
+  ( fwd S (fx, x)
+  | fwd T (fy, y)
+  | fwd U (o, fo))
+
 cutEmptyParTensor =
   proc ()
   new (c : {}, d : [])
@@ -46,6 +138,79 @@ cut_send_recv_recv_send_v2 =
   send d 2.
   recv c (x : Int)
 
+cut_send_recv_recv_send_with_log_prll =
+  proc (logc : !String.!String, logd : !String.!String)
+  new (c : !Int.?Int, d : ?Int.!Int)
+  send logd "recv d".
+  send logc "send c 1".
+  send c 1.
+  recv d (y : Int).
+  send logc "recv c".
+  send logd "send d 2".
+  send d 2.
+  recv c (x : Int)
+
+dep_fun_server =
+  \ (A : Type)-> \ (B : (x : A)-> Type)-> \ (f : (x : A)-> B x)-> proc (c : ?(x : A).!B x)
+  recv c (x : A).
+  send c (f x)
+
+div_mod_server_cont =
+  proc (c : ?Int.?Int.!Int.!Int)
+  recv c (m : Int).
+  recv c (n : Int).
+  send c (m / n).
+  send c (m % n)
+
+div_mod_server_explicit_prll =
+  proc (rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int)
+  recv rn (n : Int).
+  recv rm (m : Int).
+  send sdiv (m / n).
+  send smod (m % n)
+
+div_mod_server_par2_ten2_ten2 =
+  proc (r : [?Int, ?Int],s : [!Int, !Int])
+  r [rm, rn]
+  s [sdiv, smod]
+  recv rm (m : Int).
+  recv rn (n : Int).
+  send sdiv (m / n).
+  send smod (m % n)
+
+div_mod_server_par4 =
+  proc (c : {?Int, ?Int, !Int, !Int})
+  c {rm, rn, sdiv, smod}
+  recv rm (m : Int).
+  recv rn (n : Int).
+  send sdiv (m / n).
+  send smod (m % n)
+
+div_mod_server_seq2_ten2_ten2 =
+  proc (c : [: [?Int, ?Int],[!Int, !Int]:])
+  c [: r, s :]
+  r [rm, rn]
+  s [sdiv, smod]
+  recv rm (m : Int).
+  recv rn (n : Int).
+  send sdiv (m / n).
+  send smod (m % n)
+
+div_mod_server_seq4 =
+  proc (c : [: ?Int, ?Int, !Int, !Int :])
+  c [: rm, rn, sdiv, smod :]
+  recv rm (m : Int).
+  recv rn (n : Int).
+  send sdiv (m / n).
+  send smod (m % n)
+
+div_mod_server_simple =
+  proc (rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int)
+  recv rm (m : Int).
+  recv rn (n : Int).
+  send sdiv (m / n).
+  send smod (m % n)
+
 double =
   proc (i : ?Int, r : !Int)
   recv i (xi : Int).
@@ -57,6 +222,110 @@ double =
   send c (x + y).
   recv d (z : Int).
   send r z
+
+another_dual =
+  \ (S : Session)-> ~ S
+
+dual_dual =
+  \ (S : Session)-> \ (p : < S >)-> proc (c : ~ another_dual S)
+  @ p (c)
+
+send_42 =
+  proc (c : !Int)
+  send c 42
+
+embed_send_42 =
+  proc (c : !Int)
+  send c 42
+
+my_zero =
+  0
+
+assert (S : Session)-> (T : Session)-> < S ^ 5, T ^ (0 + my_zero)> = (S : Session)-> (T : Session)-> < S ^ 2, T ^ 0, S, S, S > : Type
+
+assert (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (m + n)> = (S : Session)-> (m : Int)-> (n : Int)-> < S ^ m, S ^ n > : Type
+
+fake_div_mod_server_ten2 =
+  proc (r : [?Int, ?Int],s : [!Int, !Int])
+  r [rm, rn]
+  s [sdiv, smod]
+  send sdiv 42.
+  send smod 21.
+  recv rm (m : Int).
+  recv rn (n : Int)
+
+feed_fwd_send_then_recv =
+  \ (I : Type)-> \ (O : Type)-> \ (i : I)-> \ (f : (x : I)-> O)-> \ (p : < {!I.?O, ?I.!O}>)-> proc ()
+  new (a : {!I.?O, ?I.!O},b : [?I.!O, !I.?O])
+  ( @ p (a)
+  | b [c, d]
+    ( recv c (x : I).
+      send c (f x)
+    | send d i.
+      recv d (o : O)))
+
+feed_recv =
+  \ (p : < ?Int >)-> \ (i : Int)-> proc ()
+  new (c : ?Int, d)
+  ( @ p (c)
+  | send d i )
+
+feed_send =
+  \ (p : < !Int >)-> proc ()
+  new (c : !Int, d)
+  ( @ p (c)
+  | recv d (x : Int))
+
+feed_send_par_recv =
+  \ (p : < {!Int, ?Int}>)-> \ (n : Int)-> proc ()
+  new (c : {!Int, ?Int},d : [?Int, !Int])
+  ( @ p (c)
+  | d [i, o]
+    ( recv i (x : Int)
+    | send o n ))
+
+feed_send_ten_recv =
+  \ (p : < [!Int, ?Int]>)-> \ (f : (x : Int)-> Int)-> proc ()
+  new (c : [!Int, ?Int],d : {?Int, !Int})
+  ( @ p (c)
+  | d {i, o}
+    recv i (x : Int).
+    send o (f x))
+
+feed_send_then_recv =
+  \ (p : < !Int.?Int >)-> \ (f : (x : Int)-> Int)-> proc ()
+  new (c : !Int.?Int, d)
+  ( @ p (c)
+  | recv d (x : Int).
+    send d (f x))
+
+flexible_telescope : (A : Type)-> (B : Type)-> (x : A)-> (y : A)-> (z : B)-> (t : B)-> Int =
+  \ (A : Type)-> \ (B : Type)-> \ (x : A)-> \ (y : A)-> \ (z : B)-> \ (t : B)-> 42
+
+fun1_to_proc_ord =
+  \ (I : Type)-> \ (O : Type)-> \ (f : (x : I)-> O)-> proc (c : [: ?I, !O :])
+  c [: i, o :]
+  recv i (x : I).
+  send o (f x)
+
+fun1_to_proc_par2 =
+  \ (I : Type)-> \ (O : Type)-> \ (f : (x : I)-> O)-> proc (i : ?I, o : !O)
+  recv i (x : I).
+  send o (f x)
+
+fun1_to_proc_seq =
+  \ (I : Type)-> \ (O : Type)-> \ (f : (x : I)-> O)-> proc (c : ?I.!O)
+  recv c (x : I).
+  send c (f x)
+
+fwd0_snd0 =
+  proc (c : {})
+  c {}
+
+fwd1_rcv =
+  proc (c : {?Int})
+  c {c#0}
+  recv c#0 (x#c#0 : Int)
 
 fwd2_par2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int]})
@@ -80,6 +349,22 @@ fwd3_par2_ten2_ten2 =
   recv c#1#1 (x#c#1#1 : Int).
   send c#1#0 x#c#0#0.
   send c#2#0 x#c#0#0.
+  send c#0#1 x#c#1#1.
+  send c#2#1 x#c#1#1.
+  recv c#0#1 (x#c#0#1 : Int).
+  send c#1#1 x#c#0#1.
+  send c#2#1 x#c#0#1
+
+fwd3_seq2_seq2_seq2 =
+  proc (c : {[: ?Int, !Int.?Int :], [: !Int, ?Int.!Int :], [: !Int, !Int.!Int :]})
+  c {c#0, c#1, c#2}
+  c#0 [: c#0#0, c#0#1 :]
+  c#1 [: c#1#0, c#1#1 :]
+  c#2 [: c#2#0, c#2#1 :]
+  recv c#0#0 (x#c#0#0 : Int).
+  send c#1#0 x#c#0#0.
+  send c#2#0 x#c#0#0.
+  recv c#1#1 (x#c#1#1 : Int).
   send c#0#1 x#c#1#1.
   send c#2#1 x#c#1#1.
   recv c#0#1 (x#c#0#1 : Int).
@@ -152,12 +437,69 @@ fwd_send_recv =
   recv i (x#i : Int).
   send o x#i
 
+fwd_send_recv_recv_auto =
+  proc (c : !Int.?Int.?Int, d : ?Int.!Int.!Int)
+  recv d (x#d : Int).
+  send c x#d.
+  recv c (x#c : Int).
+  send d x#c.
+  recv c (y#c : Int).
+  send d y#c
+
+fwd_send_recv_recv_manually =
+  proc (c : !Int.?Int.?Int, d : ?Int.!Int.!Int)
+  recv d (x : Int).
+  send c x.
+  recv c (y : Int).
+  send d y.
+  recv c (z : Int).
+  send d z
+
 fwd_send_recv_recv_send =
   proc (i : ?Int.!Int, o : !Int.?Int)
   recv i (x#i : Int).
   send o x#i.
   recv o (x#o : Int).
   send i x#o
+
+fwd_send_recv_recv_with_listener_auto =
+  proc (c : !Int.?Int.?Int, d : ?Int.!Int.!Int, e : !Int.!Int.!Int)
+  recv d (x#d : Int).
+  send c x#d.
+  send e x#d.
+  recv c (x#c : Int).
+  send d x#c.
+  send e x#c.
+  recv c (y#c : Int).
+  send d y#c.
+  send e y#c
+
+fwd_send_recv_recv_with_listener_manually =
+  proc (c : !Int.?Int.?Int, d : ?Int.!Int.!Int, e : !Int.!Int.!Int)
+  recv d (x : Int).
+  send c x.
+  send e x.
+  recv c (y : Int).
+  send d y.
+  send e y.
+  recv c (z : Int).
+  send d z.
+  send e z
+
+fwd_seq2_seq2_seq2 =
+  proc (i : [: ?Int, !Int.?Int :], o : [: !Int, ?Int.!Int :], l : [: !Int, !Int.!Int :])
+  i [: i#0, i#1 :]
+  o [: o#0, o#1 :]
+  l [: l#0, l#1 :]
+  recv i#0 (x#i#0 : Int).
+  send o#0 x#i#0.
+  send l#0 x#i#0.
+  recv o#1 (x#o#1 : Int).
+  send i#1 x#o#1.
+  send l#1 x#o#1.
+  recv i#1 (x#i#1 : Int).
+  send o#1 x#i#1.
+  send l#1 x#i#1
 
 fwd_ten2_par2 =
   proc (i : [?Int, !Int.?Int],o : {!Int, ?Int.!Int})
@@ -170,12 +512,106 @@ fwd_ten2_par2 =
   recv i#1 (x#i#1 : Int).
   send o#1 x#i#1
 
+split_nested_seq_core =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (i : [: ~ A, ~ B, ~ C, ~ D :], o : [: [: A, B :], [: C, D :] :])
+  i [: na, nb, nc, nd :]
+  o [: ab, cd :]
+  ab [: a, b :]
+  cd [: c, d :]
+  fwd A (a, na).
+  fwd B (b, nb).
+  fwd C (c, nc).
+  fwd D (d, nd)
+
+group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]}> =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]})
+  c {i, o}
+  @ (split_nested_seq_core (~ A)(~ B)(~ C)(~ D)) {o, i}
+
 id : (A : Type)-> (x : A)-> A
 
 idproc =
   proc (c : ?Int, d : !Int)
   recv c (y : Int).
   send d (id Int y)
+
+assert 42 = let x = 42 in x
+
+i42 : Int =
+  42
+
+one : Int =
+  1
+
+suc : (x : Int)-> Int =
+  _+_ one
+
+doubleInt : (x : Int)-> Int =
+  \ (x : Int)-> x + x
+
+data ABC = `a | `b | `c
+
+rot : (x : ABC)-> ABC =
+  \ (x : ABC)-> case x of {
+    `a -> `b ,
+    `b -> `c ,
+    `c -> `a
+  }
+
+rot2 : (x : ABC)-> ABC =
+  \ (x : ABC)-> rot (rot x)
+
+let42ann =
+  let x : Int = 42 in x + x
+
+let42 =
+  let x = 42 in x + x
+
+let_example =
+  proc (c : ?Int.!Int)
+  let T = Int.
+  let f = _+_.
+  recv c (x : T).
+  let y = (f x x).
+  send c y
+
+letrecv_ann =
+  proc (c : ?Int.!Int)
+  recv c (x : Int).
+  let y : Int = (x + x).
+  send c y
+
+letrecv =
+  proc (c : ?Int.!Int)
+  recv c (x : Int).
+  let y = (x + x).
+  send c y
+
+letsession =
+  proc (c)
+  let f = (\ (S0 : Session)-> let S1 = {S0, S0}in let S2 = {S1, S1}in let S3 = {S2, S2}in let S4 = {S3, S3}in let S5 = {S4, S4}in let S6 = {S5, S5}in let S7 = {S6, S6}in S7).
+  c {c#0, c#1}
+  fwd (f (?Int)) (c#0, c#1)
+
+lettype : (P : (A : Type)-> (B : Type)-> Type)-> (p : (A : Type)-> P A A)-> (A : Type)-> P (P (P (P A A)(P A A)) (P (P A A)(P A A)))(P (P (P A A)(P A A)) (P (P A A)(P A A)))=
+  \ (P : (A : Type)-> (B : Type)-> Type)-> \ (p : (A : Type)-> P A A)-> \ (A : Type)-> let B = P A A in let C = P B B in let D = P C C in p D
+
+assert 1 = let f = \ (x : Int)-> x in f (f 1): Int
+
+showMult =
+  \ (m : Int)-> \ (n : Int)-> (showInt m)++S " * " ++S (showInt n)++S " = " ++S showInt (m * n)
+
+showDiv =
+  \ (m : Double)-> \ (n : Double)-> (showDouble m)++S " / " ++S (showDouble n)++S " = " ++S showDouble (m /D n)
+
+my42 : String =
+  showMult 2 21
+
+my3_14 : String =
+  showDiv 6.28 2.0
+
+myNewline : Char =
+  '\n'
 
 merger =
   \ (m : Int)-> \ (n : Int)-> proc (c0 : [!Vec Int m, ?Vec Int m],c1 : [!Vec Int n, ?Vec Int n],ci : ?Vec Int (m + n),co : !Vec Int (m + n))
@@ -186,6 +622,48 @@ merger =
   | send c1i (drop Int m n vi)
   | recv c0o (v0 : Vec Int m).
     recv c1o (v1 : Vec Int n).
+    send co (merge m n v0 v1))
+
+merger_loli_Sort =
+  \ (m : Int)-> \ (n : Int)-> proc (c : {[~ DotSort Int m, ~ DotSort Int n],DotSort Int (m + n)})
+  c {c01, d}
+  c01 [c0, c1]
+  recv d (vi : Vec Int (m + n)).
+  ( send c0 (take Int m n vi)
+  | send c1 (drop Int m n vi)).
+  ( recv c0 (v0 : Vec Int m)
+  | recv c1 (v1 : Vec Int n)).
+  send d (merge m n v0 v1)
+
+merger_nstSort_prll =
+  \ (m : Int)-> \ (n : Int)-> proc (c0 : ~ DotSort Int m, c1 : ~ DotSort Int n, c : DotSort Int (m + n))
+  recv c (vi : Vec Int (m + n)).
+  ( send c0 (take Int m n vi)
+  | send c1 (drop Int m n vi)).
+  ( recv c0 (v0 : Vec Int m)
+  | recv c1 (v1 : Vec Int n)).
+  send c (merge m n v0 v1)
+
+merger_nstSort_prll_v2 =
+  \ (m : Int)-> \ (n : Int)-> proc (c : [~ DotSort Int m, ~ DotSort Int n],d : DotSort Int (m + n))
+  c [c0, c1]
+  recv d (vi : Vec Int (m + n)).
+  ( send c0 (take Int m n vi)
+  | send c1 (drop Int m n vi)).
+  ( recv c0 (v0 : Vec Int m)
+  | recv c1 (v1 : Vec Int n)).
+  send d (merge m n v0 v1)
+
+merger_ParSort_full_prll =
+  \ (m : Int)-> \ (n : Int)-> proc (c0 : ~ ParSort Int m, c1 : ~ ParSort Int n, c : ParSort Int (m + n))
+  c0 [c0i, c0o]
+  c1 [c1i, c1o]
+  c {ci, co}
+  recv ci (vi : Vec Int (m + n)).
+  ( send c0i (take Int m n vi)
+  | send c1i (drop Int m n vi)
+  | ( recv c0o (v0 : Vec Int m)
+    | recv c1o (v1 : Vec Int n)).
     send co (merge m n v0 v1))
 
 merger_seq_inferred =
@@ -217,6 +695,140 @@ merger_seq_Sort =
   recv d1 (v1 : Vec Int n).
   send io (merge m n v0 v1)
 
+merger_seqential_ten2_loli_Sort =
+  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ DotSort Int m, ~ DotSort Int n},DotSort Int (m + n)})
+  c {c01, d}
+  c01 {c0, c1}
+  recv d (vi : Vec Int (m + n)).
+  send c0 (take Int m n vi).
+  send c1 (drop Int m n vi).
+  recv c0 (v0 : Vec Int m).
+  recv c1 (v1 : Vec Int n).
+  send d (merge m n v0 v1)
+
+merger_ten2_loli_Sort =
+  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ DotSort Int m, ~ DotSort Int n},DotSort Int (m + n)})
+  c {c01, d}
+  c01 {c0, c1}
+  recv d (vi : Vec Int (m + n)).
+  ( send c0 (take Int m n vi)
+  | send c1 (drop Int m n vi)).
+  ( recv c0 (v0 : Vec Int m)
+  | recv c1 (v1 : Vec Int n)).
+  send d (merge m n v0 v1)
+
+mk_new_ann =
+  \ (ann : Allocation)-> \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
+  new/ann [c : S, d : ~ S]
+  ( @ p (c)
+  | @ q (d))
+
+mk_par2_LR =
+  \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : {S0, S1})
+  c {c0, c1}
+  @ p0 (c0).
+  @ p1 (c1)
+
+mk_par2_prll =
+  \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : {S0, S1})
+  c {c0, c1}
+  ( @ p0 (c0)
+  | @ p1 (c1))
+
+mk_par2_RL =
+  \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : {S0, S1})
+  c {c0, c1}
+  @ p1 (c1).
+  @ p0 (c0)
+
+mk_seq2 =
+  \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [: S0, S1 :])
+  c [: c0, c1 :]
+  @ p0 (c0).
+  @ p1 (c1)
+
+mk_ten2_2new_2fwd =
+  \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
+  c [c0, c1]
+  new (d0 : ~ S0, e0 : S0)
+  new (d1 : ~ S1, e1 : S1)
+  ( @ p0 (e0)
+  | fwd S0 (c0, d0)
+  | @ p1 (e1)
+  | fwd S1 (c1, d1))
+
+mk_tensor2 =
+  \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
+  c [c0, c1]
+  ( @ p0 (c0)
+  | @ p1 (c1))
+
+assert ?(A : Type).?(B : Type).?(C : Type)= ?(A : Type).?(B : Type).?(C : Type): Session
+
+my_dual =
+  \ (S : Session)-> ~ S
+
+test_my_dual =
+  proc (c : my_dual (!Int))
+  recv c (x : Int)
+
+my_loli =
+  \ (S : Session)-> \ (T : Session)-> {~ S, T}
+
+test_my_loli =
+  \ (A : Type)-> proc (c : my_loli (!A)(!A))
+  c {i, o}
+  recv i (x : A).
+  send o x
+
+new_alloc =
+  proc (c : !Int)
+  new/alloc [d : !Int, e]
+  send d 1.
+  recv e (x#e : Int).
+  send c x#e
+
+new_fuse1_recv_send_send_recv =
+  proc ()
+  new/fuse 1 [d : ?Int.!Int, c : !Int.?Int]
+  send c 1.
+  recv d (y : Int).
+  send d 2.
+  recv c (x : Int)
+
+no_dead_lock_new_new =
+  proc ()
+  new (c : ?Int, d)
+  new (e : ?Int, f)
+  send d 5.
+  recv c (x : Int).
+  send f x.
+  recv e (y : Int)
+
+no_dead_lock_new_new_v2 =
+  proc ()
+  new (c : ?Int, d)
+  new (e : ?Int, f)
+  send d 5.
+  recv c (x : Int).
+  send f x.
+  recv e (y : Int)
+
+non_dependent_function_type : Int -> Int =
+  \ (x : Int)-> x + 1
+
+assert (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> B a0 -> Type = (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> (b : B a0)-> Type : Type
+
+assert (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> < ?B a0 > = (A : Type)-> (a0 : A)-> (B : (a : A)-> Type)-> < ?(b : B a0)> : Type
+
+some_type : Type =
+  Int
+
+some_value : some_type =
+  42
+
+assert (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (m + n)> = (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (n + m)> : Type
+
 par0 =
   proc (c : {})
   c {}
@@ -237,6 +849,16 @@ par2mix =
   c {d, e}
   recv e (x : Int).
   send d 42
+
+par4_seq_send3 =
+  proc (a : {[: !Int, !Int :], !Int, !Int, !Int})
+  a {b, e, f, g}
+  b [: c, d :]
+  send e 1.
+  send c 2.
+  send f 3.
+  send d 4.
+  send g 5
 
 parallel_assoc_2tensor2_left =
   proc (cde : [[!Int, !Int],!Int])
@@ -311,6 +933,68 @@ parallel_tensor4_v0 =
   send d 3.
   send f 4
 
+par_comm =
+  \ (A : Session)-> \ (B : Session)-> proc (c : {[~ A, ~ B],{B, A}})
+  c {i, o}
+  i [na, nb]
+  o {b, a}
+  ( fwd A (a, na)
+  | fwd B (b, nb))
+
+par_loli_ten_send =
+  \ (S : Type)-> \ (T : Type)-> proc (c : {[?S, ?T],[!S, !T]})
+  c {i, o}
+  i [rs, rt]
+  o [ss, st]
+  ( recv rs (vs : S)
+  | recv rt (vt : T)).
+  ( send ss vs
+  | send st vt )
+
+par_loli_ten_send_v2 =
+  \ (S : Type)-> \ (T : Type)-> proc (c : {[?S, ?T],[!S, !T]})
+  c {i, o}
+  i [rs, rt]
+  ( recv rs (vs : S)
+  | recv rt (vt : T)).
+  o [ss, st]
+  ( send ss vs
+  | send st vt )
+
+par_seq_back =
+  proc (a : {[: !Int, !Int :], !Int})
+  a {b, e}
+  b [: c, d :]
+  send c 2.
+  send d 3.
+  send e 1
+
+par_seq_front =
+  proc (a : {[: !Int, !Int :], !Int})
+  a {b, e}
+  b [: c, d :]
+  send e 1.
+  send c 2.
+  send d 3
+
+par_seq_middle =
+  proc (a : {[: !Int, !Int :], !Int})
+  a {b, e}
+  b [: c, d :]
+  send c 2.
+  send e 1.
+  send d 3
+
+par_seq_send3 =
+  proc (a : {[: !Int, !Int :], !Int.!Int.!Int})
+  a {b, e}
+  b [: c, d :]
+  send e 1.
+  send c 2.
+  send e 3.
+  send d 4.
+  send e 5
+
 par_ten1_ten1 =
   proc (c : {[?Int],[!Int]})
   c {e, d}
@@ -349,17 +1033,147 @@ par_ten_ten_v2 =
   recv l (y : Int).
   send g 2
 
+pattern_example_expanded =
+  proc (abcde : [!Int, [: !Int, !Int :], {[!Int, !Int],{?Int, ?Int}}])
+  abcde [a, bc, de]
+  bc [: b, c :]
+  de {d, e}
+  send a 1.
+  send b 2.
+  d [d#0, d#1]
+  send c 3.
+  e {e#0, e#1}
+  recv e#0 (x#e#0 : Int).
+  recv e#1 (x#e#1 : Int).
+  send d#0 x#e#0.
+  send d#1 x#e#1
+
+plug_compose =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < A, B >)-> \ (q : < ~ B, C >)-> proc (a : A, c : C)
+  new (b : B, b' : ~ B)
+  ( @ p {a, b}
+  | @ q {b', c})
+
+flat_par' =
+  \ (A : Session)-> \ (B : Session)-> \ (p : < {A, B}>)-> proc (a : A, b : B)
+  new (ab : {A, B},nanb)
+  ( @ p (ab)
+  | nanb [na, nb]
+    ( fwd A (a, na)
+    | fwd B (b, nb)))
+
+bump_par' =
+  \ (A : Session)-> \ (B : Session)-> \ (p : < A, B >)-> proc (ab : {A, B})
+  ab {a, b}
+  @ p {a, b}
+
+plug_compose' =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < A, B >)-> \ (q : < ~ B, C >)-> proc (a : A, c : C)
+  new (b : B, b' : ~ B)
+  ( @ p {a, b}
+  | @ q {b', c})
+
+plug_compose_par_par : (A : Session)-> (B : Session)-> (C : Session)-> (p : < {A, B}>)-> (q : < {~ B, C}>)-> < {A, C}> =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < {A, B}>)-> \ (q : < {~ B, C}>)-> bump_par' A C (plug_compose' A B C (flat_par' A B p)(flat_par' (~ B)C q))
+
+plug_send_recv =
+  \ (p : < !Int, ?Int >)-> proc (c : !Int, d : ?Int)
+  @ p {c, d}
+
+_ =
+  1
+
+_ =
+  2
+
+_ =
+  "Hello!"
+
+assert 16 % 33 = 16
+
+assert 30 + 2 = 32
+
+assert 86 - 22 = 64
+
+assert 4 * 32 = 128
+
+assert 512 / 2 = 256
+
+assert pow 2 9 = 512
+
+assert 3.03 +D 0.11000000000000032 = 3.14
+
+assert 3.28 -D 0.13999999999999968 = 3.14
+
+assert 6.28 *D 0.5 = 3.14
+
+assert 1.57 /D 0.5 = 3.14
+
+assert powD 0.1 1.0e-3 = 0.9977000638225533
+
+assert Int2Double 42 = 42.0
+
+assert showInt 42 = "42"
+
+assert showDouble 3.14 = "3.14"
+
+assert showChar 'a' = "'a'"
+
+assert showString "Hello \"World\"!" = "\"Hello \\\"World\\\"!\""
+
+assert "Hello " ++S "World!" = "Hello World!"
+
+replicate =
+  \ (A : Type)-> \ (n : Int)-> \ (x : A)-> proc (os : [!A ^ n])
+  os [o]
+  slice (o)n as _
+    send o x
+
 replicate_par =
   proc (c : {!Int ^ 10})
   c {d}
   slice (d)10 as i
     send d i
 
+replicate_proc =
+  \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
+  c {i, os}
+  os [o]
+  slice (o)n as _
+    recv i (x#i : A).
+    send o x#i
+
+replicate_proc_alt =
+  \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
+  c {i, os}
+  recv i (x : A).
+  os [o]
+  slice (o)n as _
+    new (j : ?A, k)
+    ( recv j (x#j : A).
+      send o x#j
+    | send k x )
+
 replicate_ten =
   proc (c : [!Int ^ 10])
   c [d]
   slice (d)10 as i
     send d i
+
+Int1 =
+  Int
+
+send_1 =
+  proc (c : !Int1)
+  send c 1
+
+seq0_explicit =
+  proc (c : [: :])
+  c [: :]
+
+seq0 =
+  proc (c : [: :])
+  ( )
 
 seq3 =
   proc (c : [: !Int, !Int, !Int :])
@@ -378,6 +1192,59 @@ seq3_seq2 =
   send c2 2.
   send d1 1
 
+seq_assoc_core =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (i : [: [: ~ A, ~ B :], ~ C :], o : [: A, [: B, C :] :])
+  i [: nab, nc :]
+  nab [: na, nb :]
+  o [: a, bc :]
+  bc [: b, c :]
+  fwd A (a, na).
+  fwd B (b, nb).
+  fwd C (c, nc)
+
+seq_par_back =
+  proc (a : [: {!Int, !Int},!Int :])
+  a [: b, e :]
+  b {c, d}
+  send c 2.
+  send d 3.
+  send e 1
+
+seq_par_back_v2 =
+  proc (a : [: {!Int, !Int},!Int :])
+  a [: b, e :]
+  b {c, d}
+  send d 3.
+  send c 2.
+  send e 1
+
+seq_seq =
+  proc (a : [: [: !Int, !Int :], !Int :])
+  a [: b, e :]
+  b [: c, d :]
+  send c 1.
+  send d 2.
+  send e 3
+
+seq_seq_send2 =
+  proc (a : [: [: !Int.!Int, !Int.!Int :], !Int.!Int :])
+  a [: b, e :]
+  b [: c, d :]
+  send c 1.
+  send c 2.
+  send d 3.
+  send d 4.
+  send e 5.
+  send e 6
+
+seq_ten =
+  proc (a : [: [!Int, !Int],!Int :])
+  a [: b, e :]
+  b [c, d]
+  send c 2.
+  send d 3.
+  send e 1
+
 singleRecv =
   proc (c : ?Int)
   recv c (x : Int)
@@ -392,6 +1259,23 @@ sorter =
   recv ci (v : Vec Int n).
   send co (sort n v)
 
+split_fwd1_rcv =
+  proc (c : {?Int})
+  c {d}
+  recv d (x#d : Int)
+
+split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :]}> =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :]})
+  c {i, o}
+  i [: na, nb, nc, nd :]
+  o [: ab, cd :]
+  ab [: a, b :]
+  cd [: c, d :]
+  fwd A (a, na).
+  fwd B (b, nb).
+  fwd C (c, nc).
+  fwd D (d, nd)
+
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
   new (itmp : !Int.?Int, tmp)
@@ -404,6 +1288,17 @@ sum_int =
   recv itmp (x#itmp : Int).
   send r x#itmp
 
+switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {[A, B],C}} > =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (c : {{~ A, [~ B, ~ C]}, {[A, B],C}})
+  c {i, o}
+  i {na, nbc}
+  nbc [nb, nc]
+  o {ab, c}
+  ab [a, b]
+  ( fwd A (a, na)
+  | fwd B (b, nb)
+  | fwd C (c, nc))
+
 ten_loli_par =
   \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})
   c {i, o}
@@ -411,6 +1306,24 @@ ten_loli_par =
   o {a, b}
   ( fwd A (a, na)
   | fwd B (b, nb))
+
+ten_loli_par_sInt_sDouble =
+  proc (c : {{?Int, ?Double},{!Int, !Double}})
+  let A##9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f : Session = (!Int).
+  let B##6c355f357a642a57a71c0d88a70f5ef0681738435e2da1c2c4f50d4407f566a4 : Session = (!Double).
+  c {i, o}
+  i {na, nb}
+  o {a, b}
+  fwd A##9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f (a, na).
+  fwd B##6c355f357a642a57a71c0d88a70f5ef0681738435e2da1c2c4f50d4407f566a4 (b, nb)
+
+ten_loli_par_sequential =
+  \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})
+  c {i, o}
+  i {na, nb}
+  o {a, b}
+  fwd A (a, na).
+  fwd B (b, nb)
 
 ten_par_par_split =
   proc (c : [{}, {}])
@@ -491,6 +1404,115 @@ test4 =
   send d 3.
   recv c (x2 : Int).
   send r (x0 + x1 + x2)
+
+type_annotation =
+  Int : 21 + 21
+
+ZeroCh : Type =
+  (A : Type)-> A
+
+One : Type =
+  (A : Type)-> (x : A)-> A
+
+zeroOne : One =
+  \ (A : Type)-> \ (x : A)-> x
+
+Two : Type =
+  (A : Type)-> (x : A)-> (y : A)-> A
+
+zeroTwo : Two =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+
+oneTwo : Two =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+
+notTwo : (b : Two)-> Two =
+  \ (b : Two)-> \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
+
+andTwo : (b0 : Two)-> (b1 : Two)-> Two =
+  \ (b0 : Two)-> \ (b1 : Two)-> b0 Two zeroTwo b1
+
+orTwo : (b0 : Two)-> (b1 : Two)-> Two =
+  \ (b0 : Two)-> \ (b1 : Two)-> b0 Two b1 oneTwo
+
+Nat : Type =
+  (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+zeroNat : Nat =
+  \ (A : Type)-> \ (z : A)-> \ (s : (n : A)-> A)-> z
+
+sucNat : (n : Nat)-> Nat =
+  \ (n : Nat)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s)
+
+addNat : (m : Nat)-> (n : Nat)-> Nat =
+  \ (m : Nat)-> \ (n : Nat)-> m Nat n sucNat
+
+Bin : Type =
+  (A : Type)-> (leaf : A)-> (fork : (left : A)-> (right : A)-> A)-> A
+
+Nats : Type =
+  (A : Type)-> (nil : A)-> (cons : (head : Nat)-> (tail : A)-> A)-> A
+
+List : (X : Type)-> Type =
+  \ (X : Type)-> (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A
+
+nilList : (X : Type)-> List X =
+  \ (X : Type)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head : X)-> (tail : A)-> A)-> nil
+
+consList : (X : Type)-> (head : X)-> (tail : List X)-> List X =
+  \ (X : Type)-> \ (head : X)-> \ (tail : List X)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : X)-> (tail' : A)-> A)-> cons head (tail A nil cons)
+
+mapList : (X : Type)-> (Y : Type)-> (f : (x : X)-> Y)-> (xs : List X)-> List Y =
+  \ (X : Type)-> \ (Y : Type)-> \ (f : (x : X)-> Y)-> \ (xs : List X)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : Y)-> (tail' : A)-> A)-> xs A nil (\ (head : X)-> \ (tail : A)-> cons (f head)tail)
+
+Id : (A : Type)-> (x : A)-> (y : A)-> Type
+
+refl : (A : Type)-> (x : A)-> Id A x x
+
+J : (A : Type)-> (x : A)-> (P : (y : A)-> (p : Id A x y)-> Type)-> (Px : P x (refl A x)) -> (y : A)-> (p : Id A x y)-> P y p
+
+J-refl : (A : Type)-> (x : A)-> (P : (y : A)-> (p : Id A x y)-> Type)-> (Px : P x (refl A x)) -> Id (P x (refl A x)) (J A x P Px x (refl A x)) Px
+
+tr : (A : Type)-> (x : A)-> (P : (y : A)-> Type)-> (Px : P x)-> (y : A)-> (p : Id A x y)-> P y =
+  \ (A : Type)-> \ (x : A)-> \ (P : (y : A)-> Type)-> \ (Px : P x)-> \ (y : A)-> \ (p : Id A x y)-> J A x (\ (z : A)-> \ (q : Id A x z)-> P z)Px y p
+
+tr-refl : (A : Type)-> (x : A)-> (P : (y : A)-> Type)-> (Px : P x)-> Id (P x)(tr A x P Px x (refl A x)) Px =
+  \ (A : Type)-> \ (x : A)-> \ (P : (y : A)-> Type)-> \ (Px : P x)-> J-refl A x (\ (z : A)-> \ (q : Id A x z)-> P z)Px
+
+coe : (A : Type)-> (B : Type)-> (p : Id Type A B)-> (x : A)-> B =
+  \ (A : Type)-> \ (B : Type)-> \ (p : Id Type A B)-> \ (x : A)-> tr Type A (\ (X : Type)-> X)x B p
+
+coe-refl : (A : Type)-> (x : A)-> Id A (coe A A (refl Type A)x)x =
+  \ (A : Type)-> \ (x : A)-> tr-refl Type A (\ (X : Type)-> X)x
+
+sym : (A : Type)-> (x : A)-> (y : A)-> (p : Id A x y)-> Id A y x =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (p : Id A x y)-> tr A x (\ (z : A)-> Id A z x)(refl A x)y p
+
+trans : (A : Type)-> (x : A)-> (y : A)-> (z : A)-> (p : Id A x y)-> (q : Id A y z)-> Id A x z =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (z : A)-> \ (p : Id A x y)-> \ (q : Id A y z)-> tr A y (Id A x)p z q
+
+uncurry =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> proc (c : {[S, [T, ~ U]], {{~ S, ~ T},U}})
+  c {f, xyo}
+  xyo {xy, o}
+  xy {x, y}
+  f [fx, fyo]
+  fyo [fy, fo]
+  ( fwd S (fx, x)
+  | fwd T (fy, y)
+  | fwd U (o, fo))
+
+zap =
+  \ (S : Session)-> \ (T : Session)-> \ (n : Int)-> proc (c : {{[S, ~ T]^ n},{{~ S ^ n},[T ^ n]}})
+  c {fs, xos}
+  xos {xs, os}
+  fs {f}
+  xs {x}
+  os [o]
+  slice (f, x, o)n as _
+    f [fi, fo]
+    ( fwd S (fi, x)
+    | fwd T (o, fo))
 
 zap_ten_fwd =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])

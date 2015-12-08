@@ -1,3 +1,4 @@
+[WARNING] Skipping compilation of unsupported definition not
 [WARNING] Unsupported type A
 [WARNING] Unsupported type A
 [WARNING] Unsupported type A
@@ -26,14 +27,16 @@
 [WARNING] Unsupported type Allocation
 [WARNING] Unsupported type Allocation
 [WARNING] Skipping compilation of unsupported definition ap
-[WARNING] Skipping compilation of unsupported definition not
-[WARNING] Skipping compilation of unsupported definition not
+[WARNING] Skipping compilation of unsupported definition another_not
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Skipping compilation of unsupported definition if
 [WARNING] Skipping compilation of unsupported definition If
 [WARNING] Skipping compilation of unsupported definition case_con
+[WARNING] Skipping compilation of unsupported definition com_new
+[WARNING] Skipping compilation of unsupported definition com_new_mk_ten2
+[WARNING] Skipping compilation of unsupported definition conv_fun
 [WARNING] Skipping compilation of unsupported definition curry
 [WARNING] Skipping compilation of unsupported definition dep_fun_server
 [WARNING] Skipping compilation of unsupported definition another_dual
@@ -59,6 +62,9 @@
 [WARNING] Skipping compilation of unsupported definition doubleInt
 [WARNING] Skipping compilation of unsupported definition rot
 [WARNING] Skipping compilation of unsupported definition rot2
+[WARNING] Skipping compilation of unsupported definition let42ann
+[WARNING] Skipping compilation of unsupported definition let42
+[WARNING] Skipping compilation of unsupported definition lettype
 [WARNING] Skipping compilation of unsupported definition showMult
 [WARNING] Skipping compilation of unsupported definition showDiv
 [WARNING] Skipping compilation of unsupported definition my42
@@ -73,6 +79,13 @@
 [WARNING] Skipping compilation of unsupported definition merger_seq_Sort
 [WARNING] Skipping compilation of unsupported definition merger_seqential_ten2_loli_Sort
 [WARNING] Skipping compilation of unsupported definition merger_ten2_loli_Sort
+[WARNING] Skipping compilation of unsupported definition mk_new_ann
+[WARNING] Skipping compilation of unsupported definition mk_par2_LR
+[WARNING] Skipping compilation of unsupported definition mk_par2_prll
+[WARNING] Skipping compilation of unsupported definition mk_par2_RL
+[WARNING] Skipping compilation of unsupported definition mk_seq2
+[WARNING] Skipping compilation of unsupported definition mk_ten2_2new_2fwd
+[WARNING] Skipping compilation of unsupported definition mk_tensor2
 [WARNING] Skipping compilation of unsupported definition my_dual
 [WARNING] Skipping compilation of unsupported definition my_loli
 [WARNING] Skipping compilation of unsupported definition test_my_loli

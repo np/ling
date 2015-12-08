@@ -51,6 +51,8 @@ prims = [q|
 data Empty =
 data Unit = `unit
 data Bool = `false | `true
+not : (x : Bool)-> Bool
+    = \(x : Bool)-> case x of { `false -> `true, `true -> `false }
 data LR = `left | `right
 Int   : Type
 _+_   : (m : Int)(n : Int) -> Int

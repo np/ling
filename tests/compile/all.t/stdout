@@ -52,6 +52,17 @@ void cutSendRecv_lin () {
   c_lin = 1 ;
   const int x_lin = c_lin ;
   }
+void cut_send_recv_recv_send_with_log_prll_lin (char * logc_lin, char * logd_lin){
+  int c_lin ;
+  logd_lin = "recv d" ;
+  logc_lin = "send c 1" ;
+  c_lin = 1 ;
+  const int y_lin = c_lin ;
+  logc_lin = "recv c" ;
+  logd_lin = "send d 2" ;
+  c_lin = 2 ;
+  const int x_lin = c_lin ;
+  }
 void div_mod_server_cont_lin (int * c_lin){
   const int m_lin = * c_lin ;
   const int n_lin = * c_lin ;
@@ -423,8 +434,33 @@ void idproc_lin (const int * c_lin, int * d_lin){
   const int y_lin = * c_lin ;
   * d_lin = id_lin (0, y_lin);
   }
+void let_example_lin (int * c_lin){
+  const int x_lin = * c_lin ;
+  * c_lin = x_lin + x_lin ;
+  }
+void letrecv_ann_lin (int * c_lin){
+  const int x_lin = * c_lin ;
+  * c_lin = x_lin + x_lin ;
+  }
+void letrecv_lin (int * c_lin){
+  const int x_lin = * c_lin ;
+  * c_lin = x_lin + x_lin ;
+  }
 void test_my_dual_lin (const int * c_lin){
   const int x_lin = * c_lin ;
+  }
+void new_alloc_lin (int * c_lin){
+  int d_lin ;
+  d_lin = 1 ;
+  const int x__e_lin = d_lin ;
+  * c_lin = x__e_lin ;
+  }
+void new_fuse1_recv_send_send_recv_lin () {
+  int d_lin ;
+  d_lin = 1 ;
+  const int y_lin = d_lin ;
+  d_lin = 2 ;
+  const int x_lin = d_lin ;
   }
 void no_dead_lock_new_new_lin () {
   int c_lin ;

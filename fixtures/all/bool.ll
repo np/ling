@@ -1,4 +1,4 @@
-not : (x : Bool)-> Bool
+another_not : (x : Bool)-> Bool
     = \(x : Bool)-> case x of { `false -> `true, `true -> `false }
 
 pnot = proc(c : ?Bool. !Bool)

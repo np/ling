@@ -2,9 +2,6 @@ assert `false = `false : Bool
 
 assert (\(x:Bool) -> x) = (\(y:Bool) -> y) : ((b:Bool) -> Bool)
 
-not : (x : Bool)-> Bool
-    = \(x : Bool)-> case x of { `false -> `true, `true -> `false }
-
 assert (not `true) = `false : Bool
 
 assert
