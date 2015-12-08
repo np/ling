@@ -865,11 +865,6 @@ some_type : Type =
 some_value : some_type =
   42
 
-assert
-  (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (m + n)>
-  =
-  (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (n + m)> : Type
-
 par0 =
   proc (c : {})
   c {}

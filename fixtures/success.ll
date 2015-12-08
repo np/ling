@@ -701,9 +701,6 @@ assert (A : Type)(a0 : A)(B : (a : A)-> Type)-> < ?     B a0  >
      = (A : Type)(a0 : A)(B : (a : A)-> Type)-> < ?(b : B a0) >
      : Type
 some_type : Type = Int , some_value : some_type = 42
-assert ((S : Session)(m n : Int)-> < S ^(m + n) >)
-     = ((S : Session)(m n : Int)-> < S ^(n + m) >)
-     : Type
 par0 = proc(c : {}) c{}
 par1 = proc(c : {!Int}) c{d} send d 42
 par2 = proc(c : {!Int,?Int}) c{d,e} recv e (x : Int) send d x
