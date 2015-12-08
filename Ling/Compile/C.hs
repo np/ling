@@ -279,7 +279,7 @@ transAct :: Env -> Act -> (Env, [C.Stm])
 transAct env act =
   case act of
     Nu _ann cds ->
-      -- Issue#24: the annotation should be used to decide
+      -- Issue #24: the annotation should be used to decide
       -- operational choices on channel allocation.
       (env', sDec typ cid C.NoInit)
       where

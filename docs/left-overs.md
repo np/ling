@@ -4,7 +4,7 @@ TODO: I guess that most of this should take part of the Reference Manual.
 
 ## Additives
 
-(not yet supported in the prototype, see [Issue#10](https://github.com/np/ling/issues/10))
+(not yet supported in the prototype, see [Issue #10](https://github.com/np/ling/issues/10))
 
 ```{.haskell}
 A₀ ⊕ A₁ = !(x : LR). case x of { `left -> A₀ ; `right -> A₁ }
