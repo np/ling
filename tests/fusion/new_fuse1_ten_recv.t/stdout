@@ -1,0 +1,11 @@
+
+{- Fused process -}
+
+new_fuse1_ten_recv =
+  proc ()
+  new/fuse 0 [co, di]
+  new/fuse 0 [ci, do]
+  send co 42.
+  recv di (x : Int).
+  send do (x + x).
+  recv ci (y : Int)

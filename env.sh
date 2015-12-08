@@ -33,6 +33,9 @@ cmdrstrictparfailure(){
 cmdrseq(){
   cmdr --seq -- sequence "$@"
 }
+cmdrfuse(){
+  cmdr --fuse -- fusion "$@"
+}
 cmdrcompile(){
   cmdr --compile -- compile "$@"
 }
@@ -43,6 +46,7 @@ cmdrnorm(){
   cmdr --norm -- norm "$@"
 }
 alias cmdrseqall='cmdrecord tests/sequence/all.t --env empty -- Ling --seq < fixtures/sequence/*.ll'
+alias cmdrfuseall='cmdrecord tests/fusion/all.t --env empty -- Ling --fuse < fixtures/sequence/*.ll'
 alias cmdrcompileall='cmdrecord tests/compile/all.t  --env empty -- Ling --compile-prims --compile < fixtures/compile/*.ll'
 alias cmdrfmtall='cmdrecord tests/fmt/all.t  --env empty -- ling-fmt < fixtures/all/*.ll'
 alias cmdrprettyall='cmdrecord tests/pretty/all.t  --env empty -- Ling --pretty < fixtures/all/*.ll'

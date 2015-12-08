@@ -6,6 +6,8 @@ echo "== EXPECTED SUCCESSES =="
 cmdcheck "$@" tests/success/*.t
 echo "== EXPECTED SEQUENCE =="
 cmdcheck "$@" tests/sequence/*.t
+echo "== EXPECTED FUSION =="
+cmdcheck "$@" tests/fusion/*.t
 echo "== EXPECTED COMPILATION =="
 cmdcheck "$@" tests/compile/*.t
 echo "== EXPECTED NORMALIZED =="

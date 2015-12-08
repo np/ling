@@ -4,10 +4,11 @@ Usage: Ling [option...] [file...]
 
 option ::=
   | --check         # Type check the program
-  | --compile       # Compile the program to C
-  | --pretty        # Pretty-print the program
-  | --norm          # Normalize the program
-  | --seq           # Sequentialize the program
+  | --compile       # Display the compiled program (C language)
+  | --pretty        # Display the program
+  | --norm          # Display the normalized program
+  | --fuse          # Display the fused program
+  | --seq           # Display the sequential program
   | --tokens        # Display the program as a list of tokens from the lexer
   | --ast           # Display the program as an Abstract Syntax Tree
   | --debug-check   # Display debugging information while checking

@@ -24,6 +24,7 @@ import qualified Ling.Norm          as N
 import           Ling.Par
 import           Ling.Prelude
 import           Ling.Print
+import           Ling.Fuse          (fuseProgram)
 import           Ling.Reify
 import qualified Ling.Sequential    as Sequential
 
@@ -31,14 +32,14 @@ type ParseFun a = [Token] -> Err a
 
 data Opts =
        Opts
-         { _tokens,_showAST,_showPretty,_doNorm,_check,_sequential,_compile,_compilePrims,_noPrims :: Bool
+         { _tokens,_showAST,_showPretty,_doNorm,_check,_sequential,_fuse,_compile,_compilePrims,_noPrims :: Bool
          , _checkOpts                                                                              :: TCOpts
          }
 
 $(makeLenses ''Opts)
 
 defaultOpts :: Opts
-defaultOpts = Opts False False False False False False False False False defaultTCOpts
+defaultOpts = Opts False False False False False False False False False False defaultTCOpts
 
 debugCheck :: Setter' Opts Bool
 debugCheck = mergeSetters check (checkOpts.debugChecker)
@@ -154,12 +155,15 @@ transP opts prg = do
     putStrLn "Checking Sucessful!"
   when (opts ^. sequential) $
     putStrLn $ "\n{- Sequential process -}\n\n" ++ pretty sprg
+  when (opts ^. fuse) $
+    putStrLn $ "\n{- Fused process -}\n\n" ++ pretty fprg
   when (opts ^. compile) $
     putStrLn $ "\n/* Transformed tree */\n\n" ++ C.printTree cprg
 
   where
     nprg = norm prg
     sprg = Sequential.transProgram nprg
+    fprg = fuseProgram sprg
     cprg = Compile.transProgram (addPrims (opts ^. compilePrims) sprg)
 
 showTree :: (Show a, Print a) => Opts -> a -> IO ()
@@ -174,10 +178,11 @@ flagSpec :: [(String, (Endom Opts, String))]
 flagSpec =
   (\(x,y,z) -> (x,(y,z))) <$>
   [ ("check"        , add check                   , "Type check the program")
-  , ("compile"      , add compile                 , "Compile the program to C")
-  , ("pretty"       , add showPretty              , "Pretty-print the program")
-  , ("norm"         , add doNorm                  , "Normalize the program")
-  , ("seq"          , add sequential              , "Sequentialize the program")
+  , ("compile"      , add compile                 , "Display the compiled program (C language)")
+  , ("pretty"       , add showPretty              , "Display the program")
+  , ("norm"         , add doNorm                  , "Display the normalized program")
+  , ("fuse"         , add fuse                    , "Display the fused program")
+  , ("seq"          , add sequential              , "Display the sequential program")
   , ("tokens"       , add tokens                  , "Display the program as a list of tokens from the lexer")
   , ("ast"          , add showAST                 , "Display the program as an Abstract Syntax Tree")
   , ("debug-check"  , add debugCheck              , "Display debugging information while checking")
