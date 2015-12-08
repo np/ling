@@ -141,7 +141,7 @@ isInternalName :: Name -> Bool
 isInternalName (Name s) = '#' `elem` s
 
 internalNameFor :: Show a => a -> EndoPrism Name
-internalNameFor a = suffixedName ("#" ++ hash256 (show a))
+internalNameFor = suffixedName . hash256 . show
 
 prefixedName :: String -> EndoPrism Name
 prefixedName s = nameString . prefixed (s++"#") . from nameString

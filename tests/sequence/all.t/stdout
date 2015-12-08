@@ -1309,13 +1309,13 @@ ten_loli_par =
 
 ten_loli_par_sInt_sDouble =
   proc (c : {{?Int, ?Double},{!Int, !Double}})
-  let A##9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f : Session = (!Int).
-  let B##6c355f357a642a57a71c0d88a70f5ef0681738435e2da1c2c4f50d4407f566a4 : Session = (!Double).
+  let A#9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f : Session = (!Int).
+  let B#6c355f357a642a57a71c0d88a70f5ef0681738435e2da1c2c4f50d4407f566a4 : Session = (!Double).
   c {i, o}
   i {na, nb}
   o {a, b}
-  fwd A##9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f (a, na).
-  fwd B##6c355f357a642a57a71c0d88a70f5ef0681738435e2da1c2c4f50d4407f566a4 (b, nb)
+  fwd A#9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f (a, na).
+  fwd B#6c355f357a642a57a71c0d88a70f5ef0681738435e2da1c2c4f50d4407f566a4 (b, nb)
 
 ten_loli_par_sequential =
   \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})
