@@ -44,7 +44,7 @@ import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
 import           Ling.Print
 import           Ling.Proc       (fwdP, _Pref)
-import           Ling.Reduce     (reduceTerm)
+import           Ling.Reduce     (reduceTerm, reduce_)
 import           Ling.Scoped     (Scoped(Scoped))
 import           Ling.Session
 -- import           Ling.Subst      (unScoped)
@@ -301,7 +301,7 @@ transAct env act =
         y     = transName x
         cinit = C.SoInit (transLVal (env!c))
     Ax s cs ->
-      case fwdP ø s cs of
+      case fwdP (reduceSession env) ø s cs of
         Act (Ax{}) -> transErr "transAct/Ax" act
         proc0 -> (rmChans cs env, transProc env proc0)
     At t p ->
@@ -511,6 +511,9 @@ transProgram (Program decs) =
 
 reduceTerm' :: Env -> Endom Term
 reduceTerm' env = pushDefs . reduceTerm . Scoped (env ^. edefs) ø
+
+reduceSession :: Env -> Endom Session
+reduceSession env = pushDefs . reduce_ tSession . Scoped (env ^. edefs) ø
 -- -}
 -- -}
 -- -}

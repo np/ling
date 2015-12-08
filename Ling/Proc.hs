@@ -119,9 +119,11 @@ unRSession (s `Repl` r)
   | litR1 `is` r = s
   | otherwise    = error "unRSession"
 
+type MkFwd a = (Session -> Session) -> UsedNames -> a -> [Channel] -> Proc
+
 -- One could generate the session annotations on the splits
-fwdSplit :: [TraverseKind] -> ([Proc] -> Proc) -> UsedNames -> [RSession] -> [Channel] -> Proc
-fwdSplit ks fprocs used rss cs
+fwdSplit :: [TraverseKind] -> ([Proc] -> Proc) -> MkFwd [RSession]
+fwdSplit ks fprocs redSession used rss cs
   | null cs   = ø
   | otherwise = Order pref `dotP` fprocs ps
   -- These splits are independant, they are put in sequence because
@@ -129,48 +131,48 @@ fwdSplit ks fprocs used rss cs
   where
     ss   = unRSession <$> rss
     dss  = subChans (length ss) <$> cs
-    ps   = zipWith     (fwdP used) ss (transpose dss)
+    ps   = zipWith     (fwdP redSession used) ss (transpose dss)
     pref = zipWith3 id (split' <$> ks) cs dss
 
-fwdParTen, fwdSeqSeq :: UsedNames -> [RSession] -> [Channel] -> Proc
+fwdParTen, fwdSeqSeq :: MkFwd [RSession]
 fwdParTen = fwdSplit (TenK : repeat ParK) mconcat
 fwdSeqSeq = fwdSplit (repeat SeqK)        dotsP
 
-fwdIO :: RW -> UsedNames -> VarDec -> Session -> [Channel] -> Proc
-fwdIO _     _    _   _ []     = ø
-fwdIO Write used arg s ds     = fwdDual (fwdIO Read used arg) s ds
-fwdIO Read  used arg s (c:ds) = recv `dotP` Prll sends `dotP` fwdP used' s (c:ds)
+fwdIO :: MkFwd (RW, VarDec, Session)
+fwdIO _          _    _               []     = ø
+fwdIO redSession used (Write, arg, s) ds     = fwdDual fwdP redSession used (IO Write arg s) ds
+fwdIO redSession used (Read,  arg, s) (c:ds) = recv `dotP` Prll sends `dotP` fwdP redSession used' s (c:ds)
   where (x, used') = avoidUsed (arg^.argName) c used
         vx         = Def x []
         recv       = Recv c (arg & argName .~ x)
         sends      = [ Send d vx | d <- ds ]
 
 fwdDual :: Dual session
-        => (session -> [channel] -> proc)
-        ->  session -> [channel] -> proc
-fwdDual f s (c:d:es) = f (dual s) (d:c:es)
-fwdDual _ _ _        = error "fwdDual: Not enough channels for this forwarder (or the session is not a sink)"
+        => (redsession -> usednames -> session -> [channel] -> proc)
+        ->  redsession -> usednames -> session -> [channel] -> proc
+fwdDual f r u s (c:d:es) = f r u (dual s) (d:c:es)
+fwdDual _ _ _ _ _        = error "fwdDual: Not enough channels for this forwarder (or the session is not a sink)"
 
-fwdArray :: TraverseKind -> UsedNames -> [RSession] -> [Channel] -> Proc
+fwdArray :: TraverseKind -> MkFwd [RSession]
 fwdArray k = case k of
   SeqK -> fwdSeqSeq
   TenK -> fwdParTen
-  ParK -> fwdDual . fwdParTen
+  ParK -> fwdDual fwdParTen
 
-fwdP :: UsedNames -> Session -> [Channel] -> Proc
-fwdP _    _  [] = ø
-fwdP used s0 cs
+fwdP :: MkFwd Session
+fwdP _          _    _  [] = ø
+fwdP redSession used s0 cs
   | endS `is` s0 = ø
   | otherwise    =
-  case s0 of
-    Array k ss -> fwdArray k used ss cs
-    IO p t s   -> fwdIO p used t s cs
+  case redSession s0 of
+    Array k ss -> fwdArray k redSession used ss cs
+    IO p t s   -> fwdIO redSession used (p, t, s) cs
     TermS{}    -> Act $ ax s0 cs
 
 -- The session 'Fwd n session' is a par.
 -- This function builds a process which first splits this par.
 fwdProc :: (Show i, Integral i) => i -> Session -> Channel -> Proc
-fwdProc n s c = split' ParK c cs `dotP` fwdP ø s cs
+fwdProc n s c = split' ParK c cs `dotP` fwdP id ø s cs
   where cs = subChans n c
 
 ax :: Session -> [Channel] -> Act

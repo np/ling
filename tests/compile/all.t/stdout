@@ -868,6 +868,24 @@ void sum_int_lin (const int a_lin [10], int * r_lin){
   const int x__itmp_lin = itmp_lin ;
   * r_lin = x__itmp_lin ;
   }
+void ten_loli_par_sInt_sDouble_lin (struct {
+  struct {
+    int f0 ;
+    double f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    double f1 ;
+    }
+  f1 ;
+  }
+* c_lin){
+  const int x__na_lin = c_lin -> f0 . f0 ;
+  c_lin -> f1 . f0 = x__na_lin ;
+  const double x__nb_lin = c_lin -> f0 . f1 ;
+  c_lin -> f1 . f1 = x__nb_lin ;
+  }
 void ten_par_par_split_lin (const struct {
   struct {
     }

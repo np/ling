@@ -142,7 +142,7 @@ noSoSession (CD (Name x) SoSession{}) = error $
 normAct :: Act -> N.Proc
 normAct = \case
     -- These two clauses expand the forwarders
-    Ax        s cs    -> fwdP    ø (norm s) (noSoSession <$> cs)
+    Ax        s cs    -> fwdP id ø (norm s) (noSoSession <$> cs)
     SplitAx n s c     -> fwdProc n (norm s) c
 
     -- TODO make a flag to turn these on
