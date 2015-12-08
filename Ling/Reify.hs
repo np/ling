@@ -181,15 +181,6 @@ reifyAct = \case
   N.At       t ps     -> PAct $ At (reify t) (reify ps)
   N.LetA defs         -> reifyDefsA defs
 
--- isInfix xs = match "_[^_]*_" xs
-isInfix :: Name -> Maybe Name
-isInfix (Name ('_':xs@(_:_:_)))
-  | last xs == '_' && '_' `notElem` s =
-      Just (Name s)
-  where
-    s = init xs
-isInfix _ = Nothing
-
 -- Really naive rawApp parsing
 -- Next step is to carry an environment with
 -- the operators and their fixity.
@@ -198,9 +189,9 @@ isInfix _ = Nothing
 --   * this currently fails to parse: `f x + y`
 normRawApp :: [ATerm] -> N.Term
 normRawApp [e] = norm e
-normRawApp (e0:Op (OpName d):es)
-  | d `elem` ["-", "+", "*", "/", "%", "-D", "+D", "*D", "/D", "++S"] =
-      N.Def (Name ("_" ++ d ++ "_")) [norm e0, normRawApp es]
+normRawApp (e0:Op d:es)
+  | (unOpName # d) `elem` ["-", "+", "*", "/", "%", "-D", "+D", "*D", "/D", "++S"] =
+      N.Def (infixed # d) [norm e0, normRawApp es]
 normRawApp (Var (Name "Fwd"):es)
   | [e0, e1] <- es
   , Just n <- e0 ^? normalized . N.litTerm . integral =
@@ -272,9 +263,8 @@ mkVDsLam = \case
 
 reifyDef :: Name -> [N.Term] -> Term
 reifyDef x es
-  | [e1, e2] <- es,
-    Just d <- isInfix x
-  = RawApp (reify e1) (Var d : reifyRawApp e2)
+  | Just d <- x ^? infixed, [e1, e2] <- es
+  = RawApp (reify e1) (Op d : reifyRawApp e2)
   | otherwise = RawApp (Var x) (reify es)
 
 reifyVarDecA :: N.VarDec -> ATerm

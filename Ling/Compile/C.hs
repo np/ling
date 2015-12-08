@@ -148,7 +148,7 @@ addEVar x y env
   | otherwise               = env & evars . at x ?~ y
 
 (!) :: Env -> Name -> C.LVal
-(!) = lookupEnv nameString locs
+(!) = lookupEnv _Name locs
 
 transCon :: Name -> C.Ident
 transCon (Name x) = C.Ident ("con_" ++ x)
@@ -394,7 +394,7 @@ transTyp env ty0 =
   Def x es
     | null es, Just t <- Map.lookup x basicTypes -> (t, [])
     | otherwise ->
-    case (unName x, es) of
+    case (unName # x, es) of
       -- ("Vec", [a,e]) -> tArr (transTyp env a) (transTerm env e)
       ("Vec", [a,_e]) -> tPtr (transTyp env a)
       _ -> unsupportedTyp ty0

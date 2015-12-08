@@ -50,10 +50,10 @@ reducePrim _            _                        = Nothing
 
 reduceDef :: Scoped Name -> [Term] -> Scoped Term
 reduceDef sd es
-  | Just st <- scopedName sd            = reduceApp st es
+  | Just st <- scopedName sd              = reduceApp st es
   | Just ls <- es ^? below _Lit
-  , Just  l <- reducePrim (unName d) ls = pure $ Lit l
-  | otherwise                           = sd $> Def d es
+  , Just  l <- reducePrim (unName # d) ls = pure $ Lit l
+  | otherwise                             = sd $> Def d es
 
   where d = sd ^. scoped
 

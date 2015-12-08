@@ -114,6 +114,12 @@ makeLenses ''Abs
 makeLenses ''Telescope
 makeLenses ''Ann
 
+instance Each (Prll a) (Prll b) a b where
+  each = _Prll . each
+
+instance Each (Order a) (Order b) a b where
+  each = _Order . each
+
 instance t ~ Arg a' => Rewrapped (Arg a) t
 instance Wrapped (Arg a) where
   type Unwrapped (Arg a) = (Name, a)
@@ -131,8 +137,17 @@ instance Wrapped (Ann a b) where
 
 type Channel = Name
 
-nameString :: Iso' Name String
-nameString = iso unName Name
+_Name :: Iso' Name String
+_Name = iso (\(Name x) -> x) Name
+
+unName :: Iso' String Name
+unName = from _Name
+
+_OpName :: Iso' OpName String
+_OpName = iso (\(OpName x) -> x) OpName
+
+unOpName :: Iso' String OpName
+unOpName = from _OpName
 
 indented :: Int -> Fold String String
 indented n = lined . re (prefixed (replicate n ' '))
@@ -144,16 +159,25 @@ internalNameFor :: Show a => a -> EndoPrism Name
 internalNameFor = suffixedName . hash256 . show
 
 prefixedName :: String -> EndoPrism Name
-prefixedName s = nameString . prefixed (s++"#") . from nameString
+prefixedName s = _Name . prefixed (s++"#") . unName
 
 suffixedName :: String -> EndoPrism Name
-suffixedName s = nameString . suffixed ('#':s) . from nameString
+suffixedName s = _Name . suffixed ('#':s) . unName
 
 suffixedChan :: String -> EndoPrism Channel
 suffixedChan = suffixedName
 
 prefixedChan :: String -> EndoPrism Channel
 prefixedChan = prefixedName
+
+-- infixed = match "_[^_]*_"
+infixed :: Prism' Name OpName
+infixed = _Name . prism' con pat . unOpName
+  where
+    con x = '_' : x ++ "_"
+    pat ('_':xs@(_:_:_))
+      | let s = init xs, last xs == '_' && '_' `notElem` s = Just s
+    pat _ = Nothing
 
 traceShowMsg :: Show a => String -> Endom a
 traceShowMsg msg x = trace (msg ++ " " ++ show x) x
@@ -163,9 +187,6 @@ debugTraceWhen b s =
   if b
     then trace (unlines . map ("[DEBUG]  " ++) . lines $ s)
     else id
-
-unName :: Name -> String
-unName (Name x) = x
 
 type UsedNames = Set Name
 

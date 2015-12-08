@@ -66,7 +66,7 @@ rmChan :: Channel -> Endom Env
 rmChan c = chans .\\ c
 
 (!) :: Env -> Channel -> (Location, RSession)
-(!) = lookupEnv nameString chans
+(!) = lookupEnv _Name chans
 
 addLoc :: (Location, Status) -> Endom Env
 addLoc (l, s) = locs . at l . status .~ s
@@ -124,7 +124,7 @@ reduceProc :: Defs -> Endom Proc
 reduceProc defs = \case
   Act act -> reduceAct defs act
   proc0 `Dot` proc1 -> reduceProc defs proc0 `dotP` reduceProc defs proc1 -- TODO add the LetA defs from proc0
-  Procs (Prll procs) -> procs ^. each . to (reduceProc defs)
+  Procs procs -> procs ^. each . to (reduceProc defs)
   NewSlice cs t x p -> NewSlice cs t x (reduceProc defs p)
 
 reduceAct :: Defs -> Act -> Proc

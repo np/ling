@@ -281,7 +281,7 @@ inferDef f es = do
   mtyp <- view $ evars . at f
   case mtyp of
     Just typ -> errorScope f $ tcScope typ >>= \styp -> checkApp f 0 styp es
-    Nothing  -> tcError $ "unknown definition " ++ unName f ++
+    Nothing  -> tcError $ "unknown definition " ++ pretty f ++
                           if f == anonName then
                             "\n\nHint: While `_` is allowed as a name for a definition, one cannot reference it."
                           else
