@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Ling.Proc
@@ -46,6 +45,29 @@ dotQ proc0 proc1
   | proc1 == ø = proc0
   | otherwise  = proc0 `Dot` proc1
 
+instance Dottable a => Dottable (Maybe a) where
+  Nothing `dotP` proc = proc
+  Just a  `dotP` proc = a `dotP` proc
+
+instance Dottable act => Dottable (Order act) where
+  Order []         `dotP` proc = proc
+  Order (act:acts) `dotP` proc = act `dotP` Order acts `dotP` proc
+
+instance Dottable Act where
+  act `dotP` proc = Act act `dotQ` proc
+  toProc = Act
+
+instance Dottable Proc where
+  proc0 `dotP` proc1
+    | proc1 == ø = proc0
+    | otherwise  =
+      case proc0 of
+        Act act -> act `dotP` proc1
+        proc00 `Dot` proc01 -> proc00 `dotP` proc01 `dotP` proc1
+        NewSlice{} -> proc0 `Dot` proc1
+        Procs procs0 -> procs0 `dotP` proc1
+  toProc = id
+
 -- Is a given process only a prefix?
 _Pref :: Prism' Proc Pref
 _Pref =  prism' toProc go
@@ -61,40 +83,25 @@ _Pref =  prism' toProc go
         _ | all isSendRecv acts -> Just pref
         _                       -> Nothing
 
-instance Dottable (Prll Act) where
-  Prll []    `dotP` proc = proc
-  Prll [act] `dotP` proc = act `dotP` proc
-  Prll acts  `dotP` proc = Procs (Prll (Act <$> acts)) `dotQ` proc
-
-instance Dottable Act where
-  act `dotP` proc = Act act `dotQ` proc
-
-instance Dottable (Order Act) where
-  Order []         `dotP` proc = proc
-  Order (act:acts) `dotP` proc = act `dotP` Order acts `dotP` proc
-
-instance Dottable Proc where
-  proc0 `dotP` proc1
-    | proc1 == ø = proc0
-    | otherwise  =
-      case proc0 of
-        Act act -> act `dotP` proc1
-        proc00 `Dot` proc01 -> proc00 `dotP` proc01 `dotP` proc1
-        NewSlice{} -> proc0 `Dot` proc1
-        Procs procs0 -> procs0 `dotP` proc1
-
-instance Dottable (Prll Proc) where
+instance Dottable proc => Dottable (Prll proc) where
   Prll procs0 `dotP` proc1
     | [] <- procs0 = proc1
-    | [_p] <- procs0 = error "Dot Proc: IMPOSSIBLE" -- _p `dotP` proc1
-    | proc1 == ø = Procs (Prll procs0)
-    | Just pref <- procs0 ^? below _Pref = mconcat pref `dotP` proc1
+    | [proc0] <- procs0 = proc0 `dotP` proc1
+    | proc1 == ø = Procs (Prll procs0')
+    | Just pref <- procs0' ^? below _Pref = mconcat pref `pdotP` proc1
     | otherwise =
         error . unlines $
           ["Unsupported sequencing of parallel processes"
-          ,show procs0
+          ,show procs0'
           ,show proc1
           ]
+
+    where
+      procs0' = toProc <$> procs0
+
+      Prll []    `pdotP` proc = proc
+      Prll [act] `pdotP` proc = act `dotP` proc
+      Prll acts  `pdotP` proc = Procs (Prll (Act <$> acts)) `dotQ` proc
 
 _PrefDotProc :: Prism' Proc (Pref, Proc)
 _PrefDotProc = prism' (uncurry dotP) go
