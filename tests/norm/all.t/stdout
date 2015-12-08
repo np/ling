@@ -1532,7 +1532,7 @@ test_pat =
   @ test_pat_term [a, [: b, c :], {d, e}]
 
 type_annotation =
-  Int : 21 + 21
+  (21 + 21 : Int)
 
 ZeroCh : Type =
   (A : Type)-> A

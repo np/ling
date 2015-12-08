@@ -262,6 +262,8 @@ mkVDsLam = \case
   _ -> error "Unexpected "
 
 reifyDef :: Name -> [N.Term] -> Term
+reifyDef (Name "_:_") [e1,e2]
+  = aTerm $ Paren (reify e2) (SoSig (reify e1))
 reifyDef x es
   | Just d <- x ^? infixed, [e1, e2] <- es
   = RawApp (reify e1) (Op d : reifyRawApp e2)

@@ -1499,7 +1499,7 @@ test4 =
   send r (x0 + x1 + x2)
 
 type_annotation =
-  Int : 21 + 21
+  (21 + 21 : Int)
 
 ZeroCh : Type =
   (A : Type)-> A
