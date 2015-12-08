@@ -4,6 +4,6 @@ mk_new_ann =
    (p : < S  >)
    (q : < ~S >)->
   proc()
-    new/ ann [c : S, d : ~S]
+    new/ann [c : S, d : ~S]
     ( @p(c)
     | @q(d))

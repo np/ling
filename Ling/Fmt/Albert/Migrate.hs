@@ -60,6 +60,7 @@ transLiteral = \case
 transATerm :: ATerm -> L.ATerm
 transATerm = \case
   Var name          -> L.Var (transName name)
+  Op opname         -> L.Op (transOpName opname)
   Lit literal       -> L.Lit (transLiteral literal)
   Con conname       -> L.Con (transConName conname)
   TTyp              -> L.TTyp
@@ -109,14 +110,18 @@ transAct = \case
   LetA x os t -> L.LetA (transName x) (transOptSig os) (transATerm t)
 
 transAllocTerm :: AllocTerm -> L.AllocTerm
-transAllocTerm (AVar d es) = L.AVar (transName d) (transAllocTerm <$> es)
+transAllocTerm (AVar d) = L.AVar (transName d)
 transAllocTerm (ALit lit) = L.ALit (transLiteral lit)
 transAllocTerm (AParen t os) = L.AParen (transTerm t) (transOptSig os)
 
 transNewAlloc :: NewAlloc -> L.NewAlloc
 transNewAlloc (New chandecs) = L.New (transChanDec <$> chandecs)
 transNewAlloc (OldNew chandecs) = L.OldNew (transChanDec <$> chandecs)
-transNewAlloc (NewAnn allocterm chandecs) = L.NewAnn (transAllocTerm allocterm) (transChanDec <$> chandecs)
+transNewAlloc (NewSAnn term optsig chandecs) = L.NewSAnn (transTerm term) (transOptSig optsig) (transChanDec <$> chandecs)
+transNewAlloc (NewNAnn opnname allocterms chandecs) = L.NewNAnn (transOpName opnname) (transAllocTerm <$> allocterms) (transChanDec <$> chandecs)
+
+transOpName :: OpName -> L.OpName
+transOpName (OpName x) = L.OpName x
 
 transOptSession :: OptSession -> L.OptSession
 transOptSession = \case

@@ -198,7 +198,7 @@ isInfix _ = Nothing
 --   * this currently fails to parse: `f x + y`
 normRawApp :: [ATerm] -> N.Term
 normRawApp [e] = norm e
-normRawApp (e0:Var (Name d):es)
+normRawApp (e0:Op (OpName d):es)
   | d `elem` ["-", "+", "*", "/", "%", "-D", "+D", "*D", "/D", "++S"] =
       N.Def (Name ("_" ++ d ++ "_")) [norm e0, normRawApp es]
 normRawApp (Var (Name "Fwd"):es)
@@ -237,6 +237,7 @@ instance Norm ATerm where
     e                         -> paren (reify e)
   norm = \case
     Var x      -> N.Def x []
+    Op x       -> error $ "Unexpected operator-part: " ++ show x
     Lit l      -> N.Lit l
     Con n      -> N.Con (norm n)
     TTyp       -> N.TTyp
@@ -333,20 +334,24 @@ reifyTerm = reify
 instance Norm AllocTerm where
   type Normalized AllocTerm = N.Term
   reify (N.Lit lit)  = ALit lit
-  reify (N.Def d es) = AVar d (reify es)
+  reify (N.Def d []) = AVar d
   reify t            = AParen (reify t) NoSig
   norm (ALit lit)    = N.Lit lit
-  norm (AVar d es)   = N.Def d (norm es)
+  norm (AVar d)      = N.Def d []
   norm (AParen t os) = N.optSig (norm t) (norm os)
 
 instance Norm NewAlloc where
   type Normalized NewAlloc = ([N.Term], [N.ChanDec])
   reify ([], cds) = OldNew (reify cds)
-  reify ([t], cds) = NewAnn (reify t) (reify cds)
-  reify _ = error "Norm NewAlloc reify IMPOSSIBLE"
+  reify ([N.Def (Name d) ts], cds) = NewNAnn (OpName ("new/" ++ d)) (reify ts) (reify cds)
+  reify ([t], cds) = NewSAnn (reify t) NoSig (reify cds)
+  reify _ = error "reify/NewAlloc: IMPOSSIBLE"
   norm (New cds) = ([], norm cds)
   norm (OldNew cds) = ([], norm cds)
-  norm (NewAnn t cds) = ([norm t], norm cds)
+  norm (NewSAnn t os cds) = ([N.optSig (norm t) (norm os)], norm cds)
+  norm (NewNAnn (OpName newd) ts cds)
+    | Just d <- newd ^? prefixed "new/" = ([N.Def (Name d) (norm ts)], norm cds)
+    | otherwise                         = error "norm/NewAlloc: IMPOSSIBLE"
 
 instance Norm ChanDec where
   type Normalized ChanDec = N.ChanDec

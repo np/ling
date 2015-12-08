@@ -9,7 +9,6 @@ import Ling.Fmt.Albert.ErrM
 }
 
 %name pProgram Program
-%name pListName ListName
 %name pDec Dec
 %name pAssertion Assertion
 %name pConName ConName
@@ -97,6 +96,7 @@ L_doubl  { PT _ (TD $$) }
 L_quoted { PT _ (TL $$) }
 L_charac { PT _ (TC $$) }
 L_Name { PT _ (T_Name $$) }
+L_OpName { PT _ (T_OpName $$) }
 
 
 %%
@@ -106,11 +106,10 @@ Double  :: { Double }  : L_doubl  { (read ( $1)) :: Double }
 String  :: { String }  : L_quoted {  $1 }
 Char    :: { Char }    : L_charac { (read ( $1)) :: Char }
 Name    :: { Name} : L_Name { Name ($1)}
+OpName    :: { OpName} : L_OpName { OpName ($1)}
 
 Program :: { Program }
 Program : ListDec { Ling.Fmt.Albert.Abs.Prg $1 }
-ListName :: { [Name] }
-ListName : {- empty -} { [] } | Name ListName { (:) $1 $2 }
 Dec :: { Dec }
 Dec : Name '(' ListChanDec ')' '=' Proc OptDot { Ling.Fmt.Albert.Abs.DPrc $1 $3 $6 $7 }
     | Name OptSig '=' TermProc OptDot { Ling.Fmt.Albert.Abs.DDef $1 $2 $4 $5 }
@@ -159,6 +158,7 @@ Literal : Integer { Ling.Fmt.Albert.Abs.LInteger $1 }
         | Char { Ling.Fmt.Albert.Abs.LChar $1 }
 ATerm :: { ATerm }
 ATerm : Name { Ling.Fmt.Albert.Abs.Var $1 }
+      | OpName { Ling.Fmt.Albert.Abs.Op $1 }
       | Literal { Ling.Fmt.Albert.Abs.Lit $1 }
       | ConName { Ling.Fmt.Albert.Abs.Con $1 }
       | 'Type' { Ling.Fmt.Albert.Abs.TTyp }
@@ -243,16 +243,17 @@ CSession :: { CSession }
 CSession : '.' Term1 { Ling.Fmt.Albert.Abs.Cont $2 }
          | {- empty -} { Ling.Fmt.Albert.Abs.Done }
 AllocTerm :: { AllocTerm }
-AllocTerm : Name ListAllocTerm { Ling.Fmt.Albert.Abs.AVar $1 (reverse $2) }
+AllocTerm : Name { Ling.Fmt.Albert.Abs.AVar $1 }
           | Literal { Ling.Fmt.Albert.Abs.ALit $1 }
           | '(' Term OptSig ')' { Ling.Fmt.Albert.Abs.AParen $2 $3 }
 ListAllocTerm :: { [AllocTerm] }
 ListAllocTerm : {- empty -} { [] }
               | ListAllocTerm AllocTerm { flip (:) $1 $2 }
 NewAlloc :: { NewAlloc }
-NewAlloc : 'new' '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.New $3 }
-         | 'new' '(' ListChanDec ')' { Ling.Fmt.Albert.Abs.OldNew $3 }
-         | 'new/' AllocTerm '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.NewAnn $2 $4 }
+NewAlloc : 'new' '(' ListChanDec ')' { Ling.Fmt.Albert.Abs.OldNew $3 }
+         | 'new' '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.New $3 }
+         | 'new/' '(' Term OptSig ')' '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.NewSAnn $3 $4 $7 }
+         | OpName ListAllocTerm '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.NewNAnn $1 (reverse $2) $4 }
 {
 
 returnM :: a -> Err a

@@ -32,8 +32,12 @@ Character literals //Char// have the form
 
 
 
+
 Name literals are recognized by the regular expression
-`````(letter | ["_-+*/%"] | digit)* (letter | ["_-+*/%"]) (letter | ["_-+*/%'"] | digit)*`````
+`````["_"] (letter | ["-+*/%"] | digit)* (letter | ["-+*/%"]) (letter | ["-+*/%'"] | digit)* ["_"] | ["_"] | letter (letter | ["_-'"] | digit)*`````
+
+OpName literals are recognized by the regular expression
+`````(letter | ["-+*/%"] | digit)* ["-+*/%"] (letter | ["-+*/%'"] | digit)*`````
 
 
 ===Reserved words and symbols===
@@ -64,8 +68,6 @@ and **eps** (empty rule) belong to the BNF notation.
 All other symbols are terminals.
 
   | //Program// | -> | //[Dec]// 
-  | //[Name]// | -> | **eps**
-  |  |  **|**  | //Name// //[Name]// 
   | //Dec// | -> | //Name// //OptSig// ``=`` //Term// 
   |  |  **|**  | //Name// ``:`` //Term// 
   |  |  **|**  | ``data`` //Name// ``=`` //[ConName]// 
@@ -94,6 +96,7 @@ All other symbols are terminals.
   |  |  **|**  | //String// 
   |  |  **|**  | //Char// 
   | //ATerm// | -> | //Name// 
+  |  |  **|**  | //OpName// 
   |  |  **|**  | //Literal// 
   |  |  **|**  | //ConName// 
   |  |  **|**  | ``Type`` 
@@ -160,13 +163,14 @@ All other symbols are terminals.
   |  |  **|**  | ``^`` //ATerm// 
   | //CSession// | -> | ``.`` //Term1// 
   |  |  **|**  | **eps**
-  | //AllocTerm// | -> | //Name// //[AllocTerm]// 
+  | //AllocTerm// | -> | //Name// 
   |  |  **|**  | //Literal// 
   |  |  **|**  | ``(`` //Term// //OptSig// ``)`` 
   | //[AllocTerm]// | -> | **eps**
   |  |  **|**  | //AllocTerm// //[AllocTerm]// 
-  | //NewAlloc// | -> | ``new`` ``[`` //[ChanDec]// ``]`` 
-  |  |  **|**  | ``new`` ``(`` //[ChanDec]// ``)`` 
-  |  |  **|**  | ``new/`` //AllocTerm// ``[`` //[ChanDec]// ``]`` 
+  | //NewAlloc// | -> | ``new`` ``(`` //[ChanDec]// ``)`` 
+  |  |  **|**  | ``new`` ``[`` //[ChanDec]// ``]`` 
+  |  |  **|**  | ``new/`` ``(`` //Term// //OptSig// ``)`` ``[`` //[ChanDec]// ``]`` 
+  |  |  **|**  | //OpName// //[AllocTerm]// ``[`` //[ChanDec]// ``]`` 
 
 

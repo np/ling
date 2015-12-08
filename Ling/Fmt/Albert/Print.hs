@@ -81,8 +81,11 @@ instance Print Double where
 
 instance Print Name where
   prt _ (Name i) = doc (showString ( i))
-  prtList _ [] = (concatD [])
-  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+
+
+instance Print OpName where
+  prt _ (OpName i) = doc (showString ( i))
+
 
 
 instance Print Program where
@@ -150,6 +153,7 @@ instance Print Literal where
 instance Print ATerm where
   prt i e = case e of
     Var name -> prPrec i 0 (concatD [prt 0 name])
+    Op opname -> prPrec i 0 (concatD [prt 0 opname])
     Lit literal -> prPrec i 0 (concatD [prt 0 literal])
     Con conname -> prPrec i 0 (concatD [prt 0 conname])
     TTyp -> prPrec i 0 (concatD [doc (showString "Type")])
@@ -241,15 +245,16 @@ instance Print CSession where
 
 instance Print AllocTerm where
   prt i e = case e of
-    AVar name allocterms -> prPrec i 0 (concatD [prt 0 name, prt 0 allocterms])
+    AVar name -> prPrec i 0 (concatD [prt 0 name])
     ALit literal -> prPrec i 0 (concatD [prt 0 literal])
     AParen term optsig -> prPrec i 0 (concatD [doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print NewAlloc where
   prt i e = case e of
-    New chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "["), prt 0 chandecs, doc (showString "]")])
     OldNew chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandecs, doc (showString ")")])
-    NewAnn allocterm chandecs -> prPrec i 0 (concatD [doc (showString "new/"), prt 0 allocterm, doc (showString "["), prt 0 chandecs, doc (showString "]")])
+    New chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "["), prt 0 chandecs, doc (showString "]")])
+    NewSAnn term optsig chandecs -> prPrec i 0 (concatD [doc (showString "new/"), doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")"), doc (showString "["), prt 0 chandecs, doc (showString "]")])
+    NewNAnn opname allocterms chandecs -> prPrec i 0 (concatD [prt 0 opname, prt 0 allocterms, doc (showString "["), prt 0 chandecs, doc (showString "]")])
 
 

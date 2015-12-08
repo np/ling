@@ -6,11 +6,20 @@ comment "{-" "-}" ;
 
 Prg. Program ::= [Dec] ;
 
-token Name ((letter | ["_-+*/%"] | digit)*
-            (letter | ["_-+*/%"])
-            (letter | ["_-+*/%'"] | digit)*) ;
+token Name ( ["_"] (letter | ["-+*/%"] | digit)*
+                   (letter | ["-+*/%"])
+                   (letter | ["-+*/%'"] | digit)*
+             ["_"]
+           | ["_"]
+           | letter
+             (letter | ["_-'"] | digit)*
+           );
 
-separator Name "" ;
+token OpName
+  ( (letter | ["-+*/%"] | digit)*
+    ["-+*/%"]
+    (letter | ["-+*/%'"] | digit)*
+  );
 
 DPrc. Dec ::= Name "(" [ChanDec] ")" "=" Proc OptDot ;
 DDef. Dec ::= Name OptSig "=" TermProc OptDot ;
@@ -52,6 +61,7 @@ LChar.    Literal ::= Char    ;
 
 -- Atomic terms
 Var.     ATerm ::= Name ;
+Op.      ATerm ::= OpName ;
 Lit.     ATerm ::= Literal ;
 Con.     ATerm ::= ConName ;
 TTyp.    ATerm ::= "Type" ;
@@ -141,11 +151,12 @@ Some. OptRepl  ::= "^" ATerm ;
 Cont. CSession ::= "." Term1 ;
 Done. CSession ::= ;
 
-AVar.     AllocTerm ::= Name [AllocTerm] ;
+AVar.     AllocTerm ::= Name ;
 ALit.     AllocTerm ::= Literal ;
 AParen.   AllocTerm ::= "(" Term OptSig ")" ;
 separator AllocTerm "" ;
 
-New.      NewAlloc ::= "new" "[" [ChanDec] "]"  ;
 OldNew.   NewAlloc ::= "new" "(" [ChanDec] ")"  ;
-NewAnn.   NewAlloc ::= "new/" AllocTerm "[" [ChanDec] "]" ;
+New.      NewAlloc ::= "new" "[" [ChanDec] "]"  ;
+NewSAnn.  NewAlloc ::= "new/" "(" Term OptSig ")" "[" [ChanDec] "]" ;
+NewNAnn.  NewAlloc ::= OpName [AllocTerm] "[" [ChanDec] "]" ;

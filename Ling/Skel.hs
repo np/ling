@@ -12,6 +12,9 @@ failure x = Bad $ "Undefined case: " ++ show x
 transName :: Name -> Result
 transName x = case x of
   Name string -> failure x
+transOpName :: OpName -> Result
+transOpName x = case x of
+  OpName string -> failure x
 transProgram :: Program -> Result
 transProgram x = case x of
   Prg decs -> failure x
@@ -49,6 +52,7 @@ transLiteral x = case x of
 transATerm :: ATerm -> Result
 transATerm x = case x of
   Var name -> failure x
+  Op opname -> failure x
   Lit literal -> failure x
   Con conname -> failure x
   TTyp -> failure x
@@ -122,12 +126,13 @@ transCSession x = case x of
   Done -> failure x
 transAllocTerm :: AllocTerm -> Result
 transAllocTerm x = case x of
-  AVar name allocterms -> failure x
+  AVar name -> failure x
   ALit literal -> failure x
   AParen term optsig -> failure x
 transNewAlloc :: NewAlloc -> Result
 transNewAlloc x = case x of
-  New chandecs -> failure x
   OldNew chandecs -> failure x
-  NewAnn allocterm chandecs -> failure x
+  New chandecs -> failure x
+  NewSAnn term optsig chandecs -> failure x
+  NewNAnn opname allocterms chandecs -> failure x
 

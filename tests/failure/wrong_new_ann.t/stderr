@@ -1,7 +1,8 @@
 While checking `wrong_new_ann`
-  Types are not equivalent.
-  Expected:
-    Allocation
-  Inferred:
-    Int
+  While checking `fuse`
+    Types are not equivalent.
+    Expected:
+      Int
+    Inferred:
+      String
 

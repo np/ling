@@ -29,7 +29,8 @@ $u = [\0-\255]          -- universal: any character
 
 $white+ ;
 @rsyms { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
-($l | [\_ \- \+ \* \/ \%]| $d)* ($l | [\_ \- \+ \* \/ \%]) ($l | [\_ \- \+ \* \/ \% \']| $d)* { tok (\p s -> PT p (eitherResIdent (T_Name . share) s)) }
+[\_]($l | [\- \+ \* \/ \%]| $d)* ($l | [\- \+ \* \/ \%]) ($l | [\- \+ \* \/ \% \']| $d)* [\_]| [\_]| $l ($l | [\_ \- \']| $d)* { tok (\p s -> PT p (eitherResIdent (T_Name . share) s)) }
+($l | [\- \+ \* \/ \%]| $d)* [\- \+ \* \/ \%]($l | [\- \+ \* \/ \% \']| $d)* { tok (\p s -> PT p (eitherResIdent (T_OpName . share) s)) }
 
 $l $i*   { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
 \" ([$u # [\" \\ \n]] | (\\ (\" | \\ | \' | n | t)))* \"{ tok (\p s -> PT p (TL $ share $ unescapeInitTail s)) }
@@ -53,6 +54,7 @@ data Tok =
  | TD !String         -- double precision float literals
  | TC !String         -- character literals
  | T_Name !String
+ | T_OpName !String
 
  deriving (Eq,Show,Ord)
 
@@ -88,6 +90,7 @@ prToken t = case t of
   PT _ (TD s)   -> s
   PT _ (TC s)   -> s
   PT _ (T_Name s) -> s
+  PT _ (T_OpName s) -> s
 
 
 data BTree = N | B String Tok BTree BTree deriving (Show)

@@ -9,7 +9,6 @@ import Ling.ErrM
 }
 
 %name pProgram Program
-%name pListName ListName
 %name pDec Dec
 %name pAssertion Assertion
 %name pConName ConName
@@ -95,6 +94,7 @@ L_doubl  { PT _ (TD $$) }
 L_quoted { PT _ (TL $$) }
 L_charac { PT _ (TC $$) }
 L_Name { PT _ (T_Name $$) }
+L_OpName { PT _ (T_OpName $$) }
 
 
 %%
@@ -104,11 +104,10 @@ Double  :: { Double }  : L_doubl  { (read ( $1)) :: Double }
 String  :: { String }  : L_quoted {  $1 }
 Char    :: { Char }    : L_charac { (read ( $1)) :: Char }
 Name    :: { Name} : L_Name { Name ($1)}
+OpName    :: { OpName} : L_OpName { OpName ($1)}
 
 Program :: { Program }
 Program : ListDec { Ling.Abs.Prg $1 }
-ListName :: { [Name] }
-ListName : {- empty -} { [] } | Name ListName { (:) $1 $2 }
 Dec :: { Dec }
 Dec : Name OptSig '=' Term { Ling.Abs.DDef $1 $2 $4 }
     | Name ':' Term { Ling.Abs.DSig $1 $3 }
@@ -150,6 +149,7 @@ Literal : Integer { Ling.Abs.LInteger $1 }
         | Char { Ling.Abs.LChar $1 }
 ATerm :: { ATerm }
 ATerm : Name { Ling.Abs.Var $1 }
+      | OpName { Ling.Abs.Op $1 }
       | Literal { Ling.Abs.Lit $1 }
       | ConName { Ling.Abs.Con $1 }
       | 'Type' { Ling.Abs.TTyp }
@@ -234,16 +234,17 @@ CSession :: { CSession }
 CSession : '.' Term1 { Ling.Abs.Cont $2 }
          | {- empty -} { Ling.Abs.Done }
 AllocTerm :: { AllocTerm }
-AllocTerm : Name ListAllocTerm { Ling.Abs.AVar $1 (reverse $2) }
+AllocTerm : Name { Ling.Abs.AVar $1 }
           | Literal { Ling.Abs.ALit $1 }
           | '(' Term OptSig ')' { Ling.Abs.AParen $2 $3 }
 ListAllocTerm :: { [AllocTerm] }
 ListAllocTerm : {- empty -} { [] }
               | ListAllocTerm AllocTerm { flip (:) $1 $2 }
 NewAlloc :: { NewAlloc }
-NewAlloc : 'new' '[' ListChanDec ']' { Ling.Abs.New $3 }
-         | 'new' '(' ListChanDec ')' { Ling.Abs.OldNew $3 }
-         | 'new/' AllocTerm '[' ListChanDec ']' { Ling.Abs.NewAnn $2 $4 }
+NewAlloc : 'new' '(' ListChanDec ')' { Ling.Abs.OldNew $3 }
+         | 'new' '[' ListChanDec ']' { Ling.Abs.New $3 }
+         | 'new/' '(' Term OptSig ')' '[' ListChanDec ']' { Ling.Abs.NewSAnn $3 $4 $7 }
+         | OpName ListAllocTerm '[' ListChanDec ']' { Ling.Abs.NewNAnn $1 (reverse $2) $4 }
 {
 
 returnM :: a -> Err a

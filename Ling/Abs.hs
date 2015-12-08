@@ -8,6 +8,7 @@ module Ling.Abs where
 
 
 newtype Name = Name String deriving (Eq, Ord, Show, Read)
+newtype OpName = OpName String deriving (Eq, Ord, Show, Read)
 data Program = Prg [Dec]
   deriving (Eq, Ord, Show, Read)
 
@@ -42,6 +43,7 @@ data Literal
 
 data ATerm
     = Var Name
+    | Op OpName
     | Lit Literal
     | Con ConName
     | TTyp
@@ -117,11 +119,13 @@ data OptRepl = One | Some ATerm
 data CSession = Cont Term | Done
   deriving (Eq, Ord, Show, Read)
 
-data AllocTerm
-    = AVar Name [AllocTerm] | ALit Literal | AParen Term OptSig
+data AllocTerm = AVar Name | ALit Literal | AParen Term OptSig
   deriving (Eq, Ord, Show, Read)
 
 data NewAlloc
-    = New [ChanDec] | OldNew [ChanDec] | NewAnn AllocTerm [ChanDec]
+    = OldNew [ChanDec]
+    | New [ChanDec]
+    | NewSAnn Term OptSig [ChanDec]
+    | NewNAnn OpName [AllocTerm] [ChanDec]
   deriving (Eq, Ord, Show, Read)
 
