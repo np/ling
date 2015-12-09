@@ -25,6 +25,7 @@ import           Ling.Par
 import           Ling.Prelude
 import           Ling.Print
 import           Ling.Fuse          (fuseProgram)
+import           Ling.Subst         (subst)
 import           Ling.Reify
 import qualified Ling.Sequential    as Sequential
 
@@ -32,14 +33,14 @@ type ParseFun a = [Token] -> Err a
 
 data Opts =
        Opts
-         { _tokens,_showAST,_showPretty,_doNorm,_check,_sequential,_fuse,_compile,_compilePrims,_noPrims :: Bool
+         { _tokens,_showAST,_showPretty,_doNorm,_check,_expand,_sequential,_fuse,_compile,_compilePrims,_noPrims :: Bool
          , _checkOpts                                                                              :: TCOpts
          }
 
 $(makeLenses ''Opts)
 
 defaultOpts :: Opts
-defaultOpts = Opts False False False False False False False False False False defaultTCOpts
+defaultOpts = Opts False False False False False False False False False False False defaultTCOpts
 
 debugCheck :: Setter' Opts Bool
 debugCheck = mergeSetters check (checkOpts.debugChecker)
@@ -153,6 +154,8 @@ transP opts prg = do
   when (opts ^. check) $ do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not (opts ^. noPrims)) $ nprg
     putStrLn "Checking Sucessful!"
+  when (opts ^. expand) $
+    putStrLn $ "\n{- Expanded program -}\n\n" ++ pretty eprg
   when (opts ^. sequential) $
     putStrLn $ "\n{- Sequential program -}\n\n" ++ pretty sprg
   when (opts ^. fuse) $
@@ -162,6 +165,7 @@ transP opts prg = do
 
   where
     nprg = norm prg
+    eprg = N.transProgramTerms subst nprg
     sprg = Sequential.transProgram nprg
     fprg = fuseProgram sprg
     cprg = Compile.transProgram (addPrims (opts ^. compilePrims) sprg)
@@ -181,6 +185,7 @@ flagSpec =
   , ("compile"      , add compile                 , "Display the compiled program (C language)")
   , ("pretty"       , add showPretty              , "Display the program")
   , ("norm"         , add doNorm                  , "Display the normalized program")
+  , ("expand"       , add expand                  , "Display the program with the definitions expanded")
   , ("fuse"         , add fuse                    , "Display the fused program")
   , ("seq"          , add sequential              , "Display the sequential program")
   , ("tokens"       , add tokens                  , "Display the program as a list of tokens from the lexer")

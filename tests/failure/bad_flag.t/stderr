@@ -7,6 +7,7 @@ option ::=
   | --compile       # Display the compiled program (C language)
   | --pretty        # Display the program
   | --norm          # Display the normalized program
+  | --expand        # Display the program with the definitions expanded
   | --fuse          # Display the fused program
   | --seq           # Display the sequential program
   | --tokens        # Display the program as a list of tokens from the lexer
