@@ -6,6 +6,7 @@ module Ling.Subst where
 import           Ling.Free
 import           Ling.Norm
 import           Ling.Prelude
+import           Ling.Proc
 import           Ling.Scoped
 import           Ling.Session
 
@@ -16,7 +17,9 @@ app :: Term -> [Term] -> Term
 app t0 []     = t0
 app t0 (u:us) =
   case t0 of
-    Lam (Arg x mty) t1 -> app (subst (aDef x mty u) t1) us
+    Lam (Arg x mty) t1 ->
+      app (subst (aDef x mty u) t1) us
+      -- app (substScoped (subst1 (x, Ann mty u) t1)) us
     Def x es           -> Def x (es ++ u : us)
     _                  -> error "Ling.Subst.app: IMPOSSIBLE"
 
@@ -31,7 +34,7 @@ substName f x = f ^? at x . _Just . annotated ?| Def x []
 instance Subst Term where
   subst f = \case
     Def x es   -> app (substName f x) (subst f es)
-    Let defs t -> subst (defs <> f) t
+    Let defs t -> subst (subst f defs <> f) t
     Lam arg t  -> Lam (subst f arg) (subst (hide argName arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hide argName arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hide argName arg f) t)
@@ -39,9 +42,15 @@ instance Subst Term where
     e0@Con{}   -> e0
     e0@TTyp    -> e0
     e0@Lit{}   -> e0
-    Proc cs p  -> Proc cs (subst f p)
+    Proc cs p  -> Proc (subst f cs) (subst f p)
     TProto rs  -> TProto (subst f rs)
     TSession s -> TSession (subst f s)
+
+instance Subst Defs where
+  subst = over each . subst
+
+instance (Subst a, Subst b) => Subst (Ann a b) where
+  subst f = bimap (subst f) (subst f)
 
 instance Subst a => Subst (Arg a) where
   subst f (Arg x e) = Arg x (subst f e)
@@ -63,19 +72,27 @@ hide f = composeMapOf f sans
 
 instance Subst Act where
   subst f = \case
-    Split k c ds    -> Split k c (subst f ds)
-    Send c e        -> Send c (subst f e)
-    Recv c arg      -> Recv c (subst f arg)
-    Nu ann cs       -> Nu (subst f ann) (subst f cs)
-    LetA{}          -> error "Subst/LetA"
-    Ax s cs         -> Ax (subst f s) cs
-    At t cs         -> At (subst f t) cs
+    Split k c ds -> Split k c (subst f ds)
+    Send c e     -> Send c (subst f e)
+    Recv c arg   -> Recv c (subst f arg)
+    Nu ann cs    -> Nu (subst f ann) (subst f cs)
+    LetA{}       -> LetA ø
+    Ax s cs      -> Ax (subst f s) cs
+    At t cs      -> At (subst f t) (subst f cs)
+
+instance Subst CPatt where
+  subst f = \case
+    ChanP cd    -> ChanP (subst f cd)
+    ArrayP k ps -> ArrayP k (subst f ps)
 
 instance Subst Proc where
   subst f = \case
     Act act -> Act (subst f act)
     proc0 `Dot` proc1 ->
-      subst f proc0 `Dot` subst (hide (to bvProc . folded) proc0 f) proc1
+      subst f proc0 `Dot` subst f1 proc1
+      where
+        defs0 = proc0 ^. procActs . to actDefs
+        f1 = hide (to bvProc . folded) proc0 f <> subst f defs0
     Procs procs -> Procs $ subst f procs
     NewSlice cs t x p -> NewSlice cs (subst f t) x (subst (hide id x f) p)
 
