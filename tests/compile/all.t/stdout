@@ -1,5 +1,5 @@
 
-/* Transformed tree */
+/* C program */
 
 int Int_lin ;
 int __plus___lin (const int m_lin, const int n_lin);

@@ -1,5 +1,5 @@
 
-/* Transformed tree */
+/* C program */
 
 void test3_lin() {
   union {

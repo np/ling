@@ -1,5 +1,5 @@
 
-{- Sequential process -}
+{- Sequential program -}
 
 cut_recv_send_send_recv =
   proc ()

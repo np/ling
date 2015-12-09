@@ -154,11 +154,11 @@ transP opts prg = do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not (opts ^. noPrims)) $ nprg
     putStrLn "Checking Sucessful!"
   when (opts ^. sequential) $
-    putStrLn $ "\n{- Sequential process -}\n\n" ++ pretty sprg
+    putStrLn $ "\n{- Sequential program -}\n\n" ++ pretty sprg
   when (opts ^. fuse) $
-    putStrLn $ "\n{- Fused process -}\n\n" ++ pretty fprg
+    putStrLn $ "\n{- Fused program -}\n\n" ++ pretty fprg
   when (opts ^. compile) $
-    putStrLn $ "\n/* Transformed tree */\n\n" ++ C.printTree cprg
+    putStrLn $ "\n/* C program */\n\n" ++ C.printTree cprg
 
   where
     nprg = norm prg
