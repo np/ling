@@ -131,11 +131,6 @@ noSession c = Arg c Nothing
 split' :: TraverseKind -> Channel -> [Channel] -> Act
 split' k c = Split k c . map noSession
 
-unRSession :: RSession -> Session
-unRSession (s `Repl` r)
-  | litR1 `is` r = s
-  | otherwise    = error "unRSession"
-
 type MkFwd a = (Session -> Session) -> UsedNames -> a -> [Channel] -> Proc
 
 -- One could generate the session annotations on the splits
@@ -146,9 +141,8 @@ fwdSplit ks fprocs redSession used rss cs
   -- These splits are independant, they are put in sequence because
   -- splitting always commutes anyway.
   where
-    ss   = unRSession <$> rss
-    dss  = subChans (length ss) <$> cs
-    ps   = zipWith     (fwdP redSession used) ss (transpose dss)
+    dss  = subChans (length rss) <$> cs
+    ps   = zipWith     (fwdR redSession used) rss (transpose dss)
     pref = zipWith3 id (split' <$> ks) cs dss
 
 fwdParTen, fwdSeqSeq :: MkFwd [RSession]
@@ -175,6 +169,11 @@ fwdArray k = case k of
   SeqK -> fwdSeqSeq
   TenK -> fwdParTen
   ParK -> fwdDual fwdParTen
+
+fwdR :: MkFwd RSession
+fwdR redSession used (s `Repl` r) cs
+  | litR1 `is` r = fwdP redSession used s cs
+  | otherwise    = NewSlice cs r anonName (fwdP redSession used s cs)
 
 fwdP :: MkFwd Session
 fwdP _          _    _  [] = ø
