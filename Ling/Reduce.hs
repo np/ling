@@ -2,7 +2,6 @@
 {-# LANGUAGE Rank2Types #-}
 module Ling.Reduce where
 
-import           Ling.Defs ()
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Scoped

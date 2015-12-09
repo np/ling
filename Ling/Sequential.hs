@@ -236,27 +236,27 @@ transProcs env p0s waiting k =
         _ ->
           transProcs env ps (p0 : waiting) k
 
-transDec :: Defs -> Dec -> (Defs, Dec)
-transDec gdefs = \case
-  Sig d oty mtm -> (gdefs & at d .~ (Ann oty <$> mtm'), Sig d oty mtm')
-    where
-      decSt Write = Empty
-      decSt Read  = Full
-      mtm' =
-        case reduceTerm' gdefs <$> mtm of
-          Just (Proc cs proc0) -> transProc env proc0 (const $ Just . Proc cs)
-            where
-              env = emptyEnv
-                      & edefs .~ gdefs
-                      & addLocs  [ ls | Arg c (Just s) <- cs
-                                 , ls <- rsessionStatus gdefs decSt (Root c) s ]
-                      & addChans [ (c, (Root c, s)) | Arg c (Just s) <- cs ]
-          _ -> mtm
-  dec@Dat{} -> (gdefs, dec)
-  dec@Assert{} -> (gdefs, dec)
+initEnv :: Defs -> [ChanDec] -> Env
+initEnv gdefs cs =
+  emptyEnv
+    & edefs .~ gdefs
+    & addLocs  [ ls | Arg c (Just s) <- cs
+               , ls <- rsessionStatus gdefs decSt (Root c) s ]
+    & addChans [ (c, (Root c, s)) | Arg c (Just s) <- cs ]
+  where
+    decSt Write = Empty
+    decSt Read  = Full
+
+
+transTermProc :: Defs -> Endom Term
+transTermProc gdefs tm0
+  | Proc cs proc0 <- reduceTerm' gdefs tm0
+  = transProc (initEnv gdefs cs) proc0 (const $ Proc cs)
+  | otherwise
+  = tm0
 
 transProgram :: Endom Program
-transProgram (Program decs) = Program (mapAccumL transDec ø decs ^. _2)
+transProgram = transProgramTerms transTermProc
 
 reduceTerm' :: Defs -> Endom Term
 reduceTerm' defs = pushDefs . reduceTerm . Scoped defs ø

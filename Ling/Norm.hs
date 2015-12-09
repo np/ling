@@ -384,3 +384,19 @@ multR = rterm . multTerm . (from rterm `bimapping` from rterm)
 instance Monoid RFactor where
   mempty      = litR # 1
   mappend x y = multR # (x, y)
+
+addDec :: Dec -> Endom Defs
+addDec (Sig d oty mtm) = at d .~ (Ann oty <$> mtm)
+addDec Dat{}           = id
+addDec Assert{}        = id
+
+transProgramDecs :: (Defs -> Endom Dec) -> Endom Program
+transProgramDecs transDec (Program decs) = Program (mapAccumL go ø decs ^. _2)
+  where
+    go gdefs dec0 = (addDec dec1 gdefs, dec1)
+      where
+        dec1 = transDec gdefs dec0
+
+transProgramTerms :: (Defs -> Endom Term) -> Endom Program
+transProgramTerms transTerm =
+  transProgramDecs $ over (_Sig . _3 . _Just) . transTerm
