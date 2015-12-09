@@ -212,7 +212,7 @@ checkCPattR (s `Repl` r) pat
 checkDefs :: Defs -> Endom (TC a)
 checkDefs = composeMapOf each checkDef
   where
-    checkDef (x,Ann mty tm) = checkVarDef x mty (Just tm)
+    checkDef (Arg x (Ann mty tm)) = checkVarDef x mty (Just tm)
 
 inferBranch :: (name, Term) -> TC (name, Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t

@@ -175,9 +175,9 @@ instance Wrapped Defs where
   type Unwrapped Defs = Map Name AnnTerm
   _Wrapped' = _Defs
 
-instance Each Defs Defs (Name, AnnTerm) (Name, AnnTerm) where
+instance Each Defs Defs (Arg AnnTerm) (Arg AnnTerm) where
   -- TODO,LENS: I would prefer to avoid the conversion to a list
-  each = defsMap . _Wrapped . each
+  each = defsMap . _Wrapped . each . _Unwrapped
 
 instance Monoid Program where
   mempty        = Program []

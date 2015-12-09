@@ -163,8 +163,8 @@ normAct = \case
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
 
-reifyLetA :: (Name, N.AnnTerm) -> Act
-reifyLetA (x, Ann os tm) = LetA x (reify os) (reify tm)
+reifyLetA :: Arg N.AnnTerm -> Act
+reifyLetA (Arg x (Ann os tm)) = LetA x (reify os) (reify tm)
 
 reifyDefsA :: N.Defs -> Proc
 reifyDefsA defs = pDots $ defs ^.. each . to reifyLetA . to PAct
@@ -280,7 +280,7 @@ reifyVarDec = aTerm . reifyVarDecA
 
 reifyDefs :: N.Defs -> Endom Term
 reifyDefs = composeMapOf each $ \case
-  (x, Ann mty tm) -> Let x (reify mty) (reify tm)
+  Arg x (Ann mty tm) -> Let x (reify mty) (reify tm)
 
 instance Norm Term where
   type Normalized Term = N.Term
