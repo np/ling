@@ -333,14 +333,14 @@ fwd0_snd0 =
 
 fwd1_rcv =
   proc (c : {?Int})
-  c {c#0}
+  c {c#0 : ?Int}
   recv c#0 (x#c#0 : Int)
 
 fwd2_par2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int]})
-  c {c#0, c#1}
-  c#1 [c#1#0, c#1#1]
-  c#0 {c#0#0, c#0#1}
+  c {c#0 : {?Int, !Int.?Int},c#1 : [!Int, ?Int.!Int]}
+  c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int]
+  c#0 {c#0#0 : ?Int, c#0#1 : !Int.?Int}
   recv c#0#0 (x#c#0#0 : Int).
   recv c#1#1 (x#c#1#1 : Int).
   send c#1#0 x#c#0#0.
@@ -350,10 +350,10 @@ fwd2_par2_ten2 =
 
 fwd3_par2_ten2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int],{!Int, !Int.!Int}})
-  c {c#0, c#1, c#2}
-  c#1 [c#1#0, c#1#1]
-  c#0 {c#0#0, c#0#1}
-  c#2 {c#2#0, c#2#1}
+  c {c#0 : {?Int, !Int.?Int},c#1 : [!Int, ?Int.!Int],c#2 : {!Int, !Int.!Int}}
+  c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int]
+  c#0 {c#0#0 : ?Int, c#0#1 : !Int.?Int}
+  c#2 {c#2#0 : !Int, c#2#1 : !Int.!Int}
   recv c#0#0 (x#c#0#0 : Int).
   recv c#1#1 (x#c#1#1 : Int).
   send c#1#0 x#c#0#0.
@@ -366,10 +366,10 @@ fwd3_par2_ten2_ten2 =
 
 fwd3_seq2_seq2_seq2 =
   proc (c : {[: ?Int, !Int.?Int :], [: !Int, ?Int.!Int :], [: !Int, !Int.!Int :]})
-  c {c#0, c#1, c#2}
-  c#0 [: c#0#0, c#0#1 :]
-  c#1 [: c#1#0, c#1#1 :]
-  c#2 [: c#2#0, c#2#1 :]
+  c {c#0 : [: ?Int, !Int.?Int :], c#1 : [: !Int, ?Int.!Int :], c#2 : [: !Int, !Int.!Int :]}
+  c#0 [: c#0#0 : ?Int, c#0#1 : !Int.?Int :]
+  c#1 [: c#1#0 : !Int, c#1#1 : ?Int.!Int :]
+  c#2 [: c#2#0 : !Int, c#2#1 : !Int.!Int :]
   recv c#0#0 (x#c#0#0 : Int).
   send c#1#0 x#c#0#0.
   send c#2#0 x#c#0#0.
@@ -398,8 +398,8 @@ fwd_par2_ten2_expanded =
 
 fwd_par2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
-  o [o#0, o#1]
-  i {i#0, i#1}
+  o [o#0 : !Int, o#1 : ?Int.!Int]
+  i {i#0 : ?Int, i#1 : !Int.?Int}
   recv i#0 (x#i#0 : Int).
   recv o#1 (x#o#1 : Int).
   send o#0 x#i#0.
@@ -409,9 +409,9 @@ fwd_par2_ten2 =
 
 fwd_par2_ten2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int})
-  o [o#0, o#1]
-  i {i#0, i#1}
-  l {l#0, l#1}
+  o [o#0 : !Int, o#1 : ?Int.!Int]
+  i {i#0 : ?Int, i#1 : !Int.?Int}
+  l {l#0 : !Int, l#1 : !Int.!Int}
   recv i#0 (x#i#0 : Int).
   recv o#1 (x#o#1 : Int).
   send o#0 x#i#0.
@@ -424,10 +424,10 @@ fwd_par2_ten2_ten2 =
 
 fwd_par2_ten2_ten2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int},m : {!Int, !Int.!Int})
-  o [o#0, o#1]
-  i {i#0, i#1}
-  l {l#0, l#1}
-  m {m#0, m#1}
+  o [o#0 : !Int, o#1 : ?Int.!Int]
+  i {i#0 : ?Int, i#1 : !Int.?Int}
+  l {l#0 : !Int, l#1 : !Int.!Int}
+  m {m#0 : !Int, m#1 : !Int.!Int}
   recv i#0 (x#i#0 : Int).
   recv o#1 (x#o#1 : Int).
   send o#0 x#i#0.
@@ -497,9 +497,9 @@ fwd_send_recv_recv_with_listener_manually =
 
 fwd_seq2_seq2_seq2 =
   proc (i : [: ?Int, !Int.?Int :], o : [: !Int, ?Int.!Int :], l : [: !Int, !Int.!Int :])
-  i [: i#0, i#1 :]
-  o [: o#0, o#1 :]
-  l [: l#0, l#1 :]
+  i [: i#0 : ?Int, i#1 : !Int.?Int :]
+  o [: o#0 : !Int, o#1 : ?Int.!Int :]
+  l [: l#0 : !Int, l#1 : !Int.!Int :]
   recv i#0 (x#i#0 : Int).
   send o#0 x#i#0.
   send l#0 x#i#0.
@@ -512,8 +512,8 @@ fwd_seq2_seq2_seq2 =
 
 fwd_ten2_par2 =
   proc (i : [?Int, !Int.?Int],o : {!Int, ?Int.!Int})
-  i [i#0, i#1]
-  o {o#0, o#1}
+  i [i#0 : ?Int, i#1 : !Int.?Int]
+  o {o#0 : !Int, o#1 : ?Int.!Int}
   recv i#0 (x#i#0 : Int).
   recv o#1 (x#o#1 : Int).
   send o#0 x#i#0.
@@ -602,7 +602,7 @@ letrecv =
 letsession =
   proc (c)
   let f = (\ (S0 : Session)-> let S1 = {S0, S0}in let S2 = {S1, S1}in let S3 = {S2, S2}in let S4 = {S3, S3}in let S5 = {S4, S4}in let S6 = {S5, S5}in let S7 = {S6, S6}in S7).
-  c {c#0, c#1}
+  c {c#0 : f (?Int),c#1 : ~ f (?Int)}
   fwd (f (?Int)) (c#0, c#1)
 
 lettype : (P : (A : Type)-> (B : Type)-> Type)-> (p : (A : Type)-> P A A)-> (A : Type)-> P (P (P (P A A)(P A A)) (P (P A A)(P A A)))(P (P (P A A)(P A A)) (P (P A A)(P A A)))=
@@ -1094,9 +1094,9 @@ pattern_example_expanded =
   de {d, e}
   send a 1.
   send b 2.
-  d [d#0, d#1]
+  d [d#0 : !Int, d#1 : !Int]
   send c 3.
-  e {e#0, e#1}
+  e {e#0 : ?Int, e#1 : ?Int}
   recv e#0 (x#e#0 : Int).
   recv e#1 (x#e#1 : Int).
   send d#0 x#e#0.

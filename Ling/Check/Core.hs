@@ -19,7 +19,11 @@ import           Prelude              hiding (log)
 -- The protocol is the result of inferrence.
 -- The channel has a potential session annotation.
 checkChanDec :: Proto -> ChanDec -> TC RSession
-checkChanDec proto (Arg c ms0) = do
+checkChanDec proto (ChanDec c r ms0) = do
+  errorScope c $
+    checkEquivalence "Replication factors are not equivalent."
+                     "Annotation:" (pure r)
+                     "Inferred:"   (pure (ms1 ^. endedRS . rfactor))
   case ms0 of
     Nothing -> return ()
     Just s0 ->
@@ -139,8 +143,8 @@ checkAct act proto =
   case act of
     Nu anns cds -> do
       for_ anns $ checkTerm allocationTyp
-      let cs = cds ^.. each . argName
-          csNSession = [ proto ^. chanSession c . endedRS | Arg c _ <- cds ]
+      let cs = cds ^.. each . cdChan
+          csNSession = [ proto ^. chanSession c . endedRS | ChanDec c _ _ <- cds ]
       unless (all (is endRS) csNSession) $
         for_ cs $ assertUsed proto
       for_ cds $ checkChanDec proto
@@ -150,10 +154,10 @@ checkAct act proto =
       rmChans cs <$> checkConflictingChans proto Nothing cs
     Split k c dOSs -> do
       assertAbsent proto c
-      let ds         = dOSs ^.. each . argName
+      for_ dOSs $ checkChanDec proto
+      let ds         = dOSs ^.. each . cdChan
           dsSessions = ds & each %~ \d -> proto ^. chanSession d . endedRS
           s          = array k dsSessions
-      for_ dOSs $ checkChanDec proto
       proto' <-
         case k of
           TenK -> checkConflictingChans proto (Just c) ds
@@ -186,7 +190,7 @@ unTProto t0 =
 checkCPatt :: Session -> CPatt -> TC Proto
 checkCPatt s = \case
   ChanP cd ->
-    let proto = pureProto (cd^.argName) s in
+    let proto = pureProto (cd ^. cdChan) s in
     checkChanDec proto cd $> proto
   ArrayP kpat pats ->
     case s of
@@ -237,7 +241,7 @@ inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
 
 inferProcTyp :: [ChanDec] -> Proc -> TC Typ
 inferProcTyp cds proc = do
-  let cs  = _argName <$> cds
+  let cs  = cds ^.. each . cdChan
   proto <- checkProc proc
   rs <- forM cds $ checkChanDec proto
   let proto' = rmChans cs proto

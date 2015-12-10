@@ -30,6 +30,9 @@ instance SubTerms RFactor where
 instance SubTerms RSession where
   subTerms f (s `Repl` r) = Repl <$> subTerms f s <*> subTerms f r
 
+instance SubTerms ChanDec where
+  subTerms f (ChanDec c r os) = ChanDec c <$> subTerms f r <*> subTerms f os
+
 instance SubTerms a => SubTerms (Arg a) where
   subTerms = argTerms subTerms
 

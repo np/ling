@@ -149,7 +149,7 @@ instance Print VarDec where
 
 instance Print ChanDec where
   prt i e = case e of
-    CD name optsession -> prPrec i 0 (concatD [prt 0 name, prt 0 optsession])
+    CD name optrepl optsession -> prPrec i 0 (concatD [prt 0 name, prt 0 optrepl, prt 0 optsession])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
@@ -409,3 +409,7 @@ instance Print N.Term where
 instance Print N.RFactor where
   prt     i (N.RFactor t) = prt i t
   prtList i = prtList i . map N._rterm
+
+instance Print N.ChanDec where
+  prt     i cd = prt i (reify cd :: ChanDec)
+  prtList i cds = prtList i (map reify cds :: [ChanDec])

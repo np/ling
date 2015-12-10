@@ -40,7 +40,7 @@ separator Dec "," ;
 
 VD. VarDec ::= "(" Name OptSig ")" ;
 
-CD. ChanDec ::= Name OptSession ;
+CD. ChanDec ::= Name OptRepl OptSession ;
 
 separator ChanDec "," ;
 

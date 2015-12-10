@@ -18,7 +18,7 @@ bvVarDec :: BoundChans VarDec
 bvVarDec = l2s . pure . _argName
 
 bcChanDecs :: BoundChans [ChanDec]
-bcChanDecs = l2s . map _argName
+bcChanDecs = setOf (each . cdChan)
 
 fcPat :: FreeChans CPatt
 fcPat = \case

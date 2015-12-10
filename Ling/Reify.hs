@@ -88,13 +88,13 @@ instance Norm Proc where
     proc0 `N.Dot` proc1 -> reifyDot proc0 (reify proc1)
     N.Procs (Prll procs) -> pPrll $ reify procs
     N.NewSlice cs t x p ->
-      NewSlice ((`CD` NoSession) <$> cs) (t ^. N.rterm . reified) x (reify p)
+      NewSlice ((justChannel #) <$> cs) (t ^. N.rterm . reified) x (reify p)
   norm = \case
     PAct act         -> normAct act
     PNxt proc0 proc1 -> norm proc0 `dotP` norm proc1
     PDot proc0 proc1 -> norm proc0 `dotP` norm proc1
     PPrll procs      -> mconcat $ norm procs
-    NewSlice cs t x p -> N.NewSlice (noSoSession <$> cs) (norm (Some t)) x (norm p)
+    NewSlice cs t x p -> N.NewSlice (view justChannel <$> cs) (norm (Some t)) x (norm p)
 
 kCPatt :: N.TraverseKind -> [CPatt] -> CPatt
 kCPatt = \case
@@ -134,16 +134,20 @@ reifyDot = \case
   N.Act act | not (N.actNeedsDot act) -> pNxt (reifyAct act)
   proc0 -> pDot (reify proc0)
 
-noSoSession :: ChanDec -> Name
-noSoSession (CD x NoSession) = x
-noSoSession (CD (Name x) SoSession{}) = error $
-  "unexpected session annotation for channel " ++ x
+justChannel :: Iso' ChanDec Name
+justChannel = iso go (\c-> CD c One NoSession)
+  where
+    go (CD x One NoSession) = x
+    go (CD (Name x) _ SoSession{}) =
+      error $ "unexpected session annotation for channel " ++ x
+    go (CD (Name x) Some{} NoSession) =
+      error $ "unexpected session replication for channel " ++ x
 
 normAct :: Act -> N.Proc
 normAct = \case
     -- These two clauses expand the forwarders
-    Ax        s cs    -> fwdP id ø (norm s) (noSoSession <$> cs)
-    SplitAx n s c     -> fwdProc n (norm s) c
+    Ax        s cs    -> fwdProc' id (norm s) (view justChannel <$> cs)
+    SplitAx n s c     -> fwdProc (n ^?! integral) (norm s) c
 
     -- TODO make a flag to turn these on
 {-
@@ -177,7 +181,7 @@ reifyAct = \case
   N.Split N.SeqK c ds -> PAct $ SeqSplit c (reify ds)
   N.Send     c t      -> PAct $ Send     c (reify t)
   N.Recv     c a      -> PAct $ Recv     c (reify a)
-  N.Ax       s cs     -> PAct $ Ax (reify s) ((`CD` NoSession) <$> cs)
+  N.Ax       s cs     -> PAct $ Ax (reify s) ((justChannel #) <$> cs)
   N.At       t ps     -> PAct $ At (reify t) (reify ps)
   N.LetA defs         -> reifyDefsA defs
 
@@ -346,9 +350,9 @@ instance Norm NewAlloc where
     | otherwise                         = error "norm/NewAlloc: IMPOSSIBLE"
 
 instance Norm ChanDec where
-  type Normalized ChanDec = N.ChanDec
-  reify (Arg c s)         = CD c (reify s)
-  norm  (CD c s)          = Arg c (norm s)
+  type Normalized ChanDec  = N.ChanDec
+  reify (N.ChanDec c r os) = CD c (reify r) (reify os)
+  norm  (CD c r os)        = N.ChanDec c (norm r) (norm os)
 
 instance Norm VarDec where
   type Normalized VarDec = N.VarDec

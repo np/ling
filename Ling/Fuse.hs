@@ -71,7 +71,7 @@ fuseChanDecs anns ((c0,c1):cs) = fuse2Chans anns c0 c1 . fuseChanDecs anns cs
 
 fuseSendRecv :: [Allocation] -> ChanDec -> Term -> ChanDec -> VarDec -> Order Act
 fuseSendRecv anns c0 e c1 (Arg x mty) =
-  Order [LetA (aDef x mty e), Nu anns ([c0,c1] & each . argBody . _Just . rsession %~ sessionStep)]
+  Order [LetA (aDef x mty e), Nu anns ([c0,c1] & each . cdSession . _Just . rsession %~ sessionStep)]
 
 nu2 :: [Allocation] -> ChanDec -> ChanDec -> Act
 nu2 anns c0 c1 = Nu anns [c0,c1]
@@ -100,7 +100,7 @@ fuse2Chans anns cd0 cd1 p0 =
       let
         (cdA, cdB) = if actA ^. to fcAct . hasKey c0 then (cd0, cd1) else (cd1, cd0)
         predB :: Set Channel -> Bool
-        predB fc = fc ^. hasKey (cdB ^. argName)
+        predB fc = fc ^. hasKey (cdB ^. cdChan)
         mactB = p1 ^? {-scoped .-} fetchActProc predB . _Act
       in
       case mactB of
@@ -108,8 +108,8 @@ fuse2Chans anns cd0 cd1 p0 =
         Just actB ->
           p1 & fetchActProc predB .~ toProc (fuse2Acts anns cdA actA cdB actB)
   where
-    c0 = cd0 ^. argName
-    c1 = cd1 ^. argName
+    c0 = cd0 ^. cdChan
+    c1 = cd1 ^. cdChan
     predA :: Set Channel -> Bool
     predA fc = fc ^. hasKey c0 || fc ^. hasKey c1
 

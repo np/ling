@@ -21,7 +21,12 @@ newtype Defs = Defs { _defsMap :: Map Name AnnTerm }
 newtype RFactor = RFactor { _rterm :: Term }
   deriving (Eq, Ord, Read, Show)
 
-type ChanDec = Arg (Maybe RSession)
+data ChanDec = ChanDec { _cdChan :: Channel
+                       , _cdRepl :: RFactor
+                       , _cdSession :: Maybe RSession
+                       }
+  deriving (Eq,Ord,Show,Read)
+
 type VarDec  = Arg (Maybe Typ)
 
 data Program = Program { _prgDecs :: [Dec] }
@@ -131,11 +136,13 @@ data RSession
 type Sessions = [RSession]
 type NSession = Maybe Session
 
+makeLenses ''ChanDec
 makeLenses ''Defs
 makeLenses ''RFactor
 makeLenses ''Proc
 makeLenses ''Program
 makeLenses ''RSession
+makePrisms ''ChanDec
 makePrisms ''Act
 makePrisms ''Assertion
 makePrisms ''CPatt

@@ -80,6 +80,9 @@ instance Subst Act where
     Ax s cs      -> Ax (subst f s) cs
     At t cs      -> At (subst f t) (subst f cs)
 
+instance Subst ChanDec where
+  subst f (ChanDec c r os) = ChanDec c (subst f r) (subst f os)
+
 instance Subst CPatt where
   subst f = \case
     ChanP cd    -> ChanP (subst f cd)

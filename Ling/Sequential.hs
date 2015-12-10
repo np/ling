@@ -132,11 +132,11 @@ reduceAct defs act =
   case act of
     At t p ->
       case p of
-        ChanP (Arg c _) ->
+        ChanP (ChanDec c _ _) ->
           case reduceTerm' defs t of
             Proc cs proc0 ->
               case cs of
-                [Arg c' _] ->
+                [ChanDec c' _ _] ->
                   rename1 (c', c) proc0
                 _ -> transErr "reduceAct/At/Non single proc" act
             _ -> transErr "reduceAct/At/Non Proc" act
@@ -158,10 +158,11 @@ isReady env = \case
 transSplit :: Channel -> [ChanDec] -> Endom Env
 transSplit c dOSs env =
   rmChan c $
-  addChans [ (d, (Proj l n, oneS (projSession (integral # n) (unRepl session))))
+  addChans [ (d, (Proj l n, oneS (projSessions (integral # n) sessions)))
            | (d, n) <- zip ds [(0 :: Int)..] ] env
   where (l, session) = env ! c
-        ds = _argName <$> dOSs
+        sessions = session ^? to unRepl . _Array . _2 {-. to unsafeFlatSessions-} ?| error "transSplit: expected to split an array"
+        ds = dOSs ^.. each . cdChan
 
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
 transProc env proc0 = transProcs env [proc0] []
@@ -179,14 +180,15 @@ transAct defs act =
   case act of
     Nu _ [] ->
       id
-    Nu _ cds ->
+    Nu _ cds0 ->
       let
-        cds'@(Arg c0 c0S:_) = cds & each . argBody . _Just %~ unRepl
-                                  & unsafePartsOf (each . argBody) %~ extractDuals
+        cds1 = [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
+        cds2@(Arg c0 c0S:_) = cds1 & each . argBody . _Just %~ unRepl
+                                   & unsafePartsOf (each . argBody) %~ extractDuals
         l = Root c0
       in
       addLocs  (sessionStatus defs (const Empty) l c0S) .
-      addChans [(c,(l,oneS cS)) | Arg c cS <- cds']
+      addChans [(c,(l,oneS cS)) | Arg c cS <- cds2]
     Split _ c ds ->
       transSplit c ds
     Send c _ ->
@@ -240,9 +242,9 @@ initEnv :: Defs -> [ChanDec] -> Env
 initEnv gdefs cs =
   emptyEnv
     & edefs .~ gdefs
-    & addLocs  [ ls | Arg c (Just s) <- cs
+    & addLocs  [ ls | ChanDec c _ (Just s) <- cs
                , ls <- rsessionStatus gdefs decSt (Root c) s ]
-    & addChans [ (c, (Root c, s)) | Arg c (Just s) <- cs ]
+    & addChans [ (c, (Root c, s)) | ChanDec c _ (Just s) <- cs ]
   where
     decSt Write = Empty
     decSt Read  = Full

@@ -5,9 +5,9 @@ replicate_proc =
   \(A : Type)(n : Int)->
   proc(c : !A -o [!A ^ n])
   c{i,os}
-  os[o]
+  os[o^n]
   slice (o) n as _
-  fwd(!A)(o,i)
+    fwd(!A)(o,i)
 
 -- Here is a version without this trick which relies on the persistency of
 -- the variables (not channels)
@@ -16,8 +16,8 @@ replicate_proc_alt =
   proc(c : !A -o [!A ^ n])
   c{i,os}
   recv i (x : A).
-  os[o]
+  os[o^n]
   slice (o) n as _
-  new (j : ?A, k)
-  ( fwd(!A)(o,j)
-  | send k x)
+    new (j : ?A, k)
+    ( fwd(!A)(o,j)
+    | send k x)

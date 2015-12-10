@@ -31,6 +31,7 @@ import           Data.Set                  as X (Set)
 import           Data.Set                  (intersection, member, notMember,
                                             union, insert)
 import qualified Data.Set                  as Set
+import           Data.Set.Lens             as X
 import           Data.Traversable          as X
 import           Data.Tuple                as X
 import           Debug.Trace               as X

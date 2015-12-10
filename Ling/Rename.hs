@@ -61,6 +61,9 @@ hideName x f y | x == y    = y
 hide :: Fold s Name -> s -> Endom Ren
 hide f = composeMapOf f hideName
 
+instance Rename ChanDec where
+  rename f (ChanDec c r os) = ChanDec (rename f c) (rename f r) (rename f os)
+
 instance Rename CPatt where
   rename f = \case
     ChanP cd    -> ChanP (rename f cd)

@@ -17,15 +17,15 @@ oneS s = Repl s ø
 loli :: Op2 Session
 loli s t = Array ParK $ oneS <$> [dual s, t]
 
-fwds :: Int -> Session -> Sessions
+fwds :: Dual session => Int -> session -> [session]
 fwds n s
   | n <  0    = error "fwd: Negative number of channels to forward"
   | n == 0    = []
-  | n == 1    = [oneS s]
-  | otherwise = oneS <$> s : dual s : replicate (n - 2) (log s)
+  | n == 1    = [s]
+  | otherwise = s : dual s : replicate (n - 2) (log s)
 
 fwd :: Int -> Endom Session
-fwd n s = Array ParK $ fwds n s
+fwd n s = Array ParK $ oneS <$> fwds n s
 
 -- Here one can tune what we consider ended.
 -- Being ended implies:
@@ -204,17 +204,13 @@ unsafeFlatRSession (s `Repl` r) =
 unsafeFlatSessions :: Sessions -> [Session]
 unsafeFlatSessions = concatMap unsafeFlatRSession
 
-projRSessions :: Integer -> Sessions -> Session
-projRSessions _ [] = error "projRSessions: out of bound"
-projRSessions n (Repl s r:ss)
+projSessions :: Integer -> Sessions -> Session
+projSessions _ [] = error "projSessions: out of bound"
+projSessions n (Repl s r:ss)
   | Just i <- r ^? litR = if n < i
                            then s
-                           else projRSessions (n - i) ss
-  | otherwise           = error "projRSessions/Repl: only integer literals are supported"
-
-projSession :: Integer -> Endom Session
-projSession n (Array _ ss) = projRSessions n ss
-projSession _ _            = error "projSession: not an array (par,tensor,seq) session"
+                           else projSessions (n - i) ss
+  | otherwise           = error "projSessions/Repl: only integer literals are supported"
 
 replRSession :: RFactor -> Endom RSession
 replRSession r (Repl s t) = Repl s (r <> t)

@@ -43,7 +43,7 @@ import           Ling.Defs       (pushDefs)
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
 import           Ling.Print
-import           Ling.Proc       (fwdP, _Pref)
+import           Ling.Proc       (fwdProc', _Pref)
 import           Ling.Reduce     (reduceTerm, reduce_)
 import           Ling.Scoped     (Scoped(Scoped))
 import           Ling.Session
@@ -283,8 +283,8 @@ transAct env act =
       -- operational choices on channel allocation.
       (env', sDec typ cid C.NoInit)
       where
-        cs   = cds ^.. each . argName
-        cOSs = cds ^.. each . argBody
+        cs   = cds ^.. each . cdChan
+        cOSs = cds ^.. each . cdSession
         s    = log $ extractSession cOSs
         cid  = transName (cs ^?! _head)
         l    = C.LVar cid
@@ -301,16 +301,16 @@ transAct env act =
         y     = transName x
         cinit = C.SoInit (transLVal (env!c))
     Ax s cs ->
-      case fwdP (reduceSession env) ø s cs of
+      case fwdProc' (reduceSession env) s cs of
         Act (Ax{}) -> transErr "transAct/Ax" act
         proc0 -> (rmChans cs env, transProc env proc0)
     At t p ->
       case p of
-        ChanP (Arg c _) ->
+        ChanP (ChanDec c _ _) ->
           case reduceTerm' env t of
             Proc cs proc0 ->
               case cs of
-                [Arg c' _] ->
+                [ChanDec c' _ _] ->
                   let env1 = renChan c c' env in
                   (rmChan c env, transMkProc env1 cs proc0 ^. _2)
                 _ -> transErr "transAct/At/Non single proc" act
@@ -342,7 +342,7 @@ transSplit :: Name -> [ChanDec] -> Endom Env
 transSplit c dOSs env = rmChan c $ addChans newChans env
   where
     lval = env ! c
-    ds   = _argName <$> dOSs
+    ds   = _cdChan <$> dOSs
     newChans =
       case ds of
         [d] -> [ (d, lval) ]
@@ -465,12 +465,12 @@ mkPtrTyp ctyp
   | otherwise      = (mapAQTyp tPtr ctyp, C.LPtr)
 
 transChanDec :: Env -> ChanDec -> (C.Dec , (Channel, C.LVal))
-transChanDec env (Arg c (Just session)) =
+transChanDec env (ChanDec c _ (Just session)) =
     (dDec ctyp d, (c, trlval (C.LVar d)))
   where
     d              = transName c
     (ctyp, trlval) = mkPtrTyp (transRSession env session)
-transChanDec _   (Arg c Nothing)
+transChanDec _   (ChanDec c _ Nothing)
   = transErr "transChanDec: TODO No Session for channel:" c
 
 transMkProc :: Env -> [ChanDec] -> Proc -> ([C.Dec], [C.Stm])

@@ -5,9 +5,9 @@ module Ling.Proc
   ( Dottable(..)
   , _Pref
   , _PrefDotProc
-  , split'
   , fwdP
   , fwdProc
+  , fwdProc'
   , ax
   , splitAx
 
@@ -122,28 +122,28 @@ _PrefDotProc = prism' (uncurry dotP) go
       proc0 `Dot` proc1 -> proc0 ^? _Pref . to (\pref -> (pref, proc1))
       NewSlice{} -> Nothing
 
+subChanDecs :: [RSession] -> Channel -> [ChanDec]
+subChanDecs rss c = [ ChanDec c (rs ^. rfactor) (Just rs)
+                    | (i, rs) <- zip [0 :: Int ..] rss
+                    , let c' = suffixedChan (show i) # c ]
+
 subChans :: (Show i, Integral i) => i -> Channel -> [Channel]
 subChans n c = [ suffixedChan (show i) # c | i <- [0..n-1] ]
 
-noSession :: Channel -> ChanDec
-noSession c = Arg c Nothing
-
-split' :: TraverseKind -> Channel -> [Channel] -> Act
-split' k c = Split k c . map noSession
-
 type MkFwd a = (Session -> Session) -> UsedNames -> a -> [Channel] -> Proc
 
--- One could generate the session annotations on the splits
 fwdSplit :: [TraverseKind] -> ([Proc] -> Proc) -> MkFwd [RSession]
 fwdSplit ks fprocs redSession used rss cs
   | null cs   = ø
+  | null rss  = toProc $ Order (zipWith3 Split ks cs (repeat []))
   | otherwise = Order pref `dotP` fprocs ps
   -- These splits are independant, they are put in sequence because
   -- splitting always commutes anyway.
   where
-    dss  = subChans (length rss) <$> cs
-    ps   = zipWith     (fwdR redSession used) rss (transpose dss)
-    pref = zipWith3 id (split' <$> ks) cs dss
+    cdss = zipWith subChanDecs (transpose (fwds (length cs) <$> rss)) cs
+    css  = map _cdChan <$> cdss
+    ps   = zipWith (fwdR redSession used) rss (transpose css)
+    pref = zipWith3 Split ks cs cdss
 
 fwdParTen, fwdSeqSeq :: MkFwd [RSession]
 fwdParTen = fwdSplit (TenK : repeat ParK) mconcat
@@ -185,19 +185,26 @@ fwdP redSession used s0 cs
     IO p t s   -> fwdIO redSession used (p, t, s) cs
     TermS{}    -> Act $ ax s0 cs
 
+fwdProc' :: (Session -> Session) -> Session -> [Channel] -> Proc
+fwdProc' redSession s cs = fwdP redSession ø s cs
+
 -- The session 'Fwd n session' is a par.
 -- This function builds a process which first splits this par.
-fwdProc :: (Show i, Integral i) => i -> Session -> Channel -> Proc
-fwdProc n s c = split' ParK c cs `dotP` fwdP id ø s cs
-  where cs = subChans n c
+fwdProc :: Int -> Session -> Channel -> Proc
+fwdProc n s c = Split ParK c cs `dotP` fwdP id ø s (_cdChan <$> cs)
+  where
+    ss = oneS <$> fwds n s
+    cs = subChanDecs ss c
 
 ax :: Session -> [Channel] -> Act
 ax s cs | validAx s cs = Ax s cs
         | otherwise    = error "ax: Not enough channels given for this forwarder (or the session is not a sink)"
 
 splitAx :: (Show i, Integral i) => i -> Session -> Channel -> [Act]
-splitAx n s c = [split' ParK c cs, ax s cs]
-  where cs = subChans n c
+splitAx n s c = [Split ParK c cs, ax s (_cdChan <$> cs)]
+  where
+    ss = oneS <$> fwds n s
+    cs = subChanDecs ss c
 
 procActs :: Traversal' Proc Act
 procActs f = \case

@@ -127,6 +127,10 @@ instance Equiv Name where
 instance Equiv Term where
   equiv env t0 t1 = equivDef env t0 t1 || reduceEquiv reduceTerm equivRedTerm env t0 t1
 
+-- The session annotation is ignored
+chanDecArg :: ChanDec -> Arg RFactor
+chanDecArg (ChanDec c r _) = Arg c r
+
 equivRedTerm :: IsEquiv Term
 equivRedTerm env s0 s1 =
     case (s0,s1) of
@@ -139,8 +143,8 @@ equivRedTerm env s0 s1 =
                                                 (Abs (ignoreArgBody arg1) u1)
       (TFun arg0 u0, TFun arg1 u1) -> equiv env (Abs arg0 u0) (Abs arg1 u1)
       (TSig arg0 u0, TSig arg1 u1) -> equiv env (Abs arg0 u0) (Abs arg1 u1)
-      (Proc cds0 p0, Proc cds1 p1) -> equiv env (Telescope (ignoreArgBody<$>cds0) p0)
-                                                (Telescope (ignoreArgBody<$>cds1) p1)
+      (Proc cds0 p0, Proc cds1 p1) -> equiv env (Telescope (chanDecArg<$>cds0) p0)
+                                                (Telescope (chanDecArg<$>cds1) p1)
       (TProto ss0,   TProto ss1)   -> equiv env (RS ss0) (RS ss1)
       (TSession se0, TSession se1) -> case (se0, se1) of
         (IO p0 ty0 se0', IO p1 ty1 se1') -> equiv env (p0, Abs ty0 se0') (p1, Abs ty1 se1')
@@ -201,9 +205,12 @@ instance Equiv Act where
     (At t0 p0, At t1 p1) -> equiv env t0 t1 && p0 == p1
     (Nu _ann0 cds0, Nu _ann1 cds1) ->
        -- Annotations are ignored as they are semantic preserving
-       on (==) (each %~ _argName) cds0 cds1
+       on (==)        (each %~ _cdChan) cds0 cds1 &&
+       on (equiv env) (each %~ _cdRepl) cds0 cds1
     (Split k0 c0 cds0, Split k1 c1 cds1) ->
-       (k0, c0) == (k1, c1) && on (==) (_argName <$>) cds0 cds1
+       (k0, c0) == (k1, c1) &&
+       on (==)        (each %~ _cdChan) cds0 cds1 &&
+       on (equiv env) (each %~ _cdRepl) cds0 cds1
     (Ax _s0 cs0, Ax _s1 cs1) ->
        cs0 == cs1
 
