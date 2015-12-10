@@ -48,7 +48,7 @@ transVarDec x = case x of
   VD name optsig -> failure x
 transChanDec :: ChanDec -> Result
 transChanDec x = case x of
-  CD name optsession -> failure x
+  CD name optrepl optsession -> failure x
 transBranch :: Branch -> Result
 transBranch x = case x of
   Br conname term -> failure x

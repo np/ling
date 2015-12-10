@@ -38,7 +38,7 @@ data OptSig = NoSig | SoSig Term
 data VarDec = VD Name OptSig
   deriving (Eq, Ord, Show, Read)
 
-data ChanDec = CD Name OptSession
+data ChanDec = CD Name OptRepl OptSession
   deriving (Eq, Ord, Show, Read)
 
 data Branch = Br ConName Term

@@ -88,7 +88,7 @@ All other symbols are terminals.
   |  |  **|**  | //Dec// 
   |  |  **|**  | //Dec// ``,`` //[Dec]// 
   | //VarDec// | -> | ``(`` //Name// //OptSig// ``)`` 
-  | //ChanDec// | -> | //Name// //OptSession// 
+  | //ChanDec// | -> | //Name// //OptRepl// //OptSession// 
   | //[ChanDec]// | -> | **eps**
   |  |  **|**  | //ChanDec// 
   |  |  **|**  | //ChanDec// ``,`` //[ChanDec]// 

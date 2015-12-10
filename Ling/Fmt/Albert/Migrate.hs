@@ -44,7 +44,7 @@ transVarDec = \case
 
 transChanDec :: ChanDec -> L.ChanDec
 transChanDec = \case
-  CD name optsession -> L.CD (transName name) (transOptSession optsession)
+  CD name optrepl optsession -> L.CD (transName name) (transOptRepl optrepl) (transOptSession optsession)
 
 transBranch :: Branch -> L.Branch
 transBranch = \case

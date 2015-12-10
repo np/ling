@@ -133,7 +133,7 @@ instance Print VarDec where
 
 instance Print ChanDec where
   prt i e = case e of
-    CD name optsession -> prPrec i 0 (concatD [prt 0 name, prt 0 optsession])
+    CD name optrepl optsession -> prPrec i 0 (concatD [prt 0 name, prt 0 optrepl, prt 0 optsession])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])

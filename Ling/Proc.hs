@@ -123,12 +123,9 @@ _PrefDotProc = prism' (uncurry dotP) go
       NewSlice{} -> Nothing
 
 subChanDecs :: [RSession] -> Channel -> [ChanDec]
-subChanDecs rss c = [ ChanDec c (rs ^. rfactor) (Just rs)
+subChanDecs rss c = [ ChanDec c' (rs ^. rfactor) (Just rs)
                     | (i, rs) <- zip [0 :: Int ..] rss
                     , let c' = suffixedChan (show i) # c ]
-
-subChans :: (Show i, Integral i) => i -> Channel -> [Channel]
-subChans n c = [ suffixedChan (show i) # c | i <- [0..n-1] ]
 
 type MkFwd a = (Session -> Session) -> UsedNames -> a -> [Channel] -> Proc
 
@@ -200,7 +197,7 @@ ax :: Session -> [Channel] -> Act
 ax s cs | validAx s cs = Ax s cs
         | otherwise    = error "ax: Not enough channels given for this forwarder (or the session is not a sink)"
 
-splitAx :: (Show i, Integral i) => i -> Session -> Channel -> [Act]
+splitAx :: Int -> Session -> Channel -> [Act]
 splitAx n s c = [Split ParK c cs, ax s (_cdChan <$> cs)]
   where
     ss = oneS <$> fwds n s

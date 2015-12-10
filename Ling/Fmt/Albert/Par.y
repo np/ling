@@ -140,7 +140,7 @@ ListDec : {- empty -} { [] }
 VarDec :: { VarDec }
 VarDec : '(' Name OptSig ')' { Ling.Fmt.Albert.Abs.VD $2 $3 }
 ChanDec :: { ChanDec }
-ChanDec : Name OptSession { Ling.Fmt.Albert.Abs.CD $1 $2 }
+ChanDec : Name OptRepl OptSession { Ling.Fmt.Albert.Abs.CD $1 $2 $3 }
 ListChanDec :: { [ChanDec] }
 ListChanDec : {- empty -} { [] }
             | ChanDec { (:[]) $1 }
