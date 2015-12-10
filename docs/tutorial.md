@@ -17,7 +17,7 @@ and writes back its sum, should look less intimidating:
 
 ```{.haskell}
 sum_int = proc(a : {?Int ^ 10}, r : !Int)
-  new (itmp : !Int.?Int, tmp)
+  new/alloc [itmp : !Int.?Int, tmp]
   ( send itmp 0.
     fwd(?Int)(itmp, r)
   | a{ai}
