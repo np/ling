@@ -1,30 +1,37 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE LambdaCase      #-}
+{-# LANGUAGE Rank2Types      #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Ling.Rename where
 
+import           Control.Lens
 import           Ling.Free
 import           Ling.Norm
 import           Ling.Prelude
 
-type Ren = Endom Name
+data Ren = Ren { _renName  :: Endom Name
+               , _renBound :: Set Name }
+
+makeLenses ''Ren
 
 class Rename a where
   rename :: Ren -> Endom a
 
+-- `rename1 (x,y) s` replaces *all* the occurrences of `x` in `s`
+-- and put `y` instead.
 rename1 :: Rename a => (Name, Name) -> Endom a
-rename1 xy = rename (subst1 xy id)
+rename1 xy = rename $ Ren (subst1 xy id) ø
 
 instance Rename Name where
-  rename = id
+  rename = view renName
 
 instance Rename Term where
   rename f = \case
     Def x es   -> Def (rename f x) (rename f es)
-    Let defs t -> Let (rename f defs) (rename (hide (defsMap . to keys . each) defs f) t)
-    Lam arg t  -> Lam (rename f arg) (rename (hide argName arg f) t)
-    TFun arg t -> TFun (rename f arg) (rename (hide argName arg f) t)
-    TSig arg t -> TSig (rename f arg) (rename (hide argName arg f) t)
+    Let defs t -> Let (rename f defs) (rename (bindersOf (defsMap . to keys . each) defs f) t)
+    Lam arg t  -> Lam (rename f arg) (rename (bindersOf argName arg f) t)
+    TFun arg t -> TFun (rename f arg) (rename (bindersOf argName arg f) t)
+    TSig arg t -> TSig (rename f arg) (rename (bindersOf argName arg f) t)
     Con x      -> Con (rename f x)
     Case t brs -> Case (rename f t) (rename f brs)
     e0@TTyp    -> e0
@@ -54,12 +61,8 @@ instance Rename a => Rename (Maybe a) where
 instance (Rename a, Rename b) => Rename (a, b) where
   rename f = bimap (rename f) (rename f)
 
-hideName :: Name -> Endom Ren
-hideName x f y | x == y    = y
-               | otherwise = f y
-
-hide :: Fold s Name -> s -> Endom Ren
-hide f = composeMapOf f hideName
+bindersOf :: Fold s Name -> s -> Endom Ren
+bindersOf f s = renBound <>~ setOf f s
 
 instance Rename ChanDec where
   rename f (ChanDec c r os) = ChanDec (rename f c) (rename f r) (rename f os)
@@ -85,7 +88,7 @@ instance Rename Proc where
       Act (rename f act)
     proc0 `Dot` proc1 ->
       rename f proc0 `Dot`
-        rename (hide (to bvProc . folded) proc0 f) proc1
+        rename (bindersOf (to bvProc . folded) proc0 f) proc1
     Procs procs ->
       Procs (rename f procs)
     NewSlice cs t x proc0 ->
@@ -97,7 +100,7 @@ instance Rename a => Rename (Prll a) where
 instance Rename Session where
   rename f = \case
     Array k ss -> Array k (rename f ss)
-    IO p arg s -> IO p (rename f arg) (rename (hide argName arg f) s)
+    IO p arg s -> IO p (rename f arg) (rename (bindersOf argName arg f) s)
     TermS p t  -> TermS p (rename f t)
 
 instance Rename RSession where
