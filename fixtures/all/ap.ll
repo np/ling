@@ -6,3 +6,5 @@ ap =
   f[fi,fo]
   ( fwd(S)(fi,x)
   | fwd(T)(o,fo))
+
+ap_SInt_SBool = ap (!Int) (!Bool)

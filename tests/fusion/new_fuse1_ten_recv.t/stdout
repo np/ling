@@ -1,5 +1,5 @@
 
-{- Fused program -}
+{- Sequential Fused program -}
 
 new_ann_ten_recv =
   \ (ann : Allocation)-> proc ()

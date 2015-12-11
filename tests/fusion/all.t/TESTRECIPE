@@ -2,7 +2,7 @@
 
 testname=all.t
 command=Ling
-args=( --fuse )
+args=( --pretty --no-check --seq --fuse )
 exit_code=0
 stdin_file=stdin
 stdout_file=stdout

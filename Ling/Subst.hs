@@ -5,8 +5,9 @@ module Ling.Subst where
 
 import           Ling.Free
 import           Ling.Norm
-import           Ling.Prelude
+import           Ling.Prelude hiding (subst1)
 import           Ling.Proc
+import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.Session
 
@@ -20,7 +21,7 @@ app t0 (u:us) =
     Lam (Arg x mty) t1 ->
       app (subst (aDef x mty u) t1) us
       -- app (substScoped (subst1 (x, Ann mty u) t1)) us
-    Def x es           -> Def x (es ++ u : us)
+    Def x es           -> reduceDef (pure x) (es ++ u : us) ^. scoped
     _                  -> error "Ling.Subst.app: IMPOSSIBLE"
 
 substScoped :: Subst a => Scoped a -> a
@@ -90,7 +91,7 @@ instance Subst CPatt where
 
 instance Subst Proc where
   subst f = \case
-    Act act -> Act (subst f act)
+    Act act -> __Act # subst f act
     proc0 `Dot` proc1 ->
       subst f proc0 `Dot` subst f1 proc1
       where

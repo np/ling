@@ -15,3 +15,7 @@ com_new_mk_ten2 =
   proc()
   new(c : S, d : ~S)
   @(mk_tensor2 S (~S) p q)[c,d]
+
+com_new_mk_ten2_SInt =
+  com_new_mk_ten2 (!Int) (proc(c' : !Int) send c' 42)
+                         (proc(d : ?Int) recv d (x : Int))

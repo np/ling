@@ -2,7 +2,7 @@
 
 testname=send_1.t
 command=Ling
-args=( --compile send_1.ll )
+args=( --no-check --compile send_1.ll )
 exit_code=0
 stdin_file=/dev/null
 stdout_file=stdout

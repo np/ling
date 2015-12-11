@@ -1,5 +1,5 @@
 
--- Pretty-printed program
+{- Pretty-printed program -}
 
 assert
   'a'

@@ -91,10 +91,10 @@ bcProcs = mconcat . map bcProc . view unPrll
 
 bvProc :: BoundVars Proc
 bvProc = \case
-  Act act     -> bvAct act
-  Procs procs -> bvProcs procs
-  NewSlice{}  -> ø
-  Dot{}       -> error "bvProc: Dot"
+  Act act           -> bvAct act
+  Procs procs       -> bvProcs procs
+  NewSlice{}        -> ø
+  proc0 `Dot` proc1 -> bvProc proc0 <> bvProc proc1
 
 bvProcs :: BoundVars Procs
 bvProcs = mconcat . map bvProc . view unPrll

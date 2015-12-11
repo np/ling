@@ -31,19 +31,19 @@ cmdrstrictparfailure(){
   cmdr --strict-par --check -- strict-par-failure "$@"
 }
 cmdrseq(){
-  cmdr --seq -- sequence "$@"
+  cmdr --pretty --no-check --seq -- sequence "$@"
 }
 cmdrfuse(){
-  cmdr --fuse -- fusion "$@"
+  cmdr --pretty --no-check --seq --fuse -- fusion "$@"
 }
 cmdrcompile(){
-  cmdr --compile -- compile "$@"
+  cmdr --no-check --seq --fuse --compile -- compile "$@"
 }
 cmdrpretty(){
-  cmdr --pretty -- pretty "$@"
+  cmdr --pretty --no-norm -- pretty "$@"
 }
 cmdrnorm(){
-  cmdr --norm -- norm "$@"
+  cmdr --pretty -- norm "$@"
 }
 alias cmdrseqall='cmdrecord tests/sequence/all.t --env empty -- Ling --seq < fixtures/sequence/*.ll'
 alias cmdrfuseall='cmdrecord tests/fusion/all.t --env empty -- Ling --fuse < fixtures/sequence/*.ll'

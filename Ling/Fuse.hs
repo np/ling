@@ -11,9 +11,14 @@ import           Ling.Session
 
 type Allocation = Term
 
+-- isoPrism :: Prism s t a b -> Iso s t (Either s a) (Either b t)
+-- isoPrism p pafb = p pafb
+
 data AllocAnn
   = Fused
   | Fuse Int
+--  | Alloc
+--  | Auto
 
 defaultFusion, autoFusion :: AllocAnn -- [Allocation] -> Maybe [Allocation]
 defaultFusion = Fused
@@ -30,6 +35,8 @@ _AllocAnn = prism' con pat where
   con = \case
     Fused   -> Def (Name "fused") []
     Fuse i  -> Def (Name "fuse" ) [litTerm . integral # i]
+    -- Alloc   -> Def (Name "alloc") []
+    -- Auto    -> Def (Name "auto" ) []
   pat = \case
     Def (Name "fused") []  -> Just Fused
     Def (Name "fuse" ) [i] -> i ^? litTerm . integral . re _Fuse
@@ -75,6 +82,12 @@ fuseSendRecv (anns, k) c0 e c1 (Arg x mty) =
 
 nu2 :: ([Allocation], TraverseKind) -> ChanDec -> ChanDec -> Act
 nu2 (anns, k) c0 c1 = Nu anns k [c0,c1]
+{-
+new(c : {A,B}, d : [~A,~B])
+
+new(c0 : A, d0 : ~A)
+new(c1 : B, d1 : ~B)
+-}
 
 fuse2Acts :: ([Allocation], TraverseKind) -> ChanDec -> Act -> ChanDec -> Act -> Order Act
 fuse2Acts anns c0 act0 c1 act1 =
@@ -101,12 +114,12 @@ fuse2Chans anns cd0 cd1 p0 =
         (cdA, cdB) = if actA ^. to fcAct . hasKey c0 then (cd0, cd1) else (cd1, cd0)
         predB :: Set Channel -> Bool
         predB fc = fc ^. hasKey (cdB ^. cdChan)
-        mactB = p1 ^? {-scoped .-} fetchActProc predB . _Act
+        mactB = p0 {- was p1 -} ^? {-scoped .-} fetchActProc predB . _Act
       in
       case mactB of
-        Nothing -> error $ "fuse2Chans: mactB is Nothing" ++ pretty (cdB, p1) -- p1
+        Nothing -> error $ "fuse2Chans: mactB is Nothing" ++ pretty (cdB, p0) -- can we return p0 or p1 ?
         Just actB ->
-          p1 & fetchActProc predB .~ toProc (fuse2Acts anns cdA actA cdB actB)
+          p1 & fetchActProc predA .~ toProc (fuse2Acts anns cdA actA cdB actB)
   where
     c0 = cd0 ^. cdChan
     c1 = cd1 ^. cdChan
@@ -119,3 +132,16 @@ fuse2Chans anns cd0 cd1 p0 =
 
 fuseProgram :: Endom Program
 fuseProgram = prgDecs . each . _Sig . _3 . _Just . _Proc . _2 %~ fuseProc
+{-
+fuse2Chans c0 c1 p0 =
+  p0 & partsOf (scoped . procActsChans (l2s [c0,c1])) %~ f
+
+  where f [] = []
+        f (act0 : acts)
+          | c0 `member` fcAct act0 = g act0 acts c0
+          | otherwise              = g act0 acts c1
+        g act0 acts cA =
+          let (acts0,act1:acts1) = span (member cA . fcAct) acts
+              (act0',act1')      = fuse2Acts (act0, act1)
+          in act0' : acts0 ++ act1' : acts1
+-}

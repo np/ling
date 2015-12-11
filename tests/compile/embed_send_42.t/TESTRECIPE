@@ -2,7 +2,7 @@
 
 testname=embed_send_42.t
 command=Ling
-args=( --compile embed_send_42.ll )
+args=( --no-check --compile embed_send_42.ll )
 exit_code=0
 stdin_file=/dev/null
 stdout_file=stdout

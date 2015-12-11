@@ -45,6 +45,7 @@ import           Ling.Prelude    hiding (q)
 import           Ling.Print
 import           Ling.Proc       (fwdProc', _Pref)
 import           Ling.Reduce     (reduceTerm, reduce_)
+--import           Ling.Rename     (hDec)
 import           Ling.Scoped     (Scoped(Scoped))
 import           Ling.Session
 -- import           Ling.Subst      (unScoped)
@@ -111,6 +112,7 @@ data Env =
       , _evars :: Map EVar C.Ident
       , _edefs :: Defs
       , _types :: Set Name
+      , _farr  :: Bool
       }
   deriving (Show)
 
@@ -127,7 +129,7 @@ primTypes :: Set Name
 primTypes = l2s (Name "Vec" : keys basicTypes)
 
 emptyEnv :: Env
-emptyEnv = Env ø ø ø primTypes
+emptyEnv = Env ø ø ø primTypes True
 
 addChans :: [(Name, C.LVal)] -> Endom Env
 addChans xys env = env & locs %~ Map.union (l2m xys)
@@ -169,6 +171,8 @@ transOp (Name v) = case v of
   "_+D_" -> Just C.Add
   "_*_"  -> Just C.Mul
   "_*D_" -> Just C.Mul
+  "_/_"  -> Just C.Div
+  "_/D_" -> Just C.Div
   "_%_"  -> Just C.Mod
   "_%D_" -> Just C.Mod
   "_-_"  -> Just C.Sub
@@ -258,7 +262,7 @@ transProc env = \case
 
 transLVal :: C.LVal -> C.Exp
 transLVal (C.LVar x)   = C.EVar x
-transLVal (C.LFld l f) = C.EFld (transLVal l) f
+transLVal (C.LFld l f) = eFld   (transLVal l) f
 transLVal (C.LArw l f) = C.EArw (transLVal l) f
 transLVal (C.LArr l i) = C.EArr (transLVal l) i
 transLVal (C.LPtr l)   = ePtr   (transLVal l)
@@ -297,7 +301,7 @@ transAct env act =
     Recv c (Arg x typ) ->
       (addEVar x (transName x) env, sDec ctyp y cinit)
       where
-        ctyp  = transMaybeCTyp env C.QConst typ
+        ctyp  = transMaybeCTyp (env & farr .~ False) C.QConst typ
         y     = transName x
         cinit = C.SoInit (transLVal (env!c))
     Ax s cs ->
@@ -395,8 +399,12 @@ transTyp env ty0 =
     | null es, Just t <- Map.lookup x basicTypes -> (t, [])
     | otherwise ->
     case (unName # x, es) of
-      -- ("Vec", [a,e]) -> tArr (transTyp env a) (transTerm env e)
-      ("Vec", [a,_e]) -> tPtr (transTyp env a)
+      ("Vec", [a,e])
+        | env ^. farr, Just i <- reduceTerm' env e ^? _Lit . _LInteger ->
+           -- Here we could use transTerm if we could still fallback on a
+           -- pointer type.
+            tArr (transTyp env a) (C.ELit (C.LInteger i))
+        | otherwise -> tPtr (transTyp env a)
       _ -> unsupportedTyp ty0
   Let{}      -> error "IMPOSSIBLE: Let after reduce"
   TTyp{}     -> tInt -- <- types are erased to 0
@@ -498,7 +506,7 @@ transSig env0 f (Just ty0) Nothing = go [] (reduceTerm' env0 ty0)
 transSig _ _ Nothing Nothing = error "IMPOSSIBLE transSig no sig nor def"
 
 transDec :: Env -> Dec -> (Env, [C.Def])
-transDec env x = case x of
+transDec env dec = case {-hDec-} dec of
   Sig d ty tm -> (env & edefs . at d .~ (Ann ty <$> tm), transSig env d ty tm)
   Dat _d _cs ->
     (env, []) -- TODO typedef ? => [C.TEnum (C.EEnm . transCon <$> cs)]

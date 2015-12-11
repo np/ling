@@ -9,6 +9,8 @@ replicate_proc =
   slice (o) n as _
     fwd(!A)(o,i)
 
+replicate_proc_Int_10 = replicate_proc Int 10
+
 -- Here is a version without this trick which relies on the persistency of
 -- the variables (not channels)
 replicate_proc_alt =
@@ -21,3 +23,5 @@ replicate_proc_alt =
     new (j : ?A, k)
     ( fwd(!A)(o,j)
     | send k x)
+
+replicate_proc_alt_Int_10 = replicate_proc_alt Int 10

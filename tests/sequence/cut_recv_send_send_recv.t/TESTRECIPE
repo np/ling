@@ -2,7 +2,7 @@
 
 testname=cut_recv_send_send_recv.t
 command=Ling
-args=( --seq cut_recv_send_send_recv.ll )
+args=( --pretty --no-check --seq cut_recv_send_send_recv.ll )
 exit_code=0
 stdin_file=/dev/null
 stdout_file=stdout

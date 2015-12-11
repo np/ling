@@ -2,7 +2,7 @@
 
 testname=all.t
 command=Ling
-args=( --compile-prims --compile )
+args=( --no-check --seq --compile-prims --compile )
 exit_code=0
 stdin_file=stdin
 stdout_file=stdout

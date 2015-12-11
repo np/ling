@@ -17,3 +17,6 @@ group_nested_seq :
    proc(c : {[: [: ~A, ~B :], [: ~C, ~D :] :], [: A, B, C, D :]})
      c{i,o}
      @(split_nested_seq_core (~A) (~B) (~C) (~D))(o,i)
+
+group_nested_seq_SInt_SDouble_SBool_SString =
+  group_nested_seq (!Int) (!Double) (!Bool) (!String)

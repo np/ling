@@ -4,6 +4,8 @@
 
 module Main where
 
+import           Control.Monad.Writer (tell, execWriter)
+
 import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
 import           System.IO          (hPutStrLn, stderr)
@@ -27,6 +29,7 @@ import           Ling.Print
 import           Ling.Fuse          (fuseProgram)
 import           Ling.Subst         (subst)
 import           Ling.Reify
+import           Ling.Rename        (hDec)
 import qualified Ling.Sequential    as Sequential
 
 cpprint :: Show a => a -> IO ()
@@ -36,14 +39,20 @@ type ParseFun a = [Token] -> Err a
 
 data Opts =
        Opts
-         { _tokens,_showAST,_showPretty,_doNorm,_check,_expand,_sequential,_fuse,_compile,_compilePrims,_noPrims :: Bool
-         , _checkOpts                                                                              :: TCOpts
+         { _noCheck, _showExpand, _doExpand, _doSeq
+         , _noSequential,  _showTokens, _showAST, _showPretty, _noNorm
+         , _doRefresh, _doFuse, _compile, _compilePrims, _noPrims   :: Bool
+         , _checkOpts :: TCOpts
          }
 
 $(makeLenses ''Opts)
 
+check :: Lens' Opts Bool
+check = noCheck . iso not not
+
 defaultOpts :: Opts
-defaultOpts = Opts False False False False False False False False False False False defaultTCOpts
+defaultOpts = Opts False False False False False False False False False False
+                   False False False False defaultTCOpts
 
 debugCheck :: Setter' Opts Bool
 debugCheck = mergeSetters check (checkOpts.debugChecker)
@@ -126,14 +135,12 @@ runProgram opts f = runFile opts pProgram f >>= transP opts
 
 run :: (Print a, Show a) => Opts -> ParseFun a -> String -> IO a
 run opts p s = do
-  when (opts ^. tokens) $ do
+  when (opts ^. showTokens) $ do
     putStrLn "Tokens:"
     for_ ts cpprint
   case p ts of
     Bad e -> failIO $ "Parse Failed: " ++ e
-    Ok tree -> do
-      showTree opts tree
-      return tree
+    Ok tree -> return tree
 
   where
     ts = layoutLexer s
@@ -150,53 +157,60 @@ runErr :: Err a -> IO a
 runErr (Ok a)  = return a
 runErr (Bad s) = failIO s
 
+transOpts :: Opts -> [String]
+transOpts opts = execWriter $ do
+  when (opts ^. doRefresh) $ tell ["Fresh"]
+  when (opts ^. doExpand)  $ tell ["Expanded"]
+  when (opts ^. doSeq)     $ tell ["Sequential"]
+  when (opts ^. doFuse)    $ tell ["Fused"]
+
 transP :: Opts -> Program -> IO ()
 transP opts prg = do
-  when (opts ^. doNorm) $
-    putStrLn (pretty nprg)
+  when (opts ^. showAST) $ do
+    putStrLn "\n[Abstract Syntax]\n\n"
+    cpprint prg
   when (opts ^. check) $ do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not (opts ^. noPrims)) $ nprg
     putStrLn "Checking Sucessful!"
-  when (opts ^. expand) $
-    putStrLn $ "\n{- Expanded program -}\n\n" ++ pretty eprg
-  when (opts ^. sequential) $
-    putStrLn $ "\n{- Sequential program -}\n\n" ++ pretty sprg
-  when (opts ^. fuse) $
-    putStrLn $ "\n{- Fused program -}\n\n" ++ pretty fprg
+  when (opts ^. showPretty) $
+    case transOpts opts of
+      [] | opts ^. noNorm -> putStrLn $ "\n{- Pretty-printed program -}\n\n" ++ pretty prg
+         | otherwise      -> putStrLn $ "\n{- Normalized program -}\n\n" ++ pretty nprg
+      ts | opts ^. noNorm -> usage "--no-norm cannot be combined with --fresh, --expand, --seq, or --fuse"
+         | otherwise      -> putStrLn $ "\n{- " ++ unwords ts ++ " program -}\n\n" ++ pretty fprg
   when (opts ^. compile) $
     putStrLn $ "\n/* C program */\n\n" ++ C.printTree cprg
 
   where
     nprg = norm prg
-    eprg = N.transProgramTerms subst nprg
-    sprg = Sequential.transProgram nprg
-    fprg = fuseProgram sprg
-    cprg = Compile.transProgram (addPrims (opts ^. compilePrims) sprg)
-
-showTree :: (Show a, Print a) => Opts -> a -> IO ()
-showTree opts tree = do
-  when (opts ^. showAST) $ do
-    putStrLn "\n[Abstract Syntax]\n\n"
-    cpprint tree
-  when (opts ^. showPretty) $
-    putStrLn $ "\n-- Pretty-printed program\n\n" ++ pretty tree
+    rprg | opts ^. doRefresh = N.transProgramDecs (const hDec) nprg
+         | otherwise         = nprg
+    eprg | opts ^. doExpand  = N.transProgramTerms subst rprg
+         | otherwise         = rprg
+    sprg | opts ^. doSeq     = Sequential.transProgram eprg
+         | otherwise         = eprg
+    fprg | opts ^. doFuse    = fuseProgram sprg
+         | otherwise         = sprg
+    cprg = Compile.transProgram $ addPrims (opts ^. compilePrims) fprg
 
 flagSpec :: [(String, (Endom Opts, String))]
 flagSpec =
   (\(x,y,z) -> (x,(y,z))) <$>
-  [ ("check"        , add check                   , "Type check the program")
+  [ ("check"        , add check                   , "Type check the program (default on)")
+  , ("pretty"       , add showPretty              , "Display the program (can be combined with transformations)")
   , ("compile"      , add compile                 , "Display the compiled program (C language)")
-  , ("pretty"       , add showPretty              , "Display the program")
-  , ("norm"         , add doNorm                  , "Display the normalized program")
-  , ("expand"       , add expand                  , "Display the program with the definitions expanded")
-  , ("fuse"         , add fuse                    , "Display the fused program")
-  , ("seq"          , add sequential              , "Display the sequential program")
-  , ("tokens"       , add tokens                  , "Display the program as a list of tokens from the lexer")
-  , ("ast"          , add showAST                 , "Display the program as an Abstract Syntax Tree")
+  , ("refresh"      , add doRefresh               , "Enable the internal renaming using fresh names")
+  , ("expand"       , add doExpand                , "Rewrite the program with the definitions expanded")
+  , ("fuse"         , add doFuse                  , "Display the fused program")
+  , ("seq"          , add doSeq                   , "Display the sequential program")
+  , ("show-tokens"  , add showTokens              , "Display the program as a list of tokens from the lexer")
+  , ("show-ast"     , add showAST                 , "Display the program as an Abstract Syntax Tree")
   , ("debug-check"  , add debugCheck              , "Display debugging information while checking")
   , ("compile-prims", add compilePrims            , "Also compile the primitive definitions")
   , ("strict-par"   , add (checkOpts . strictPar) , "Make the checker stricter about pars (no mix rule)")
   , ("no-prims"     , add noPrims                 , "Do not include the primitive definitions")
+  , ("no-norm"      , add noNorm                  , "Disable the normalizer")
+  , ("no-check"     , add noCheck                 , "Disable type checking")
   ] where add opt opts = opts & opt .~ True
 
 usage :: String -> IO a

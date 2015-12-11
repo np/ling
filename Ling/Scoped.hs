@@ -83,5 +83,5 @@ subst1 (x, Ann mty tm) s =
     Def y [] | isInternalName y ->
       pure $ rename1 (x, y) s
     _ ->
-      let hx = internalNameFor tm # x in
-      Scoped ø (aDef hx mty tm) (rename1 (x, hx) s)
+      let (hx, hmty, htm) = hDef x mty tm in
+      Scoped ø (aDef hx hmty htm) (rename1 (x, hx) s)

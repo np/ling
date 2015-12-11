@@ -21,7 +21,6 @@ import Ling.Print
 import Ling.Session
 import Ling.Proc
 import Ling.Norm
-import Ling.Rename
 import Ling.Scoped (Scoped(Scoped))
 import Ling.Defs (pushDefs)
 import Ling.Reduce (reduceTerm)
@@ -122,26 +121,18 @@ splitReady env = bimap Prll Prll . partition (isReady env) . _unPrll
 
 reduceProc :: Defs -> Endom Proc
 reduceProc defs = \case
-  Act act -> reduceAct defs act
+  Act act -> Act act & _ActAt . _1 %~ reduceTerm' defs
   proc0 `Dot` proc1 -> reduceProc defs proc0 `dotP` reduceProc defs proc1 -- TODO add the LetA defs from proc0
   Procs procs -> procs ^. each . to (reduceProc defs)
   NewSlice cs t x p -> NewSlice cs t x (reduceProc defs p)
 
+{-
 reduceAct :: Defs -> Act -> Proc
-reduceAct defs act =
-  case act of
-    At t p ->
-      case p of
-        ChanP (ChanDec c _ _) ->
-          case reduceTerm' defs t of
-            Proc cs proc0 ->
-              case cs of
-                [ChanDec c' _ _] ->
-                  rename1 (c', c) proc0
-                _ -> transErr "reduceAct/At/Non single proc" act
-            _ -> transErr "reduceAct/At/Non Proc" act
-        _ -> transErr "reduceAct/At/Non ChanP" act
-    _ -> Act act
+reduceAct defs =
+  \case
+    At t p -> _ActAt # (reduceTerm' defs t) p
+    act -> Act act
+-}
 
 isReady :: Env -> Act -> Bool
 isReady env = \case
@@ -246,12 +237,17 @@ transProcs env p0s waiting k =
             _ | (readyPis@(Prll(_:_)),restPis) <- splitReady env pref ->
               transPref env readyPis (ps ++ reverse waiting ++ [restPis `dotP` p1]) k
 
-            _ | null ps && null waiting ->
-              trace ("[WARNING] Sequencing a non-ready prefix " ++ pretty pref)
-              transPref env pref [p1] k
+            _ | null ps ->
+              trace ("[WARNING] Sequencing a non-ready prefix " ++ pretty pref) $
+              transPref env pref (p1 : reverse waiting) k
 
             _ ->
               transProcs env ps (p0 : waiting) k
+
+        proc0 `Dot` proc1 ->
+          transProc env proc0 $ \env' proc0' ->
+            transProc env' proc1 $ \env'' proc1' ->
+              k env'' (proc0' `dotP` proc1')
 
         _ ->
           transProcs env ps (p0 : waiting) k

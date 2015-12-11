@@ -10,6 +10,8 @@ curry =
   | fwd(T)(fy,y)
   | fwd(U)(o,fo))
 
+curry_SInt_SBool_SDouble = curry (!Int) (!Bool) (!Double)
+
 {-
 later on...
 

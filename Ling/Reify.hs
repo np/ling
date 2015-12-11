@@ -175,14 +175,22 @@ normAct = \case
     NewSend  c t      -> toProc $ N.Send         c (norm t)
     NewRecv x os c    -> toProc $ N.Recv         c (norm (VD x os))
     At       t pa     -> toProc $ N.At   (norm t) (norm pa)
-    LetA     x os t   -> toProc $ N.LetA (N.aDef x (norm os) (norm t))
+    LetA     x os t   -> toProc $ N.LetA (N.aDef (norm x) (norm os) (norm t))
     LetRecv _x _os _t -> error "`let ... <= ...` is not supported yet (Issue #16)"
+
+instance Norm Name where
+  type Normalized Name = Name
+  -- reify x = x ^? suffixedName "norm" ?| x
+  reify x = x
+  norm x = x
+    -- | x == anonName = x
+    -- | otherwise     = suffixedName "norm" # x
 
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
 
 reifyLetA :: Arg N.AnnTerm -> Act
-reifyLetA (Arg x (Ann os tm)) = LetA x (reify os) (reify tm)
+reifyLetA (Arg x (Ann os tm)) = LetA (reify x) (reify os) (reify tm)
 
 reifyDefsA :: N.Defs -> Proc
 reifyDefsA defs = pDots $ defs ^.. each . to reifyLetA . to PAct
@@ -212,7 +220,7 @@ normRawApp :: [ATerm] -> N.Term
 normRawApp [e] = norm e
 normRawApp (e0:Op d:es)
   | (unOpName # d) `elem` ["-", "+", "*", "/", "%", "-D", "+D", "*D", "/D", "++S"] =
-      N.Def (infixed # d) [norm e0, normRawApp es]
+      N.Def (norm (infixed # d)) [norm e0, normRawApp es]
 normRawApp (Var (Name "Fwd"):es)
   | [e0, e1] <- es
   , Just n <- e0 ^? normalized . N.litTerm . integral =
@@ -222,7 +230,7 @@ normRawApp (Var (Name "Fwd"):es)
 normRawApp (Var (Name "Log"):es)
   | [e] <- es = log (norm (AS e)) ^. N.tSession
   | otherwise = error "invalid usage of Log"
-normRawApp (Var x:es) = N.Def x (norm es)
+normRawApp (Var x:es) = N.Def (norm x) (norm es)
 normRawApp [] = error "normRawApp: IMPOSSIBLE"
 normRawApp _ = error "normRawApp: unexpected application"
 
@@ -240,7 +248,7 @@ reifyArray N.TenK = Ten
 instance Norm ATerm where
   type Normalized ATerm = N.Term
   reify = \case
-    N.Def x []                -> Var x
+    N.Def x []                -> Var (reify x)
     N.Lit l                   -> Lit l
     N.Con n                   -> Con (reify n)
     N.TTyp                    -> TTyp
@@ -248,7 +256,7 @@ instance Norm ATerm where
     N.TSession (N.Array k ss) -> reifyArray k (reify ss)
     e                         -> paren (reify e)
   norm = \case
-    Var x      -> N.Def x []
+    Var x      -> N.Def (norm x) []
     Op x       -> error $ "Unexpected operator-part: " ++ show x
     Lit l      -> N.Lit l
     Con n      -> N.Con (norm n)
@@ -292,21 +300,23 @@ reifyDef x es
 
 reifyVarDecA :: N.VarDec -> ATerm
 reifyVarDecA (Arg _ Nothing) = error "reifyVarDecA: no type annotation"
-reifyVarDecA (Arg a (Just t))
+reifyVarDecA (Arg a0 (Just t))
   | a == anonName = Paren (reify t)            NoSig
   | otherwise     = Paren (RawApp (Var a) []) (SoSig (reify t))
+
+  where a = reify a0
 
 reifyVarDec :: N.VarDec -> Term
 reifyVarDec = aTerm . reifyVarDecA
 
 reifyDefs :: N.Defs -> Endom Term
 reifyDefs = composeMapOf each $ \case
-  Arg x (Ann mty tm) -> Let x (reify mty) (reify tm)
+  Arg x (Ann mty tm) -> Let (reify x) (reify mty) (reify tm)
 
 instance Norm Term where
   type Normalized Term = N.Term
   reify = \case
-    N.Def x es   -> reifyDef x es
+    N.Def x es   -> reifyDef (reify x) es
     N.Let d t    -> reifyDefs d (reify t)
     N.Lit l      -> RawApp (Lit l) []
     N.Con n      -> RawApp (Con (reify n)) []
@@ -330,7 +340,7 @@ instance Norm Term where
     Loli s t     -> N.TSession $ norm (RawSession s) `loli` norm (RawSession t)
     Dual s       -> dual (norm s)
     TRecv _c     -> error "Receive as an expression (Issue #16) is not supported yet"
-    Let x os t u -> N.Let (N.aDef x (norm os) (norm t)) (norm u)
+    Let x os t u -> N.Let (N.aDef (norm x) (norm os) (norm t)) (norm u)
 
 instance Norm Branch where
   type Normalized Branch = (Name, N.Term)
@@ -348,10 +358,10 @@ reifyTerm = reify
 instance Norm AllocTerm where
   type Normalized AllocTerm = N.Term
   reify (N.Lit lit)  = ALit lit
-  reify (N.Def d []) = AVar d
+  reify (N.Def d []) = AVar (reify d)
   reify t            = AParen (reify t) NoSig
   norm (ALit lit)    = N.Lit lit
-  norm (AVar d)      = N.Def d []
+  norm (AVar d)      = N.Def (norm d) []
   norm (AParen t os) = N.optSig (norm t) (norm os)
 
 instance Norm NewPatt where
@@ -386,8 +396,8 @@ instance Norm ChanDec where
 
 instance Norm VarDec where
   type Normalized VarDec = N.VarDec
-  reify (Arg x s) = VD  x (reify s)
-  norm  (VD x s)  = Arg x (norm  s)
+  reify (Arg x s) = VD  (reify x) (reify s)
+  norm  (VD x s)  = Arg (norm x) (norm  s)
 
 instance Norm OptSession where
   type Normalized OptSession = Maybe N.RSession
@@ -418,15 +428,15 @@ instance Norm Dec where
   type Normalized Dec   = N.Dec
 
   norm = \case
-    DSig d ty    -> N.Sig d (Just $ norm ty) Nothing
-    DDef d ty tm -> N.Sig d (norm ty) (Just $ norm tm)
-    DDat d cs    -> N.Dat d (norm cs)
+    DSig d ty    -> N.Sig (norm d) (Just $ norm ty) Nothing
+    DDef d ty tm -> N.Sig (norm d) (norm ty) (Just $ norm tm)
+    DDat d cs    -> N.Dat (norm d) (norm cs)
     DAsr a       -> N.Assert (norm a)
   reify = \case
     N.Sig _ Nothing   Nothing -> error "IMPOSSIBLE Norm Dec/reify: no def nor sig"
-    N.Sig d (Just ty) Nothing -> DSig d (reify ty)
-    N.Sig d ty (Just tm)      -> DDef d (reify ty) (reify tm)
-    N.Dat d cs                -> DDat d (reify cs)
+    N.Sig d (Just ty) Nothing -> DSig (reify d) (reify ty)
+    N.Sig d ty (Just tm)      -> DDef (reify d) (reify ty) (reify tm)
+    N.Dat d cs                -> DDat (reify d) (reify cs)
     N.Assert a                -> DAsr (reify a)
 
 instance Norm Assertion where

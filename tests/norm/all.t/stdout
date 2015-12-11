@@ -1,3 +1,6 @@
+
+{- Normalized program -}
+
 assert
   'a'
   =
@@ -10,6 +13,9 @@ ap =
   split f [fi, fo]
   ( fwd S (fi, x)
   | fwd T (o, fo))
+
+ap_SInt_SBool =
+  ap (!Int)(!Bool)
 
 assert
   `false
@@ -120,6 +126,11 @@ com_new =
   ( @ p (c)
   | @ q (d))
 
+com_new_SInt =
+  com_new (!Int)(proc (c' : !Int)
+  c' <- 42)(proc (d : ?Int)
+  let x : Int <- d)
+
 com_new_mk_ten2 =
   let mk_tensor2 = \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
   split c [c0, c1]
@@ -127,6 +138,11 @@ com_new_mk_ten2 =
   | @ p1 (c1))in \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
   new (c : S, d : ~ S)
   @ (mk_tensor2 S (~ S)p q)[c, d]
+
+com_new_mk_ten2_SInt =
+  com_new_mk_ten2 (!Int)(proc (c' : !Int)
+  c' <- 42)(proc (d : ?Int)
+  let x : Int <- d)
 
 conv_fun =
   \ (A : Type)-> \ (A' : Type)-> \ (B : Type)-> \ (S : Session)-> \ (dom : A' -> A)-> \ (cod : B -> < S >)-> \ (f : A -> B)-> proc (c : {?A', S})
@@ -144,6 +160,9 @@ curry =
   ( fwd S (fx, x)
   | fwd T (fy, y)
   | fwd U (o, fo))
+
+curry_SInt_SBool_SDouble =
+  curry (!Int)(!Bool)(!Double)
 
 cutEmptyParTensor =
   proc ()
@@ -301,6 +320,14 @@ feed_fwd_send_then_recv =
       c <- (f x)
     | d <- i.
       let o : O <- d ))
+
+feed_fwd_send_then_recv_Int_String_42_showInt =
+  feed_fwd_send_then_recv Int String 42 showInt (proc (c)
+  split c {c#0 : !Int.?String, c#1 : ?Int.!String}
+  let x#c#1 : Int <- c#1.
+  c#0 <- x#c#1.
+  let x#c#0 : String <- c#0.
+  c#1 <- x#c#0)
 
 feed_recv =
   \ (p : < ?Int >)-> \ (i : Int)-> proc ()
@@ -576,6 +603,9 @@ group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]})
   split c {i, o}
   @ (split_nested_seq_core (~ A)(~ B)(~ C)(~ D)) {o, i}
+
+group_nested_seq_SInt_SDouble_SBool_SString =
+  group_nested_seq (!Int)(!Double)(!Bool)(!String)
 
 id : (A : Type)-> (x : A)-> A
 
@@ -1310,6 +1340,9 @@ replicate_proc =
     let x#i : A <- i.
     o <- x#i
 
+replicate_proc_Int_10 =
+  replicate_proc Int 10
+
 replicate_proc_alt =
   \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
   split c {i, os}
@@ -1320,6 +1353,9 @@ replicate_proc_alt =
     ( let x#j : A <- j.
       o <- x#j
     | k <- x )
+
+replicate_proc_alt_Int_10 =
+  replicate_proc_alt Int 10
 
 replicate_ten =
   proc (c : [!Int ^ 10])

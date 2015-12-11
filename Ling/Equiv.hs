@@ -24,8 +24,10 @@ eqEnv l = views l (EqEnv [] ø ø)
 swapEnv :: Endom EqEnv
 swapEnv (EqEnv nms gds ds0 ds1) = EqEnv (map swap nms) gds ds1 ds0
 
-ext :: EqEnv -> Name -> Name -> EqEnv
-ext env x0 x1
+ext :: Name -> Name -> Endom EqEnv
+ext x0 x1 env
+  -- If any of the bound name is anon then
+ -- | x0 == anonName || x1 == anonName = env
   | env^.egdefs.hasKey x0 =
       error $ "Name conflict: " ++ pretty x0 ++ " is already bound"
   | env^.egdefs.hasKey x1 =
@@ -40,7 +42,7 @@ ext env x0 x1
 -- NOTE: Removing the definitions as here would be wrong
 -- since these definitions might be needed by others
 -- "Better" solution, use a different binder
-ext env x0 x1 = env & eqnms  %~ ((x0,x1):)
+ext x0 x1 env = env & eqnms  %~ ((x0,x1):)
                     & edefs0 . at x0 .~ Nothing
                     & edefs1 . at x1 .~ Nothing
 -}
@@ -80,7 +82,7 @@ ignoreArgBody = argBody %~ Ignored
 
 instance (Equiv a, Equiv b) => Equiv (Abs a b) where
   equiv env (Abs (Arg x0 s0) u0) (Abs (Arg x1 s1) u1) =
-    equiv env s0 s1 && equiv (ext env x0 x1) u0 u1
+    equiv env s0 s1 && equiv (ext x0 x1 env) u0 u1
 
 instance (Equiv a, Equiv b) => Equiv (Telescope a b) where
   equiv env (Telescope args0 u0) (Telescope args1 u1) =

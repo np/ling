@@ -11,3 +11,7 @@ feed_fwd_send_then_recv =
        send c (f x)
      | send d i.
        recv d (o : O)))
+
+feed_fwd_send_then_recv_Int_String_42_showInt =
+  feed_fwd_send_then_recv Int String 42 showInt
+  (proc(c) fwd 2 (!Int.?String) c)

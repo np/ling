@@ -147,6 +147,7 @@ makeLenses ''RFactor
 makeLenses ''Proc
 makeLenses ''Program
 makeLenses ''RSession
+makePrisms ''Literal
 makePrisms ''ChanDec
 makePrisms ''Act
 makePrisms ''Assertion
@@ -397,16 +398,16 @@ instance Monoid RFactor where
   mappend x y = multR # (x, y)
 
 addDec :: Dec -> Endom Defs
-addDec (Sig d oty mtm) = at d .~ (Ann oty <$> mtm)
+addDec (Sig d mty mtm) = at d .~ (Ann mty <$> mtm)
 addDec Dat{}           = id
 addDec Assert{}        = id
 
 transProgramDecs :: (Defs -> Endom Dec) -> Endom Program
 transProgramDecs transDec (Program decs) = Program (mapAccumL go ø decs ^. _2)
   where
-    go gdefs dec0 = (addDec dec1 gdefs, dec1)
+    go defs dec0 = (addDec dec1 defs, dec1)
       where
-        dec1 = transDec gdefs dec0
+        dec1 = transDec defs dec0
 
 transProgramTerms :: (Defs -> Endom Term) -> Endom Program
 transProgramTerms transTerm =

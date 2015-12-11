@@ -5,6 +5,8 @@ module Ling.Proc
   ( Dottable(..)
   , _Pref
   , _PrefDotProc
+  , _ActAt
+  , __Act
   , fwdP
   , fwdProc
   , fwdProc'
@@ -20,9 +22,11 @@ module Ling.Proc
 
 import Prelude hiding (pred)
 import qualified Data.Set as Set
+import qualified Data.Map as Map
 import Ling.Free (fcAct,fcProc)
 import Ling.Norm
 import Ling.Prelude
+import Ling.Rename
 import Ling.Session
 
 infixr 4 `dotP`
@@ -122,6 +126,42 @@ _PrefDotProc = prism' (uncurry dotP) go
       proc0 `Dot` proc1 -> proc0 ^? _Pref . to (\pref -> (pref, proc1))
       NewSlice{} -> Nothing
 
+unParP :: CPatt -> Maybe [ChanDec]
+unParP = \case
+  ChanP cd -> Just [cd]
+  ArrayP ParK patts -> patts ^? below _ChanP
+  ArrayP _ _ -> Nothing
+
+-- Prism valid up to the reduction rules
+_ActAt :: Prism' Proc (Term, CPatt)
+_ActAt = prism con pat
+  where
+    con (t, p) =
+      case t of
+        Proc cs proc0 ->
+          case unParP p of
+            Just cs' | length cs == length cs' ->
+              let
+                l = zip cs cs' & each . both %~ view cdChan
+                m = l2m l
+                r = Ren (\_ x -> Map.lookup x m ?| x) ø ø
+              in
+              rename r proc0
+            _ -> p0
+        _ -> p0
+      where
+        p0 = Act (At t p)
+    pat (Act (At t p)) = Right (t, p)
+    pat proc0          = Left  proc0
+
+-- Prism valid up to the reduction rules
+__Act :: Prism' Proc Act
+__Act = prism con pat
+  where
+    con act = Act act & _ActAt %~ id
+    pat (Act act) = Right act
+    pat proc0     = Left proc0
+
 subChanDecs :: [RSession] -> Channel -> [ChanDec]
 subChanDecs rss c = [ ChanDec c' (rs ^. rfactor) (Just rs)
                     | (i, rs) <- zip [0 :: Int ..] rss
@@ -206,6 +246,31 @@ procActs f = \case
 -- Only a traversal if we don't put back actions about these channels
 procActsChans :: Set Channel -> Traversal' Proc Act
 procActsChans cs = procActs . filtered (\act -> not (Set.null (fcAct act `Set.intersection` cs)))
+
+{-
+skippableAct :: Channel -> Act -> Bool
+skippableAct c = \case
+  Send{}     -> False
+  Recv{}     -> False
+  NewSlice{} -> False -- TODO
+  Ax{}       -> False -- TODO
+  At{}       -> False -- TODO
+
+  LetA{} -> True
+  Split _ _ cds
+    | c `notElem` (cds ^.. each . argName) ->
+        True
+    | otherwise ->
+        error $ "skippableAct: re-used channel names " ++ show (c, cds)
+  Nu ds
+    | c `notElem` ds ^.. each . argName ->
+        True
+    | otherwise ->
+        error $ "skippableAct: re-used channel names " ++ show (c, ds)
+
+skippableActs :: Channel -> [Act] -> Bool
+skippableActs c acts = null acts || all (skippableAct c) acts
+-}
 
 fetchActAct :: (Set Channel -> Bool) -> Lens Act Proc (Maybe Act) Proc
 fetchActAct pred f act

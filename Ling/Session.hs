@@ -241,7 +241,7 @@ extractSession l = l ^? each . _Just ?| error "Missing type signature in `new` (
 -- See flatRSession in Ling.Reduce
 unsafeFlatRSession :: RSession -> [Session]
 unsafeFlatRSession (s `Repl` r) =
-  replicate (r ^? litR . integral ?| error "unsafeFlatRSession") s
+  replicate (r ^? litR . integral ?| error ("unsafeFlatRSession " ++ show r)) s
 
 -- See flatSessions in Ling.Reduce
 unsafeFlatSessions :: Sessions -> [Session]

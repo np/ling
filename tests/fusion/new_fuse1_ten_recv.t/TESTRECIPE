@@ -2,7 +2,7 @@
 
 testname=new_fuse1_ten_recv.t
 command=Ling
-args=( --fuse new_fuse1_ten_recv.ll )
+args=( --pretty --no-check --seq --fuse new_fuse1_ten_recv.ll )
 exit_code=0
 stdin_file=/dev/null
 stdout_file=stdout
