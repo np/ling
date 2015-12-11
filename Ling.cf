@@ -18,7 +18,7 @@ token Name ( ["_"] (letter | ["-+*/%"] | digit)*
 token OpName
   ( (letter | ["-+*/%"] | digit)*
     ["-+*/%"]
-    (letter | ["-+*/%'"] | digit)*
+    (letter | ["-+*/%_'"] | digit)*
   );
 
 DDef. Dec ::= Name OptSig "=" Term ;
