@@ -470,6 +470,17 @@ fwd_par2_ten2_ten2_ten2 =
     | send l#1 x#i#1
     | send m#1 x#i#1 ))
 
+fwd_parN_tenN =
+  \ (n : Int)-> proc (i : {?Int ^ n},o : [!Int ^ n])
+  o [o#0 ^ n : !Int ^ n]
+  i {i#0 ^ n : ?Int ^ n}
+  slice (o#0, i#0)n as _
+    recv i#0 (x#i#0 : Int).
+    send o#0 x#i#0
+
+fwd_par10_ten10 =
+  fwd_parN_tenN 10
+
 fwd_send_recv =
   proc (i : ?Int, o : !Int)
   recv i (x#i : Int).
@@ -1281,20 +1292,20 @@ assert
 
 replicate =
   \ (A : Type)-> \ (n : Int)-> \ (x : A)-> proc (os : [!A ^ n])
-  os [o]
+  os [o ^ n]
   slice (o)n as _
     send o x
 
 replicate_par =
   proc (c : {!Int ^ 10})
-  c {d}
+  c {d ^ 10}
   slice (d)10 as i
     send d i
 
 replicate_proc =
   \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
   c {i, os}
-  os [o]
+  os [o ^ n]
   slice (o)n as _
     recv i (x#i : A).
     send o x#i
@@ -1303,7 +1314,7 @@ replicate_proc_alt =
   \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
   c {i, os}
   recv i (x : A).
-  os [o]
+  os [o ^ n]
   slice (o)n as _
     new (j : ?A, k)
     ( recv j (x#j : A).
@@ -1312,7 +1323,7 @@ replicate_proc_alt =
 
 replicate_ten =
   proc (c : [!Int ^ 10])
-  c [d]
+  c [d ^ 10]
   slice (d)10 as i
     send d i
 
@@ -1439,7 +1450,7 @@ sum_int =
   ( send itmp 0.
     recv itmp (x#itmp : Int).
     send r x#itmp
-  | a {ai}
+  | a {ai ^ 10}
     slice (ai)10 as i
       recv ai (x : Int).
       recv tmp (y : Int).
@@ -1689,9 +1700,9 @@ zap =
   \ (S : Session)-> \ (T : Session)-> \ (n : Int)-> proc (c : {{[S, ~ T]^ n},{{~ S ^ n},[T ^ n]}})
   c {fs, xos}
   xos {xs, os}
-  fs {f}
-  xs {x}
-  os [o]
+  fs {f ^ n}
+  xs {x ^ n}
+  os [o ^ n]
   slice (f, x, o)n as _
     f [fi, fo]
     ( fwd S (fi, x)
@@ -1699,9 +1710,9 @@ zap =
 
 zap_ten_fwd =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
-  cf {cfi}
-  cn {cni}
-  co [coi]
+  cf {cfi ^ 10}
+  cn {cni ^ 10}
+  co [coi ^ 10]
   slice (cfi, cni, coi)10 as i
     cfi {cfii, cfio}
     ( recv cni (x#cni : Int).
@@ -1711,9 +1722,9 @@ zap_ten_fwd =
 
 zap_ten_par =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
-  cf {cfi}
-  cn {cni}
-  co [coi]
+  cf {cfi ^ 10}
+  cn {cni ^ 10}
+  co [coi ^ 10]
   slice (cfi, cni, coi)10 as i
     cfi {cfii, cfio}
     ( recv cni (x : Int).
@@ -1723,9 +1734,9 @@ zap_ten_par =
 
 zap_ten_seq =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
-  cf {cfi}
-  cn {cni}
-  co [coi]
+  cf {cfi ^ 10}
+  cn {cni ^ 10}
+  co [coi ^ 10]
   slice (cfi, cni, coi)10 as i
     cfi {cfii, cfio}
     recv cni (x : Int).
@@ -1735,9 +1746,9 @@ zap_ten_seq =
 
 zip_add =
   proc (xs : {?Int ^ 10},ys : {?Int ^ 10},zs : [!Int ^ 10])
-  xs {x}
-  ys {y}
-  zs [z]
+  xs {x ^ 10}
+  ys {y ^ 10}
+  zs [z ^ 10]
   slice (x, y, z)10 as i
     recv x (a : Int).
     recv y (b : Int).

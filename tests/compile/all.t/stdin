@@ -92,7 +92,6 @@ conv_fun =
 curry =
   \(S T U : Session)->
   proc(c : ([S, T] -o U) -o S -o T -o U)
--- later on we could replace the 5 lines below by: c{[[fx,fy],fo],{x,{y,o}}}
   c{f,xyo}
   xyo{x,yo}
   yo{y,o}
@@ -102,7 +101,21 @@ curry =
   | fwd(T)(fy,y)
   | fwd(U)(o,fo))
 
+{-
+later on...
 
+curry :  (S T U : Session)-> < ([S, T] -o U) -o S -o T -o U >
+      = \(S T U : Session)->
+  proc{[[fx,fy],fo],{x,{y,o}}}
+  ( fwd(S)(fx,x)
+  | fwd(T)(fy,y)
+  | fwd(U)(o,fo))
+
+or
+
+curry :  (S T U : Session)-> < ([S, T] -o U) -o S -o T -o U >
+      = \(S T U : Session)-> proc{[[x:S,y:T],o:U],{x,{y,o}}}
+-}
 cutEmptyParTensor = proc() new (c : {}, d : []) (c{} | d[])
 cut_par_cut = proc()
   ( new (c  : !Int, d  : ?Int) ( send c  1 | recv d  (x  : Int) )
@@ -862,14 +875,14 @@ assert "Hello " ++S "World!" = "Hello World!"
 replicate =
   \(A : Type)(n : Int)(x : A)->
   proc(os : [!A ^ n])
-  os[o]
+  os[o^n]
   slice (o) n as _
-  send o x
+    send o x
 -- should be named enum_par
 replicate_par = proc(c : {!Int ^ 10})
-  c{d}
+  c{d^10}
   slice (d) 10 as i
-  send d i
+    send d i
 -- The slice command will sequence the `fwd` actions making the `i`
 -- channel be read many times.
 -- Some sessions are thus considered safe to be repeated, including: ?A
@@ -877,9 +890,9 @@ replicate_proc =
   \(A : Type)(n : Int)->
   proc(c : !A -o [!A ^ n])
   c{i,os}
-  os[o]
+  os[o^n]
   slice (o) n as _
-  fwd(!A)(o,i)
+    fwd(!A)(o,i)
 
 -- Here is a version without this trick which relies on the persistency of
 -- the variables (not channels)
@@ -888,16 +901,16 @@ replicate_proc_alt =
   proc(c : !A -o [!A ^ n])
   c{i,os}
   recv i (x : A).
-  os[o]
+  os[o^n]
   slice (o) n as _
-  new (j : ?A, k)
-  ( fwd(!A)(o,j)
-  | send k x)
+    new (j : ?A, k)
+    ( fwd(!A)(o,j)
+    | send k x)
 -- should be name enum_ten
 replicate_ten = proc(c : [!Int ^ 10])
-  c[d]
+  c[d^10]
   slice (d) 10 as i
-  send d i
+    send d i
 Int1 = Int
 send_1 = proc(c : !Int1)
   send c 1
@@ -965,15 +978,13 @@ split_nested_seq :
     fwd D (d,nd)
 sum_int = proc(a : {?Int ^ 10}, r : !Int)
   new/alloc [itmp : !Int.?Int, tmp]
-  (send itmp 0
-   fwd(?Int)(itmp, r)
-  |
-   a{ai}
-   slice (ai) 10 as i
-   recv ai  (x : Int)
-   recv tmp (y : Int)
-   send tmp (x + y)
-  )
+  ( send itmp 0
+    fwd(?Int)(itmp, r)
+  | a{ai^10}
+    slice (ai) 10 as i
+      recv ai  (x : Int)
+      recv tmp (y : Int)
+      send tmp (x + y))
 
 switch
   : (A B C : Session)->
@@ -1178,23 +1189,26 @@ zap =
   proc(c : [S -o T ^ n] -o [S ^ n] -o [T ^ n])
   c{fs,xos}
   xos{xs,os}
-  fs{f}
-  xs{x}
-  os[o]
+  fs{f^n}
+  xs{x^n}
+  os[o^n]
   slice (f,x,o) n as _
-  f[fi,fo]
-  ( fwd(S)(fi,x)
-  | fwd(T)(o,fo))
+    f[fi,fo]
+    ( fwd(S)(fi,x)
+    | fwd(T)(o,fo))
+
 {- later on...
-  c{{f},{{x},[o]}}
+zap :  (S T : Session)(n : Int)-> < [S -o T ^ n] -o [S ^ n] -o [T ^ n] >
+    = \(S T : Session)(n : Int)->
+  proc{{f^n},{{x^n},[o^n]}}
   slice (f,x,o) n as _
-  fwd(S -o T){f, {x,o}}
+    fwd(S -o T){f, {x,o}}
 -}
 -- cf: would be more precise with {~(!Int -o !Int) ^ 10}
 zap_ten_fwd = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
-  cf{cfi}
-  cn{cni}
-  co[coi]
+  cf{cfi^10}
+  cn{cni^10}
+  co[coi^10]
   slice (cfi,cni,coi) 10 as i
   cfi{cfii,cfio}
   ( fwd(?Int)(cni,cfii)
@@ -1203,33 +1217,32 @@ zap_ten_fwd = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
 
 -- cf: would be more precise with {~(!Int -o !Int) ^ 10}
 zap_ten_par = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
-  cf{cfi}
-  cn{cni}
-  co[coi]
+  cf{cfi^10}
+  cn{cni^10}
+  co[coi^10]
   slice (cfi,cni,coi) 10 as i
-  cfi{cfii,cfio}
-  ( recv cni (x : Int)
-    send cfii x
-  | recv cfio (y : Int)
-    send coi y
-  )
-
+    cfi{cfii,cfio}
+    ( recv cni (x : Int)
+      send cfii x
+    | recv cfio (y : Int)
+      send coi y
+    )
 -- cf: would be more precise with {~(!Int -o !Int) ^ 10}
 zap_ten_seq = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
-  cf{cfi}
-  cn{cni}
-  co[coi]
+  cf{cfi^10}
+  cn{cni^10}
+  co[coi^10]
   slice (cfi,cni,coi) 10 as i
-  cfi{cfii,cfio}
-  recv cni (x : Int)
-  send cfii x
-  recv cfio (y : Int)
-  send coi y
+    cfi{cfii,cfio}
+    recv cni (x : Int)
+    send cfii x
+    recv cfio (y : Int)
+    send coi y
 
 zip_add = proc(xs : {?Int ^ 10}, ys : {?Int ^ 10}, zs : [!Int ^ 10])
-  xs{x}
-  ys{y}
-  zs[z]
+  xs{x^10}
+  ys{y^10}
+  zs[z^10]
   slice (x,y,z) 10 as i
   recv x (a : Int)
   recv y (b : Int)

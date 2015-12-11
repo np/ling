@@ -522,12 +522,12 @@ _ = "Hello!"
 replicate_par = proc(c : {!Int ^ 10})
   c{d^10}
   slice (d) 10 as i
-  send d i
+    send d i
 -- should be name enum_ten
 replicate_ten = proc(c : [!Int ^ 10])
   c[d^10]
   slice (d) 10 as i
-  send d i
+    send d i
 seq0_explicit =
   proc(c : [: :])
   c[: :]
@@ -585,8 +585,8 @@ sum_int = proc(a : {?Int ^ 10}, r : !Int)
     fwd(?Int)(itmp, r)
   | a{ai^10}
     slice (ai) 10 as i
-      recv ai  (x : Int).
-      recv tmp (y : Int).
+      recv ai  (x : Int)
+      recv tmp (y : Int)
       send tmp (x + y))
 
 ten_par_par_split = proc(c : [{},{}]) c[d,e] (d{} | e{})
@@ -748,11 +748,11 @@ zap_ten_seq = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
   cn{cni^10}
   co[coi^10]
   slice (cfi,cni,coi) 10 as i
-  cfi{cfii,cfio}
-  recv cni (x : Int)
-  send cfii x
-  recv cfio (y : Int)
-  send coi y
+    cfi{cfii,cfio}
+    recv cni (x : Int)
+    send cfii x
+    recv cfio (y : Int)
+    send coi y
 
 zip_add = proc(xs : {?Int ^ 10}, ys : {?Int ^ 10}, zs : [!Int ^ 10])
   xs{x^10}
