@@ -55,6 +55,11 @@ checkProc proc0 = do
             checkDefs defs
               (checkVarDecs (acts >>= actVarDecs) (checkProc proc1)))
 
+    proc1 `Dot` proc2 -> do
+      proto1 <- checkProc proc1
+      proto2 <- checkProc proc2
+      return $ proto1 `dotProto` proto2
+
     _ -> error $ "checkProc: IMPOSSIBLE " ++ show proc0
 
 sendRecvSession :: Act -> TC (Channel, Endom Session)
