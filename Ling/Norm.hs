@@ -67,7 +67,9 @@ data CPatt
   deriving (Eq, Ord, Show, Read)
 
 data Act
-  = Nu       { _newAnns :: [Term], _newChans :: [ChanDec] }
+  = Nu       { _newAnns :: [Term]
+             , _newKind :: TraverseKind
+             , _newChans :: [ChanDec] }
   -- TODO? Split Channel CPatt
   | Split    TraverseKind Channel [ChanDec]
   | Send     Channel Term

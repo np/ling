@@ -1,0 +1,3 @@
+While checking `wrong_new_seq_fwd`
+  Sequential `new` expects the first session to be made of sends (a Log)
+

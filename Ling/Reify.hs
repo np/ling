@@ -108,6 +108,12 @@ kTopPatt = \case
   N.ParK -> ParTopPatt
   N.SeqK -> SeqTopPatt
 
+kNewPatt :: N.TraverseKind -> [ChanDec] -> NewPatt
+kNewPatt = \case
+  N.TenK -> TenNewPatt
+  N.SeqK -> SeqNewPatt
+  N.ParK -> error "kNewPatt: IMPOSSIBLE"
+
 instance Norm CPatt where
   type Normalized CPatt = N.CPatt
   reify (N.ChanP cd) = ChaPatt (reify cd)
@@ -155,7 +161,7 @@ normAct = \case
     SplitAx  n s c    -> toProc ... (splitAx        n (norm s) c)
 -}
 
-    Nu newalloc       -> toProc $ N._Nu # norm newalloc
+    Nu newalloc       -> toProc $ N._Nu # (\(x,(y,z))->(x,y,z)) (norm newalloc)
     ParSplit c ds     -> toProc $ N.Split N.ParK c (norm ds)
     TenSplit c ds     -> toProc $ N.Split N.TenK c (norm ds)
     SeqSplit c ds     -> toProc $ N.Split N.SeqK c (norm ds)
@@ -175,7 +181,7 @@ reifyDefsA defs = pDots $ defs ^.. each . to reifyLetA . to PAct
 
 reifyAct :: N.Act -> Proc
 reifyAct = \case
-  N.Nu anns cs        -> PAct $ Nu (reify (anns, cs))
+  N.Nu anns k cs      -> PAct $ Nu (reify (anns, (k, cs)))
   N.Split N.ParK c ds -> PAct $ ParSplit c (reify ds)
   N.Split N.TenK c ds -> PAct $ TenSplit c (reify ds)
   N.Split N.SeqK c ds -> PAct $ SeqSplit c (reify ds)
@@ -336,17 +342,29 @@ instance Norm AllocTerm where
   norm (AVar d)      = N.Def d []
   norm (AParen t os) = N.optSig (norm t) (norm os)
 
+instance Norm NewPatt where
+  type Normalized NewPatt = (N.TraverseKind, [N.ChanDec])
+  reify (k, cds) = kNewPatt k (reify cds)
+  norm (TenNewPatt cds) = (N.TenK, norm cds)
+  norm (SeqNewPatt cds) = (N.SeqK, norm cds)
+
+oldNew :: NewPatt -> NewAlloc
+oldNew (TenNewPatt cds) = OldNew cds
+oldNew newpatt          = New newpatt
+
 instance Norm NewAlloc where
-  type Normalized NewAlloc = ([N.Term], [N.ChanDec])
-  reify ([], cds) = OldNew (reify cds)
-  reify ([N.Def (Name d) ts], cds) = NewNAnn (OpName ("new/" ++ d)) (reify ts) (reify cds)
-  reify ([t], cds) = NewSAnn (reify t) NoSig (reify cds)
-  reify _ = error "reify/NewAlloc: IMPOSSIBLE"
-  norm (New cds) = ([], norm cds)
-  norm (OldNew cds) = ([], norm cds)
-  norm (NewSAnn t os cds) = ([N.optSig (norm t) (norm os)], norm cds)
-  norm (NewNAnn (OpName newd) ts cds)
-    | Just d <- newd ^? prefixed "new/" = ([N.Def (Name d) (norm ts)], norm cds)
+  type Normalized NewAlloc = ([N.Term], (N.TraverseKind, [N.ChanDec]))
+  reify (os, kcds) =
+    case os of
+      [] -> oldNew (reify kcds)
+      [N.Def (Name d) ts] -> NewNAnn (OpName ("new/" ++ d)) (reify ts) (reify kcds)
+      [t] -> NewSAnn (reify t) NoSig (reify kcds)
+      _ -> error "reify/NewAlloc: IMPOSSIBLE"
+  norm (New newpatt) = ([], norm newpatt)
+  norm (OldNew cds) = ([], (N.TenK, norm cds))
+  norm (NewSAnn t os newpatt) = ([N.optSig (norm t) (norm os)], norm newpatt)
+  norm (NewNAnn (OpName newd) ts newpatt)
+    | Just d <- newd ^? prefixed "new/" = ([N.Def (Name d) (norm ts)], norm newpatt)
     | otherwise                         = error "norm/NewAlloc: IMPOSSIBLE"
 
 instance Norm ChanDec where

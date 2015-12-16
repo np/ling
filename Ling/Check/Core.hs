@@ -146,7 +146,7 @@ checkAct act proto =
               [ "Inferred protocol for the whole process:"
               ] ++ prettyError prettyProto proto') $
   case act of
-    Nu anns cds -> do
+    Nu anns k cds -> do
       for_ anns $ checkTerm allocationTyp
       let cs = cds ^.. each . cdChan
           csNSession = [ proto ^. chanSession c . endedRS | ChanDec c _ _ <- cds ]
@@ -154,9 +154,17 @@ checkAct act proto =
         for_ cs $ assertUsed proto
       for_ cds $ checkChanDec proto
       checkDual csNSession
+      proto' <-
+        case k of
+          TenK -> checkConflictingChans proto Nothing cs
+          SeqK -> do
+            assert (anyOf _head isLog csNSession)
+                   ["Sequential `new` expects the first session to be made of sends (a Log)"]
+            checkOrderedChans proto cs $> proto
+          ParK -> error "checkAct: IMPOSSIBLE"
       -- This rmChans is potentially partly redundant.
       -- We might `assert` that `cs` is no longer in the `skel`
-      rmChans cs <$> checkConflictingChans proto Nothing cs
+      return $ rmChans cs proto'
     Split k c dOSs -> do
       assertAbsent proto c
       for_ dOSs $ checkChanDec proto

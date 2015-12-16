@@ -173,14 +173,32 @@ transPref env (Prll pref0) procs k =
   case pref0 of
     []       -> transProcs env procs [] k
     act:pref -> transPref (transAct (env ^. edefs) act env) (Prll pref) procs $ \env' proc' ->
-                  k env' (act `dotP` proc')
+                  k env' ((act {-& _Nu %~ transNu
+                               & _Split . _1 .~ SeqK-}) `dotP` proc')
+
+{-
+-- This could be part of the Dual class, a special Seq operation could also
+-- be part of DualOp
+transSession :: Endom Session
+transSession = \case
+  Array _ ss -> Array SeqK (ss & list . rsession %~ transSession)
+  IO _ a s   -> IO Write a (transSession s)
+  TermS _ t -> TermS LogOp t
+
+transNu :: Endom ([Term], TraverseKind, [ChanDec])
+transNu (anns, k, cds)
+  | TenK <- k =
+      (anns, SeqK, cds & _head . cdSession . _Just . rsession %~ transSession
+                       & _tail . each . cdSession .~ Nothing)
+  | otherwise = (anns, k, cds)
+-}
 
 transAct :: Defs -> Act -> Endom Env
 transAct defs act =
   case act of
-    Nu _ [] ->
+    Nu _ _ [] ->
       id
-    Nu _ cds0 ->
+    Nu _ _ cds0 ->
       let
         cds1 = [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
         cds2@(Arg c0 c0S:_) = cds1 & each . argBody . _Just %~ unRepl

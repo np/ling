@@ -129,10 +129,13 @@ data CSession = Cont Term | Done
 data AllocTerm = AVar Name | ALit Literal | AParen Term OptSig
   deriving (Eq, Ord, Show, Read)
 
+data NewPatt = TenNewPatt [ChanDec] | SeqNewPatt [ChanDec]
+  deriving (Eq, Ord, Show, Read)
+
 data NewAlloc
     = OldNew [ChanDec]
-    | New [ChanDec]
-    | NewSAnn Term OptSig [ChanDec]
-    | NewNAnn OpName [AllocTerm] [ChanDec]
+    | New NewPatt
+    | NewSAnn Term OptSig NewPatt
+    | NewNAnn OpName [AllocTerm] NewPatt
   deriving (Eq, Ord, Show, Read)
 

@@ -40,7 +40,7 @@ fcAct = \case
 
 bcAct :: BoundChans Act
 bcAct = \case
-  Nu _ cs      -> bcChanDecs cs
+  Nu _ _ cs    -> bcChanDecs cs
   Split _ _ ds -> bcChanDecs ds
   Send{}       -> ø
   Recv{}       -> ø

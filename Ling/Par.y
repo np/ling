@@ -42,6 +42,7 @@ import Ling.ErrM
 %name pCSession CSession
 %name pAllocTerm AllocTerm
 %name pListAllocTerm ListAllocTerm
+%name pNewPatt NewPatt
 %name pNewAlloc NewAlloc
 -- no lexer declaration
 %monad { Err } { thenM } { returnM }
@@ -240,11 +241,14 @@ AllocTerm : Name { Ling.Abs.AVar $1 }
 ListAllocTerm :: { [AllocTerm] }
 ListAllocTerm : {- empty -} { [] }
               | ListAllocTerm AllocTerm { flip (:) $1 $2 }
+NewPatt :: { NewPatt }
+NewPatt : '[' ListChanDec ']' { Ling.Abs.TenNewPatt $2 }
+        | '[:' ListChanDec ':]' { Ling.Abs.SeqNewPatt $2 }
 NewAlloc :: { NewAlloc }
 NewAlloc : 'new' '(' ListChanDec ')' { Ling.Abs.OldNew $3 }
-         | 'new' '[' ListChanDec ']' { Ling.Abs.New $3 }
-         | 'new/' '(' Term OptSig ')' '[' ListChanDec ']' { Ling.Abs.NewSAnn $3 $4 $7 }
-         | OpName ListAllocTerm '[' ListChanDec ']' { Ling.Abs.NewNAnn $1 (reverse $2) $4 }
+         | 'new' NewPatt { Ling.Abs.New $2 }
+         | 'new/' '(' Term OptSig ')' NewPatt { Ling.Abs.NewSAnn $3 $4 $6 }
+         | OpName ListAllocTerm NewPatt { Ling.Abs.NewNAnn $1 (reverse $2) $3 }
 {
 
 returnM :: a -> Err a

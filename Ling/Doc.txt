@@ -168,9 +168,11 @@ All other symbols are terminals.
   |  |  **|**  | ``(`` //Term// //OptSig// ``)`` 
   | //[AllocTerm]// | -> | **eps**
   |  |  **|**  | //AllocTerm// //[AllocTerm]// 
+  | //NewPatt// | -> | ``[`` //[ChanDec]// ``]`` 
+  |  |  **|**  | ``[:`` //[ChanDec]// ``:]`` 
   | //NewAlloc// | -> | ``new`` ``(`` //[ChanDec]// ``)`` 
-  |  |  **|**  | ``new`` ``[`` //[ChanDec]// ``]`` 
-  |  |  **|**  | ``new/`` ``(`` //Term// //OptSig// ``)`` ``[`` //[ChanDec]// ``]`` 
-  |  |  **|**  | //OpName// //[AllocTerm]// ``[`` //[ChanDec]// ``]`` 
+  |  |  **|**  | ``new`` //NewPatt// 
+  |  |  **|**  | ``new/`` ``(`` //Term// //OptSig// ``)`` //NewPatt// 
+  |  |  **|**  | //OpName// //[AllocTerm]// //NewPatt// 
 
 

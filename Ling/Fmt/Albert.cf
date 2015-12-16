@@ -156,7 +156,10 @@ ALit.     AllocTerm ::= Literal ;
 AParen.   AllocTerm ::= "(" Term OptSig ")" ;
 separator AllocTerm "" ;
 
-OldNew.   NewAlloc ::= "new" "(" [ChanDec] ")"  ;
-New.      NewAlloc ::= "new" "[" [ChanDec] "]"  ;
-NewSAnn.  NewAlloc ::= "new/" "(" Term OptSig ")" "[" [ChanDec] "]" ;
-NewNAnn.  NewAlloc ::= OpName [AllocTerm] "[" [ChanDec] "]" ;
+TenNewPatt. NewPatt ::= "["  [ChanDec]  "]" ;
+SeqNewPatt. NewPatt ::= "[:" [ChanDec] ":]" ;
+
+OldNew.   NewAlloc ::= "new" "(" [ChanDec] ")" ;
+New.      NewAlloc ::= "new" NewPatt ;
+NewSAnn.  NewAlloc ::= "new/" "(" Term OptSig ")" NewPatt ;
+NewNAnn.  NewAlloc ::= OpName [AllocTerm] NewPatt ;

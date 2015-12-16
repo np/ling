@@ -278,7 +278,7 @@ transErrC msg v = error $ msg ++ "\n" ++ C.render (C.prt 0 v)
 transAct :: Env -> Act -> (Env, [C.Stm])
 transAct env act =
   case act of
-    Nu _ann cds ->
+    Nu _ann _ cds ->
       -- Issue #24: the annotation should be used to decide
       -- operational choices on channel allocation.
       (env', sDec typ cid C.NoInit)

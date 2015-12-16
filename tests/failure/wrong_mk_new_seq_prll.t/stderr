@@ -1,0 +1,4 @@
+While checking `wrong_mk_new_seq_prll`
+  These channels should be used in-order:
+  c, d
+

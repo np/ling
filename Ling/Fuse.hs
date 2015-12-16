@@ -47,9 +47,9 @@ doFuse anns =
 
 fuseDot :: Op2 Proc
 fuseDot = \case
-  Act (Nu anns cds) | Just anns' <- doFuse anns ->
+  Act (Nu anns k cds) | Just anns' <- doFuse anns ->
     case cds of
-      [c, d] -> fuseProc . fuseChanDecs anns' [(c, d)]
+      [c, d] -> fuseProc . fuseChanDecs (anns', k) [(c, d)]
       _      -> error . unlines $ [ "Unsupported fusion for multi-sided `new` " ++ pretty cds
                                   , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
   proc0@NewSlice{} -> (fuseProc proc0 `dotP`) . fuseProc
@@ -65,18 +65,18 @@ fuseProc = \case
   Procs procs -> Procs $ over each fuseProc procs
   NewSlice cs t x proc0 -> NewSlice cs t x $ fuseProc proc0
 
-fuseChanDecs :: [Allocation] -> [(ChanDec,ChanDec)] -> Endom Proc
+fuseChanDecs :: ([Allocation], TraverseKind) -> [(ChanDec,ChanDec)] -> Endom Proc
 fuseChanDecs _    []           = id
 fuseChanDecs anns ((c0,c1):cs) = fuse2Chans anns c0 c1 . fuseChanDecs anns cs
 
-fuseSendRecv :: [Allocation] -> ChanDec -> Term -> ChanDec -> VarDec -> Order Act
-fuseSendRecv anns c0 e c1 (Arg x mty) =
-  Order [LetA (aDef x mty e), Nu anns ([c0,c1] & each . cdSession . _Just . rsession %~ sessionStep)]
+fuseSendRecv :: ([Allocation], TraverseKind) -> ChanDec -> Term -> ChanDec -> VarDec -> Order Act
+fuseSendRecv (anns, k) c0 e c1 (Arg x mty) =
+  Order [LetA (aDef x mty e), Nu anns k ([c0,c1] & each . cdSession . _Just . rsession %~ sessionStep)]
 
-nu2 :: [Allocation] -> ChanDec -> ChanDec -> Act
-nu2 anns c0 c1 = Nu anns [c0,c1]
+nu2 :: ([Allocation], TraverseKind) -> ChanDec -> ChanDec -> Act
+nu2 (anns, k) c0 c1 = Nu anns k [c0,c1]
 
-fuse2Acts :: [Allocation] -> ChanDec -> Act -> ChanDec -> Act -> Order Act
+fuse2Acts :: ([Allocation], TraverseKind) -> ChanDec -> Act -> ChanDec -> Act -> Order Act
 fuse2Acts anns c0 act0 c1 act1 =
   case (act0, act1) of
     (Split _k0 _c0 cs0, Split _k1 _c1 cs1) -> Order $ zipWith (nu2 anns) cs0 cs1
@@ -92,7 +92,7 @@ fuse2Acts anns c0 act0 c1 act1 =
     (Ax{}, _)       -> error "fuse2Acts/Ax: should be expanded before"
     (At{}, _)       -> error "fuse2Acts/At: should be expanded before"
 
-fuse2Chans :: [Allocation] -> ChanDec -> ChanDec -> Endom Proc
+fuse2Chans :: ([Allocation], TraverseKind) -> ChanDec -> ChanDec -> Endom Proc
 fuse2Chans anns cd0 cd1 p0 =
   case mact0 of
     Nothing -> p0 -- error "fuse2Chans: mact0 is Nothing"

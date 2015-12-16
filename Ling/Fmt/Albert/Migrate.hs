@@ -114,11 +114,15 @@ transAllocTerm (AVar d) = L.AVar (transName d)
 transAllocTerm (ALit lit) = L.ALit (transLiteral lit)
 transAllocTerm (AParen t os) = L.AParen (transTerm t) (transOptSig os)
 
+transNewPatt :: NewPatt -> L.NewPatt
+transNewPatt (TenNewPatt chandecs) = L.TenNewPatt (transChanDec <$> chandecs)
+transNewPatt (SeqNewPatt chandecs) = L.SeqNewPatt (transChanDec <$> chandecs)
+
 transNewAlloc :: NewAlloc -> L.NewAlloc
-transNewAlloc (New chandecs) = L.New (transChanDec <$> chandecs)
+transNewAlloc (New newpatt) = L.New (transNewPatt newpatt)
 transNewAlloc (OldNew chandecs) = L.OldNew (transChanDec <$> chandecs)
-transNewAlloc (NewSAnn term optsig chandecs) = L.NewSAnn (transTerm term) (transOptSig optsig) (transChanDec <$> chandecs)
-transNewAlloc (NewNAnn opnname allocterms chandecs) = L.NewNAnn (transOpName opnname) (transAllocTerm <$> allocterms) (transChanDec <$> chandecs)
+transNewAlloc (NewSAnn term optsig newpatt) = L.NewSAnn (transTerm term) (transOptSig optsig) (transNewPatt newpatt)
+transNewAlloc (NewNAnn opnname allocterms newpatt) = L.NewNAnn (transOpName opnname) (transAllocTerm <$> allocterms) (transNewPatt newpatt)
 
 transOpName :: OpName -> L.OpName
 transOpName (OpName x) = L.OpName x

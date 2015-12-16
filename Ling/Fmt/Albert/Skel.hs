@@ -138,10 +138,14 @@ transAllocTerm x = case x of
   AVar name -> failure x
   ALit literal -> failure x
   AParen term optsig -> failure x
+transNewPatt :: NewPatt -> Result
+transNewPatt x = case x of
+  TenNewPatt chandecs -> failure x
+  SeqNewPatt chandecs -> failure x
 transNewAlloc :: NewAlloc -> Result
 transNewAlloc x = case x of
   OldNew chandecs -> failure x
-  New chandecs -> failure x
-  NewSAnn term optsig chandecs -> failure x
-  NewNAnn opname allocterms chandecs -> failure x
+  New newpatt -> failure x
+  NewSAnn term optsig newpatt -> failure x
+  NewNAnn opname allocterms newpatt -> failure x
 

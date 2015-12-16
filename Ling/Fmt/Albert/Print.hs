@@ -250,11 +250,16 @@ instance Print AllocTerm where
     AParen term optsig -> prPrec i 0 (concatD [doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+instance Print NewPatt where
+  prt i e = case e of
+    TenNewPatt chandecs -> prPrec i 0 (concatD [doc (showString "["), prt 0 chandecs, doc (showString "]")])
+    SeqNewPatt chandecs -> prPrec i 0 (concatD [doc (showString "[:"), prt 0 chandecs, doc (showString ":]")])
+
 instance Print NewAlloc where
   prt i e = case e of
     OldNew chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandecs, doc (showString ")")])
-    New chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "["), prt 0 chandecs, doc (showString "]")])
-    NewSAnn term optsig chandecs -> prPrec i 0 (concatD [doc (showString "new/"), doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")"), doc (showString "["), prt 0 chandecs, doc (showString "]")])
-    NewNAnn opname allocterms chandecs -> prPrec i 0 (concatD [prt 0 opname, prt 0 allocterms, doc (showString "["), prt 0 chandecs, doc (showString "]")])
+    New newpatt -> prPrec i 0 (concatD [doc (showString "new"), prt 0 newpatt])
+    NewSAnn term optsig newpatt -> prPrec i 0 (concatD [doc (showString "new/"), doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")"), prt 0 newpatt])
+    NewNAnn opname allocterms newpatt -> prPrec i 0 (concatD [prt 0 opname, prt 0 allocterms, prt 0 newpatt])
 
 
