@@ -71,6 +71,15 @@ mkOp op = go where
 
     | otherwise           = Op op p q
 
+skel :: (Ord a, Ord b) => Traversal (Skel a) (Skel b) a b
+skel f = \case
+  Zero -> pure Zero
+  Act a -> Act <$> f a
+  Op op sk0 sk1 -> mkOp op <$> skel f sk0 <*> skel f sk1
+
+fcSkel :: (Eq a, Ord a) => Skel a -> Set a
+fcSkel = setOf skel
+
 infixr 4 `dotS`
 
 dotS :: Eq a => Op2 (Skel a)
@@ -91,23 +100,25 @@ instance Eq a => Monoid (Skel a) where
   mconcat [] = Zero
   mconcat xs = foldr1 mappend xs
 
-instance Print a => Print (Skel a) where
-  prt i = \case
-    Zero -> prPrec i 2 (doc (showString "()"))
-    Act act -> prPrec i 2 (prt 0 act)
-    Op op proc1 proc2 ->
-      case op of
-        Prll b   -> prPrec i 1 (concatD [ doc (showString "(\n")
-                                        , prt 0 proc1
-                                        , doc (showString (if b then "\n|" else "\nX"))
-                                        , prt 0 proc2
-                                        , doc (showString "\n)")])
-        Dot      -> prPrec i 0 (concatD [prt 1 proc1, doc (showString ".\n"), prt 0 proc2])
-        Unknown  -> prPrec i 0 (concatD [prt 1 proc1, doc (showString "⁇\n"), prt 0 proc2])
-  prtList _ [] = concatD []
-  prtList _ [x] = prt 0 x
-  prtList _ (x:xs) = concatD [prt 0 x, doc (showString "\n|"), prt 0 xs]
+instance Print Op where
+  prt _ = txt . \case
+    Prll True  -> "\n|"
+    Prll False -> "\nX"
+    Unknown    -> "\n⁇"
+    Dot        -> ".\n"
 
+instance (Print a, Eq a) => Print (Skel a) where
+  prt _ = \case
+    Zero -> txt "()"
+    Act act -> prt 0 act
+    Op op proc1 proc2 ->
+      concatD [ txt "(\n"
+              , prt 0 proc1
+              , prt 0 op
+              , prt 0 proc2
+              , txt "\n)"]
+
+  prtList _ = prt 0 . mconcat
 
 infixr 4 `actS`
 
@@ -169,24 +180,31 @@ mAct :: Maybe channel -> Skel channel
 mAct Nothing  = Zero
 mAct (Just c) = Act c
 
-prllFalse :: Ord a => Maybe a -> [a] -> Op2 (Skel a)
-prllFalse c cs sk0 sk1 = mkOp (Prll False) (go sk0) (go sk1)
-  where scs  = l2s cs
-        go   = subst (substMember (scs, mAct c) Act)
+prllFalse :: Ord a => Maybe a -> Set a -> Op2 (Skel a)
+prllFalse c scs sk0 sk1 = mkOp (Prll False) (go sk0) (go sk1)
+  where
+    go   = subst (substMember (scs, mAct c) Act)
 
-check :: (MonadError String m, Ord channel) =>
+check :: (MonadError String m, Ord channel, Show channel) =>
          Maybe channel -> [channel] -> EndoM m (Skel channel)
-check c cs = fmap final . go where
+check c cs = fmap (uncurry (<>)) . go where
   scs = l2s cs
-  final (_, sk', sk'') = sk' <> sk''
+  -- Given a skeleton sk, `go` returns a pair (sk', sk'')
+  -- sk'  is a skeleton with    occurrences from scs
+  -- sk'' is a skeleton without occurrences from scs
+  -- sk should be equivalent to sk' | sk''
   go = \case
-    Zero -> return (ø, Zero, Zero)
+    Zero -> return (Zero, Zero)
     Act a
-      | a `member` scs -> return (l2s [a], Act a, Zero)
-      | otherwise      -> return (ø,       Zero,  Act a)
+      | a `member` scs -> return (Act a, Zero)
+      | otherwise      -> return (Zero,  Act a)
     Op op sk0 sk1 -> do
-      (cs0, sk0', sk0'') <- go sk0
-      (cs1, sk1', sk1'') <- go sk1
+      (sk0', sk0'') <- go sk0
+      (sk1', sk1'') <- go sk1
+      let
+        cs0 = scs `intersection` fcSkel sk0'
+        cs1 = scs `intersection` fcSkel sk1'
+        cs' = cs0 `union` cs1
       -- We could throw an error when the intersection of cs0 and cs1
       -- is not null, however these errors are also caught elsewhere
       -- (when merging parallel protocols for instance)
@@ -196,21 +214,19 @@ check c cs = fmap final . go where
       -- Here the skeleton is: `(d | e.a.e)`, the channel `e` appear twice
       -- and we chose to keep the ordering. We need the reconstruction of:
       -- `e.a.e` not to raise an error.
-      (sk', sk'') <-
-        case op of
-          _   | null cs0 && null cs1 ->
-            return (Zero, mkOp op (sk0' <> sk0'') (sk1' <> sk1''))
+      case op of
+        _   | null cs0 && null cs1 ->
+          return (Zero, mkOp op (sk0' <> sk0'') (sk1' <> sk1''))
 
-          Prll True | not (null cs1) && not (null cs0) ->
-            return (prllFalse c cs sk0' sk1', sk0'' <> sk1'')
-          Prll True | null cs0 && not (null cs1) ->
-            return (sk1', sk0' <> sk0'' <> sk1'')
-          Prll True | null cs1 && not (null cs0) ->
-            return (sk0', sk0'' <> sk1' <> sk1'')
+        Prll True | not (null cs1) && not (null cs0) ->
+          return (prllFalse c cs' sk0' sk1', sk0'' <> sk1'')
+        Prll True | null cs0 && not (null cs1) ->
+          return (sk1', sk0' <> sk0'' <> sk1'')
+        Prll True | null cs1 && not (null cs0) ->
+          return (sk0', sk0'' <> sk1' <> sk1'')
 
-          _ | not (null cs1) && not (null cs0) && cs0 /= cs1 ->
-            throwError $ "checkSel: " ++ show op
+        _ | not (null cs1) && not (null cs0) && cs0 /= cs1 ->
+          throwError $ "checkSel: " ++ show op
 
-          _ ->
-            return (mkOp op (sk0' <> sk0'') (sk1' <> sk1''), Zero)
-      return (cs0 `union` cs1, sk', sk'')
+        _ ->
+          return (mkOp op (sk0' <> sk0'') (sk1' <> sk1''), Zero)

@@ -165,16 +165,16 @@ checkConflictingChans :: MonadTC m => Proto -> Maybe Channel -> [Channel] -> m P
 checkConflictingChans proto c cs =
   debugCheck (\res -> unlines $
     ["Checking channel conflicts for channels:"
-    ,"  " ++ pretty cs
+    ,"  " ++ pretty cs ++ " to be replaced by " ++ pretty c
     ,"Input protocol:"
     ] ++ prettyProto proto ++
     ["Output protocol:"
     ] ++ prettyError prettyProto res) $
     (proto & skel %%~ Skel.check c cs)
-    `catchError` (\_err ->
+    `catchError` (\err -> do
+      debug err
       throwError . unlines $
         ["These channels should be used independently:", pretty (Comma (sort cs))]
-        -- ++ [_err]
     )
 
 checkOrderedChans :: MonadTC m => Proto -> [Channel] -> m ()
