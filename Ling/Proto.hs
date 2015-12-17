@@ -142,6 +142,12 @@ protoAx s [c] | isSink s = pureProto c s
 protoAx s (c:d:es)       = mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
 protoAx _ _              = error "protoAx: More channels should be given to forward or the session should a sink"
 
+-- Update a protocol with a given list of `session transformers` induced by
+-- `send` and `recv` session types.
+-- Example:
+--    protoSendRecv [(c0,sendS t0), (c1, recvS t1)] (pureProto c0 s0) ^. chans
+--    ==
+--    [(c0,sendS t0 s0), (c1, recvS t1 (endS # ()))]
 protoSendRecv :: [(Channel, Endom Session)] -> Endom Proto
 protoSendRecv cfs p =
   p & composeMapOf each addChanOnly crs
