@@ -177,7 +177,7 @@ equivRedTerm env s0 s1 =
 instance Equiv RW where
   equiv _ = (==)
 
-instance Equiv DualOp where
+instance Equiv SessionOp where
   equiv _ = (==)
 
 instance Equiv TraverseKind where

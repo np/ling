@@ -363,3 +363,40 @@ lookupEnv keyString vals env k = env ^. vals . at k ?| err
 
 hash256 :: String -> String
 hash256 = showDigest . sha256 . view BL.packedChars
+
+data FinEndom a = FinEndom { _finMap :: !(Map a a), _finDflt :: !a }
+  deriving (Ord, Show, Read)
+
+mkFinEndom :: (Enum a, Ord a) => Endom a -> FinEndom a
+mkFinEndom f = FinEndom (l2m (filter ((/=d).snd) g)) d
+  where
+  -- TODO pick the most recurring element
+    (_,d):g = [(x, f x) | x <- [toEnum 0..]]
+
+idEndom :: (Enum a, Ord a) => FinEndom a
+idEndom = mkFinEndom id
+
+constEndom :: Ord a => a -> FinEndom a
+constEndom = FinEndom ø
+
+ifEndom :: Ord a => a -> a -> FinEndom a -> FinEndom a
+ifEndom c t (FinEndom m d)
+  | t == d    = FinEndom (m & sans c)         d
+  | otherwise = FinEndom (m & at c .~ Just t) d
+
+finEndomMap :: (Enum a, Ord a) => FinEndom a -> Map a a
+finEndomMap (FinEndom m d) = foldr (\a -> at a %~ f) m [toEnum 0..]
+  where f Nothing = Just d
+        f x       = x
+
+evalFinEndom :: Ord a => FinEndom a -> Endom a
+evalFinEndom (FinEndom m d) a = m ^. at a ?| d
+
+composeFinEndom :: (Enum a, Ord a) => Op2 (FinEndom a)
+composeFinEndom f g = mkFinEndom (evalFinEndom f . evalFinEndom g)
+
+instance (Enum a, Ord a) => Eq (FinEndom a) where
+  f == g = all (\x -> evalFinEndom f x == evalFinEndom g x) [toEnum 0..]
+
+makePrisms ''FinEndom
+makeLenses ''FinEndom

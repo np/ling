@@ -98,7 +98,7 @@ sessionStatus defs dflt l = \case
   IO rw _ s  -> (l, dflt rw) : sessionStatus defs dflt (Next l) s
   TermS p t ->
     case reduceTerm' defs t of
-      TSession s -> sessionStatus defs dflt l (dualOp p s)
+      TSession s -> sessionStatus defs dflt l (sessionOp p s)
       t'         -> trace ("[WARNING] Skipping abstract session " ++ pretty t')
                     [(l, Empty)]
 

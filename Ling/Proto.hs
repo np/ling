@@ -137,10 +137,10 @@ mkProto :: TraverseKind -> [(Channel,Session)] -> Proto
 mkProto k = arrayProto k . map (uncurry pureProto)
 
 protoAx :: Session -> [Channel] -> Proto
-protoAx _ []             = mempty
+protoAx _ []             = ø
 protoAx s [c] | isSink s = pureProto c s
 protoAx s (c:d:es)       = mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
-protoAx _ _              = error "protoAx: Not enough channels given to forward"
+protoAx _ _              = error "protoAx: More channels should be given to forward or the session should a sink"
 
 protoSendRecv :: [(Channel, Endom Session)] -> Endom Proto
 protoSendRecv cfs p =

@@ -158,7 +158,7 @@ checkAct act proto =
         case k of
           TenK -> checkConflictingChans proto Nothing cs
           SeqK -> do
-            assert (anyOf _head isLog csNSession)
+            assert (anyOf _head isSource csNSession)
                    ["Sequential `new` expects the first session to be made of sends (a Log)"]
             checkOrderedChans proto cs $> proto
           ParK -> error "checkAct: IMPOSSIBLE"

@@ -59,7 +59,7 @@ data TraverseKind
   = ParK
   | TenK
   | SeqK
-  deriving (Eq,Ord,Show,Read)
+  deriving (Eq,Ord,Show,Read,Enum)
 
 data CPatt
     = ChanP !ChanDec
@@ -103,20 +103,23 @@ data Term
 tSession :: Iso' Session Term
 tSession = iso fwd bkd
   where
-    fwd (TermS NoOp t) = t
-    fwd             s  = TSession s
-    bkd (TSession s)   = s
-    bkd           t    = TermS NoOp t
+    fwd (TermS so t) | so == idOp = t
+    fwd           s  = TSession s
+    bkd (TSession s) = s
+    bkd           t  = TermS idOp t
 
 -- Polarity with a read/write (recv/send) flavor
 data RW = Read | Write
+  deriving (Eq,Ord,Show,Read,Enum)
+
+data SessionOp = SessionOp { _rwOp :: !(FinEndom RW), _arrayOp :: !(FinEndom TraverseKind) }
   deriving (Eq,Ord,Show,Read)
 
-data DualOp = DualOp | NoOp | LogOp | SinkOp
-  deriving (Eq,Ord,Show,Read)
+idOp :: SessionOp
+idOp = SessionOp idEndom idEndom
 
 data Session
-  = TermS !DualOp !Term
+  = TermS !SessionOp !Term
   | IO !RW !VarDec Session
   | Array !TraverseKind !Sessions
   deriving (Eq,Ord,Show,Read)
@@ -150,7 +153,6 @@ makePrisms ''Assertion
 makePrisms ''CPatt
 makePrisms ''Dec
 makePrisms ''Defs
-makePrisms ''DualOp
 makePrisms ''Proc
 makePrisms ''Program
 makePrisms ''RFactor

@@ -436,7 +436,7 @@ transSession env x = case x of
   Array _ ss -> tupQ (transSessions env ss)
   TermS p t ->
     case reduceTerm' env t of
-      TSession s -> transSession env (dualOp p s)
+      TSession s -> transSession env (sessionOp p s)
       ty         -> unsupportedTyp ty & _1 %~ C.QTyp C.NoQual
 
 transRFactor :: Env -> RFactor -> C.Exp
