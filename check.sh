@@ -16,6 +16,8 @@ echo "== EXPECTED PRETTY-PRINTER =="
 cmdcheck "$@" tests/pretty/*.t
 echo "== EXPECTED FMT =="
 cmdcheck "$@" tests/fmt/*.t
+echo "== EXPECTED STRICT-PAR FAILURES =="
+cmdcheck "$@" tests/strict-par-failure/*.t
 echo "== ISSUES CHECK =="
 cmdcheck "$@" issues/check/*.t
 echo "== ISSUES COMPILATION =="

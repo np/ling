@@ -1,4 +1,4 @@
 While checking `test_pat_term`
   These channels should be used in some order (not in parallel):
-  e0# e1#
+  e#0 e#1
 
