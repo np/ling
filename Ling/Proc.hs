@@ -129,8 +129,8 @@ subChanDecs rss c = [ ChanDec c' (rs ^. rfactor) (Just rs)
 
 type MkFwd a = (Session -> Session) -> UsedNames -> a -> [Channel] -> Proc
 
-fwdSplit :: [TraverseKind] -> ([Proc] -> Proc) -> MkFwd [RSession]
-fwdSplit ks fprocs redSession used rss cs
+fwdSplit :: ([Proc] -> Proc) -> [TraverseKind] -> MkFwd [RSession]
+fwdSplit fprocs ks redSession used rss cs
   | null cs   = ø
   | null rss  = toProc $ Order (zipWith3 Split ks cs (repeat []))
   | otherwise = Order pref `dotP` fprocs ps
@@ -142,30 +142,21 @@ fwdSplit ks fprocs redSession used rss cs
     ps   = zipWith (fwdR redSession used) rss (transpose css)
     pref = zipWith3 Split ks cs cdss
 
-fwdParTen, fwdSeqSeq :: MkFwd [RSession]
-fwdParTen = fwdSplit (TenK : repeat ParK) mconcat
-fwdSeqSeq = fwdSplit (repeat SeqK)        dotsP
-
 fwdIO :: MkFwd (RW, VarDec, Session)
-fwdIO _          _    _               []     = ø
-fwdIO redSession used (Write, arg, s) ds     = fwdDual fwdP redSession used (IO Write arg s) ds
-fwdIO redSession used (Read,  arg, s) (c:ds) = recv `dotP` Prll sends `dotP` fwdP redSession used' s (c:ds)
+fwdIO _          _    _               []       = ø
+fwdIO redSession used (Write, arg, s) (c:d:es) = fwdIO redSession used (Read, arg, dual s) (d:c:es)
+fwdIO redSession used (Read,  arg, s) (c:ds)   = recv `dotP` Prll sends `dotP` fwdP redSession used' s (c:ds)
   where (x, used') = avoidUsed (arg^.argName) c used
         vx         = Def x []
         recv       = Recv c (arg & argName .~ x)
         sends      = [ Send d vx | d <- ds ]
-
-fwdDual :: Dual session
-        => (redsession -> usednames -> session -> [channel] -> proc)
-        ->  redsession -> usednames -> session -> [channel] -> proc
-fwdDual f r u s (c:d:es) = f r u (dual s) (d:c:es)
-fwdDual _ _ _ _ _        = error "fwdDual: Not enough channels for this forwarder (or the session is not a sink)"
+fwdIO _          _    _               _        = error "fwdIO: Not enough channels for this forwarder (or the session is not a sink)"
 
 fwdArray :: TraverseKind -> MkFwd [RSession]
-fwdArray k = case k of
-  SeqK -> fwdSeqSeq
-  TenK -> fwdParTen
-  ParK -> fwdDual fwdParTen
+fwdArray = \case
+  SeqK -> fwdSplit dotsP   $ repeat SeqK
+  TenK -> fwdSplit mconcat $ TenK : repeat ParK
+  ParK -> fwdSplit mconcat $ ParK : TenK : repeat ParK
 
 fwdR :: MkFwd RSession
 fwdR redSession used (s `Repl` r) cs

@@ -368,8 +368,8 @@ fwd1_rcv =
 fwd2_par2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int]})
   c {c#0 : {?Int, !Int.?Int},c#1 : [!Int, ?Int.!Int]}
-  c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int]
   c#0 {c#0#0 : ?Int, c#0#1 : !Int.?Int}
+  c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int]
   ( recv c#0#0 (x#c#0#0 : Int).
     send c#1#0 x#c#0#0
   | recv c#1#1 (x#c#1#1 : Int).
@@ -380,8 +380,8 @@ fwd2_par2_ten2 =
 fwd3_par2_ten2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int],{!Int, !Int.!Int}})
   c {c#0 : {?Int, !Int.?Int},c#1 : [!Int, ?Int.!Int],c#2 : {!Int, !Int.!Int}}
-  c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int]
   c#0 {c#0#0 : ?Int, c#0#1 : !Int.?Int}
+  c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int]
   c#2 {c#2#0 : !Int, c#2#1 : !Int.!Int}
   ( recv c#0#0 (x#c#0#0 : Int).
     ( send c#1#0 x#c#0#0
@@ -411,8 +411,8 @@ fwd3_seq2_seq2_seq2 =
 
 fwd_par0_ten0 =
   proc (i : {}, o : [])
-  o []
   i {}
+  o []
 
 fwd_par2_ten2_expanded =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
@@ -427,8 +427,8 @@ fwd_par2_ten2_expanded =
 
 fwd_par2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
-  o [o#0 : !Int, o#1 : ?Int.!Int]
   i {i#0 : ?Int, i#1 : !Int.?Int}
+  o [o#0 : !Int, o#1 : ?Int.!Int]
   ( recv i#0 (x#i#0 : Int).
     send o#0 x#i#0
   | recv o#1 (x#o#1 : Int).
@@ -438,8 +438,8 @@ fwd_par2_ten2 =
 
 fwd_par2_ten2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int})
-  o [o#0 : !Int, o#1 : ?Int.!Int]
   i {i#0 : ?Int, i#1 : !Int.?Int}
+  o [o#0 : !Int, o#1 : ?Int.!Int]
   l {l#0 : !Int, l#1 : !Int.!Int}
   ( recv i#0 (x#i#0 : Int).
     ( send o#0 x#i#0
@@ -453,8 +453,8 @@ fwd_par2_ten2_ten2 =
 
 fwd_par2_ten2_ten2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int},m : {!Int, !Int.!Int})
-  o [o#0 : !Int, o#1 : ?Int.!Int]
   i {i#0 : ?Int, i#1 : !Int.?Int}
+  o [o#0 : !Int, o#1 : ?Int.!Int]
   l {l#0 : !Int, l#1 : !Int.!Int}
   m {m#0 : !Int, m#1 : !Int.!Int}
   ( recv i#0 (x#i#0 : Int).
@@ -472,9 +472,9 @@ fwd_par2_ten2_ten2_ten2 =
 
 fwd_parN_tenN =
   \ (n : Int)-> proc (i : {?Int ^ n},o : [!Int ^ n])
-  o [o#0 ^ n : !Int ^ n]
   i {i#0 ^ n : ?Int ^ n}
-  slice (o#0, i#0)n as _
+  o [o#0 ^ n : !Int ^ n]
+  slice (i#0, o#0)n as _
     recv i#0 (x#i#0 : Int).
     send o#0 x#i#0
 
