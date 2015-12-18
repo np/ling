@@ -21,35 +21,35 @@ newtype Defs = Defs { _defsMap :: Map Name AnnTerm }
 newtype RFactor = RFactor { _rterm :: Term }
   deriving (Eq, Ord, Read, Show)
 
-data ChanDec = ChanDec { _cdChan :: Channel
-                       , _cdRepl :: RFactor
-                       , _cdSession :: Maybe RSession
+data ChanDec = ChanDec { _cdChan :: !Channel
+                       , _cdRepl :: !RFactor
+                       , _cdSession :: !(Maybe RSession)
                        }
   deriving (Eq,Ord,Show,Read)
 
 type VarDec  = Arg (Maybe Typ)
 
-data Program = Program { _prgDecs :: [Dec] }
+data Program = Program { _prgDecs :: ![Dec] }
   deriving (Eq,Ord,Show,Read)
 
 data Dec
-  = Sig Name (Maybe Typ) (Maybe Term)
-  | Dat Name [Name]
-  | Assert Assertion
+  = Sig !Name !(Maybe Typ) !(Maybe Term)
+  | Dat !Name ![Name]
+  | Assert !Assertion
   deriving (Eq,Ord,Show,Read)
 
 data Assertion
-  = Equal Term Term (Maybe Typ)
+  = Equal !Term !Term !(Maybe Typ)
   deriving (Eq,Ord,Show,Read)
 
 infixr 4 `Dot`
 
 -- See `Ling.WellFormed` for the conditions on Proc
 data Proc
-  = Act Act
-  | Procs (Prll Proc)
+  = Act !Act
+  | Procs !(Prll Proc)
   | Dot Proc Proc
-  | NewSlice [Channel] RFactor Name Proc
+  | NewSlice ![Channel] !RFactor !Name Proc
   deriving (Eq,Ord,Show,Read)
 
 type Pref  = Prll Act
@@ -62,21 +62,21 @@ data TraverseKind
   deriving (Eq,Ord,Show,Read)
 
 data CPatt
-    = ChanP ChanDec
-    | ArrayP TraverseKind [CPatt]
+    = ChanP !ChanDec
+    | ArrayP !TraverseKind ![CPatt]
   deriving (Eq, Ord, Show, Read)
 
 data Act
-  = Nu       { _newAnns :: [Term]
-             , _newKind :: TraverseKind
-             , _newChans :: [ChanDec] }
+  = Nu       { _newAnns :: ![Term]
+             , _newKind :: !TraverseKind
+             , _newChans :: ![ChanDec] }
   -- TODO? Split Channel CPatt
-  | Split    TraverseKind Channel [ChanDec]
-  | Send     Channel Term
-  | Recv     Channel VarDec
-  | Ax       Session [Channel]
-  | At       Term CPatt
-  | LetA     Defs
+  | Split    !TraverseKind !Channel ![ChanDec]
+  | Send     !Channel !Term
+  | Recv     !Channel !VarDec
+  | Ax       !Session ![Channel]
+  | At       !Term !CPatt
+  | LetA     !Defs
   deriving (Eq,Ord,Show,Read)
 
 type DataTypeName = Name
@@ -85,19 +85,19 @@ type Branch = (ConName,Term)
 
 type Typ = Term
 data Term
-  = Def Name [Term]
-  | Let Defs Term
-  | Lit Literal
-  | Lam VarDec Term
-  | Con ConName
-  | Case Term [Branch]
+  = Def !Name ![Term]
+  | Let !Defs Term
+  | Lit !Literal
+  | Lam !VarDec Term
+  | Con !ConName
+  | Case Term ![Branch]
   --          ^ Sorted
-  | Proc [ChanDec] Proc
+  | Proc ![ChanDec] !Proc
   | TTyp
-  | TFun VarDec Typ
-  | TSig VarDec Typ
-  | TProto [RSession]
-  | TSession Session
+  | TFun !VarDec Typ
+  | TSig !VarDec Typ
+  | TProto ![RSession]
+  | TSession !Session
   deriving (Eq,Ord,Show,Read)
 
 tSession :: Iso' Session Term
@@ -116,9 +116,9 @@ data DualOp = DualOp | NoOp | LogOp | SinkOp
   deriving (Eq,Ord,Show,Read)
 
 data Session
-  = TermS DualOp Term
-  | IO RW VarDec Session
-  | Array TraverseKind Sessions
+  = TermS !DualOp !Term
+  | IO !RW !VarDec Session
+  | Array !TraverseKind !Sessions
   deriving (Eq,Ord,Show,Read)
 
 depSend, depRecv :: VarDec -> Endom Session
@@ -130,8 +130,8 @@ sendS = depSend . anonArg . Just
 recvS = depRecv . anonArg . Just
 
 data RSession
-  = Repl { _rsession :: Session
-         , _rfactor  :: RFactor
+  = Repl { _rsession :: !Session
+         , _rfactor  :: !RFactor
          }
   deriving (Eq,Ord,Show,Read)
 
