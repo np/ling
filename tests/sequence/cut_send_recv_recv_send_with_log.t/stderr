@@ -1,6 +1,0 @@
-Ling: transProcs: impossible all the processes are stuck:
-send logd "send d 2"
-send d 2
-| send logc "recv c"
-recv c (x : Int)
-

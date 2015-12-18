@@ -1,9 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Ling.Fmt.Albert.Migrate where
+module Ling.Fmt.Benjamin.Migrate where
 
-import           Ling.Fmt.Albert.Abs
-import qualified Ling.Fmt.Benjamin.Abs as L
+import           Ling.Fmt.Benjamin.Abs
+import qualified Ling.Raw              as L
 
 transName :: Name -> L.Name
 transName = \case
@@ -15,14 +15,10 @@ transProgram = \case
 
 transDec :: Dec -> L.Dec
 transDec = \case
-  DPrc name chandecs proc0 _ ->
-    L.DDef (transName name) L.NoSig (L.TProc (transChanDec <$> chandecs) (transProc proc0))
-  DDef name optsig (SoProc proc0) _ ->
-    L.DDef (transName name) (transOptSig optsig) (L.TProc [] (transProc proc0))
-  DDef name optsig (SoTerm term) _ ->
+  DDef name optsig term ->
     L.DDef (transName name) (transOptSig optsig) (transTerm term)
-  DSig name term _ -> L.DSig (transName name) (transTerm term)
-  DDat name connames _ -> L.DDat (transName name) (transConName <$> connames)
+  DSig name term -> L.DSig (transName name) (transTerm term)
+  DDat name connames -> L.DDat (transName name) (transConName <$> connames)
   DAsr assertion -> L.DAsr (transAssertion assertion)
 
 transAssertion :: Assertion -> L.Assertion
@@ -101,9 +97,9 @@ transProc = \case
 transAct :: Act -> L.Act
 transAct = \case
   Nu newalloc -> L.Nu (transNewAlloc newalloc)
-  ParSplit chan chandecs -> L.ParSplit (L.NoSplit (transName chan)) (transChanDec <$> chandecs)
-  TenSplit chan chandecs -> L.TenSplit (L.NoSplit (transName chan)) (transChanDec <$> chandecs)
-  SeqSplit chan chandecs -> L.SeqSplit (L.NoSplit (transName chan)) (transChanDec <$> chandecs)
+  ParSplit optsplit chandecs -> L.ParSplit (transOptSplit optsplit) (transChanDec <$> chandecs)
+  TenSplit optsplit chandecs -> L.TenSplit (transOptSplit optsplit) (transChanDec <$> chandecs)
+  SeqSplit optsplit chandecs -> L.SeqSplit (transOptSplit optsplit) (transChanDec <$> chandecs)
   Send name aterm -> L.Send (transName name) (transATerm aterm)
   Recv name vardec -> L.Recv (transName name) (transVarDec vardec)
   NewSend name aterm -> L.NewSend (transName name) (transATerm aterm)
@@ -113,6 +109,11 @@ transAct = \case
   At aterm topcpatt -> L.At (transATerm aterm) (transTopCPatt topcpatt)
   LetA x os t -> L.LetA (transName x) (transOptSig os) (transATerm t)
   LetRecv x os t -> L.LetRecv (transName x) (transOptSig os) (transATerm t)
+
+transOptSplit :: OptSplit -> L.OptSplit
+transOptSplit = \case
+  NoSplit name -> L.NoSplit (transName name)
+  SoSplit name -> L.SoSplit (transName name)
 
 transAllocTerm :: AllocTerm -> L.AllocTerm
 transAllocTerm (AVar d) = L.AVar (transName d)

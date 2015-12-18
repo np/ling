@@ -3,7 +3,7 @@
 {
 {-# OPTIONS -fno-warn-incomplete-patterns #-}
 {-# OPTIONS_GHC -w #-}
-module Ling.Lex where
+module Ling.Fmt.Benjamin.Lex where
 
 
 

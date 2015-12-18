@@ -55,8 +55,9 @@ The symbols used in Albert are the following:
   | -> | < | > | {
   | } | [ | ] | [:
   | :] | ! | ? | ~
-  | -o | ** | \ | @
-  | ^ | new/ |  | 
+  | <- | -o | ** | \
+  | ; | <= | @ | ^
+  | new/ |  |  | 
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {- and -}.
@@ -118,6 +119,7 @@ All other symbols are terminals.
   |  |  **|**  | ``!`` //Term3// //CSession// 
   |  |  **|**  | ``?`` //Term3// //CSession// 
   |  |  **|**  | ``~`` //Term2// 
+  |  |  **|**  | ``<-`` //Name// 
   |  |  **|**  | //Term3// 
   | //Term1// | -> | //Term2// ``-o`` //Term1// 
   |  |  **|**  | //Term2// ``->`` //Term1// 
@@ -131,6 +133,7 @@ All other symbols are terminals.
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
   | //Proc// | -> | //Proc1// //Proc// 
   |  |  **|**  | //Proc1// ``.`` //Proc// 
+  |  |  **|**  | //Proc1// ``;`` //Proc// 
   |  |  **|**  | ``slice`` ``(`` //[ChanDec]// ``)`` //ATerm// ``as`` //Name// //Proc// 
   |  |  **|**  | //Proc1// 
   | //[Proc]// | -> | **eps**
@@ -141,7 +144,10 @@ All other symbols are terminals.
   |  |  **|**  | //Name// ``[`` //[ChanDec]// ``]`` 
   |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 
   |  |  **|**  | ``send`` //Name// //ATerm// 
+  |  |  **|**  | //Name// ``<-`` //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
+  |  |  **|**  | ``let`` //Name// //OptSig// ``<-`` //Name// 
+  |  |  **|**  | ``let`` //Name// //OptSig// ``<=`` //ATerm// 
   |  |  **|**  | ``fwd`` //ASession// ``(`` //[ChanDec]// ``)`` 
   |  |  **|**  | ``fwd`` //Integer// //ASession// //Name// 
   |  |  **|**  | ``@`` //ATerm// //TopCPatt// 

@@ -32,6 +32,7 @@ import Ling.ErrM
 %name pListProc ListProc
 %name pAct Act
 %name pASession ASession
+%name pOptSplit OptSplit
 %name pTopCPatt TopCPatt
 %name pCPatt CPatt
 %name pListCPatt ListCPatt
@@ -58,37 +59,41 @@ import Ling.ErrM
   '.' { PT _ (TS _ 8) }
   ':' { PT _ (TS _ 9) }
   ':]' { PT _ (TS _ 10) }
-  '<' { PT _ (TS _ 11) }
-  '=' { PT _ (TS _ 12) }
-  '>' { PT _ (TS _ 13) }
-  '?' { PT _ (TS _ 14) }
-  '@' { PT _ (TS _ 15) }
-  'Type' { PT _ (TS _ 16) }
-  '[' { PT _ (TS _ 17) }
-  '[:' { PT _ (TS _ 18) }
-  '\\' { PT _ (TS _ 19) }
-  ']' { PT _ (TS _ 20) }
-  '^' { PT _ (TS _ 21) }
-  '`' { PT _ (TS _ 22) }
-  'as' { PT _ (TS _ 23) }
-  'assert' { PT _ (TS _ 24) }
-  'case' { PT _ (TS _ 25) }
-  'data' { PT _ (TS _ 26) }
-  'end' { PT _ (TS _ 27) }
-  'fwd' { PT _ (TS _ 28) }
-  'in' { PT _ (TS _ 29) }
-  'let' { PT _ (TS _ 30) }
-  'new' { PT _ (TS _ 31) }
-  'new/' { PT _ (TS _ 32) }
-  'of' { PT _ (TS _ 33) }
-  'proc' { PT _ (TS _ 34) }
-  'recv' { PT _ (TS _ 35) }
-  'send' { PT _ (TS _ 36) }
-  'slice' { PT _ (TS _ 37) }
-  '{' { PT _ (TS _ 38) }
-  '|' { PT _ (TS _ 39) }
-  '}' { PT _ (TS _ 40) }
-  '~' { PT _ (TS _ 41) }
+  ';' { PT _ (TS _ 11) }
+  '<' { PT _ (TS _ 12) }
+  '<-' { PT _ (TS _ 13) }
+  '<=' { PT _ (TS _ 14) }
+  '=' { PT _ (TS _ 15) }
+  '>' { PT _ (TS _ 16) }
+  '?' { PT _ (TS _ 17) }
+  '@' { PT _ (TS _ 18) }
+  'Type' { PT _ (TS _ 19) }
+  '[' { PT _ (TS _ 20) }
+  '[:' { PT _ (TS _ 21) }
+  '\\' { PT _ (TS _ 22) }
+  ']' { PT _ (TS _ 23) }
+  '^' { PT _ (TS _ 24) }
+  '`' { PT _ (TS _ 25) }
+  'as' { PT _ (TS _ 26) }
+  'assert' { PT _ (TS _ 27) }
+  'case' { PT _ (TS _ 28) }
+  'data' { PT _ (TS _ 29) }
+  'end' { PT _ (TS _ 30) }
+  'fwd' { PT _ (TS _ 31) }
+  'in' { PT _ (TS _ 32) }
+  'let' { PT _ (TS _ 33) }
+  'new' { PT _ (TS _ 34) }
+  'new/' { PT _ (TS _ 35) }
+  'of' { PT _ (TS _ 36) }
+  'proc' { PT _ (TS _ 37) }
+  'recv' { PT _ (TS _ 38) }
+  'send' { PT _ (TS _ 39) }
+  'slice' { PT _ (TS _ 40) }
+  'split' { PT _ (TS _ 41) }
+  '{' { PT _ (TS _ 42) }
+  '|' { PT _ (TS _ 43) }
+  '}' { PT _ (TS _ 44) }
+  '~' { PT _ (TS _ 45) }
 
 L_integ  { PT _ (TI $$) }
 L_doubl  { PT _ (TD $$) }
@@ -169,6 +174,7 @@ Term2 : 'case' Term 'of' '{' ListBranch '}' { Ling.Abs.Case $2 $5 }
       | '!' Term3 CSession { Ling.Abs.Snd $2 $3 }
       | '?' Term3 CSession { Ling.Abs.Rcv $2 $3 }
       | '~' Term2 { Ling.Abs.Dual $2 }
+      | '<-' Name { Ling.Abs.TRecv $2 }
       | Term3 { $1 }
 Term1 :: { Term }
 Term1 : Term2 '-o' Term1 { Ling.Abs.Loli $1 $3 }
@@ -186,6 +192,7 @@ Proc1 : Act { Ling.Abs.PAct $1 }
 Proc :: { Proc }
 Proc : Proc1 Proc { Ling.Abs.PNxt $1 $2 }
      | Proc1 '.' Proc { Ling.Abs.PDot $1 $3 }
+     | Proc1 ';' Proc { Ling.Abs.PSem $1 $3 }
      | 'slice' '(' ListChanDec ')' ATerm 'as' Name Proc { Ling.Abs.NewSlice $3 $5 $7 $8 }
      | Proc1 { $1 }
 ListProc :: { [Proc] }
@@ -194,17 +201,23 @@ ListProc : {- empty -} { [] }
          | Proc '|' ListProc { (:) $1 $3 }
 Act :: { Act }
 Act : NewAlloc { Ling.Abs.Nu $1 }
-    | Name '{' ListChanDec '}' { Ling.Abs.ParSplit $1 $3 }
-    | Name '[' ListChanDec ']' { Ling.Abs.TenSplit $1 $3 }
-    | Name '[:' ListChanDec ':]' { Ling.Abs.SeqSplit $1 $3 }
+    | OptSplit '{' ListChanDec '}' { Ling.Abs.ParSplit $1 $3 }
+    | OptSplit '[' ListChanDec ']' { Ling.Abs.TenSplit $1 $3 }
+    | OptSplit '[:' ListChanDec ':]' { Ling.Abs.SeqSplit $1 $3 }
     | 'send' Name ATerm { Ling.Abs.Send $2 $3 }
+    | Name '<-' ATerm { Ling.Abs.NewSend $1 $3 }
     | 'recv' Name VarDec { Ling.Abs.Recv $2 $3 }
+    | 'let' Name OptSig '<-' Name { Ling.Abs.NewRecv $2 $3 $5 }
+    | 'let' Name OptSig '<=' ATerm { Ling.Abs.LetRecv $2 $3 $5 }
     | 'fwd' ASession '(' ListChanDec ')' { Ling.Abs.Ax $2 $4 }
     | 'fwd' Integer ASession Name { Ling.Abs.SplitAx $2 $3 $4 }
     | '@' ATerm TopCPatt { Ling.Abs.At $2 $3 }
     | 'let' Name OptSig '=' ATerm { Ling.Abs.LetA $2 $3 $5 }
 ASession :: { ASession }
 ASession : ATerm { Ling.Abs.AS $1 }
+OptSplit :: { OptSplit }
+OptSplit : 'split' Name { Ling.Abs.SoSplit $2 }
+         | Name { Ling.Abs.NoSplit $1 }
 TopCPatt :: { TopCPatt }
 TopCPatt : '(' ListChanDec ')' { Ling.Abs.OldTopPatt $2 }
          | '{' ListCPatt '}' { Ling.Abs.ParTopPatt $2 }

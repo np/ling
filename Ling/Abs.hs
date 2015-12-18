@@ -61,6 +61,7 @@ data Term
     | Snd Term CSession
     | Rcv Term CSession
     | Dual Term
+    | TRecv Name
     | Loli Term Term
     | TFun Term Term
     | TSig Term Term
@@ -74,16 +75,20 @@ data Proc
     | PPrll [Proc]
     | PNxt Proc Proc
     | PDot Proc Proc
+    | PSem Proc Proc
     | NewSlice [ChanDec] ATerm Name Proc
   deriving (Eq, Ord, Show, Read)
 
 data Act
     = Nu NewAlloc
-    | ParSplit Name [ChanDec]
-    | TenSplit Name [ChanDec]
-    | SeqSplit Name [ChanDec]
+    | ParSplit OptSplit [ChanDec]
+    | TenSplit OptSplit [ChanDec]
+    | SeqSplit OptSplit [ChanDec]
     | Send Name ATerm
+    | NewSend Name ATerm
     | Recv Name VarDec
+    | NewRecv Name OptSig Name
+    | LetRecv Name OptSig ATerm
     | Ax ASession [ChanDec]
     | SplitAx Integer ASession Name
     | At ATerm TopCPatt
@@ -91,6 +96,9 @@ data Act
   deriving (Eq, Ord, Show, Read)
 
 data ASession = AS ATerm
+  deriving (Eq, Ord, Show, Read)
+
+data OptSplit = SoSplit Name | NoSplit Name
   deriving (Eq, Ord, Show, Read)
 
 data TopCPatt

@@ -4,7 +4,7 @@
 module Ling.Fmt.Albert.Par where
 import Ling.Fmt.Albert.Abs
 import Ling.Fmt.Albert.Lex
-import Ling.Fmt.Albert.ErrM
+import Ling.ErrM
 
 }
 
@@ -60,37 +60,40 @@ import Ling.Fmt.Albert.ErrM
   '.' { PT _ (TS _ 8) }
   ':' { PT _ (TS _ 9) }
   ':]' { PT _ (TS _ 10) }
-  '<' { PT _ (TS _ 11) }
-  '=' { PT _ (TS _ 12) }
-  '>' { PT _ (TS _ 13) }
-  '?' { PT _ (TS _ 14) }
-  '@' { PT _ (TS _ 15) }
-  'Type' { PT _ (TS _ 16) }
-  '[' { PT _ (TS _ 17) }
-  '[:' { PT _ (TS _ 18) }
-  '\\' { PT _ (TS _ 19) }
-  ']' { PT _ (TS _ 20) }
-  '^' { PT _ (TS _ 21) }
-  '`' { PT _ (TS _ 22) }
-  'as' { PT _ (TS _ 23) }
-  'assert' { PT _ (TS _ 24) }
-  'case' { PT _ (TS _ 25) }
-  'data' { PT _ (TS _ 26) }
-  'end' { PT _ (TS _ 27) }
-  'fwd' { PT _ (TS _ 28) }
-  'in' { PT _ (TS _ 29) }
-  'let' { PT _ (TS _ 30) }
-  'new' { PT _ (TS _ 31) }
-  'new/' { PT _ (TS _ 32) }
-  'of' { PT _ (TS _ 33) }
-  'proc' { PT _ (TS _ 34) }
-  'recv' { PT _ (TS _ 35) }
-  'send' { PT _ (TS _ 36) }
-  'slice' { PT _ (TS _ 37) }
-  '{' { PT _ (TS _ 38) }
-  '|' { PT _ (TS _ 39) }
-  '}' { PT _ (TS _ 40) }
-  '~' { PT _ (TS _ 41) }
+  ';' { PT _ (TS _ 11) }
+  '<' { PT _ (TS _ 12) }
+  '<-' { PT _ (TS _ 13) }
+  '<=' { PT _ (TS _ 14) }
+  '=' { PT _ (TS _ 15) }
+  '>' { PT _ (TS _ 16) }
+  '?' { PT _ (TS _ 17) }
+  '@' { PT _ (TS _ 18) }
+  'Type' { PT _ (TS _ 19) }
+  '[' { PT _ (TS _ 20) }
+  '[:' { PT _ (TS _ 21) }
+  '\\' { PT _ (TS _ 22) }
+  ']' { PT _ (TS _ 23) }
+  '^' { PT _ (TS _ 24) }
+  '`' { PT _ (TS _ 25) }
+  'as' { PT _ (TS _ 26) }
+  'assert' { PT _ (TS _ 27) }
+  'case' { PT _ (TS _ 28) }
+  'data' { PT _ (TS _ 29) }
+  'end' { PT _ (TS _ 30) }
+  'fwd' { PT _ (TS _ 31) }
+  'in' { PT _ (TS _ 32) }
+  'let' { PT _ (TS _ 33) }
+  'new' { PT _ (TS _ 34) }
+  'new/' { PT _ (TS _ 35) }
+  'of' { PT _ (TS _ 36) }
+  'proc' { PT _ (TS _ 37) }
+  'recv' { PT _ (TS _ 38) }
+  'send' { PT _ (TS _ 39) }
+  'slice' { PT _ (TS _ 40) }
+  '{' { PT _ (TS _ 41) }
+  '|' { PT _ (TS _ 42) }
+  '}' { PT _ (TS _ 43) }
+  '~' { PT _ (TS _ 44) }
 
 L_integ  { PT _ (TI $$) }
 L_doubl  { PT _ (TD $$) }
@@ -178,6 +181,7 @@ Term2 : 'case' Term 'of' '{' ListBranch '}' { Ling.Fmt.Albert.Abs.Case $2 $5 }
       | '!' Term3 CSession { Ling.Fmt.Albert.Abs.Snd $2 $3 }
       | '?' Term3 CSession { Ling.Fmt.Albert.Abs.Rcv $2 $3 }
       | '~' Term2 { Ling.Fmt.Albert.Abs.Dual $2 }
+      | '<-' Name { Ling.Fmt.Albert.Abs.TRecv $2 }
       | Term3 { $1 }
 Term1 :: { Term }
 Term1 : Term2 '-o' Term1 { Ling.Fmt.Albert.Abs.Loli $1 $3 }
@@ -195,6 +199,7 @@ Proc1 : Act { Ling.Fmt.Albert.Abs.PAct $1 }
 Proc :: { Proc }
 Proc : Proc1 Proc { Ling.Fmt.Albert.Abs.PNxt $1 $2 }
      | Proc1 '.' Proc { Ling.Fmt.Albert.Abs.PDot $1 $3 }
+     | Proc1 ';' Proc { Ling.Fmt.Albert.Abs.PSem $1 $3 }
      | 'slice' '(' ListChanDec ')' ATerm 'as' Name Proc { Ling.Fmt.Albert.Abs.NewSlice $3 $5 $7 $8 }
      | Proc1 { $1 }
 ListProc :: { [Proc] }
@@ -207,7 +212,10 @@ Act : NewAlloc { Ling.Fmt.Albert.Abs.Nu $1 }
     | Name '[' ListChanDec ']' { Ling.Fmt.Albert.Abs.TenSplit $1 $3 }
     | Name '[:' ListChanDec ':]' { Ling.Fmt.Albert.Abs.SeqSplit $1 $3 }
     | 'send' Name ATerm { Ling.Fmt.Albert.Abs.Send $2 $3 }
+    | Name '<-' ATerm { Ling.Fmt.Albert.Abs.NewSend $1 $3 }
     | 'recv' Name VarDec { Ling.Fmt.Albert.Abs.Recv $2 $3 }
+    | 'let' Name OptSig '<-' Name { Ling.Fmt.Albert.Abs.NewRecv $2 $3 $5 }
+    | 'let' Name OptSig '<=' ATerm { Ling.Fmt.Albert.Abs.LetRecv $2 $3 $5 }
     | 'fwd' ASession '(' ListChanDec ')' { Ling.Fmt.Albert.Abs.Ax $2 $4 }
     | 'fwd' Integer ASession Name { Ling.Fmt.Albert.Abs.SplitAx $2 $3 $4 }
     | '@' ATerm TopCPatt { Ling.Fmt.Albert.Abs.At $2 $3 }

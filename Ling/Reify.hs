@@ -93,6 +93,7 @@ instance Norm Proc where
     PAct act         -> normAct act
     PNxt proc0 proc1 -> norm proc0 `dotP` norm proc1
     PDot proc0 proc1 -> norm proc0 `dotP` norm proc1
+    PSem proc0 proc1 -> norm proc0 `dotP` norm proc1
     PPrll procs      -> mconcat $ norm procs
     NewSlice cs t x p -> N.NewSlice (view justChannel <$> cs) (norm (Some t)) x (norm p)
 
@@ -149,6 +150,10 @@ justChannel = iso go (\c-> CD c One NoSession)
     go (CD (Name x) Some{} NoSession) =
       error $ "unexpected session replication for channel " ++ x
 
+unSplit :: OptSplit -> Name
+unSplit (SoSplit x) = x
+unSplit (NoSplit x) = x
+
 normAct :: Act -> N.Proc
 normAct = \case
     -- These two clauses expand the forwarders
@@ -162,13 +167,16 @@ normAct = \case
 -}
 
     Nu newalloc       -> toProc $ N._Nu # (\(x,(y,z))->(x,y,z)) (norm newalloc)
-    ParSplit c ds     -> toProc $ N.Split N.ParK c (norm ds)
-    TenSplit c ds     -> toProc $ N.Split N.TenK c (norm ds)
-    SeqSplit c ds     -> toProc $ N.Split N.SeqK c (norm ds)
+    ParSplit c ds     -> toProc $ N.Split N.ParK (unSplit c) (norm ds)
+    TenSplit c ds     -> toProc $ N.Split N.TenK (unSplit c) (norm ds)
+    SeqSplit c ds     -> toProc $ N.Split N.SeqK (unSplit c) (norm ds)
     Send     c t      -> toProc $ N.Send         c (norm t)
     Recv     c a      -> toProc $ N.Recv         c (norm a)
+    NewSend  c t      -> toProc $ N.Send         c (norm t)
+    NewRecv x os c    -> toProc $ N.Recv         c (norm (VD x os))
     At       t pa     -> toProc $ N.At   (norm t) (norm pa)
     LetA     x os t   -> toProc $ N.LetA (N.aDef x (norm os) (norm t))
+    LetRecv _x _os _t -> error "`let ... <= ...` is not supported yet (Issue #16)"
 
 reifyProc :: N.Proc -> Proc
 reifyProc = reify
@@ -179,14 +187,17 @@ reifyLetA (Arg x (Ann os tm)) = LetA x (reify os) (reify tm)
 reifyDefsA :: N.Defs -> Proc
 reifyDefsA defs = pDots $ defs ^.. each . to reifyLetA . to PAct
 
+newRecv :: Name -> VarDec -> Act
+newRecv c (VD x os) = NewRecv x os c
+
 reifyAct :: N.Act -> Proc
 reifyAct = \case
   N.Nu anns k cs      -> PAct $ Nu (reify (anns, (k, cs)))
-  N.Split N.ParK c ds -> PAct $ ParSplit c (reify ds)
-  N.Split N.TenK c ds -> PAct $ TenSplit c (reify ds)
-  N.Split N.SeqK c ds -> PAct $ SeqSplit c (reify ds)
-  N.Send     c t      -> PAct $ Send     c (reify t)
-  N.Recv     c a      -> PAct $ Recv     c (reify a)
+  N.Split N.ParK c ds -> PAct $ ParSplit (SoSplit c) (reify ds)
+  N.Split N.TenK c ds -> PAct $ TenSplit (SoSplit c) (reify ds)
+  N.Split N.SeqK c ds -> PAct $ SeqSplit (SoSplit c) (reify ds)
+  N.Send     c t      -> PAct $ NewSend          c (reify t)
+  N.Recv     c a      -> PAct $ newRecv          c (reify a)
   N.Ax       s cs     -> PAct $ Ax (reify s) ((justChannel #) <$> cs)
   N.At       t ps     -> PAct $ At (reify t) (reify ps)
   N.LetA defs         -> reifyDefsA defs
@@ -318,6 +329,7 @@ instance Norm Term where
     Rcv t s      -> N.TSession $ normVarDecs (N.IO N.Read ) (mkVDs t) s
     Loli s t     -> N.TSession $ norm (RawSession s) `loli` norm (RawSession t)
     Dual s       -> dual (norm s)
+    TRecv _c     -> error "Receive as an expression (Issue #16) is not supported yet"
     Let x os t u -> N.Let (N.aDef x (norm os) (norm t)) (norm u)
 
 instance Norm Branch where

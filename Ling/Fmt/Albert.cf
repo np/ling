@@ -82,6 +82,7 @@ Case.     Term2  ::= "case" Term "of" "{" [Branch] "}" ;
 Snd.      Term2  ::= "!" Term3 CSession ;
 Rcv.      Term2  ::= "?" Term3 CSession ;
 Dual.     Term2  ::= "~" Term2 ;
+TRecv.    Term2  ::= "<-" Name ;
 _.        Term2  ::= Term3 ;
 
 Loli.     Term1  ::= Term2 "-o" Term1 ;
@@ -110,6 +111,7 @@ PPrll.    Proc1 ::= "(" [Proc] ")" ;
 
 PNxt.     Proc ::= Proc1 Proc ;
 PDot.     Proc ::= Proc1 "." Proc ;
+PSem.     Proc ::= Proc1 ";" Proc ;
 NewSlice. Proc ::= "slice" "(" [ChanDec] ")" ATerm "as" Name Proc ;
 _.        Proc ::= Proc1 ;
 separator Proc "|" ;
@@ -119,7 +121,10 @@ ParSplit. Act ::= Name "{" [ChanDec] "}" ;
 TenSplit. Act ::= Name "[" [ChanDec] "]" ;
 SeqSplit. Act ::= Name "[:" [ChanDec] ":]" ;
 Send.     Act ::= "send" Name ATerm ;
+NewSend.  Act ::= Name "<-" ATerm ;
 Recv.     Act ::= "recv" Name VarDec ;
+NewRecv.  Act ::= "let" Name OptSig "<-" Name ;
+LetRecv.  Act ::= "let" Name OptSig "<=" ATerm ;
 Ax.       Act ::= "fwd" ASession "(" [ChanDec] ")" ;
 SplitAx.  Act ::= "fwd" Integer ASession Name ;
 At.       Act ::= "@" ATerm TopCPatt ;

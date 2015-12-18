@@ -6,12 +6,12 @@ import System.IO ( stdin, hGetContents )
 import System.Environment ( getArgs, getProgName )
 import System.Exit ( exitFailure, exitSuccess )
 
-import Ling.Fmt.Albert.Lex
-import Ling.Fmt.Albert.Par
-import Ling.Fmt.Albert.Skel
-import Ling.Fmt.Albert.Print
-import Ling.Fmt.Albert.Abs
-import Ling.Fmt.Albert.Layout
+import Ling.Fmt.Benjamin.Lex
+import Ling.Fmt.Benjamin.Par
+import Ling.Fmt.Benjamin.Skel
+import Ling.Fmt.Benjamin.Print
+import Ling.Fmt.Benjamin.Abs
+import Ling.Fmt.Benjamin.Layout
 
 
 

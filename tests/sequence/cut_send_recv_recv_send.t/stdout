@@ -4,7 +4,7 @@
 cut_send_recv_recv_send =
   proc ()
   new (c : !Int.?Int, d : ?Int.!Int)
-  send c 1.
-  recv d (y : Int).
-  send d 2.
-  recv c (x : Int)
+  c <- 1.
+  let y : Int <- d.
+  d <- 2.
+  let x : Int <- c
