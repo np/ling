@@ -8,7 +8,7 @@ import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
 import           System.IO          (hPutStrLn, stderr)
 
-import           IPPrint.Colored
+-- import           IPPrint.Colored
 
 import qualified MiniC.Print        as C
 
@@ -28,6 +28,9 @@ import           Ling.Fuse          (fuseProgram)
 import           Ling.Subst         (subst)
 import           Ling.Reify
 import qualified Ling.Sequential    as Sequential
+
+cpprint :: Show a => a -> IO ()
+cpprint = print
 
 type ParseFun a = [Token] -> Err a
 
