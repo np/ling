@@ -1,0 +1,1 @@
+../../../fixtures/all/com_with_log.ll
