@@ -1,8 +1,15 @@
-double = proc(i : ?Int, r : !Int)
-  recv i(xi : Int)
-  new (c : ?Int. ?Int. !Int, d)
-  (
-    recv c(x : Int) recv c(y : Int) send c (x + y)
-  |
-    send d xi send d xi recv d(z : Int) send r z
-  )
+double = proc(a: ?Int, b: !Int)
+  let x : Int <- a.
+  b <- (x + x)
+
+double_21 = proc(b: !Int)
+  new [: c: !Int, c': ?Int :].
+  c <- 21.
+  @double{c',b}
+
+double_21_fused = proc(b: !Int)
+  let x : Int = 21.
+  b <- (x + x)
+
+double_21_fused_and_reduced = proc(b: !Int)
+  b <- 42
