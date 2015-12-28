@@ -37,3 +37,8 @@ Beside hacking on the tool chain, you can:
 * Submit bug reports
 * Join the discussion on the evolution of the language
 * Help with the documentations and tutorials
+
+## Documentation
+
+* Tutorial: https://ling.readthedocs.org/en/latest/tutorial/
+* Talk: https://nicolaspouillard.fr/talks/ling-32c3/
