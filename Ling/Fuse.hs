@@ -117,9 +117,11 @@ fuse2Chans anns cd0 cd1 p0 =
         mactB = p0 {- was p1 -} ^? {-scoped .-} fetchActProc predB . _Act
       in
       case mactB of
-        Nothing -> error $ "fuse2Chans: mactB is Nothing" ++ pretty (cdB, p0) -- can we return p0 or p1 ?
+        Nothing ->
+          error $ "fuse2Chans: cannot find " ++ pretty (cdB ^. cdChan) ++ " in " ++ pretty p0
         Just actB ->
-          p1 & fetchActProc predA .~ toProc (fuse2Acts anns cdA actA cdB actB)
+          p0 & fetchActProc predA .~ toProc (fuse2Acts anns cdA actA cdB actB)
+             & fetchActProc predB .~ ø
   where
     c0 = cd0 ^. cdChan
     c1 = cd1 ^. cdChan
@@ -128,7 +130,7 @@ fuse2Chans anns cd0 cd1 p0 =
 
     -- TODO fuse into one traversal
     mact0 = p0 ^? {-scoped .-} fetchActProc predA . _Act
-    p1    = p0 &  {-scoped .-} fetchActProc predA .~ ø
+    -- p1    = p0 &  {-scoped .-} fetchActProc predA .~ ø
 
 fuseProgram :: Endom Program
 fuseProgram = prgDecs . each . _Sig . _3 . _Just . _Proc . _2 %~ fuseProc
