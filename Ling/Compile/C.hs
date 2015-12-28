@@ -166,7 +166,7 @@ transName (Name x) = C.Ident (concatMap f x ++ "_lin") where
   f  c   = [c]
 
 transOp :: EVar -> Maybe (Op2 C.Exp)
-transOp (Name v) = case v of
+transOp (Name v) = (\f x y -> C.EParen (f x y)) <$> case v of
   "_+_"  -> Just C.Add
   "_+D_" -> Just C.Add
   "_*_"  -> Just C.Mul

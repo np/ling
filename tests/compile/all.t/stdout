@@ -65,14 +65,14 @@ void cut_send_recv_recv_send_with_log_prll_lin (char * logc_lin, char * logd_lin
 void div_mod_server_cont_lin (int * c_lin){
   const int m_lin = * c_lin ;
   const int n_lin = * c_lin ;
-  * c_lin = __div___lin (m_lin, n_lin);
-  * c_lin = m_lin % n_lin ;
+  * c_lin = (m_lin / n_lin);
+  * c_lin = (m_lin % n_lin);
   }
 void div_mod_server_explicit_prll_lin (const int * rm_lin, const int * rn_lin, int * sdiv_lin, int * smod_lin){
   const int n_lin = * rn_lin ;
   const int m_lin = * rm_lin ;
-  * sdiv_lin = __div___lin (m_lin, n_lin);
-  * smod_lin = m_lin % n_lin ;
+  * sdiv_lin = (m_lin / n_lin);
+  * smod_lin = (m_lin % n_lin);
   }
 void div_mod_server_par2_ten2_ten2_lin (const struct {
   int f0 ;
@@ -85,8 +85,8 @@ void div_mod_server_par2_ten2_ten2_lin (const struct {
 * s_lin){
   const int m_lin = r_lin -> f0 ;
   const int n_lin = r_lin -> f1 ;
-  s_lin -> f0 = __div___lin (m_lin, n_lin);
-  s_lin -> f1 = m_lin % n_lin ;
+  s_lin -> f0 = (m_lin / n_lin);
+  s_lin -> f1 = (m_lin % n_lin);
   }
 void div_mod_server_par4_lin (struct {
   int f0 ;
@@ -97,8 +97,8 @@ void div_mod_server_par4_lin (struct {
 * c_lin){
   const int m_lin = c_lin -> f0 ;
   const int n_lin = c_lin -> f1 ;
-  c_lin -> f2 = __div___lin (m_lin, n_lin);
-  c_lin -> f3 = m_lin % n_lin ;
+  c_lin -> f2 = (m_lin / n_lin);
+  c_lin -> f3 = (m_lin % n_lin);
   }
 void div_mod_server_seq2_ten2_ten2_lin (struct {
   struct {
@@ -115,8 +115,8 @@ void div_mod_server_seq2_ten2_ten2_lin (struct {
 * c_lin){
   const int m_lin = c_lin -> f0 . f0 ;
   const int n_lin = c_lin -> f0 . f1 ;
-  c_lin -> f1 . f0 = __div___lin (m_lin, n_lin);
-  c_lin -> f1 . f1 = m_lin % n_lin ;
+  c_lin -> f1 . f0 = (m_lin / n_lin);
+  c_lin -> f1 . f1 = (m_lin % n_lin);
   }
 void div_mod_server_seq4_lin (struct {
   int f0 ;
@@ -127,14 +127,14 @@ void div_mod_server_seq4_lin (struct {
 * c_lin){
   const int m_lin = c_lin -> f0 ;
   const int n_lin = c_lin -> f1 ;
-  c_lin -> f2 = __div___lin (m_lin, n_lin);
-  c_lin -> f3 = m_lin % n_lin ;
+  c_lin -> f2 = (m_lin / n_lin);
+  c_lin -> f3 = (m_lin % n_lin);
   }
 void div_mod_server_simple_lin (const int * rm_lin, const int * rn_lin, int * sdiv_lin, int * smod_lin){
   const int m_lin = * rm_lin ;
   const int n_lin = * rn_lin ;
-  * sdiv_lin = __div___lin (m_lin, n_lin);
-  * smod_lin = m_lin % n_lin ;
+  * sdiv_lin = (m_lin / n_lin);
+  * smod_lin = (m_lin % n_lin);
   }
 void double_lin (const int * i_lin, int * r_lin){
   const int xi_lin = * i_lin ;
@@ -143,7 +143,7 @@ void double_lin (const int * i_lin, int * r_lin){
   const int x_lin = c_lin ;
   c_lin = xi_lin ;
   const int y_lin = c_lin ;
-  c_lin = x_lin + y_lin ;
+  c_lin = (x_lin + y_lin);
   const int z_lin = c_lin ;
   * r_lin = z_lin ;
   }
@@ -435,15 +435,15 @@ void idproc_lin (const int * c_lin, int * d_lin){
   }
 void let_example_lin (int * c_lin){
   const int x_lin = * c_lin ;
-  * c_lin = x_lin + x_lin ;
+  * c_lin = (x_lin + x_lin);
   }
 void letrecv_ann_lin (int * c_lin){
   const int x_lin = * c_lin ;
-  * c_lin = x_lin + x_lin ;
+  * c_lin = (x_lin + x_lin);
   }
 void letrecv_lin (int * c_lin){
   const int x_lin = * c_lin ;
-  * c_lin = x_lin + x_lin ;
+  * c_lin = (x_lin + x_lin);
   }
 void test_my_dual_lin (const int * c_lin){
   const int x_lin = * c_lin ;
@@ -898,7 +898,7 @@ void sum_int_lin (const int a_lin [10], int * r_lin){
   i_lin = i_lin + 1){
     const int x_lin = a_lin [i_lin];
     const int y_lin = itmp_lin ;
-    itmp_lin = x_lin + y_lin ;
+    itmp_lin = (x_lin + y_lin);
     } ;
   const int x__itmp_lin = itmp_lin ;
   * r_lin = x__itmp_lin ;
@@ -982,15 +982,15 @@ void test2_lin () {
   c_lin ;
   c_lin . f0 = 1 ;
   const int x0_lin = c_lin . f0 ;
-  c_lin . f1 = x0_lin + 1 ;
+  c_lin . f1 = (x0_lin + 1);
   const int z0_lin = c_lin . f1 ;
-  c_lin . f1 = z0_lin + 5 ;
+  c_lin . f1 = (z0_lin + 5);
   const int x1_lin = c_lin . f1 ;
-  c_lin . f0 = x1_lin + (x0_lin + 2);
+  c_lin . f0 = (x1_lin + (x0_lin + 2)) ;
   const int y0_lin = c_lin . f0 ;
-  c_lin . f0 = y0_lin + 4 ;
+  c_lin . f0 = (y0_lin + 4);
   const int x2_lin = c_lin . f0 ;
-  c_lin . f1 = x2_lin + (x1_lin + (x0_lin + 3)) ;
+  c_lin . f1 = (x2_lin + (x1_lin + (x0_lin + 3)));
   const int z1_lin = c_lin . f1 ;
   }
 void test3_lin () {
@@ -1018,7 +1018,7 @@ void test4_lin (int * r_lin){
   const int x1_lin = c_lin ;
   c_lin = 3 ;
   const int x2_lin = c_lin ;
-  * r_lin = x0_lin + (x1_lin + x2_lin);
+  * r_lin = (x0_lin + (x1_lin + x2_lin)) ;
   }
 int Id_lin (const int A_lin, const void * x_lin, const void * y_lin);
 void * refl_lin (const int A_lin, const void * x_lin);
@@ -1072,7 +1072,7 @@ void zip_add_lin (const int xs_lin [10], const int ys_lin [10], int zs_lin [10])
   i_lin = i_lin + 1){
     const int a_lin = xs_lin [i_lin];
     const int b_lin = ys_lin [i_lin];
-    zs_lin [i_lin]= a_lin + b_lin ;
+    zs_lin [i_lin]= (a_lin + b_lin);
     } ;
   }
 

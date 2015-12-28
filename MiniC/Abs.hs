@@ -66,6 +66,7 @@ data UOp = UAmp | UPtr | UPlus | UMinus | UTilde | UBang
 data Exp
     = EVar Ident
     | ELit Literal
+    | EParen Exp
     | EArw Exp Ident
     | EFld Exp Ident
     | EArr Exp Exp

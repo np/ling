@@ -81,6 +81,7 @@ transExp :: Exp -> Result
 transExp x = case x of
   EVar ident -> failure x
   ELit literal -> failure x
+  EParen exp -> failure x
   EArw exp ident -> failure x
   EFld exp ident -> failure x
   EArr exp1 exp2 -> failure x

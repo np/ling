@@ -62,9 +62,9 @@ LString.  Literal ::= String  ;
 LChar.    Literal ::= Char    ;
 
 -- primary-expression
-EVar. Exp16 ::= Ident ;
-ELit. Exp16 ::= Literal ;
-_.    Exp16 ::= "(" Exp ")" ;
+EVar.   Exp16 ::= Ident ;
+ELit.   Exp16 ::= Literal ;
+EParen. Exp16 ::= "(" Exp ")" ;
 
 -- postfix-expression
 EArw. Exp15 ::= Exp15 "->" Ident ;

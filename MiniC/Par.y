@@ -186,7 +186,7 @@ Literal : Integer { MiniC.Abs.LInteger $1 }
 Exp16 :: { Exp }
 Exp16 : Ident { MiniC.Abs.EVar $1 }
       | Literal { MiniC.Abs.ELit $1 }
-      | '(' Exp ')' { $2 }
+      | '(' Exp ')' { MiniC.Abs.EParen $2 }
 Exp15 :: { Exp }
 Exp15 : Exp15 '->' Ident { MiniC.Abs.EArw $1 $3 }
       | Exp15 '.' Ident { MiniC.Abs.EFld $1 $3 }

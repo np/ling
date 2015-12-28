@@ -177,6 +177,7 @@ instance Print Exp where
   prt i e = case e of
     EVar id -> prPrec i 16 (concatD [prt 0 id])
     ELit literal -> prPrec i 16 (concatD [prt 0 literal])
+    EParen exp -> prPrec i 16 (concatD [doc (showString "("), prt 0 exp, doc (showString ")")])
     EArw exp id -> prPrec i 15 (concatD [prt 15 exp, doc (showString "->"), prt 0 id])
     EFld exp id -> prPrec i 15 (concatD [prt 15 exp, doc (showString "."), prt 0 id])
     EArr exp1 exp2 -> prPrec i 15 (concatD [prt 15 exp1, doc (showString "["), prt 0 exp2, doc (showString "]")])
