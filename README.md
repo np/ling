@@ -1,12 +1,12 @@
-Here some instructions on how to use the Ling tool chain.
+Here are some instructions on how to use the Ling tool chain.
 
 ## Requirements
 
-If your new to Haskell your simplest option might be to install `stack`: http://docs.haskellstack.org/en/stable/README.html#how-to-install
+If you're new to Haskell your simplest option might be to install `stack`: http://docs.haskellstack.org/en/stable/README.html#how-to-install
 
 ## Building
 
-Once the repository cloned, you can setup a local Haskell environment:
+Once the repository is cloned, you can setup a local Haskell environment:
 
 ```
 $ stack setup
