@@ -1,6 +1,6 @@
 Terms are not equivalent.
 Left side:
-  "Hello" ++S "World!"
+  "HelloWorld!"
 Right side:
   "Hello World!"
 
