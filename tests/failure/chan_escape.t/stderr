@@ -1,0 +1,4 @@
+While checking `chan_escape`
+  These channels have not been introduced:
+  (c : !Int)
+
