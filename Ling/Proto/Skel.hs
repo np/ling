@@ -22,7 +22,7 @@ import           Prelude      hiding (null)
 
 import           Ling.Norm    (TraverseKind (..))
 import           Ling.Prelude hiding (null, op, q, Prll)
-import           Ling.Print
+import           Ling.Print.Class
 
 -- A way to deal with Unknown would be to stick an identifier on each of them. Then the normal
 -- equality could be used safely. One way would be to use an `IORef ()`

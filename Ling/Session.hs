@@ -6,6 +6,7 @@ module Ling.Session where
 import           Ling.Norm
 import           Ling.Prelude
 import qualified Ling.Raw     as Raw
+import           Ling.Scoped
 import           Prelude      hiding (log)
 
 array :: TraverseKind -> Sessions -> Session
@@ -210,6 +211,13 @@ instance Dual Term where
   sessionOp o = view tSession . termS o
   isSource = isSource . view (from tSession)
   isMaster = isMaster . view (from tSession)
+
+instance Dual a => Dual (Scoped a) where
+  sessionOp = fmap . sessionOp
+  dual      = fmap dual
+  log       = fmap log
+  isSource  = isSource . view scoped
+  isMaster  = isMaster . view scoped
 
 validAx :: (Eq session, Dual session) => session -> [channel] -> Bool
 -- Forwarding anything between no channels is always possible

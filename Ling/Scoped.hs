@@ -16,9 +16,7 @@ import           Prelude      hiding (log)
 
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
-import           Ling.Print
 import           Ling.Rename
-import           Ling.Session
 
 data Scoped a = Scoped { _gdefs, _ldefs :: Defs, _scoped :: a }
   deriving Eq
@@ -56,22 +54,6 @@ nullDefs = Map.null . _defsMap
 instance Monad Scoped where
   return  = pure
   s >>= f = s *> f (s ^. scoped)
-
-instance Dual a => Dual (Scoped a) where
-  sessionOp = fmap . sessionOp
-  dual      = fmap dual
-  log       = fmap log
-  isSource  = isSource . view scoped
-  isMaster  = isMaster . view scoped
-
-instance Print a => Print (Scoped a) where
-  prt i (Scoped _ ld x)
-    -- the global scope is not displayed
-    | nullDefs ld = prt i x
-    | otherwise   =
-        concatD [ doc (showString "let ") , prt 0 ld
-                , doc (showString "in")
-                , prt i x ]
 
 scopedName :: Scoped Name -> Maybe (Scoped Term)
 scopedName (Scoped g l x) =
