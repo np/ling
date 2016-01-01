@@ -144,6 +144,16 @@ com_new_mk_ten2_SInt =
   c' <- 42)(proc (d : ?Int)
   let x : Int <- d)
 
+com_with_log =
+  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> \ (s : < ~ Log S >)-> proc ()
+  new (c : S, c' : ~ S)
+  new (d : ~ S, d' : S)
+  new (l : ~ Log S, l' : Log S)
+  ( @ p (c)
+  | @ q (d)
+  | @ s (l)
+  | fwd S (d', c', l'))
+
 conv_fun =
   \ (A : Type)-> \ (A' : Type)-> \ (B : Type)-> \ (S : Session)-> \ (dom : A' -> A)-> \ (cod : B -> < S >)-> \ (f : A -> B)-> proc (c : {?A', S})
   split c {i, o}
@@ -271,16 +281,24 @@ div_mod_server_simple =
   smod <- (m % n)
 
 double =
-  proc (i : ?Int, r : !Int)
-  let xi : Int <- i.
-  new (c : ?Int.?Int.!Int, d)
-  ( let x : Int <- c.
-    let y : Int <- c.
-    c <- (x + y)
-  | d <- xi.
-    d <- xi.
-    let z : Int <- d.
-    r <- z )
+  proc (a : ?Int, b : !Int)
+  let x : Int <- a.
+  b <- (x + x)
+
+double_21 =
+  proc (b : !Int)
+  new [: c : !Int, c' : ?Int :]
+  c <- 21.
+  @ double {c', b}
+
+double_21_fused =
+  proc (b : !Int)
+  let x : Int = 21.
+  b <- (x + x)
+
+double_21_fused_and_reduced =
+  proc (b : !Int)
+  b <- 42
 
 another_dual =
   \ (S : Session)-> ~ S
@@ -387,10 +405,31 @@ fwd0_snd0 =
   proc (c : {})
   split c {}
 
+fwd1_par2_rcv =
+  proc (c : {{?Int, ?Bool}})
+  split c {c#0 : {?Int, ?Bool}}
+  split c#0 {c#0#0 : ?Int, c#0#1 : ?Bool}
+  ( let x#c#0#0 : Int <- c#0#0
+  | let x#c#0#1 : Bool <- c#0#1 )
+
 fwd1_rcv =
   proc (c : {?Int})
   split c {c#0 : ?Int}
   let x#c#0 : Int <- c#0
+
+fwd1_seq2_rcv =
+  proc (c : {[: ?Int, ?Bool :]})
+  split c {c#0 : [: ?Int, ?Bool :]}
+  split c#0 [: c#0#0 : ?Int, c#0#1 : ?Bool :]
+  let x#c#0#0 : Int <- c#0#0.
+  let x#c#0#1 : Bool <- c#0#1
+
+fwd1_ten2_rcv =
+  proc (c : {[?Int, ?Bool]})
+  split c {c#0 : [?Int, ?Bool]}
+  split c#0 [c#0#0 : ?Int, c#0#1 : ?Bool]
+  ( let x#c#0#0 : Int <- c#0#0
+  | let x#c#0#1 : Bool <- c#0#1 )
 
 fwd2_par2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int]})
@@ -695,6 +734,72 @@ my3_14 : String =
 myNewline : Char =
   '\n'
 
+zipWith =
+  \ (A : Type)-> \ (B : Type)-> \ (C : Type)-> \ (f : (a : A)-> (b : B)-> C)-> \ (n : Int)-> proc (cas : [: ?A ^ n :], cbs : [: ?B ^ n :], ccs : [: !C ^ n :])
+  split cas [: ca ^ n :]
+  split cbs [: cb ^ n :]
+  split ccs [: cc ^ n :]
+  slice (ca, cb, cc)n as _
+    let a : A <- ca.
+    let b : B <- cb.
+    cc <- (f a b)
+
+zip_multD =
+  zipWith Double Double Double _*D_
+
+foldl =
+  \ (A : Type)-> \ (B : Type)-> \ (f : (acc : B)-> (a : A)-> B)-> \ (init : B)-> \ (n : Int)-> proc (ca : [: ?A ^ n :], cr : !B)
+  new/alloc [itmp : !B.?B, tmp]
+  ( itmp <- init.
+    let x#itmp : B <- itmp.
+    cr <- x#itmp
+  | split ca [: ai ^ n :]
+    slice (ai)n as _
+      ( let a : A <- ai
+      | let b : B <- tmp ).
+      tmp <- (f b a))
+
+sumD : (n : Int)-> < [: ?Double ^ n :], !Double > =
+  foldl Double Double _+D_ 0.0
+
+dotproduct =
+  \ (n : Int)-> proc (as' : [: ?Double ^ n :], bs : [: ?Double ^ n :], o : !Double)
+  new/alloc [: cs : [: !Double ^ n :], ds :]
+  @ (zip_multD n){as', bs, cs}.
+  @ (sumD n){ds, o}
+
+dotproduct_4 =
+  dotproduct 4
+
+ix : (A : Type)-> (n : Int)-> (v : Vec A n)-> (i : Int)-> A
+
+row =
+  \ (A : Type)-> \ (m : Int)-> \ (n : Int)-> \ (a : Vec A (m * n)) -> \ (i : Int)-> proc (v : [: !A ^ n :])
+  split v [: v_i ^ n :]
+  slice (v_i)n as j
+    v_i <- (ix A (m * n)a ((i * n)+ j))
+
+col =
+  \ (A : Type)-> \ (m : Int)-> \ (n : Int)-> \ (a : Vec A (m * n)) -> \ (j : Int)-> proc (v : [: !A ^ m :])
+  split v [: v_j ^ m :]
+  slice (v_j)m as i
+    v_j <- (ix A (m * n)a ((i * n)+ j))
+
+matmult =
+  \ (m : Int)-> \ (n : Int)-> \ (p : Int)-> proc (a : ?Vec Double (m * n),b : ?Vec Double (n * p),c : [: !Double ^ (m * p):])
+  let a' : Vec Double (m * n)<- a.
+  let b' : Vec Double (n * p)<- b.
+  split c [: c_i_j ^ (m * p):]
+  slice (c_i_j)(m * p)as ij
+    new/alloc [: u : [: !Double ^ n :], u' :]
+    @ (row Double m n a' (ij / n)) (u).
+    new/alloc [: v : [: !Double ^ n :], v' :]
+    @ (col Double n p b' (ij % n)) (v).
+    @ (dotproduct n){u', v', c_i_j}
+
+matmult_4 =
+  matmult 4 4 4
+
 merger =
   \ (m : Int)-> \ (n : Int)-> proc (c0 : [!Vec Int m, ?Vec Int m],c1 : [!Vec Int n, ?Vec Int n],ci : ?Vec Int (m + n),co : !Vec Int (m + n))
   split c0 [c0i, c0o]
@@ -804,6 +909,12 @@ mk_new_ann =
   new/ann [c : S, d : ~ S]
   ( @ p (c)
   | @ q (d))
+
+mk_new_seq =
+  \ (ann : Allocation)-> \ (S : Session)-> \ (p : < Log S >)-> \ (q : < ~ Log S >)-> proc ()
+  new/ann [: c : Log S, d :]
+  @ p (c).
+  @ q (d)
 
 mk_par2_LR =
   \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : {S0, S1})
@@ -931,6 +1042,16 @@ new_fused_ten_recv =
     let x : Int <- di.
     do <- (x + x))
 
+new_seq_par_par =
+  proc ()
+  new [: cd : {!Int, !Bool},ef : {?Int, ?Bool}:]
+  split cd {c, d}
+  split ef {e, f}
+  c <- 1.
+  d <- `true.
+  let b : Bool <- f.
+  let i : Int <- e
+
 no_dead_lock_new_new =
   proc ()
   new (c : ?Int, d)
@@ -939,6 +1060,15 @@ no_dead_lock_new_new =
     f <- x
   | d <- 5
   | let y : Int <- e )
+
+no_dead_lock_new_new_seq =
+  proc ()
+  new [: d : !Int, c :]
+  new [: f : !Int, e :]
+  d <- 5.
+  let x : Int <- c.
+  f <- x.
+  let y : Int <- e
 
 no_dead_lock_new_new_v2 =
   proc ()
@@ -1122,6 +1252,19 @@ par_seq_front =
   e <- 1.
   c <- 2.
   d <- 3
+
+seqi =
+  \ (S0 : Session)-> \ (S1 : Session)-> [: ~ S0, S1 :]
+
+par_seqi_ten_send =
+  \ (A : Type)-> \ (B : Type)-> proc (c : seqi {!A, !B}[!A, !B])
+  split c [: i, o :]
+  split i [rs, rt]
+  split o [ss, st]
+  ( let vs : A <- rs
+  | let vt : B <- rt ).
+  ( ss <- vs
+  | st <- vt )
 
 par_seq_middle =
   proc (a : {[: !Int, !Int :], !Int})
@@ -1363,6 +1506,16 @@ replicate_ten =
   slice (d)10 as i
     d <- i
 
+rotate_seq =
+  \ (A : Type)-> \ (n : Int)-> proc (i : [: ?A ^ (1 + n):], o : [: !A ^ (n + 1):])
+  split i [: iL, iH ^ n :]
+  split o [: oL ^ n, oH :]
+  let xL : A <- iL.
+  (slice (iH, oL)n as _
+    let x#iH : A <- iH.
+    oL <- x#iH ).
+  oH <- xL
+
 seq0_explicit =
   proc (c : [: :])
   split c [: :]
@@ -1502,6 +1655,15 @@ switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {
   ( fwd A (a, na)
   | fwd B (b, nb)
   | fwd C (c, nc))
+
+tabulate_seq =
+  \ (A : Type)-> \ (f : (i : Int)-> A)-> \ (n : Int)-> proc (a : [: !A ^ n :])
+  split a [: a_i ^ n :]
+  slice (a_i)n as i
+    a_i <- (f i)
+
+tabulate_seq_Double_40 =
+  tabulate_seq Double (\ (i : Int)-> 1.0 -D 5.0e-2 *D Int2Double i)41
 
 ten_loli_par =
   \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})
@@ -1731,6 +1893,20 @@ uncurry =
   ( fwd S (fx, x)
   | fwd T (fy, y)
   | fwd U (o, fo))
+
+With =
+  \ (SL : Session)-> \ (SR : Session)-> ?(b : LR).case b of {
+    `left -> SL ,
+    `right -> SR
+  }
+
+with =
+  \ (SL : Session)-> \ (SR : Session)-> \ (pL : < SL >)-> \ (pR : < SR >)-> proc (c : With SL SR)
+  let x : LR <- c.
+  @ (case x of {
+    `left -> pL ,
+    `right -> pR
+  } ) (c)
 
 zap =
   \ (S : Session)-> \ (T : Session)-> \ (n : Int)-> proc (c : {{[S, ~ T]^ n},{{~ S ^ n},[T ^ n]}})

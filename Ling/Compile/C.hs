@@ -40,10 +40,11 @@ import           Prelude         hiding (log)
 
 import qualified Data.Map        as Map
 import           Ling.Defs       (pushDefs)
+import           Ling.Fwd        (fwdProc')
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
 import           Ling.Print
-import           Ling.Proc       (fwdProc', _Pref)
+import           Ling.Proc       (_Pref)
 import           Ling.Reduce     (reduceTerm, reduce_)
 --import           Ling.Rename     (hDec)
 import           Ling.Scoped     (Scoped(Scoped))

@@ -3,6 +3,7 @@
 
 module Ling.Reify where
 
+import           Ling.Fwd
 import qualified Ling.Norm    as N
 import           Ling.Prelude
 import           Ling.Proc

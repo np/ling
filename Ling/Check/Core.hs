@@ -96,6 +96,22 @@ checkProcs (Prll procs) = mconcat <$> traverse checkProc procs
 checkRFactor :: RFactor -> TC ()
 checkRFactor (RFactor t) = checkTerm intTyp t
 
+checkAx :: Session -> [Channel] -> TC Proto
+checkAx s cs = do
+  checkSession s
+  case cs of
+    [] ->
+      pure ø
+    [c] -> do
+      b <- isSink s
+      if b then pure (pureProto c s)
+           else tcError . concat $
+                  ["Cannot forward only channel ", pretty c, " with session ", pretty s, ".\n"
+                  ,"More channels should be given to forward or the session should a sink."]
+    c:d:es ->
+      pure $ mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
+
+
 {-
 Γ(P) is the protocol, namely mapping from channel to sessions of the process P
 Δ(P) is the set of sequential channels, namely each set of C ∈ Δ(P) is a set
@@ -153,13 +169,20 @@ checkAct act proto =
       unless (all (is endRS) csNSession) $
         for_ cs $ assertUsed proto
       for_ cds $ checkChanDec proto
-      checkDual csNSession
       proto' <-
         case k of
-          TenK -> checkConflictingChans proto Nothing cs
+          TenK -> do
+            checkDual csNSession
+            checkConflictingChans proto Nothing cs
           SeqK -> do
-            assert (anyOf _head isSource csNSession)
-                   ["Sequential `new` expects the first session to be made of sends (a Log)"]
+            let (Just s) = csNSession ^? _head
+            b <- isSource s
+            assert b
+                   ["Sequential `new` expects the session for channel " ++
+                    pretty (cds ^.. _head . cdChan) ++
+                    " to be made of sends (a Log)"
+                   ,pretty s]
+            checkCompat csNSession
             checkOrderedChans proto cs $> proto
           ParK -> error "checkAct: IMPOSSIBLE"
       -- This rmChans is potentially partly redundant.
@@ -181,7 +204,9 @@ checkAct act proto =
       (`protoSendRecv` proto) . pure <$> sendRecvSession act
     Recv{} ->
       (`protoSendRecv` proto) . pure <$> sendRecvSession act
-    Ax s cs -> return $ protoAx s cs `dotProto` proto
+    Ax s cs -> do
+      proto' <- checkAx s cs
+      return $ proto' `dotProto` proto
     LetA{} ->
       return proto
     At e p -> do

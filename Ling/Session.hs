@@ -64,14 +64,11 @@ mapR f (Repl s a) = Repl (f s) a
 mapSessions :: Endom Session -> Endom Sessions
 mapSessions = map . mapR
 
-seqOp :: SessionOp
-seqOp = SessionOp (constEndom Write) (constEndom SeqK)
+constArrOp :: TraverseKind -> SessionOp
+constArrOp = SessionOp idEndom . constEndom
 
-parOp :: SessionOp
-parOp = SessionOp (constEndom Write) (constEndom ParK)
-
-tenOp :: SessionOp
-tenOp = SessionOp (constEndom Write) (constEndom TenK)
+constRWOp :: RW -> SessionOp
+constRWOp rw = SessionOp (constEndom rw) idEndom
 
 logOp :: SessionOp
 logOp = SessionOp (constEndom Write) (ifEndom TenK ParK (ifEndom ParK ParK (constEndom SeqK)))
@@ -84,7 +81,6 @@ dualOp = SessionOp (ifEndom Read Write (constEndom Read))
 -- * dual . dual = id
 -- * log . log = log
 -- * the sessionOp default definition should hold
--- * isSource . log = const True
 class Dual a where
   dual :: Endom a
   dual = sessionOp dualOp
@@ -94,16 +90,9 @@ class Dual a where
 
   sessionOp :: Dual a => SessionOp -> Endom a
 
-  -- A source is only made of sends but can be combined with any form of
-  -- array: Seq, Par, Ten.
-  isSource :: a -> Bool
-
   -- Being master only concerns the top part of the session. The rule being
   -- that only one when composing several sessions only one can be master.
   isMaster :: a -> Bool
-
-isSink :: Dual a => a -> Bool
-isSink = isSource . dual
 
 dualized :: (Dual a, Dual b) => Iso a b a b
 dualized = iso dual dual
@@ -120,22 +109,15 @@ instance Dual RW where
 
   sessionOp (SessionOp rwf _) = evalFinEndom rwf
 
-  isSource   = (== Write)
   isMaster   = (== Write)
 
 instance (Ord a, Dual a) => Dual (FinEndom a) where
-  sessionOp f
-    | f == idOp   = id
-    | f == dualOp = dual
-    | f == logOp  = log
-    | otherwise   = error $ "FinEndom.sessionOp: not implemented " ++ show f
-  isSource (FinEndom m d) = allOf each isSource m && isSource d
+  sessionOp f = error $ "FinEndom.sessionOp: not implemented " ++ show f
   isMaster (FinEndom m d) = anyOf each isMaster m || isMaster d
 
 instance Dual SessionOp where
   sessionOp (SessionOp rwf kf) (SessionOp rwg kg) =
     SessionOp (composeFinEndom rwf rwg) (composeFinEndom kf kg)
-  isSource  (SessionOp rwf kf) = isSource (rwf, kf)
   isMaster  (SessionOp rwf kf) = isMaster (rwf, kf)
 
 instance Dual TraverseKind where
@@ -148,7 +130,6 @@ instance Dual TraverseKind where
 
   sessionOp (SessionOp _ kfun) = evalFinEndom kfun
 
-  isSource  = const True
   isMaster  = (== ParK)
 
 instance Dual Session where
@@ -156,11 +137,6 @@ instance Dual Session where
     Array k s -> Array (sessionOp f k) (sessionOp f s)
     IO p a s  -> IO (sessionOp f p) a (sessionOp f s)
     TermS o t -> TermS (sessionOp f o) t
-
-  isSource = \case
-    Array k s -> isSource (k, s)
-    IO p _ s  -> isSource (p, s)
-    TermS o _ -> isSource o
 
   isMaster = \case
     Array k _ -> isMaster k
@@ -178,56 +154,41 @@ instance Dual Raw.Term where
         Raw.RawApp (Raw.Var (Raw.Name "Log")) [Raw.paren s]
 
   sessionOp f
-    | f == idOp   = id
-    | f == dualOp = dual
-    | f == logOp  = log
-    | otherwise   = error $ "Raw.Term.sessionOp: not implemented " ++ show f
+    | f == idOp        = id
+    | f == dualOp      = dual
+    | f == logOp       = log
+    | f == dual logOp  = dual . log
+    | otherwise        = error $ "Raw.Term.sessionOp: not implemented " ++ show f
 
-  isSource  = error "Raw.Term.isSource: not implemented"
   isMaster  = error "Raw.Term.isMaster: not implemented"
 
 instance Dual RSession where
   dual   = mapR dual
   log    = mapR log
   sessionOp = mapR . sessionOp
-  isSource = isSource . view rsession
   isMaster = isMaster . view rsession
 
 instance (Dual a, Dual b) => Dual (a, b) where
   dual     = bimap dual dual
   log      = bimap log  log
   sessionOp f = bimap (sessionOp f) (sessionOp f)
-  isSource (a,b) = isSource a && isSource b
   isMaster (a,b) = isMaster a || isMaster b
 
 instance Dual a => Dual [a] where
   dual   = map dual
   log    = map log
   sessionOp = map . sessionOp
-  isSource = all isSource
   isMaster = any isMaster
 
 instance Dual Term where
   sessionOp o = view tSession . termS o
-  isSource = isSource . view (from tSession)
   isMaster = isMaster . view (from tSession)
 
 instance Dual a => Dual (Scoped a) where
   sessionOp = fmap . sessionOp
   dual      = fmap dual
   log       = fmap log
-  isSource  = isSource . view scoped
   isMaster  = isMaster . view scoped
-
-validAx :: (Eq session, Dual session) => session -> [channel] -> Bool
--- Forwarding anything between no channels is always possible
-validAx _ []          = True
--- At least two for the general case
-validAx _ (_ : _ : _) = True
--- One is enough if the session is a Sink. A sink can be derived
--- alone. Another way to think of it is that in the case of a sink,
--- the other side is a Log and there can be any number of Logs.
-validAx s (_ : _)     = isSink s
 
 sessionStep :: Endom Session
 sessionStep (IO _ _ s) = s

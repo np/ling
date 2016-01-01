@@ -20,7 +20,6 @@ module Ling.Proto
   , arrayProto
   , pureProto
   , mkProto
-  , protoAx
   , protoSendRecv
   , replProtoWhen
   , assertUsed
@@ -135,12 +134,6 @@ pureProto c s = MkProto (l2m [(c,oneS s)]) (c `actS` ø)
 
 mkProto :: TraverseKind -> [(Channel,Session)] -> Proto
 mkProto k = arrayProto k . map (uncurry pureProto)
-
-protoAx :: Session -> [Channel] -> Proto
-protoAx _ []             = ø
-protoAx s [c] | isSink s = pureProto c s
-protoAx s (c:d:es)       = mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
-protoAx _ _              = error "protoAx: More channels should be given to forward or the session should a sink"
 
 -- Update a protocol with a given list of `session transformers` induced by
 -- `send` and `recv` session types.

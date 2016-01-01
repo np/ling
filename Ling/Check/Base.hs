@@ -121,7 +121,28 @@ checkEqSessions c s0 s1 =
 checkOneR :: MonadError TCErr m => RFactor -> m ()
 checkOneR r = assert (r == ø) ["Unexpected replication:", pretty r]
 
+-- Prop: isSource . log = const True
+-- A source is only made of sends but can be combined with any form of
+-- array: Seq, Par, Ten.
+isSource :: (MonadTC m, Print a, Subst a, Eq a, Equiv a, Dual a) => a -> m Bool
+isSource x = view _1 <$> isEquiv (pure (sessionOp (constRWOp Write) s)) (pure s)
+  where s = sessionOp (constArrOp SeqK) x
+
+isSink :: (MonadTC m, Print a, Subst a, Eq a, Equiv a, Dual a) => a -> m Bool
+isSink = isSource . dual
+
+validAx :: (MonadTC m, Print a, Subst a, Eq a, Equiv a, Dual a) => a -> [channel] -> m Bool
+-- Forwarding anything between no channels is always possible
+validAx _ []          = pure True
+-- At least two for the general case
+validAx _ (_ : _ : _) = pure True
+-- One is enough if the session is a Sink. A sink can be derived
+-- alone. Another way to think of it is that in the case of a sink,
+-- the other side is a Log and there can be any number of Logs.
+validAx s (_ : _)     = isSink s
+
 checkDual :: MonadTC m => [RSession] -> m ()
+checkDual [] = pure ()
 checkDual [Repl s0 r0, Repl s1 r1] = do
   checkOneR r0
   checkOneR r1
@@ -130,7 +151,10 @@ checkDual [Repl s0 r0, Repl s1 r1] = do
     "Sessions are not dual." (\_ _ -> b)
     "Given session (expanded):" us0
     "Inferred dual session:"    (dual us1)
-checkDual _ = error "checkDual"
+checkDual _ = error "checkDual: too many channels"
+
+checkCompat :: MonadTC m => [RSession] -> m ()
+checkCompat = checkDual . sessionOp (constArrOp SeqK)
 
 checkSlice :: (Print channel, MonadError TCErr m) => (channel -> Bool) -> channel -> RSession -> m ()
 checkSlice cond c (s `Repl` r) = when (cond c) $ do
@@ -245,7 +269,7 @@ conType = fmap def0 . conTypeName
 {------}
 
 newtype TC a = MkTC { unTC :: ReaderT TCEnv (Except TCErr) a }
-  deriving (Functor, Applicative, Monad, MonadReader TCEnv, MonadError TCErr)
+  deriving (Functor, Applicative, Alternative, Monad, MonadReader TCEnv, MonadError TCErr)
 
 instance Monoid a => Monoid (TC a) where
   mempty = pure mempty

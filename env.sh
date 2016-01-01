@@ -40,17 +40,17 @@ cmdrcompile(){
   cmdr --no-check --seq --fuse --compile -- compile "$@"
 }
 cmdrpretty(){
-  cmdr --pretty --no-norm -- pretty "$@"
+  cmdr --pretty --no-check --no-norm -- pretty "$@"
 }
 cmdrnorm(){
-  cmdr --pretty -- norm "$@"
+  cmdr --pretty --no-check -- norm "$@"
 }
-alias cmdrseqall='cmdrecord tests/sequence/all.t --env empty -- Ling --seq < fixtures/sequence/*.ll'
-alias cmdrfuseall='cmdrecord tests/fusion/all.t --env empty -- Ling --fuse < fixtures/sequence/*.ll'
-alias cmdrcompileall='cmdrecord tests/compile/all.t  --env empty -- Ling --compile-prims --compile < fixtures/compile/*.ll'
+alias cmdrseqall='cmdrecord tests/sequence/all.t --env empty -- Ling --pretty --no-check --seq < fixtures/sequence/*.ll'
+alias cmdrfuseall='cmdrecord tests/fusion/all.t --env empty -- Ling --pretty --no-check --seq --fuse < fixtures/sequence/*.ll'
+alias cmdrcompileall='cmdrecord tests/compile/all.t  --env empty -- Ling --no-check --seq --compile-prims --compile < fixtures/compile/*.ll'
 alias cmdrfmtall='cmdrecord tests/fmt/all.t  --env empty -- ling-fmt < fixtures/all/*.ll'
-alias cmdrprettyall='cmdrecord tests/pretty/all.t  --env empty -- Ling --pretty < fixtures/all/*.ll'
-alias cmdrnormall='cmdrecord tests/norm/all.t  --env empty -- Ling --norm < fixtures/success/*.ll'
+alias cmdrprettyall='cmdrecord tests/pretty/all.t  --env empty -- Ling --pretty --no-check --no-norm < fixtures/all/*.ll'
+alias cmdrnormall='cmdrecord tests/norm/all.t  --env empty -- Ling --pretty --no-check < fixtures/success/*.ll'
 alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty -- Ling --strict-par --check  < fixtures/strict-par-success/*.ll'
 # nixpkgs commit ef17efa99b0e644bbd2a28c0c3cfe5a2e57b21ea
 current_nixpkgs=$HOME/hub/np/nixpkgs
