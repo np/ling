@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 module Ling.Check.Core where
 
+import           Data.Char            (toLower)
 import           Ling.Check.Base
 import           Ling.Defs
 import           Ling.Norm
@@ -111,11 +112,41 @@ checkAx s cs = do
     c:d:es ->
       pure $ mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
 
+inferNewChan :: Print channel => channel -> Session -> TC Typ
+inferNewChan c = go Read where
+  go rw' s = do
+    s' <- reduce_ tSession <$> tcScope s
+    case pushDefs s' of
+      IO rw (Arg _ mty) s1 -> do
+        when (rw == rw') . tcError . concat $ ["Unexpected ", map toLower (show rw), " on channel ", pretty c]
+        let ty0 = mty ?| error "IMPOSSIBLE: inferred session must have type annotations"
+        when (endS `isn't` s1) $ do
+          ty1 <- go rw s1
+          checkTypeEquivalence ty0 ty1
+        pure ty0
+      Array{} -> tcError . concat $
+                    ["Unexpected array session (", pretty s, ") when "
+                    ,"allocating channel ", pretty c, ".\n"
+                    ,"To allocate an array use `new [c:S,c':~S]` or `new [:c:S,c':~S:]`"]
+      TermS{} -> tcError . concat $
+                    ["Unsupported abstract session (", pretty s, ") when "
+                    ,"allocating channel ", pretty c, "."]
+
+
+checkNewChan :: Print channel => channel -> Maybe Typ -> RSession -> TC ()
+checkNewChan c mty (s `Repl` r) = do
+  checkOneR r
+  inferredTyp <- inferNewChan c s
+  case mty of
+    Just expectedTyp -> checkTypeEquivalence expectedTyp inferredTyp
+    Nothing          -> pure ()
 
 checkNewPatt :: Proto -> NewPatt -> TC Proto
 checkNewPatt proto = \case
-  NewChan  c os ->
-    error "TODO"
+  NewChan c mty -> do
+    let s = proto ^. chanSession c . endedRS
+    unless (endRS `is` s) $ assertUsed proto c
+    checkNewChan c mty s $> rmChans [c] proto
   NewChans k cds -> do
     let cs = cds ^.. each . cdChan
         csNSession = [ proto ^. chanSession c . endedRS | ChanDec c _ _ <- cds ]

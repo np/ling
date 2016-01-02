@@ -1,0 +1,4 @@
+While checking `wrong_ten_array_cnt_new`
+  Unexpected array session ([!Int, !Int]) when allocating channel c.
+  To allocate an array use `new [c:S,c':~S]` or `new [:c:S,c':~S:]`
+

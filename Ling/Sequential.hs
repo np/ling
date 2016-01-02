@@ -167,6 +167,15 @@ transPref env (Prll pref0) procs k =
                   k env' ((act {-& _Nu %~ transNu
                                & _Split . _1 .~ SeqK-}) `dotP` proc')
 
+addChanDecs :: Defs -> [Arg Session] -> Endom Env
+addChanDecs _    [] = id
+addChanDecs defs cds@(Arg c0 c0S : _) =
+  addLocs  (sessionStatus defs (const Empty) l c0S) .
+  addChans [(c,(l,oneS cS)) | Arg c cS <- cds]
+
+  where
+    l = Root c0
+
 {-
 -- This could be part of the Dual class, a special Seq operation could also
 -- be part of DualOp
@@ -189,16 +198,13 @@ transNew defs = \case
   NewChans _ [] ->
     id
   NewChans _ cds0 ->
-    let
-      cds1 = [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
-      cds2@(Arg c0 c0S:_) = cds1 & each . argBody . _Just %~ unRepl
-                                  & unsafePartsOf (each . argBody) %~ extractDuals
-      l = Root c0
-    in
-    addLocs  (sessionStatus defs (const Empty) l c0S) .
-    addChans [(c,(l,oneS cS)) | Arg c cS <- cds2]
-  NewChan c os ->
-    error "Sequential.transNew: TODO"
+    addChanDecs defs
+           $ [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
+           & each . argBody . _Just %~ unRepl
+           & unsafePartsOf (each . argBody) %~ extractDuals
+  NewChan _ Nothing -> error "transNew: TODO"
+  NewChan c (Just ty) ->
+    addChanDecs defs [Arg c (sendS ty (endS # ()))]
 
 transAct :: Defs -> Act -> Endom Env
 transAct defs = \case

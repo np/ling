@@ -289,7 +289,12 @@ transNewPatt env = \case
       typ  = transRSession env s
       env' = addChans [(c,l) | c <- cs] env
 
-  NewChan _ _ -> error "TODO"
+  NewChan c mty -> (env', sDec typ cid C.NoInit)
+    where
+      cid  = transName c
+      l    = C.LVar cid
+      typ  = transMaybeCTyp env C.NoQual mty
+      env' = addChans [(c,l)] env
 
 -- Implement the effect of an action over:
 -- * an environment
