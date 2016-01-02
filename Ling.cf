@@ -160,8 +160,9 @@ separator AllocTerm "" ;
 
 TenNewPatt. NewPatt ::= "["  [ChanDec]  "]" ;
 SeqNewPatt. NewPatt ::= "[:" [ChanDec] ":]" ;
+CntNewPatt. NewPatt ::= "(" Name OptSig ")" ;
 
-OldNew.   NewAlloc ::= "new" "(" [ChanDec] ")" ;
+OldNew.   NewAlloc ::= "new" "(" ChanDec "," ChanDec ")" ;
 New.      NewAlloc ::= "new" NewPatt ;
 NewSAnn.  NewAlloc ::= "new/" "(" Term OptSig ")" NewPatt ;
 NewNAnn.  NewAlloc ::= OpName [AllocTerm] NewPatt ;

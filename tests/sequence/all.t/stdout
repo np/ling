@@ -1,5 +1,5 @@
 
-{- Sequential program -}
+{- Sequential Expanded program -}
 
 assert
   'a'
@@ -8,11 +8,19 @@ assert
 
 ap =
   \ (S : Session)-> \ (T : Session)-> proc (c : {[S, ~ T],{~ S, T}})
-  split c {f, xo}
-  split xo {x, o}
-  split f [fi, fo]
+  split c {f, xo}.
+  split xo {x, o}.
+  split f [fi, fo].
   ( fwd S (fi, x)
   | fwd T (o, fo))
+
+ap_SInt_SBool =
+  proc (c : {[!Int, ?Bool],{?Int, !Bool}})
+  split c {f, xo}.
+  split xo {x, o}.
+  split f [fi, fo].
+  fwd (!Int)(fi, x).
+  fwd (!Bool)(o, fo)
 
 assert
   `false
@@ -82,45 +90,62 @@ case_con : case `true of {
 
 com_new =
   \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
-  new (c : S, d : ~ S)
+  new [c : S, d : ~ S].
   ( @ p (c)
   | @ q (d))
 
+com_new_SInt =
+  proc ()
+  new [c : !Int, d : ?Int].
+  c <- 42.
+  let x#q : Int <- d
+
 com_new_mk_ten2 =
-  let mk_tensor2 = \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
-  split c [c0, c1]
-  ( @ p0 (c0)
-  | @ p1 (c1))in \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
-  new (c : S, d : ~ S)
-  @ (mk_tensor2 S (~ S)p q)[c, d]
+  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
+  new [c : S, d : ~ S].
+  @ (proc (c : [S, ~ S])
+  split c [c0, c1].
+  ( @ p (c0)
+  | @ q (c1))) [c, d]
 
 conv_fun =
   \ (A : Type)-> \ (A' : Type)-> \ (B : Type)-> \ (S : Session)-> \ (dom : A' -> A)-> \ (cod : B -> < S >)-> \ (f : A -> B)-> proc (c : {?A', S})
-  split c {i, o}
+  split c {i, o}.
   let p : A' <- i.
   @ (cod (f (dom p)))(o)
 
 curry =
   \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> proc (c : {[[S, T],~ U],{~ S, {~ T, U}}})
-  split c {f, xyo}
-  split xyo {x, yo}
-  split yo {y, o}
-  split f [fxy, fo]
-  split fxy [fx, fy]
+  split c {f, xyo}.
+  split xyo {x, yo}.
+  split yo {y, o}.
+  split f [fxy, fo].
+  split fxy [fx, fy].
   ( fwd S (fx, x)
   | fwd T (fy, y)
   | fwd U (o, fo))
 
+curry_SInt_SBool_SDouble =
+  proc (c : {[[!Int, !Bool],?Double],{?Int, {?Bool, !Double}}})
+  split c {f, xyo}.
+  split xyo {x, yo}.
+  split yo {y, o}.
+  split f [fxy, fo].
+  split fxy [fx, fy].
+  fwd (!Int)(fx, x).
+  fwd (!Bool)(fy, y).
+  fwd (!Double)(o, fo)
+
 cutEmptyParTensor =
   proc ()
-  new (c : {}, d : [])
-  split c {}
+  new [c : {}, d : []].
+  split c {}.
   split d []
 
 cut_par_cut =
   proc ()
-  new (c : !Int, d : ?Int)
-  new (c' : !Int, d' : ?Int)
+  new [c : !Int, d : ?Int].
+  new [c' : !Int, d' : ?Int].
   c <- 1.
   let x : Int <- d.
   c' <- 1.
@@ -128,7 +153,7 @@ cut_par_cut =
 
 cut_recv_send_send_recv =
   proc ()
-  new (d : ?Int.!Int, c : !Int.?Int)
+  new [d : ?Int.!Int, c : !Int.?Int].
   c <- 1.
   let y : Int <- d.
   d <- 2.
@@ -136,13 +161,13 @@ cut_recv_send_send_recv =
 
 cutSendRecv =
   proc ()
-  new (c : !Int, d : ?Int)
+  new [c : !Int, d : ?Int].
   c <- 1.
   let x : Int <- d
 
 cut_send_recv_recv_send =
   proc ()
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   c <- 1.
   let y : Int <- d.
   d <- 2.
@@ -150,7 +175,7 @@ cut_send_recv_recv_send =
 
 cut_send_recv_recv_send_v2 =
   proc ()
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   c <- 1.
   let y : Int <- d.
   d <- 2.
@@ -158,7 +183,7 @@ cut_send_recv_recv_send_v2 =
 
 cut_send_recv_recv_send_with_log =
   proc (logc : !String.!String, logd : !String.!String)
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   logd <- "recv d".
   logc <- "send c 1".
   c <- 1.
@@ -170,7 +195,7 @@ cut_send_recv_recv_send_with_log =
 
 cut_send_recv_recv_send_with_log_prll =
   proc (logc : !String.!String, logd : !String.!String)
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   logd <- "recv d".
   logc <- "send c 1".
   c <- 1.
@@ -201,8 +226,8 @@ div_mod_server_explicit_prll =
 
 div_mod_server_par2_ten2_ten2 =
   proc (r : [?Int, ?Int],s : [!Int, !Int])
-  split r [rm, rn]
-  split s [sdiv, smod]
+  split r [rm, rn].
+  split s [sdiv, smod].
   let m : Int <- rm.
   let n : Int <- rn.
   sdiv <- (m / n).
@@ -210,7 +235,7 @@ div_mod_server_par2_ten2_ten2 =
 
 div_mod_server_par4 =
   proc (c : {?Int, ?Int, !Int, !Int})
-  split c {rm, rn, sdiv, smod}
+  split c {rm, rn, sdiv, smod}.
   let m : Int <- rm.
   let n : Int <- rn.
   sdiv <- (m / n).
@@ -218,9 +243,9 @@ div_mod_server_par4 =
 
 div_mod_server_seq2_ten2_ten2 =
   proc (c : [: [?Int, ?Int],[!Int, !Int]:])
-  split c [: r, s :]
-  split r [rm, rn]
-  split s [sdiv, smod]
+  split c [: r, s :].
+  split r [rm, rn].
+  split s [sdiv, smod].
   let m : Int <- rm.
   let n : Int <- rn.
   sdiv <- (m / n).
@@ -228,7 +253,7 @@ div_mod_server_seq2_ten2_ten2 =
 
 div_mod_server_seq4 =
   proc (c : [: ?Int, ?Int, !Int, !Int :])
-  split c [: rm, rn, sdiv, smod :]
+  split c [: rm, rn, sdiv, smod :].
   let m : Int <- rm.
   let n : Int <- rn.
   sdiv <- (m / n).
@@ -242,22 +267,30 @@ div_mod_server_simple =
   smod <- (m % n)
 
 double =
-  proc (i : ?Int, r : !Int)
-  let xi : Int <- i.
-  new (c : ?Int.?Int.!Int, d)
-  d <- xi.
-  let x : Int <- c.
-  d <- xi.
-  let y : Int <- c.
-  c <- (x + y).
-  let z : Int <- d.
-  r <- z
+  proc (a : ?Int, b : !Int)
+  let x : Int <- a.
+  b <- (x + x)
+
+double_21 =
+  proc (b : !Int)
+  new [: c : !Int, c' : ?Int :].
+  c <- 21.
+  let x : Int <- c'.
+  b <- (x + x)
+
+double_21_fused =
+  proc (b : !Int)
+  b <- 42
+
+double_21_fused_and_reduced =
+  proc (b : !Int)
+  b <- 42
 
 another_dual =
   \ (S : Session)-> ~ S
 
 dual_dual =
-  \ (S : Session)-> \ (p : < S >)-> proc (c : ~ another_dual S)
+  \ (S : Session)-> \ (p : < S >)-> proc (c : S)
   @ p (c)
 
 send_42 =
@@ -283,8 +316,8 @@ assert
 
 fake_div_mod_server_ten2 =
   proc (r : [?Int, ?Int],s : [!Int, !Int])
-  split r [rm, rn]
-  split s [sdiv, smod]
+  split r [rm, rn].
+  split s [sdiv, smod].
   sdiv <- 42.
   smod <- 21.
   let m : Int <- rm.
@@ -292,45 +325,59 @@ fake_div_mod_server_ten2 =
 
 feed_fwd_send_then_recv =
   \ (I : Type)-> \ (O : Type)-> \ (i : I)-> \ (f : (x : I)-> O)-> \ (p : < {!I.?O, ?I.!O}>)-> proc ()
-  new (a : {!I.?O, ?I.!O},b : [?I.!O, !I.?O])
+  new [a : {!I.?O, ?I.!O},b : [?I.!O, !I.?O]].
   ( @ p (a)
-  | split b [c, d]
+  | split b [c, d].
     ( let x : I <- c.
       c <- (f x)
     | d <- i.
       let o : O <- d ))
 
+feed_fwd_send_then_recv_Int_String_42_showInt =
+  proc ()
+  new [a : {!Int.?String, ?Int.!String},b : [?Int.!String, !Int.?String]].
+  split b [c, d].
+  split a {c#0#p : !Int.?String, c#1#p : ?Int.!String}.
+  d <- 42.
+  let x#c#1#p : Int <- c#1#p.
+  c#0#p <- x#c#1#p.
+  let x : Int <- c.
+  c <- (showInt x).
+  let x#c#0#p : String <- c#0#p.
+  c#1#p <- x#c#0#p.
+  let o : String <- d
+
 feed_recv =
   \ (p : < ?Int >)-> \ (i : Int)-> proc ()
-  new (c : ?Int, d)
+  new [c : ?Int, d].
   ( @ p (c)
   | d <- i )
 
 feed_send =
   \ (p : < !Int >)-> proc ()
-  new (c : !Int, d)
+  new [c : !Int, d].
   ( @ p (c)
   | let x : Int <- d )
 
 feed_send_par_recv =
   \ (p : < {!Int, ?Int}>)-> \ (n : Int)-> proc ()
-  new (c : {!Int, ?Int},d : [?Int, !Int])
+  new [c : {!Int, ?Int},d : [?Int, !Int]].
   ( @ p (c)
-  | split d [i, o]
+  | split d [i, o].
     ( let x : Int <- i
     | o <- n ))
 
 feed_send_ten_recv =
   \ (p : < [!Int, ?Int]>)-> \ (f : (x : Int)-> Int)-> proc ()
-  new (c : [!Int, ?Int],d : {?Int, !Int})
+  new [c : [!Int, ?Int],d : {?Int, !Int}].
   ( @ p (c)
-  | split d {i, o}
+  | split d {i, o}.
     let x : Int <- i.
     o <- (f x))
 
 feed_send_then_recv =
   \ (p : < !Int.?Int >)-> \ (f : (x : Int)-> Int)-> proc ()
-  new (c : !Int.?Int, d)
+  new [c : !Int.?Int, d].
   ( @ p (c)
   | let x : Int <- d.
     d <- (f x))
@@ -340,7 +387,7 @@ flexible_telescope : (A : Type)-> (B : Type)-> (x : A)-> (y : A)-> (z : B)-> (t 
 
 fun1_to_proc_ord =
   \ (I : Type)-> \ (O : Type)-> \ (f : (x : I)-> O)-> proc (c : [: ?I, !O :])
-  split c [: i, o :]
+  split c [: i, o :].
   let x : I <- i.
   o <- (f x)
 
@@ -360,14 +407,14 @@ fwd0_snd0 =
 
 fwd1_rcv =
   proc (c : {?Int})
-  split c {c#0 : ?Int}
+  split c {c#0 : ?Int}.
   let x#c#0 : Int <- c#0
 
 fwd2_par2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int]})
-  split c {c#0 : {?Int, !Int.?Int},c#1 : [!Int, ?Int.!Int]}
-  split c#0 {c#0#0 : ?Int, c#0#1 : !Int.?Int}
-  split c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int]
+  split c {c#0 : {?Int, !Int.?Int},c#1 : [!Int, ?Int.!Int]}.
+  split c#0 {c#0#0 : ?Int, c#0#1 : !Int.?Int}.
+  split c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int].
   let x#c#0#0 : Int <- c#0#0.
   let x#c#1#1 : Int <- c#1#1.
   c#1#0 <- x#c#0#0.
@@ -377,10 +424,10 @@ fwd2_par2_ten2 =
 
 fwd3_par2_ten2_ten2 =
   proc (c : {{?Int, !Int.?Int},[!Int, ?Int.!Int],{!Int, !Int.!Int}})
-  split c {c#0 : {?Int, !Int.?Int},c#1 : [!Int, ?Int.!Int],c#2 : {!Int, !Int.!Int}}
-  split c#0 {c#0#0 : ?Int, c#0#1 : !Int.?Int}
-  split c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int]
-  split c#2 {c#2#0 : !Int, c#2#1 : !Int.!Int}
+  split c {c#0 : {?Int, !Int.?Int},c#1 : [!Int, ?Int.!Int],c#2 : {!Int, !Int.!Int}}.
+  split c#0 {c#0#0 : ?Int, c#0#1 : !Int.?Int}.
+  split c#1 [c#1#0 : !Int, c#1#1 : ?Int.!Int].
+  split c#2 {c#2#0 : !Int, c#2#1 : !Int.!Int}.
   let x#c#0#0 : Int <- c#0#0.
   let x#c#1#1 : Int <- c#1#1.
   c#1#0 <- x#c#0#0.
@@ -393,10 +440,10 @@ fwd3_par2_ten2_ten2 =
 
 fwd3_seq2_seq2_seq2 =
   proc (c : {[: ?Int, !Int.?Int :], [: !Int, ?Int.!Int :], [: !Int, !Int.!Int :]})
-  split c {c#0 : [: ?Int, !Int.?Int :], c#1 : [: !Int, ?Int.!Int :], c#2 : [: !Int, !Int.!Int :]}
-  split c#0 [: c#0#0 : ?Int, c#0#1 : !Int.?Int :]
-  split c#1 [: c#1#0 : !Int, c#1#1 : ?Int.!Int :]
-  split c#2 [: c#2#0 : !Int, c#2#1 : !Int.!Int :]
+  split c {c#0 : [: ?Int, !Int.?Int :], c#1 : [: !Int, ?Int.!Int :], c#2 : [: !Int, !Int.!Int :]}.
+  split c#0 [: c#0#0 : ?Int, c#0#1 : !Int.?Int :].
+  split c#1 [: c#1#0 : !Int, c#1#1 : ?Int.!Int :].
+  split c#2 [: c#2#0 : !Int, c#2#1 : !Int.!Int :].
   let x#c#0#0 : Int <- c#0#0.
   c#1#0 <- x#c#0#0.
   c#2#0 <- x#c#0#0.
@@ -409,13 +456,13 @@ fwd3_seq2_seq2_seq2 =
 
 fwd_par0_ten0 =
   proc (i : {}, o : [])
-  split i {}
+  split i {}.
   split o []
 
 fwd_par2_ten2_expanded =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
-  split o [o0, o1]
-  split i {i0, i1}
+  split o [o0, o1].
+  split i {i0, i1}.
   let xi0 : Int <- i0.
   let xo1 : Int <- o1.
   o0 <- xi0.
@@ -425,8 +472,8 @@ fwd_par2_ten2_expanded =
 
 fwd_par2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int])
-  split i {i#0 : ?Int, i#1 : !Int.?Int}
-  split o [o#0 : !Int, o#1 : ?Int.!Int]
+  split i {i#0 : ?Int, i#1 : !Int.?Int}.
+  split o [o#0 : !Int, o#1 : ?Int.!Int].
   let x#i#0 : Int <- i#0.
   let x#o#1 : Int <- o#1.
   o#0 <- x#i#0.
@@ -436,9 +483,9 @@ fwd_par2_ten2 =
 
 fwd_par2_ten2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int})
-  split i {i#0 : ?Int, i#1 : !Int.?Int}
-  split o [o#0 : !Int, o#1 : ?Int.!Int]
-  split l {l#0 : !Int, l#1 : !Int.!Int}
+  split i {i#0 : ?Int, i#1 : !Int.?Int}.
+  split o [o#0 : !Int, o#1 : ?Int.!Int].
+  split l {l#0 : !Int, l#1 : !Int.!Int}.
   let x#i#0 : Int <- i#0.
   let x#o#1 : Int <- o#1.
   o#0 <- x#i#0.
@@ -451,10 +498,10 @@ fwd_par2_ten2_ten2 =
 
 fwd_par2_ten2_ten2_ten2 =
   proc (i : {?Int, !Int.?Int},o : [!Int, ?Int.!Int],l : {!Int, !Int.!Int},m : {!Int, !Int.!Int})
-  split i {i#0 : ?Int, i#1 : !Int.?Int}
-  split o [o#0 : !Int, o#1 : ?Int.!Int]
-  split l {l#0 : !Int, l#1 : !Int.!Int}
-  split m {m#0 : !Int, m#1 : !Int.!Int}
+  split i {i#0 : ?Int, i#1 : !Int.?Int}.
+  split o [o#0 : !Int, o#1 : ?Int.!Int].
+  split l {l#0 : !Int, l#1 : !Int.!Int}.
+  split m {m#0 : !Int, m#1 : !Int.!Int}.
   let x#i#0 : Int <- i#0.
   let x#o#1 : Int <- o#1.
   o#0 <- x#i#0.
@@ -524,9 +571,9 @@ fwd_send_recv_recv_with_listener_manually =
 
 fwd_seq2_seq2_seq2 =
   proc (i : [: ?Int, !Int.?Int :], o : [: !Int, ?Int.!Int :], l : [: !Int, !Int.!Int :])
-  split i [: i#0 : ?Int, i#1 : !Int.?Int :]
-  split o [: o#0 : !Int, o#1 : ?Int.!Int :]
-  split l [: l#0 : !Int, l#1 : !Int.!Int :]
+  split i [: i#0 : ?Int, i#1 : !Int.?Int :].
+  split o [: o#0 : !Int, o#1 : ?Int.!Int :].
+  split l [: l#0 : !Int, l#1 : !Int.!Int :].
   let x#i#0 : Int <- i#0.
   o#0 <- x#i#0.
   l#0 <- x#i#0.
@@ -539,8 +586,8 @@ fwd_seq2_seq2_seq2 =
 
 fwd_ten2_par2 =
   proc (i : [?Int, !Int.?Int],o : {!Int, ?Int.!Int})
-  split i [i#0 : ?Int, i#1 : !Int.?Int]
-  split o {o#0 : !Int, o#1 : ?Int.!Int}
+  split i [i#0 : ?Int, i#1 : !Int.?Int].
+  split o {o#0 : !Int, o#1 : ?Int.!Int}.
   let x#i#0 : Int <- i#0.
   let x#o#1 : Int <- o#1.
   o#0 <- x#i#0.
@@ -550,10 +597,10 @@ fwd_ten2_par2 =
 
 split_nested_seq_core =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (i : [: ~ A, ~ B, ~ C, ~ D :], o : [: [: A, B :], [: C, D :] :])
-  split i [: na, nb, nc, nd :]
-  split o [: ab, cd :]
-  split ab [: a, b :]
-  split cd [: c, d :]
+  split i [: na, nb, nc, nd :].
+  split o [: ab, cd :].
+  split ab [: a, b :].
+  split cd [: c, d :].
   fwd A (a, na).
   fwd B (b, nb).
   fwd C (c, nc).
@@ -561,8 +608,27 @@ split_nested_seq_core =
 
 group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]}> =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]})
-  split c {i, o}
-  @ (split_nested_seq_core (~ A)(~ B)(~ C)(~ D)) {o, i}
+  split c {i, o}.
+  split o [: na, nb, nc, nd :].
+  split i [: ab, cd :].
+  split ab [: a, b :].
+  split cd [: c, d :].
+  fwd (~ A)(a, na).
+  fwd (~ B)(b, nb).
+  fwd (~ C)(c, nc).
+  fwd (~ D)(d, nd)
+
+group_nested_seq_SInt_SDouble_SBool_SString =
+  proc (c : {[: [: ?Int, ?Double :], [: ?Bool, ?String :] :], [: !Int, !Double, !Bool, !String :]})
+  split c {i, o}.
+  split o [: na, nb, nc, nd :].
+  split i [: ab, cd :].
+  split ab [: a, b :].
+  split cd [: c, d :].
+  fwd (?Int)(a, na).
+  fwd (?Double)(b, nb).
+  fwd (?Bool)(c, nc).
+  fwd (?String)(d, nd)
 
 id : (A : Type)-> (x : A)-> A
 
@@ -583,7 +649,7 @@ one : Int =
   1
 
 suc : (x : Int)-> Int =
-  _+_ one
+  _+_ 1
 
 doubleInt : (x : Int)-> Int =
   \ (x : Int)-> x + x
@@ -598,42 +664,44 @@ rot : (x : ABC)-> ABC =
   }
 
 rot2 : (x : ABC)-> ABC =
-  \ (x : ABC)-> rot (rot x)
+  \ (x : ABC)-> case case x of {
+    `a -> `b ,
+    `b -> `c ,
+    `c -> `a
+  } of {
+    `a -> `b ,
+    `b -> `c ,
+    `c -> `a
+  }
 
 let42ann =
-  let x : Int = 42 in x + x
+  84
 
 let42 =
-  let x = 42 in x + x
+  84
 
 let_example =
   proc (c : ?Int.!Int)
-  let T = Int.
-  let f = _+_.
-  let x : T <- c.
-  let y = (f x x).
-  c <- y
+  let x : Int <- c.
+  c <- (x + x)
 
 letrecv_ann =
   proc (c : ?Int.!Int)
   let x : Int <- c.
-  let y : Int = (x + x).
-  c <- y
+  c <- (x + x)
 
 letrecv =
   proc (c : ?Int.!Int)
   let x : Int <- c.
-  let y = (x + x).
-  c <- y
+  c <- (x + x)
 
 letsession =
   proc (c)
-  let f = (\ (S0 : Session)-> let S1 = {S0, S0}in let S2 = {S1, S1}in let S3 = {S2, S2}in let S4 = {S3, S3}in let S5 = {S4, S4}in let S6 = {S5, S5}in let S7 = {S6, S6}in S7).
-  split c {c#0 : f (?Int),c#1 : ~ f (?Int)}
-  fwd (f (?Int)) (c#0, c#1)
+  split c {c#0 : {{{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}},{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}}}, {{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}},{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}}}},c#1 : [[[[[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]], [[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]]],[[[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]], [[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]]]], [[[[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]], [[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]]],[[[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]], [[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]]]]]}.
+  fwd {{{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}},{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}}}, {{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}},{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}}}}(c#0, c#1)
 
 lettype : (P : (A : Type)-> (B : Type)-> Type)-> (p : (A : Type)-> P A A)-> (A : Type)-> P (P (P (P A A)(P A A)) (P (P A A)(P A A)))(P (P (P A A)(P A A)) (P (P A A)(P A A)))=
-  \ (P : (A : Type)-> (B : Type)-> Type)-> \ (p : (A : Type)-> P A A)-> \ (A : Type)-> let B = P A A in let C = P B B in let D = P C C in p D
+  \ (P : (A : Type)-> (B : Type)-> Type)-> \ (p : (A : Type)-> P A A)-> \ (A : Type)-> p (P (P (P A A)(P A A)) (P (P A A)(P A A)))
 
 assert
   1
@@ -647,18 +715,18 @@ showDiv =
   \ (m : Double)-> \ (n : Double)-> (showDouble m)++S " / " ++S (showDouble n)++S " = " ++S showDouble (m /D n)
 
 my42 : String =
-  showMult 2 21
+  "2 * 21 = 42"
 
 my3_14 : String =
-  showDiv 6.28 2.0
+  "6.28 / 2.0 = 3.14"
 
 myNewline : Char =
   '\n'
 
 merger =
   \ (m : Int)-> \ (n : Int)-> proc (c0 : [!Vec Int m, ?Vec Int m],c1 : [!Vec Int n, ?Vec Int n],ci : ?Vec Int (m + n),co : !Vec Int (m + n))
-  split c0 [c0i, c0o]
-  split c1 [c1i, c1o]
+  split c0 [c0i, c0o].
+  split c1 [c1i, c1o].
   let vi : Vec Int (m + n)<- ci.
   ( c0i <- (take Int m n vi)
   | c1i <- (drop Int m n vi)
@@ -668,8 +736,8 @@ merger =
 
 merger_loli_Sort =
   \ (m : Int)-> \ (n : Int)-> proc (c : {[~ DotSort Int m, ~ DotSort Int n],DotSort Int (m + n)})
-  split c {c01, d}
-  split c01 [c0, c1]
+  split c {c01, d}.
+  split c01 [c0, c1].
   let vi : Vec Int (m + n)<- d.
   ( c0 <- (take Int m n vi)
   | c1 <- (drop Int m n vi)).
@@ -688,7 +756,7 @@ merger_nstSort_prll =
 
 merger_nstSort_prll_v2 =
   \ (m : Int)-> \ (n : Int)-> proc (c : [~ DotSort Int m, ~ DotSort Int n],d : DotSort Int (m + n))
-  split c [c0, c1]
+  split c [c0, c1].
   let vi : Vec Int (m + n)<- d.
   ( c0 <- (take Int m n vi)
   | c1 <- (drop Int m n vi)).
@@ -698,9 +766,9 @@ merger_nstSort_prll_v2 =
 
 merger_ParSort_full_prll =
   \ (m : Int)-> \ (n : Int)-> proc (c0 : ~ ParSort Int m, c1 : ~ ParSort Int n, c : ParSort Int (m + n))
-  split c0 [c0i, c0o]
-  split c1 [c1i, c1o]
-  split c {ci, co}
+  split c0 [c0i, c0o].
+  split c1 [c1i, c1o].
+  split c {ci, co}.
   let vi : Vec Int (m + n)<- ci.
   ( c0i <- (take Int m n vi)
   | c1i <- (drop Int m n vi)
@@ -728,8 +796,8 @@ merger_seq =
 
 merger_seq_Sort =
   \ (m : Int)-> \ (n : Int)-> proc (c : {{~ DotSort Int m, ~ DotSort Int n},DotSort Int (m + n)})
-  split c {d, io}
-  split d {d0, d1}
+  split c {d, io}.
+  split d {d0, d1}.
   let vi : Vec Int (m + n)<- io.
   d0 <- (take Int m n vi).
   d1 <- (drop Int m n vi).
@@ -739,8 +807,8 @@ merger_seq_Sort =
 
 merger_seqential_ten2_loli_Sort =
   \ (m : Int)-> \ (n : Int)-> proc (c : {{~ DotSort Int m, ~ DotSort Int n},DotSort Int (m + n)})
-  split c {c01, d}
-  split c01 {c0, c1}
+  split c {c01, d}.
+  split c01 {c0, c1}.
   let vi : Vec Int (m + n)<- d.
   c0 <- (take Int m n vi).
   c1 <- (drop Int m n vi).
@@ -750,8 +818,8 @@ merger_seqential_ten2_loli_Sort =
 
 merger_ten2_loli_Sort =
   \ (m : Int)-> \ (n : Int)-> proc (c : {{~ DotSort Int m, ~ DotSort Int n},DotSort Int (m + n)})
-  split c {c01, d}
-  split c01 {c0, c1}
+  split c {c01, d}.
+  split c01 {c0, c1}.
   let vi : Vec Int (m + n)<- d.
   ( c0 <- (take Int m n vi)
   | c1 <- (drop Int m n vi)).
@@ -761,39 +829,39 @@ merger_ten2_loli_Sort =
 
 mk_new_ann =
   \ (ann : Allocation)-> \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
-  new/ann [c : S, d : ~ S]
+  new/ann [c : S, d : ~ S].
   ( @ p (c)
   | @ q (d))
 
 mk_par2_LR =
   \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : {S0, S1})
-  split c {c0, c1}
+  split c {c0, c1}.
   @ p0 (c0).
   @ p1 (c1)
 
 mk_par2_prll =
   \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : {S0, S1})
-  split c {c0, c1}
+  split c {c0, c1}.
   ( @ p0 (c0)
   | @ p1 (c1))
 
 mk_par2_RL =
   \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : {S0, S1})
-  split c {c0, c1}
+  split c {c0, c1}.
   @ p1 (c1).
   @ p0 (c0)
 
 mk_seq2 =
   \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [: S0, S1 :])
-  split c [: c0, c1 :]
+  split c [: c0, c1 :].
   @ p0 (c0).
   @ p1 (c1)
 
 mk_ten2_2new_2fwd =
   \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
-  split c [c0, c1]
-  new (d0 : ~ S0, e0 : S0)
-  new (d1 : ~ S1, e1 : S1)
+  split c [c0, c1].
+  new [d0 : ~ S0, e0 : S0].
+  new [d1 : ~ S1, e1 : S1].
   ( @ p0 (e0)
   | fwd S0 (c0, d0)
   | @ p1 (e1)
@@ -801,7 +869,7 @@ mk_ten2_2new_2fwd =
 
 mk_tensor2 =
   \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
-  split c [c0, c1]
+  split c [c0, c1].
   ( @ p0 (c0)
   | @ p1 (c1))
 
@@ -814,28 +882,28 @@ my_dual =
   \ (S : Session)-> ~ S
 
 test_my_dual =
-  proc (c : my_dual (!Int))
+  proc (c : ?Int)
   let x : Int <- c
 
 my_loli =
   \ (S : Session)-> \ (T : Session)-> {~ S, T}
 
 test_my_loli =
-  \ (A : Type)-> proc (c : my_loli (!A)(!A))
-  split c {i, o}
+  \ (A : Type)-> proc (c : {?A, !A})
+  split c {i, o}.
   let x : A <- i.
   o <- x
 
 new_alloc =
   proc (c : !Int)
-  new/alloc [d : !Int, e]
+  new/alloc [d : !Int, e].
   d <- 1.
   let x#e : Int <- e.
   c <- x#e
 
 new_fuse1_recv_send_send_recv =
   proc ()
-  new/fuse 1 [d : ?Int.!Int, c : !Int.?Int]
+  new/fuse 1 [d : ?Int.!Int, c : !Int.?Int].
   c <- 1.
   let y : Int <- d.
   d <- 2.
@@ -843,19 +911,19 @@ new_fuse1_recv_send_send_recv =
 
 new_ann_ten_recv =
   \ (ann : Allocation)-> proc ()
-  new/ann [c : [!Int, ?Int],d : {?Int, !Int}]
-  ( split c [co, ci]
+  new/ann [c : [!Int, ?Int],d : {?Int, !Int}].
+  ( split c [co, ci].
     ( co <- 42
     | let y : Int <- ci )
-  | split d {di, do}
+  | split d {di, do}.
     let x : Int <- di.
     do <- (x + x))
 
 new_fuse1_ten_recv =
   proc ()
-  new/fuse 1 [c : [!Int, ?Int],d : {?Int, !Int}]
-  split c [co, ci]
-  split d {di, do}
+  new/fuse 1 [c : [!Int, ?Int],d : {?Int, !Int}].
+  split c [co, ci].
+  split d {di, do}.
   co <- 42.
   let x : Int <- di.
   do <- (x + x).
@@ -863,9 +931,9 @@ new_fuse1_ten_recv =
 
 new_fuse2_ten_recv =
   proc ()
-  new/fuse 2 [c : [!Int, ?Int],d : {?Int, !Int}]
-  split c [co, ci]
-  split d {di, do}
+  new/fuse 2 [c : [!Int, ?Int],d : {?Int, !Int}].
+  split c [co, ci].
+  split d {di, do}.
   co <- 42.
   let x : Int <- di.
   do <- (x + x).
@@ -873,9 +941,9 @@ new_fuse2_ten_recv =
 
 new_fuse3_ten_recv =
   proc ()
-  new/fuse 3 [c : [!Int, ?Int],d : {?Int, !Int}]
-  split c [co, ci]
-  split d {di, do}
+  new/fuse 3 [c : [!Int, ?Int],d : {?Int, !Int}].
+  split c [co, ci].
+  split d {di, do}.
   co <- 42.
   let x : Int <- di.
   do <- (x + x).
@@ -883,9 +951,9 @@ new_fuse3_ten_recv =
 
 new_fused_ten_recv =
   proc ()
-  new/fused [c : [!Int, ?Int],d : {?Int, !Int}]
-  split c [co, ci]
-  split d {di, do}
+  new/fused [c : [!Int, ?Int],d : {?Int, !Int}].
+  split c [co, ci].
+  split d {di, do}.
   co <- 42.
   let x : Int <- di.
   do <- (x + x).
@@ -893,8 +961,8 @@ new_fused_ten_recv =
 
 no_dead_lock_new_new =
   proc ()
-  new (c : ?Int, d)
-  new (e : ?Int, f)
+  new [c : ?Int, d].
+  new [e : ?Int, f].
   d <- 5.
   let x : Int <- c.
   f <- x.
@@ -902,8 +970,8 @@ no_dead_lock_new_new =
 
 no_dead_lock_new_new_v2 =
   proc ()
-  new (c : ?Int, d)
-  new (e : ?Int, f)
+  new [c : ?Int, d].
+  new [e : ?Int, f].
   d <- 5.
   let x : Int <- c.
   f <- x.
@@ -939,25 +1007,25 @@ par0 =
 
 par1 =
   proc (c : {!Int})
-  split c {d}
+  split c {d}.
   d <- 42
 
 par2 =
   proc (c : {!Int, ?Int})
-  split c {d, e}
+  split c {d, e}.
   let x : Int <- e.
   d <- x
 
 par2mix =
   proc (c : {!Int, ?Int})
-  split c {d, e}
+  split c {d, e}.
   let x : Int <- e.
   d <- 42
 
 par4_seq_send3 =
   proc (a : {[: !Int, !Int :], !Int, !Int, !Int})
-  split a {b, e, f, g}
-  split b [: c, d :]
+  split a {b, e, f, g}.
+  split b [: c, d :].
   e <- 1.
   c <- 2.
   f <- 3.
@@ -966,16 +1034,16 @@ par4_seq_send3 =
 
 parallel_assoc_2tensor2_left =
   proc (cde : [[!Int, !Int],!Int])
-  split cde [cd, e]
-  split cd [c, d]
+  split cde [cd, e].
+  split cd [c, d].
   c <- 1.
   d <- 2.
   e <- 3
 
 parallel_assoc_2tensor2_right =
   proc (cde : [[!Int, !Int],!Int])
-  split cde [cd, e]
-  split cd [c, d]
+  split cde [cd, e].
+  split cd [c, d].
   e <- 3.
   c <- 1.
   d <- 2
@@ -1000,29 +1068,29 @@ parallel_assoc_right =
 
 parallel_assoc_tensor3_flat =
   proc (cde : [!Int, !Int, !Int])
-  split cde [c, d, e]
+  split cde [c, d, e].
   c <- 1.
   d <- 2.
   e <- 3
 
 parallel_assoc_tensor3_left =
   proc (cde : [!Int, !Int, !Int])
-  split cde [c, d, e]
+  split cde [c, d, e].
   c <- 1.
   d <- 2.
   e <- 3
 
 parallel_assoc_tensor3_right =
   proc (cde : [!Int, !Int, !Int])
-  split cde [c, d, e]
+  split cde [c, d, e].
   c <- 1.
   d <- 2.
   e <- 3
 
 parallel_tensor4_flat =
   proc (cd : [!Int, !Int],ef : [!Int, !Int])
-  split cd [c, d]
-  split ef [e, f]
+  split cd [c, d].
+  split ef [e, f].
   c <- 1.
   e <- 2.
   d <- 3.
@@ -1030,8 +1098,8 @@ parallel_tensor4_flat =
 
 parallel_tensor4_v0 =
   proc (cd : [!Int, !Int],ef : [!Int, !Int])
-  split cd [c, d]
-  split ef [e, f]
+  split cd [c, d].
+  split ef [e, f].
   c <- 1.
   e <- 2.
   d <- 3.
@@ -1039,17 +1107,17 @@ parallel_tensor4_v0 =
 
 par_comm =
   \ (A : Session)-> \ (B : Session)-> proc (c : {[~ A, ~ B],{B, A}})
-  split c {i, o}
-  split i [na, nb]
-  split o {b, a}
+  split c {i, o}.
+  split i [na, nb].
+  split o {b, a}.
   ( fwd A (a, na)
   | fwd B (b, nb))
 
 par_loli_ten_send =
   \ (S : Type)-> \ (T : Type)-> proc (c : {[?S, ?T],[!S, !T]})
-  split c {i, o}
-  split i [rs, rt]
-  split o [ss, st]
+  split c {i, o}.
+  split i [rs, rt].
+  split o [ss, st].
   ( let vs : S <- rs
   | let vt : T <- rt ).
   ( ss <- vs
@@ -1057,42 +1125,42 @@ par_loli_ten_send =
 
 par_loli_ten_send_v2 =
   \ (S : Type)-> \ (T : Type)-> proc (c : {[?S, ?T],[!S, !T]})
-  split c {i, o}
-  split i [rs, rt]
+  split c {i, o}.
+  split i [rs, rt].
   ( let vs : S <- rs
   | let vt : T <- rt ).
-  split o [ss, st]
+  split o [ss, st].
   ( ss <- vs
   | st <- vt )
 
 par_seq_back =
   proc (a : {[: !Int, !Int :], !Int})
-  split a {b, e}
-  split b [: c, d :]
+  split a {b, e}.
+  split b [: c, d :].
   c <- 2.
   d <- 3.
   e <- 1
 
 par_seq_front =
   proc (a : {[: !Int, !Int :], !Int})
-  split a {b, e}
-  split b [: c, d :]
+  split a {b, e}.
+  split b [: c, d :].
   e <- 1.
   c <- 2.
   d <- 3
 
 par_seq_middle =
   proc (a : {[: !Int, !Int :], !Int})
-  split a {b, e}
-  split b [: c, d :]
+  split a {b, e}.
+  split b [: c, d :].
   c <- 2.
   e <- 1.
   d <- 3
 
 par_seq_send3 =
   proc (a : {[: !Int, !Int :], !Int.!Int.!Int})
-  split a {b, e}
-  split b [: c, d :]
+  split a {b, e}.
+  split b [: c, d :].
   e <- 1.
   c <- 2.
   e <- 3.
@@ -1101,17 +1169,17 @@ par_seq_send3 =
 
 par_ten1_ten1 =
   proc (c : {[?Int],[!Int]})
-  split c {e, d}
-  split d [l]
-  split e [h]
+  split c {e, d}.
+  split d [l].
+  split e [h].
   let x : Int <- h.
   l <- x
 
 par_ten_ten_v0 =
   proc (c : {[?Int, !Int],[!Int, ?Int]})
-  split c {e, d}
-  split d [k, l]
-  split e [h, g]
+  split c {e, d}.
+  split d [k, l].
+  split e [h, g].
   let x : Int <- h.
   k <- 1.
   let y : Int <- l.
@@ -1119,9 +1187,9 @@ par_ten_ten_v0 =
 
 par_ten_ten_v1 =
   proc (c : {[?Int, !Int],[!Int, ?Int]})
-  split c {e, d}
-  split d [k, l]
-  split e [h, g]
+  split c {e, d}.
+  split d [k, l].
+  split e [h, g].
   let x : Int <- h.
   k <- 1.
   let y : Int <- l.
@@ -1129,9 +1197,9 @@ par_ten_ten_v1 =
 
 par_ten_ten_v2 =
   proc (c : {[?Int, !Int],[!Int, ?Int]})
-  split c {e, d}
-  split d [k, l]
-  split e [h, g]
+  split c {e, d}.
+  split d [k, l].
+  split e [h, g].
   k <- 1.
   let x : Int <- h.
   let y : Int <- l.
@@ -1139,14 +1207,14 @@ par_ten_ten_v2 =
 
 pattern_example_expanded =
   proc (abcde : [!Int, [: !Int, !Int :], {[!Int, !Int],{?Int, ?Int}}])
-  split abcde [a, bc, de]
-  split bc [: b, c :]
-  split de {d, e}
+  split abcde [a, bc, de].
+  split bc [: b, c :].
+  split de {d, e}.
   a <- 1.
   b <- 2.
-  split d [d#0 : !Int, d#1 : !Int]
+  split d [d#0 : !Int, d#1 : !Int].
   c <- 3.
-  split e {e#0 : ?Int, e#1 : ?Int}
+  split e {e#0 : ?Int, e#1 : ?Int}.
   let x#e#0 : Int <- e#0.
   let x#e#1 : Int <- e#1.
   d#0 <- x#e#0.
@@ -1154,31 +1222,43 @@ pattern_example_expanded =
 
 plug_compose =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < A, B >)-> \ (q : < ~ B, C >)-> proc (a : A, c : C)
-  new (b : B, b' : ~ B)
+  new [b : B, b' : ~ B].
   ( @ p {a, b}
   | @ q {b', c})
 
 flat_par' =
   \ (A : Session)-> \ (B : Session)-> \ (p : < {A, B}>)-> proc (a : A, b : B)
-  new (ab : {A, B},nanb)
+  new [ab : {A, B},nanb].
   ( @ p (ab)
-  | split nanb [na, nb]
+  | split nanb [na, nb].
     ( fwd A (a, na)
     | fwd B (b, nb)))
 
 bump_par' =
   \ (A : Session)-> \ (B : Session)-> \ (p : < A, B >)-> proc (ab : {A, B})
-  split ab {a, b}
+  split ab {a, b}.
   @ p {a, b}
 
 plug_compose' =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < A, B >)-> \ (q : < ~ B, C >)-> proc (a : A, c : C)
-  new (b : B, b' : ~ B)
+  new [b : B, b' : ~ B].
   ( @ p {a, b}
   | @ q {b', c})
 
 plug_compose_par_par : (A : Session)-> (B : Session)-> (C : Session)-> (p : < {A, B}>)-> (q : < {~ B, C}>)-> < {A, C}> =
-  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < {A, B}>)-> \ (q : < {~ B, C}>)-> bump_par' A C (plug_compose' A B C (flat_par' A B p)(flat_par' (~ B)C q))
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < {A, B}>)-> \ (q : < {~ B, C}>)-> proc (ab : {A, C})
+  split ab {a, b}.
+  new [b : B, b' : ~ B].
+  ( new [ab : {A, B},nanb].
+    ( @ p (ab)
+    | split nanb [na, nb].
+      ( fwd A (a, na)
+      | fwd B (b, nb)))
+  | new [ab : {~ C, C},nanb].
+    ( @ q (ab)
+    | split nanb [na, nb].
+      ( fwd (~ C)(b', na)
+      | fwd C (b, nb))))
 
 plug_send_recv =
   \ (p : < !Int, ?Int >)-> proc (c : !Int, d : ?Int)
@@ -1280,38 +1360,57 @@ assert
 
 replicate =
   \ (A : Type)-> \ (n : Int)-> \ (x : A)-> proc (os : [!A ^ n])
-  split os [o]
+  split os [o ^ n].
   slice (o)n as _
     o <- x
 
 replicate_par =
   proc (c : {!Int ^ 10})
-  split c {d}
+  split c {d ^ 10}.
   slice (d)10 as i
     d <- i
 
 replicate_proc =
   \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
-  split c {i, os}
-  split os [o]
+  split c {i, os}.
+  split os [o ^ n].
   slice (o)n as _
     let x#i : A <- i.
     o <- x#i
 
+replicate_proc_Int_10 =
+  proc (c : {?Int, [!Int ^ 10]})
+  split c {i, os}.
+  split os [o ^ 10].
+  slice (o)10 as _
+    let x#i : Int <- i.
+    o <- x#i
+
 replicate_proc_alt =
   \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
-  split c {i, os}
+  split c {i, os}.
   let x : A <- i.
-  split os [o]
+  split os [o ^ n].
   slice (o)n as _
-    new (j : ?A, k)
+    new [j : ?A, k].
     ( let x#j : A <- j.
       o <- x#j
     | k <- x )
 
+replicate_proc_alt_Int_10 =
+  proc (c : {?Int, [!Int ^ 10]})
+  split c {i, os}.
+  let x : Int <- i.
+  split os [o ^ 10].
+  slice (o)10 as _
+    new [j : ?Int, k].
+    k <- x.
+    let x#j : Int <- j.
+    o <- x#j
+
 replicate_ten =
   proc (c : [!Int ^ 10])
-  split c [d]
+  split c [d ^ 10].
   slice (d)10 as i
     d <- i
 
@@ -1319,7 +1418,7 @@ Int1 =
   Int
 
 send_1 =
-  proc (c : !Int1)
+  proc (c : !Int)
   c <- 1
 
 seq0_explicit =
@@ -1332,15 +1431,15 @@ seq0 =
 
 seq3 =
   proc (c : [: !Int, !Int, !Int :])
-  split c [: c0, c1, c2 :]
+  split c [: c0, c1, c2 :].
   c0 <- 0.
   c1 <- 1.
   c2 <- 2
 
 seq3_seq2 =
   proc (c : [: !Int, !Int, !Int :], d : [: !Int, !Int :])
-  split c [: c0, c1, c2 :]
-  split d [: d0, d1 :]
+  split c [: c0, c1, c2 :].
+  split d [: d0, d1 :].
   c0 <- 0.
   c1 <- 1.
   d0 <- 0.
@@ -1349,42 +1448,42 @@ seq3_seq2 =
 
 seq_assoc_core =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (i : [: [: ~ A, ~ B :], ~ C :], o : [: A, [: B, C :] :])
-  split i [: nab, nc :]
-  split nab [: na, nb :]
-  split o [: a, bc :]
-  split bc [: b, c :]
+  split i [: nab, nc :].
+  split nab [: na, nb :].
+  split o [: a, bc :].
+  split bc [: b, c :].
   fwd A (a, na).
   fwd B (b, nb).
   fwd C (c, nc)
 
 seq_par_back =
   proc (a : [: {!Int, !Int},!Int :])
-  split a [: b, e :]
-  split b {c, d}
+  split a [: b, e :].
+  split b {c, d}.
   c <- 2.
   d <- 3.
   e <- 1
 
 seq_par_back_v2 =
   proc (a : [: {!Int, !Int},!Int :])
-  split a [: b, e :]
-  split b {c, d}
+  split a [: b, e :].
+  split b {c, d}.
   d <- 3.
   c <- 2.
   e <- 1
 
 seq_seq =
   proc (a : [: [: !Int, !Int :], !Int :])
-  split a [: b, e :]
-  split b [: c, d :]
+  split a [: b, e :].
+  split b [: c, d :].
   c <- 1.
   d <- 2.
   e <- 3
 
 seq_seq_send2 =
   proc (a : [: [: !Int.!Int, !Int.!Int :], !Int.!Int :])
-  split a [: b, e :]
-  split b [: c, d :]
+  split a [: b, e :].
+  split b [: c, d :].
   c <- 1.
   c <- 2.
   d <- 3.
@@ -1394,8 +1493,8 @@ seq_seq_send2 =
 
 seq_ten =
   proc (a : [: [!Int, !Int],!Int :])
-  split a [: b, e :]
-  split b [c, d]
+  split a [: b, e :].
+  split b [c, d].
   c <- 2.
   d <- 3.
   e <- 1
@@ -1410,22 +1509,22 @@ singleSend =
 
 sorter =
   \ (n : Int)-> proc (c : {?Vec Int n, !Vec Int n})
-  split c {ci, co}
+  split c {ci, co}.
   let v : Vec Int n <- ci.
   co <- (sort n v)
 
 split_fwd1_rcv =
   proc (c : {?Int})
-  split c {d}
+  split c {d}.
   let x#d : Int <- d
 
 split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :]}> =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :]})
-  split c {i, o}
-  split i [: na, nb, nc, nd :]
-  split o [: ab, cd :]
-  split ab [: a, b :]
-  split cd [: c, d :]
+  split c {i, o}.
+  split i [: na, nb, nc, nd :].
+  split o [: ab, cd :].
+  split ab [: a, b :].
+  split cd [: c, d :].
   fwd A (a, na).
   fwd B (b, nb).
   fwd C (c, nc).
@@ -1433,9 +1532,9 @@ split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new/alloc [itmp : !Int.?Int, tmp]
+  new/alloc [itmp : !Int.?Int, tmp].
   itmp <- 0.
-  split a {ai}
+  split a {ai ^ 10}.
   (slice (ai)10 as i
     let x : Int <- ai.
     let y : Int <- tmp.
@@ -1445,45 +1544,43 @@ sum_int =
 
 switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {[A, B],C}} > =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (c : {{~ A, [~ B, ~ C]}, {[A, B],C}})
-  split c {i, o}
-  split i {na, nbc}
-  split nbc [nb, nc]
-  split o {ab, c}
-  split ab [a, b]
+  split c {i, o}.
+  split i {na, nbc}.
+  split nbc [nb, nc].
+  split o {ab, c}.
+  split ab [a, b].
   ( fwd A (a, na)
   | fwd B (b, nb)
   | fwd C (c, nc))
 
 ten_loli_par =
   \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})
-  split c {i, o}
-  split i {na, nb}
-  split o {a, b}
+  split c {i, o}.
+  split i {na, nb}.
+  split o {a, b}.
   ( fwd A (a, na)
   | fwd B (b, nb))
 
 ten_loli_par_sInt_sDouble =
   proc (c : {{?Int, ?Double},{!Int, !Double}})
-  let A#9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f : Session = (!Int).
-  let B#6c355f357a642a57a71c0d88a70f5ef0681738435e2da1c2c4f50d4407f566a4 : Session = (!Double).
-  split c {i, o}
-  split i {na, nb}
-  split o {a, b}
-  fwd A#9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f (a, na).
-  fwd B#6c355f357a642a57a71c0d88a70f5ef0681738435e2da1c2c4f50d4407f566a4 (b, nb)
+  split c {i, o}.
+  split i {na, nb}.
+  split o {a, b}.
+  fwd (!Int)(a, na).
+  fwd (!Double)(b, nb)
 
 ten_loli_par_sequential =
   \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})
-  split c {i, o}
-  split i {na, nb}
-  split o {a, b}
+  split c {i, o}.
+  split i {na, nb}.
+  split o {a, b}.
   fwd A (a, na).
   fwd B (b, nb)
 
 ten_par_par_split =
   proc (c : [{}, {}])
-  split c [d, e]
-  split d {}
+  split c [d, e].
+  split d {}.
   split e {}
 
 tensor0 =
@@ -1492,38 +1589,38 @@ tensor0 =
 
 tensor1 =
   proc (c : [!Int])
-  split c [d]
+  split c [d].
   d <- 42
 
 tensor2 =
   proc (c : [!Int, ?Int])
-  split c [d, e]
+  split c [d, e].
   let x : Int <- e.
   d <- 42
 
 tensor2_tensor0_tensor0_parallel =
   proc (cd : [[], []])
-  split cd [c, d]
-  split c []
+  split cd [c, d].
+  split c [].
   split d []
 
 tensor2_tensor0_tensor0_sequence =
   proc (cd : [[], []])
-  split cd [c, d]
-  split c []
+  split cd [c, d].
+  split c [].
   split d []
 
 tensor2_using_dual =
   proc (c : [!Int, ?Int])
-  split c [d, e]
+  split c [d, e].
   let x : Int <- e.
   d <- 42
 
 test2 =
   proc ()
-  new (c : {?Int.!Int.?Int, !Int.?Int.!Int},d)
-  split c {c0, c1}
-  split d [d0, d1]
+  new [c : {?Int.!Int.?Int, !Int.?Int.!Int},d].
+  split c {c0, c1}.
+  split d [d0, d1].
   d0 <- 1.
   let x0 : Int <- c0.
   c1 <- (x0 + 1).
@@ -1539,11 +1636,11 @@ test2 =
 
 test3 =
   proc ()
-  new (c : ?Int.[!Int, !Int],d)
+  new [c : ?Int.[!Int, !Int],d].
   d <- 1.
   let x0 : Int <- c.
-  split d {d0, d1}
-  split c [c0, c1]
+  split d {d0, d1}.
+  split c [c0, c1].
   c0 <- x0.
   c1 <- x0.
   let y0 : Int <- d0.
@@ -1551,7 +1648,7 @@ test3 =
 
 test4 =
   proc (r : !Int)
-  new (c : ?Int.?Int.?Int, d)
+  new [c : ?Int.?Int.?Int, d].
   d <- 1.
   let x0 : Int <- c.
   d <- 2.
@@ -1561,7 +1658,7 @@ test4 =
   r <- (x0 + x1 + x2)
 
 type_annotation =
-  (21 + 21 : Int)
+  (42 : Int)
 
 ZeroCh : Type =
   (A : Type)-> A
@@ -1582,13 +1679,13 @@ oneTwo : Two =
   \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
 
 notTwo : (b : Two)-> Two =
-  \ (b : Two)-> \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
+  \ (b : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
 
 andTwo : (b0 : Two)-> (b1 : Two)-> Two =
-  \ (b0 : Two)-> \ (b1 : Two)-> b0 Two zeroTwo b1
+  \ (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> b0 ((A : Type)-> (x : A)-> (y : A)-> A)(\ (A : Type)-> \ (x : A)-> \ (y : A)-> x)b1
 
 orTwo : (b0 : Two)-> (b1 : Two)-> Two =
-  \ (b0 : Two)-> \ (b1 : Two)-> b0 Two b1 oneTwo
+  \ (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> b0 ((A : Type)-> (x : A)-> (y : A)-> A)b1 (\ (A : Type)-> \ (x : A)-> \ (y : A)-> y)
 
 Nat : Type =
   (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
@@ -1597,16 +1694,16 @@ zeroNat : Nat =
   \ (A : Type)-> \ (z : A)-> \ (s : (n : A)-> A)-> z
 
 sucNat : (n : Nat)-> Nat =
-  \ (n : Nat)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s)
+  \ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s)
 
 addNat : (m : Nat)-> (n : Nat)-> Nat =
-  \ (m : Nat)-> \ (n : Nat)-> m Nat n sucNat
+  \ (m : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> m ((A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)n (\ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s))
 
 Bin : Type =
   (A : Type)-> (leaf : A)-> (fork : (left : A)-> (right : A)-> A)-> A
 
 Nats : Type =
-  (A : Type)-> (nil : A)-> (cons : (head : Nat)-> (tail : A)-> A)-> A
+  (A : Type)-> (nil : A)-> (cons : (head : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (tail : A)-> A)-> A
 
 List : (X : Type)-> Type =
   \ (X : Type)-> (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A
@@ -1615,10 +1712,10 @@ nilList : (X : Type)-> List X =
   \ (X : Type)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head : X)-> (tail : A)-> A)-> nil
 
 consList : (X : Type)-> (head : X)-> (tail : List X)-> List X =
-  \ (X : Type)-> \ (head : X)-> \ (tail : List X)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : X)-> (tail' : A)-> A)-> cons head (tail A nil cons)
+  \ (X : Type)-> \ (head : X)-> \ (tail : (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : X)-> (tail' : A)-> A)-> cons head (tail A nil cons)
 
 mapList : (X : Type)-> (Y : Type)-> (f : (x : X)-> Y)-> (xs : List X)-> List Y =
-  \ (X : Type)-> \ (Y : Type)-> \ (f : (x : X)-> Y)-> \ (xs : List X)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : Y)-> (tail' : A)-> A)-> xs A nil (\ (head : X)-> \ (tail : A)-> cons (f head)tail)
+  \ (X : Type)-> \ (Y : Type)-> \ (f : (x : X)-> Y)-> \ (xs : (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : Y)-> (tail' : A)-> A)-> xs A nil (\ (head : X)-> \ (tail : A)-> cons (f head)tail)
 
 Id : (A : Type)-> (x : A)-> (y : A)-> Type
 
@@ -1635,47 +1732,47 @@ tr-refl : (A : Type)-> (x : A)-> (P : (y : A)-> Type)-> (Px : P x)-> Id (P x)(tr
   \ (A : Type)-> \ (x : A)-> \ (P : (y : A)-> Type)-> \ (Px : P x)-> J-refl A x (\ (z : A)-> \ (q : Id A x z)-> P z)Px
 
 coe : (A : Type)-> (B : Type)-> (p : Id Type A B)-> (x : A)-> B =
-  \ (A : Type)-> \ (B : Type)-> \ (p : Id Type A B)-> \ (x : A)-> tr Type A (\ (X : Type)-> X)x B p
+  \ (A : Type)-> \ (B : Type)-> \ (p : Id Type A B)-> \ (x : A)-> J Type A (\ (z : Type)-> \ (q : Id Type A z)-> z)x B p
 
 coe-refl : (A : Type)-> (x : A)-> Id A (coe A A (refl Type A)x)x =
-  \ (A : Type)-> \ (x : A)-> tr-refl Type A (\ (X : Type)-> X)x
+  \ (A : Type)-> \ (x : A)-> J-refl Type A (\ (z : Type)-> \ (q : Id Type A z)-> z)x
 
 sym : (A : Type)-> (x : A)-> (y : A)-> (p : Id A x y)-> Id A y x =
-  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (p : Id A x y)-> tr A x (\ (z : A)-> Id A z x)(refl A x)y p
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (p : Id A x y)-> J A x (\ (z : A)-> \ (q : Id A x z)-> Id A z x)(refl A x)y p
 
 trans : (A : Type)-> (x : A)-> (y : A)-> (z : A)-> (p : Id A x y)-> (q : Id A y z)-> Id A x z =
-  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (z : A)-> \ (p : Id A x y)-> \ (q : Id A y z)-> tr A y (Id A x)p z q
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (z : A)-> \ (p : Id A x y)-> \ (q : Id A y z)-> J A z (\ (z : A)-> \ (q : Id A z z)-> Id A x z)q z q
 
 uncurry =
   \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> proc (c : {[S, [T, ~ U]], {{~ S, ~ T},U}})
-  split c {f, xyo}
-  split xyo {xy, o}
-  split xy {x, y}
-  split f [fx, fyo]
-  split fyo [fy, fo]
+  split c {f, xyo}.
+  split xyo {xy, o}.
+  split xy {x, y}.
+  split f [fx, fyo].
+  split fyo [fy, fo].
   ( fwd S (fx, x)
   | fwd T (fy, y)
   | fwd U (o, fo))
 
 zap =
   \ (S : Session)-> \ (T : Session)-> \ (n : Int)-> proc (c : {{[S, ~ T]^ n},{{~ S ^ n},[T ^ n]}})
-  split c {fs, xos}
-  split xos {xs, os}
-  split fs {f}
-  split xs {x}
-  split os [o]
+  split c {fs, xos}.
+  split xos {xs, os}.
+  split fs {f ^ n}.
+  split xs {x ^ n}.
+  split os [o ^ n].
   slice (f, x, o)n as _
-    split f [fi, fo]
+    split f [fi, fo].
     ( fwd S (fi, x)
     | fwd T (o, fo))
 
 zap_ten_fwd =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
-  split cf {cfi}
-  split cn {cni}
-  split co [coi]
+  split cf {cfi ^ 10}.
+  split cn {cni ^ 10}.
+  split co [coi ^ 10].
   slice (cfi, cni, coi)10 as i
-    split cfi {cfii, cfio}
+    split cfi {cfii, cfio}.
     let x#cni : Int <- cni.
     let x#cfio : Int <- cfio.
     cfii <- x#cni.
@@ -1683,11 +1780,11 @@ zap_ten_fwd =
 
 zap_ten_par =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
-  split cf {cfi}
-  split cn {cni}
-  split co [coi]
+  split cf {cfi ^ 10}.
+  split cn {cni ^ 10}.
+  split co [coi ^ 10].
   slice (cfi, cni, coi)10 as i
-    split cfi {cfii, cfio}
+    split cfi {cfii, cfio}.
     let x : Int <- cni.
     let y : Int <- cfio.
     cfii <- x.
@@ -1695,11 +1792,11 @@ zap_ten_par =
 
 zap_ten_seq =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
-  split cf {cfi}
-  split cn {cni}
-  split co [coi]
+  split cf {cfi ^ 10}.
+  split cn {cni ^ 10}.
+  split co [coi ^ 10].
   slice (cfi, cni, coi)10 as i
-    split cfi {cfii, cfio}
+    split cfi {cfii, cfio}.
     let x : Int <- cni.
     cfii <- x.
     let y : Int <- cfio.
@@ -1707,9 +1804,9 @@ zap_ten_seq =
 
 zip_add =
   proc (xs : {?Int ^ 10},ys : {?Int ^ 10},zs : [!Int ^ 10])
-  split xs {x}
-  split ys {y}
-  split zs [z]
+  split xs {x ^ 10}.
+  split ys {y ^ 10}.
+  split zs [z ^ 10].
   slice (x, y, z)10 as i
     let a : Int <- x.
     let b : Int <- y.

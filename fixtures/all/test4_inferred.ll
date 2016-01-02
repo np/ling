@@ -1,5 +1,5 @@
 test4_inferred = proc(r)
-  new (c, d)
+  new [c, d].
   (
     recv c (x0 : Int)
     recv c (x1 : Int)

@@ -1,9 +1,9 @@
 
-{- Sequential program -}
+{- Sequential Expanded program -}
 
 cut_send_recv_recv_send_with_log =
   proc (logc : !String.!String, logd : !String.!String)
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   logd <- "recv d".
   logc <- "send c 1".
   c <- 1.

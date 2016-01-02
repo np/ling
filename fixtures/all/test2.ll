@@ -1,5 +1,5 @@
 test2 = proc()
-  new (c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d)
+  new [c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d].
   (
     c{c0,c1}
     recv c0 (x0 : Int)

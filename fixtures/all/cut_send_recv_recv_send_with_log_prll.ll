@@ -1,6 +1,6 @@
 cut_send_recv_recv_send_with_log_prll =
   proc(logc : !String.!String, logd : !String.!String)
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   ( ( send logd "recv d"
     | recv d (y : Int)).
     ( send logd "send d 2"

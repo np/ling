@@ -5,7 +5,7 @@ flat_par' =
   \(A B : Session)
    (p : < {A, B} >)->
   proc(a : A, b : B)
-    new(ab : {A, B}, nanb)
+    new [ab : {A, B}, nanb].
     ( @p(ab)
     | nanb[na,nb]
       ( fwd(A)(a,na)
@@ -23,7 +23,7 @@ plug_compose' =
    (p : < A, B >)
    (q : < ~B, C >)->
   proc(a : A, c : C)
-    new(b : B, b' : ~B)
+    new [b : B, b' : ~B].
     ( @p(a, b)
     | @q(b', c))
 

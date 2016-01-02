@@ -20,7 +20,7 @@ replicate_proc_alt =
   recv i (x : A).
   os[o^n]
   slice (o) n as _
-    new (j : ?A, k)
+    new [j : ?A, k].
     ( fwd(!A)(o,j)
     | send k x)
 

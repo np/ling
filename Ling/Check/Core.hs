@@ -112,6 +112,37 @@ checkAx s cs = do
       pure $ mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
 
 
+checkNewPatt :: Proto -> NewPatt -> TC Proto
+checkNewPatt proto = \case
+  NewChan  c os ->
+    error "TODO"
+  NewChans k cds -> do
+    let cs = cds ^.. each . cdChan
+        csNSession = [ proto ^. chanSession c . endedRS | ChanDec c _ _ <- cds ]
+    unless (all (is endRS) csNSession) $
+      for_ cs $ assertUsed proto
+    for_ cds $ checkChanDec proto
+    proto' <-
+      case k of
+        TenK -> do
+          checkDual csNSession
+          checkConflictingChans proto Nothing cs
+        SeqK -> do
+          let (Just s) = csNSession ^? _head
+          b <- isSource s
+          assert b
+                  ["Sequential `new` expects the session for channel " ++
+                  pretty (cds ^.. _head . cdChan) ++
+                  " to be made of sends (a Log)"
+                  ,pretty s]
+          checkCompat csNSession
+          checkOrderedChans proto cs $> proto
+        ParK -> error "checkAct: IMPOSSIBLE"
+    -- This rmChans is potentially partly redundant.
+    -- We might `assert` that `cs` is no longer in the `skel`
+    return $ rmChans cs proto'
+
+
 {-
 Γ(P) is the protocol, namely mapping from channel to sessions of the process P
 Δ(P) is the set of sequential channels, namely each set of C ∈ Δ(P) is a set
@@ -162,32 +193,9 @@ checkAct act proto =
               [ "Inferred protocol for the whole process:"
               ] ++ prettyError prettyProto proto') $
   case act of
-    Nu anns k cds -> do
+    Nu anns newpatt -> do
       for_ anns $ checkTerm allocationTyp
-      let cs = cds ^.. each . cdChan
-          csNSession = [ proto ^. chanSession c . endedRS | ChanDec c _ _ <- cds ]
-      unless (all (is endRS) csNSession) $
-        for_ cs $ assertUsed proto
-      for_ cds $ checkChanDec proto
-      proto' <-
-        case k of
-          TenK -> do
-            checkDual csNSession
-            checkConflictingChans proto Nothing cs
-          SeqK -> do
-            let (Just s) = csNSession ^? _head
-            b <- isSource s
-            assert b
-                   ["Sequential `new` expects the session for channel " ++
-                    pretty (cds ^.. _head . cdChan) ++
-                    " to be made of sends (a Log)"
-                   ,pretty s]
-            checkCompat csNSession
-            checkOrderedChans proto cs $> proto
-          ParK -> error "checkAct: IMPOSSIBLE"
-      -- This rmChans is potentially partly redundant.
-      -- We might `assert` that `cs` is no longer in the `skel`
-      return $ rmChans cs proto'
+      checkNewPatt proto newpatt
     Split k c dOSs -> do
       assertAbsent proto c
       for_ dOSs $ checkChanDec proto

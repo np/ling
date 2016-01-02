@@ -142,9 +142,9 @@ transNewPatt :: NewPatt -> Result
 transNewPatt x = case x of
   TenNewPatt chandecs -> failure x
   SeqNewPatt chandecs -> failure x
+  CntNewPatt name optsig -> failure x
 transNewAlloc :: NewAlloc -> Result
 transNewAlloc x = case x of
-  OldNew chandecs -> failure x
   New newpatt -> failure x
   NewSAnn term optsig newpatt -> failure x
   NewNAnn opname allocterms newpatt -> failure x

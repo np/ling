@@ -277,24 +277,29 @@ transErr msg v = error $ msg ++ "\n" ++ pretty v
 transErrC :: C.Print a => String -> a -> b
 transErrC msg v = error $ msg ++ "\n" ++ C.render (C.prt 0 v)
 
+transNewPatt :: Env -> NewPatt -> (Env, [C.Stm])
+transNewPatt env = \case
+  NewChans _ cds -> (env', sDec typ cid C.NoInit)
+    where
+      cs   = cds ^.. each . cdChan
+      cOSs = cds ^.. each . cdSession
+      s    = log $ extractSession cOSs
+      cid  = transName (cs ^?! _head)
+      l    = C.LVar cid
+      typ  = transRSession env s
+      env' = addChans [(c,l) | c <- cs] env
+
+  NewChan _ _ -> error "TODO"
+
 -- Implement the effect of an action over:
 -- * an environment
 -- * a list of statements
 transAct :: Env -> Act -> (Env, [C.Stm])
 transAct env act =
   case act of
-    Nu _ann _ cds ->
+    Nu _ann newpatt -> transNewPatt env newpatt
       -- Issue #24: the annotation should be used to decide
       -- operational choices on channel allocation.
-      (env', sDec typ cid C.NoInit)
-      where
-        cs   = cds ^.. each . cdChan
-        cOSs = cds ^.. each . cdSession
-        s    = log $ extractSession cOSs
-        cid  = transName (cs ^?! _head)
-        l    = C.LVar cid
-        typ  = transRSession env s
-        env' = addChans [(c,l) | c <- cs] env
     Split _ c ds ->
       (transSplit c ds env, [])
     Send c expr ->
@@ -344,11 +349,11 @@ stdFor i t =
    {S}/[S] has the same implementation as S.
    See tupQ -}
 transSplit :: Name -> [ChanDec] -> Endom Env
-transSplit c dOSs env = rmChan c $ addChans newChans env
+transSplit c dOSs env = rmChan c $ addChans news env
   where
     lval = env ! c
     ds   = _cdChan <$> dOSs
-    newChans =
+    news =
       case ds of
         [d] -> [ (d, lval) ]
         _   -> [ (d, lval')

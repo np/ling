@@ -1,1 +1,1 @@
-missingSend = proc() new (c : ?Int, d) recv c (x : Int)
+missingSend = proc() new [c : ?Int, d]. recv c (x : Int)

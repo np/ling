@@ -119,12 +119,17 @@ renameAtChanDec :: Ren -> Endom ChanDec
 renameAtChanDec f (ChanDec c r os) =
   ChanDec (rename f c) (rename f r) (rename f os)
 
+instance Rename NewPatt where
+  rename f = \case
+    NewChans k cs -> NewChans k (rename f cs)
+    NewChan c os  -> NewChan (rename f c) (rename f os)
+
 instance Rename Act where
   rename f = \case
     Split k c ds    -> Split k (rename f c) (rename f ds)
     Send c e        -> Send (rename f c) (rename f e)
     Recv c arg      -> Recv (rename f c) (rename f arg)
-    Nu ann k cs     -> Nu (rename f ann) k (rename f cs)
+    Nu ann newpatt  -> Nu (rename f ann) (rename f newpatt)
     Ax s cs         -> Ax (rename f s) (rename f cs)
     At t cs         -> At (rename f t) (renameAtCPatt f cs)
     LetA defs       -> LetA (rename f defs)

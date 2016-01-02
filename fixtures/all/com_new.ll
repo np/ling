@@ -3,7 +3,7 @@ com_new =
   (p : < S  >)
   (q : < ~S >)->
   proc()
-  new(c : S, d : ~S)
+  new [c : S, d : ~S].
   ( @p(c)
   | @q(d))
 

@@ -43,16 +43,16 @@ IF : (b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)-> A b
    = \(b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)->
       case b of { `true -> t, `false -> e }
 -}
-cutEmptyParTensor = proc() new (c : {}, d : []) (c{} | d[])
+cutEmptyParTensor = proc() new [c : {}, d : []]. (c{} | d[])
 cut_par_cut = proc()
-  ( new (c  : !Int, d  : ?Int) ( send c  1 | recv d  (x  : Int) )
-  | new (c' : !Int, d' : ?Int) ( send c' 1 | recv d' (x' : Int) )
+  ( new [c  : !Int, d  : ?Int]. ( send c  1 | recv d  (x  : Int) )
+  | new [c' : !Int, d' : ?Int]. ( send c' 1 | recv d' (x' : Int) )
   )
 
-cutSendRecv = proc() new (c : !Int, d : ?Int) ( send c 1 | recv d (x : Int) )
+cutSendRecv = proc() new [c : !Int, d : ?Int]. ( send c 1 | recv d (x : Int) )
 cut_send_recv_recv_send_with_log_prll =
   proc(logc : !String.!String, logd : !String.!String)
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   ( ( send logd "recv d"
     | recv d (y : Int)).
     ( send logd "send d 2"
@@ -112,7 +112,7 @@ div_mod_server_simple = proc(rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int)
   send smod (m % n)
 double = proc(i : ?Int, r : !Int)
   recv i(xi : Int)
-  new (c : ?Int. ?Int. !Int, d)
+  new [c : ?Int. ?Int. !Int, d].
   (
     recv c(x : Int) recv c(y : Int) send c (x + y)
   |
@@ -137,7 +137,7 @@ feed_fwd_send_then_recv =
    (f : (x : I)-> O)
    (p : < Fwd 2 (!I.?O) >)->
   proc()
-   new(a : Fwd 2 (!I.?O), b : [?I.!O, !I.?O])
+   new [a : Fwd 2 (!I.?O), b : [?I.!O, !I.?O]].
    ( @p(a)
    | b[c,d]
      ( recv c (x : I).
@@ -148,18 +148,18 @@ feed_recv =
   \(p : < ?Int >)
    (i : Int)->
   proc()
-    new(c : ?Int,d)
+    new [c : ?Int,d].
     ( @p(c) | send d i )
 feed_send =
   \(p : < !Int >)->
   proc()
-    new(c : !Int,d)
+    new [c : !Int,d].
     ( @p(c) | recv d (x : Int) )
 feed_send_par_recv =
   \(p : < {!Int, ?Int} >)
    (n : Int)->
   proc()
-    new(c : {!Int, ?Int}, d : [?Int, !Int])
+    new [c : {!Int, ?Int}, d : [?Int, !Int]].
     ( @p(c)
     | d[i,o]
       ( recv i (x : Int)
@@ -168,7 +168,7 @@ feed_send_ten_recv =
   \(p : < [!Int, ?Int] >)
    (f : (x : Int)-> Int)->
   proc()
-    new(c : [!Int, ?Int], d : {?Int, !Int})
+    new [c : [!Int, ?Int], d : {?Int, !Int}].
     ( @p(c)
     | d{i,o}
       recv i (x : Int).
@@ -177,7 +177,7 @@ feed_send_then_recv =
   \(p : < !Int. ?Int >)
    (f : (x : Int)-> Int)->
   proc()
-    new(c : !Int. ?Int,d)
+    new [c : !Int. ?Int,d].
     ( @p(c)
     | recv d (x : Int). send d (f x) )
 fun1_to_proc_ord =
@@ -393,16 +393,16 @@ test_my_loli =
   send o x
 -- Requires a mix
 no_dead_lock_new_new = proc()
-  new (c : ?Int, d)
-  new (e : ?Int, f)
+  new [c : ?Int, d].
+  new [e : ?Int, f].
   ( recv c (x : Int).
     send f x
   | send d 5
   | recv e (y : Int))
 -- Requires a mix
 no_dead_lock_new_new_v2 = proc()
-  new (c : ?Int, d)
-  new (e : ?Int, f)
+  new [c : ?Int, d].
+  new [e : ?Int, f].
   ( send d 5
   | ( recv c (x : Int).
       send f x
@@ -508,7 +508,7 @@ plug_compose =
    (p : < A, B >)
    (q : < ~B, C >)->
   proc(a : A, c : C)
-    new(b : B, b' : ~B)
+    new [b : B, b' : ~B].
     ( @p(a, b)
     | @q(b', c))
 plug_send_recv =
@@ -604,7 +604,7 @@ tensor2_tensor0_tensor0_sequence = proc(cd : [[], []])
   cd[c,d] c[] d[]
 tensor2_using_dual = proc(c : [!Int,~!Int]) c[d,e](recv e (x : Int) | send d 42)
 test2 = proc()
-  new (c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d)
+  new [c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d].
   (
     c{c0,c1}
     recv c0 (x0 : Int)
@@ -625,7 +625,7 @@ test2 = proc()
     )
   )
 test4_inferred = proc(r)
-  new (c, d)
+  new [c, d].
   (
     recv c (x0 : Int)
     recv c (x1 : Int)
@@ -637,7 +637,7 @@ test4_inferred = proc(r)
     send d 3
   )
 test4 = proc(r : !Int)
-  new (c : ?Int. ?Int. ?Int, d)
+  new [c : ?Int. ?Int. ?Int, d].
   (
     recv c (x0 : Int)
     recv c (x1 : Int)

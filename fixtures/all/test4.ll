@@ -1,5 +1,5 @@
 test4 = proc(r : !Int)
-  new (c : ?Int. ?Int. ?Int, d)
+  new [c : ?Int. ?Int. ?Int, d].
   (
     recv c (x0 : Int)
     recv c (x1 : Int)

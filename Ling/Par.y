@@ -257,9 +257,9 @@ ListAllocTerm : {- empty -} { [] }
 NewPatt :: { NewPatt }
 NewPatt : '[' ListChanDec ']' { Ling.Abs.TenNewPatt $2 }
         | '[:' ListChanDec ':]' { Ling.Abs.SeqNewPatt $2 }
+        | '(' Name OptSig ')' { Ling.Abs.CntNewPatt $2 $3 }
 NewAlloc :: { NewAlloc }
-NewAlloc : 'new' '(' ListChanDec ')' { Ling.Abs.OldNew $3 }
-         | 'new' NewPatt { Ling.Abs.New $2 }
+NewAlloc : 'new' NewPatt { Ling.Abs.New $2 }
          | 'new/' '(' Term OptSig ')' NewPatt { Ling.Abs.NewSAnn $3 $4 $6 }
          | OpName ListAllocTerm NewPatt { Ling.Abs.NewNAnn $1 (reverse $2) $3 }
 {

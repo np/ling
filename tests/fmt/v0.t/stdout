@@ -10,7 +10,7 @@ bad : (Y : Type)-> Y =
 
 badCutSendRecv =
   proc ()
-  new (c : !Int, d : ?Int)
+  new [c : !Int, d : ?Int]
   send c 1
   recv d (x : Int)
 
@@ -86,34 +86,34 @@ data T = `c | `d | `c
 
 confuseSendRecv2 =
   proc ()
-  new (c : ?Int, d : !Int)
+  new [c : ?Int, d : !Int]
   ( recv c (x : Int)
   | recv d (y : Int))
 
 confuseSendRecv2_using_dual =
   proc ()
-  new (c : ~ !Int, d)
+  new [c : ~ !Int, d]
   ( recv c (x : Int)
   | recv d (y : Int))
 
 cutEmptyParTensor =
   proc ()
-  new (c : {}, d : [])
+  new [c : {}, d : []]
   ( c {}
   | d [] )
 
 cut_par_cut =
   proc ()
-  ( new (c : !Int, d : ?Int)
+  ( new [c : !Int, d : ?Int]
     ( send c 1
     | recv d (x : Int))
-  | new (c' : !Int, d' : ?Int)
+  | new [c' : !Int, d' : ?Int]
     ( send c' 1
     | recv d' (x' : Int)))
 
 cut_recv_send_send_recv =
   proc ()
-  new (d : ?Int.!Int, c : !Int.?Int)
+  new [d : ?Int.!Int, c : !Int.?Int]
   ( send c 1
     recv c (x : Int)
   | recv d (y : Int)
@@ -121,13 +121,13 @@ cut_recv_send_send_recv =
 
 cutSendRecv =
   proc ()
-  new (c : !Int, d : ?Int)
+  new [c : !Int, d : ?Int]
   ( send c 1
   | recv d (x : Int))
 
 cut_send_recv_recv_send =
   proc ()
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int]
   ( send c 1
     recv c (x : Int)
   | recv d (y : Int)
@@ -135,7 +135,7 @@ cut_send_recv_recv_send =
 
 cut_send_recv_recv_send_v2 =
   proc ()
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int]
   ( recv d (y : Int)
     send d 2
   | send c 1
@@ -145,8 +145,8 @@ data Bad = `foo | `bar | `foo
 
 dead_lock_new_new =
   proc ()
-  new (c : ?Int, d)
-  new (e : ?Int, f)
+  new [c : ?Int, d]
+  new [e : ?Int, f]
   ( recv c (x : Int)
     send f x
   | recv e (y : Int)
@@ -174,7 +174,7 @@ dead_lock_tensor2_tensor2 =
 double =
   proc (i : ?Int, r : !Int)
   recv i (xi : Int)
-  new (c : ?Int.?Int.!Int, d)
+  new [c : ?Int.?Int.!Int, d]
   ( recv c (x : Int)
     recv c (y : Int)
     send c (x + y)
@@ -359,18 +359,18 @@ missing_one_seq3 =
 
 missingSendConfuseSendRecv =
   proc ()
-  new (c : !Int, d)
+  new [c : !Int, d]
   recv c (x : Int)
 
 missingSend =
   proc ()
-  new (c : ?Int, d)
+  new [c : ?Int, d]
   recv c (x : Int)
 
 no_dead_lock_new_new =
   proc ()
-  new (c : ?Int, d)
-  new (e : ?Int, f)
+  new [c : ?Int, d]
+  new [e : ?Int, f]
   ( recv c (x : Int)
     send f x
   | send d 5
@@ -378,8 +378,8 @@ no_dead_lock_new_new =
 
 no_dead_lock_new_new_v2 =
   proc ()
-  new (c : ?Int, d)
-  new (e : ?Int, f)
+  new [c : ?Int, d]
+  new [e : ?Int, f]
   ( send d 5
   | ( recv c (x : Int)
       send f x
@@ -697,7 +697,7 @@ split_fwd1_rcv =
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new (itmp : !Int.?Int, tmp)
+  new [itmp : !Int.?Int, tmp]
   ( send itmp 0
     fwd (?Int)(itmp, r)
   | a {ai}
@@ -761,7 +761,7 @@ tensor2_using_dual =
 
 test2 =
   proc ()
-  new (c : {?Int.!Int.?Int, !Int.?Int.!Int},d)
+  new [c : {?Int.!Int.?Int, !Int.?Int.!Int},d]
   ( c {c0, c1}
     recv c0 (x0 : Int)
     send c1 (x0 + 1)
@@ -779,7 +779,7 @@ test2 =
 
 test3 =
   proc ()
-  new (c : ?Int.[!Int, !Int],d)
+  new [c : ?Int.[!Int, !Int],d]
   ( recv c (x0 : Int)
     c [c0, c1]
     ( send c0 x0
@@ -791,7 +791,7 @@ test3 =
 
 test4_inferred =
   proc (r)
-  new (c, d)
+  new [c, d]
   ( recv c (x0 : Int)
     recv c (x1 : Int)
     recv c (x2 : Int)
@@ -802,7 +802,7 @@ test4_inferred =
 
 test4 =
   proc (r : !Int)
-  new (c : ?Int.?Int.?Int, d)
+  new [c : ?Int.?Int.?Int, d]
   ( recv c (x0 : Int)
     recv c (x1 : Int)
     recv c (x2 : Int)

@@ -38,9 +38,14 @@ fcAct = \case
   At _ p          -> fcPat p
   LetA{}          -> ø
 
+bcNewPatt :: BoundChans NewPatt
+bcNewPatt = \case
+  NewChans _ cs -> bcChanDecs cs
+  NewChan c _   -> l2s [c]
+
 bcAct :: BoundChans Act
 bcAct = \case
-  Nu _ _ cs    -> bcChanDecs cs
+  Nu _ newpatt -> bcNewPatt newpatt
   Split _ _ ds -> bcChanDecs ds
   Send{}       -> ø
   Recv{}       -> ø

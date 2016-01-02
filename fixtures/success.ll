@@ -7,6 +7,8 @@ ap =
   f[fi,fo]
   ( fwd(S)(fi,x)
   | fwd(T)(o,fo))
+
+ap_SInt_SBool = ap (!Int) (!Bool)
 assert `false = `false : Bool
 
 assert (\(x:Bool) -> x) = (\(y:Bool) -> y) : ((b:Bool) -> Bool)
@@ -90,9 +92,15 @@ com_new =
   (p : < S  >)
   (q : < ~S >)->
   proc()
-  new(c : S, d : ~S)
+  new [c : S, d : ~S].
   ( @p(c)
   | @q(d))
+
+com_new_SInt =
+  com_new
+    (!Int)
+    (proc(c' : !Int) send c' 42)
+    (proc(d : ?Int) recv d (x : Int))
 com_new_mk_ten2 =
   let
     mk_tensor2 =
@@ -108,8 +116,26 @@ com_new_mk_ten2 =
   (p : < S  >)
   (q : < ~S >)->
   proc()
-  new(c : S, d : ~S)
+  new [c : S, d : ~S].
   @(mk_tensor2 S (~S) p q)[c,d]
+
+com_new_mk_ten2_SInt =
+  com_new_mk_ten2 (!Int) (proc(c' : !Int) send c' 42)
+                         (proc(d : ?Int) recv d (x : Int))
+-- See https://github.com/np/ling/issues/4
+com_with_log =
+ \(S : Session)
+  (p : <      S >)
+  (q : <     ~S >)
+  (s : < ~Log S >)->
+  proc()
+  new [c : S,      c' : ~S].
+  new [d : ~S,     d' : S].
+  new [l : ~Log S, l' : Log S].
+  ( @p(c)
+  | @q(d)
+  | @s(l)
+  | fwd S (d',c',l'))
 conv_fun =
   \ (A A' B : Type)
     (S : Session)
@@ -132,6 +158,8 @@ curry =
   | fwd(T)(fy,y)
   | fwd(U)(o,fo))
 
+curry_SInt_SBool_SDouble = curry (!Int) (!Bool) (!Double)
+
 {-
 later on...
 
@@ -147,16 +175,16 @@ or
 curry :  (S T U : Session)-> < ([S, T] -o U) -o S -o T -o U >
       = \(S T U : Session)-> proc{[[x:S,y:T],o:U],{x,{y,o}}}
 -}
-cutEmptyParTensor = proc() new (c : {}, d : []) (c{} | d[])
+cutEmptyParTensor = proc() new [c : {}, d : []]. (c{} | d[])
 cut_par_cut = proc()
-  ( new (c  : !Int, d  : ?Int) ( send c  1 | recv d  (x  : Int) )
-  | new (c' : !Int, d' : ?Int) ( send c' 1 | recv d' (x' : Int) )
+  ( new [c  : !Int, d  : ?Int]. ( send c  1 | recv d  (x  : Int) )
+  | new [c' : !Int, d' : ?Int]. ( send c' 1 | recv d' (x' : Int) )
   )
 
-cutSendRecv = proc() new (c : !Int, d : ?Int) ( send c 1 | recv d (x : Int) )
+cutSendRecv = proc() new [c : !Int, d : ?Int]. ( send c 1 | recv d (x : Int) )
 cut_send_recv_recv_send_with_log =
   proc(logc : !String.!String, logd : !String.!String)
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   ( send logd "recv d".
     recv d (y : Int).
     send logd "send d 2".
@@ -167,7 +195,7 @@ cut_send_recv_recv_send_with_log =
     recv c (x : Int))
 cut_send_recv_recv_send_with_log_prll =
   proc(logc : !String.!String, logd : !String.!String)
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   ( ( send logd "recv d"
     | recv d (y : Int)).
     ( send logd "send d 2"
@@ -225,14 +253,21 @@ div_mod_server_simple = proc(rm : ?Int, rn : ?Int, sdiv : !Int, smod : !Int)
   recv rn (n : Int).
   send sdiv (m / n).
   send smod (m % n)
-double = proc(i : ?Int, r : !Int)
-  recv i(xi : Int)
-  new (c : ?Int. ?Int. !Int, d)
-  (
-    recv c(x : Int) recv c(y : Int) send c (x + y)
-  |
-    send d xi send d xi recv d(z : Int) send r z
-  )
+double = proc(a: ?Int, b: !Int)
+  let x : Int <- a.
+  b <- (x + x)
+
+double_21 = proc(b: !Int)
+  new [: c: !Int, c': ?Int :].
+  c <- 21.
+  @double{c',b}
+
+double_21_fused = proc(b: !Int)
+  let x : Int = 21.
+  b <- (x + x)
+
+double_21_fused_and_reduced = proc(b: !Int)
+  b <- 42
 another_dual = \(S : Session)-> ~S
 dual_dual =
   \(S : Session)
@@ -259,29 +294,33 @@ feed_fwd_send_then_recv =
    (f : (x : I)-> O)
    (p : < Fwd 2 (!I.?O) >)->
   proc()
-   new(a : Fwd 2 (!I.?O), b : [?I.!O, !I.?O])
+   new [a : Fwd 2 (!I.?O), b : [?I.!O, !I.?O]].
    ( @p(a)
    | b[c,d]
      ( recv c (x : I).
        send c (f x)
      | send d i.
        recv d (o : O)))
+
+feed_fwd_send_then_recv_Int_String_42_showInt =
+  feed_fwd_send_then_recv Int String 42 showInt
+  (proc(c) fwd 2 (!Int.?String) c)
 feed_recv =
   \(p : < ?Int >)
    (i : Int)->
   proc()
-    new(c : ?Int,d)
+    new [c : ?Int,d].
     ( @p(c) | send d i )
 feed_send =
   \(p : < !Int >)->
   proc()
-    new(c : !Int,d)
+    new [c : !Int,d].
     ( @p(c) | recv d (x : Int) )
 feed_send_par_recv =
   \(p : < {!Int, ?Int} >)
    (n : Int)->
   proc()
-    new(c : {!Int, ?Int}, d : [?Int, !Int])
+    new [c : {!Int, ?Int}, d : [?Int, !Int]].
     ( @p(c)
     | d[i,o]
       ( recv i (x : Int)
@@ -290,7 +329,7 @@ feed_send_ten_recv =
   \(p : < [!Int, ?Int] >)
    (f : (x : Int)-> Int)->
   proc()
-    new(c : [!Int, ?Int], d : {?Int, !Int})
+    new [c : [!Int, ?Int], d : {?Int, !Int}].
     ( @p(c)
     | d{i,o}
       recv i (x : Int).
@@ -299,7 +338,7 @@ feed_send_then_recv =
   \(p : < !Int. ?Int >)
    (f : (x : Int)-> Int)->
   proc()
-    new(c : !Int. ?Int,d)
+    new [c : !Int. ?Int,d].
     ( @p(c)
     | recv d (x : Int). send d (f x) )
 flexible_telescope
@@ -325,7 +364,16 @@ fun1_to_proc_seq =
   recv c (x : I).
   send c (f x)
 fwd0_snd0 = proc(c : Fwd 0 (!Empty)) fwd 0 (!Empty) c
+fwd1_par2_rcv =
+  proc(c : Fwd 1 {?Int,?Bool})
+  fwd 1 {?Int,?Bool} c
 fwd1_rcv = proc(c : Fwd 1 (?Int)) fwd 1 (?Int) c
+fwd1_seq2_rcv =
+  proc(c : Fwd 1 [:?Int,?Bool:])
+  fwd 1 [:?Int,?Bool:] c
+fwd1_ten2_rcv =
+  proc(c : Fwd 1 [?Int,?Bool])
+  fwd 1 [?Int,?Bool] c
 fwd2_par2_ten2 = proc(c : Fwd 2 {?Int,!Int.?Int}) fwd 2 {?Int,!Int.?Int} c
 fwd3_par2_ten2_ten2 = proc(c : Fwd 3 {?Int,!Int.?Int})
   fwd 3 {?Int,!Int.?Int} c
@@ -414,6 +462,9 @@ group_nested_seq :
    proc(c : {[: [: ~A, ~B :], [: ~C, ~D :] :], [: A, B, C, D :]})
      c{i,o}
      @(split_nested_seq_core (~A) (~B) (~C) (~D))(o,i)
+
+group_nested_seq_SInt_SDouble_SBool_SString =
+  group_nested_seq (!Int) (!Double) (!Bool) (!String)
 id : (A : Type)(x : A) -> A
 
 idproc = proc(c : ?Int, d : !Int)
@@ -494,6 +545,92 @@ my42 : String = showMult 2 21
 my3_14 : String = showDiv 6.28 2.0
 
 myNewline : Char = '\n'
+zipWith =
+  \(A B C : Type)
+   (f : (a : A)(b : B)-> C)
+   (n : Int)->
+  proc(cas : [: ?A ^ n :], cbs : [: ?B ^ n :], ccs : [: !C ^ n :])
+    split cas[:ca^n:]
+    split cbs[:cb^n:]
+    split ccs[:cc^n:]
+    slice (ca,cb,cc) n as _
+      -- could be parallel
+      let a : A <- ca.
+      let b : B <- cb.
+      cc <- (f a b)
+
+zip_multD = zipWith Double Double Double _*D_
+
+foldl =
+  \(A B : Type)
+   (f : (acc : B)(a : A)-> B)
+   (init : B)
+   (n : Int)->
+  proc(ca : [: ?A ^ n :], cr : !B)
+  new/alloc [itmp : !B. ?B, tmp]
+  ( itmp <- init.
+    fwd(?B)(itmp, cr)
+  | ca[: ai^n :]
+    slice (ai) n as _
+      ( let a : A <- ai
+      | let b : B <- tmp).
+      tmp <- (f b a))
+
+sumD : (n : Int)-> < [: ?Double ^ n :], !Double >
+     = foldl Double Double _+D_ 0.0
+
+dotproduct = \(n : Int)->
+  proc(as' : [: ?Double ^ n :], bs : [: ?Double ^ n :], o : !Double)
+    -- TODO fusion
+    new/alloc [: cs : [: !Double ^ n :], ds :].
+    @(zip_multD n){as', bs, cs}.
+    @(sumD n){ds, o}
+
+dotproduct_4 = dotproduct 4
+
+-- There should be a proof that i is in 0..n-1
+ix : (A : Type)(n : Int)(v : Vec A n)(i : Int) -> A
+
+{- conventions:
+  m: number of rows
+  n: number of cols
+  i: row index (valued in 0..m-1)
+  j: col index (valued in 0..n-1)
+
+  each row is a vector of n elements
+  each col is a vector of m elements
+
+  m_{i,j} is located at position ((i * n) + j) in m
+
+  Use (/ n) to get back i
+  Use (% n) to get back j
+-}
+
+row = \(A : Type)(m n : Int)(a : Vec A (m * n))(i : Int)-> proc(v : [: !A^n :])
+  split v [: v_i^n :].
+  slice (v_i) n as j
+    v_i <- (ix A (m * n) a ((i * n) + j))
+
+col = \(A : Type)(m n : Int)(a : Vec A (m * n))(j : Int)-> proc(v : [: !A^m :])
+  split v [: v_j^m :].
+  slice (v_j) m as i
+    v_j <- (ix A (m * n) a ((i * n) + j))
+
+matmult = \(m n p : Int)->
+           proc(a : ?Vec Double (m * n),
+                b : ?Vec Double (n * p),
+                c : [: !Double^(m * p) :])
+  let a' : Vec Double (m * n) <- a.
+  let b' : Vec Double (n * p) <- b.
+  split c   [: c_i_j^(m * p) :].
+  slice (c_i_j) (m * p) as ij
+    new/alloc [: u : [: !Double^n :], u' :].
+    @(row Double m n a' (ij / n))(u).
+    new/alloc [: v : [: !Double^n :], v' :].
+    @(col Double n p b' (ij % n))(v).
+    @(dotproduct n){u',v',c_i_j}
+
+matmult_4 = matmult 4 4 4
 -- Should be renamed merge_ParSort_seq_recv
 merger =
  \(m n : Int)->
@@ -624,6 +761,15 @@ mk_new_ann =
     new/ann [c : S, d : ~S]
     ( @p(c)
     | @q(d))
+mk_new_seq =
+  \(ann : Allocation)
+   (S : Session)
+   (p : <  Log S >)
+   (q : < ~Log S >)->
+  proc()
+    new/ann [: c : Log S, d :]
+    @p(c).
+    @q(d)
 mk_par2_LR =
   \ (S0 S1 : Session)
     (p0 : < S0 >)
@@ -664,12 +810,23 @@ mk_ten2_2new_2fwd =
   (p1 : < S1 >)->
   proc(c : [S0, S1])
   c[c0,c1]
-  new(d0 : ~S0, e0 : S0)
-  new(d1 : ~S1, e1 : S1)
+  new [d0 : ~S0, e0 : S0].
+  new [d1 : ~S1, e1 : S1].
   ( @p0(e0)
   | fwd S0 (c0, d0)
   | @p1(e1)
   | fwd S1 (c1, d1))
+
+{-
+mk_ten2_2new_2fwd_SInt_SDouble =
+  let mk_send = \(A : Type)(x : A)-> proc(c : !A) send c x in
+  mk_ten2_2new_2fwd (!Int) (!Double)
+    (mk_send Int 42) (mk_send Double 3.14)
+
+mk_ten2_2new_2fwd_SInt_SDouble =
+  mk_ten2_2new_2fwd (!Int) (!Double)
+    (proc(ci : !Int) send ci 42) (proc(cd : !Double) send cd 3.14)
+-}
 mk_tensor2 =
   \ (S0 S1 : Session)
     (p0 : < S0 >)
@@ -761,18 +918,34 @@ new_fused_ten_recv =
     | d{di,do}
       recv di (x : Int).
       send do (x + x))
+new_seq_par_par =
+  proc()
+  new [: cd: {!Int,!Bool}, ef: {?Int,?Bool} :].
+  split cd {c,d}.
+  split ef {e,f}.
+  c <- 1.
+  d <- `true.
+  let b : Bool <- f.
+  let i : Int  <- e
 -- Requires a mix
 no_dead_lock_new_new = proc()
-  new (c : ?Int, d)
-  new (e : ?Int, f)
+  new [c : ?Int, d].
+  new [e : ?Int, f].
   ( recv c (x : Int).
     send f x
   | send d 5
   | recv e (y : Int))
+no_dead_lock_new_new_seq = proc()
+  new [: d : !Int, c :]
+  new [: f : !Int, e :]
+  send d 5.
+  recv c (x : Int).
+  send f x.
+  recv e (y : Int)
 -- Requires a mix
 no_dead_lock_new_new_v2 = proc()
-  new (c : ?Int, d)
-  new (e : ?Int, f)
+  new [c : ?Int, d].
+  new [e : ?Int, f].
   ( send d 5
   | ( recv c (x : Int).
       send f x
@@ -875,12 +1048,36 @@ par_loli_ten_send_v2 =
   o[ss,st]
   ( send ss vs
   | send st vt)
+
+{-
+par_loli_ten_send_v3
+  :  (S T : Type)-> <{!S,!T} -o [!S,!T]>
+  = \(S T : Type)->
+ proc{[rs,rt],[ss,st]}
+  ( let vs : S = <-rs
+  | let vt : T = <-rt).
+  ( ss <- vs
+  | st <- vt)
+-}
 par_pat = proc(d : !Int, e : ?Int)
   @(proc (f) fwd 2 (!Int) f){d,e}
 par_seq_back = proc(a : {[:!Int,!Int:],!Int})
   a{b,e} b[:c,d:] send c 2 send d 3 send e 1
 par_seq_front = proc(a : {[:!Int,!Int:],!Int})
   a{b,e} b[:c,d:] send e 1 send c 2 send d 3
+-- should be infix _-:_
+seqi = \(S0 S1 : Session)-> [: ~S0, S1 :]
+
+par_seqi_ten_send =
+ \(A B : Type)->
+ proc(c : seqi {!A,!B} [!A,!B])
+  c[:i,o:]
+  i[rs,rt]
+  o[ss,st]
+  ( recv rs (vs : A)
+  | recv rt (vt : B)).
+  ( send ss vs
+  | send st vt)
 par_seq_middle = proc(a : {[:!Int,!Int:],!Int})
   a{b,e} b[:c,d:] send c 2 send e 1 send d 3
 par_seq_send3 = proc(a : {[:!Int,!Int:],!Int.!Int.!Int})
@@ -921,7 +1118,7 @@ plug_compose =
    (p : < A, B >)
    (q : < ~B, C >)->
   proc(a : A, c : C)
-    new(b : B, b' : ~B)
+    new [b : B, b' : ~B].
     ( @p(a, b)
     | @q(b', c))
 -- plug_compose_par_par is a variation over plug_compose which is derived from
@@ -931,7 +1128,7 @@ flat_par' =
   \(A B : Session)
    (p : < {A, B} >)->
   proc(a : A, b : B)
-    new(ab : {A, B}, nanb)
+    new [ab : {A, B}, nanb].
     ( @p(ab)
     | nanb[na,nb]
       ( fwd(A)(a,na)
@@ -949,7 +1146,7 @@ plug_compose' =
    (p : < A, B >)
    (q : < ~B, C >)->
   proc(a : A, c : C)
-    new(b : B, b' : ~B)
+    new [b : B, b' : ~B].
     ( @p(a, b)
     | @q(b', c))
 
@@ -1012,6 +1209,8 @@ replicate_proc =
   slice (o) n as _
     fwd(!A)(o,i)
 
+replicate_proc_Int_10 = replicate_proc Int 10
+
 -- Here is a version without this trick which relies on the persistency of
 -- the variables (not channels)
 replicate_proc_alt =
@@ -1021,14 +1220,28 @@ replicate_proc_alt =
   recv i (x : A).
   os[o^n]
   slice (o) n as _
-    new (j : ?A, k)
+    new [j : ?A, k].
     ( fwd(!A)(o,j)
     | send k x)
+
+replicate_proc_alt_Int_10 = replicate_proc_alt Int 10
 -- should be name enum_ten
 replicate_ten = proc(c : [!Int ^ 10])
   c[d^10]
   slice (d) 10 as i
     send d i
+rotate_seq =
+  \(A : Type)
+   (n : Int)->
+   proc(i : [: ?A ^(1 + n) :], o : [: !A ^(n + 1) :])
+   i[:iL, iH^n:]
+   o[:oL^n, oH:]
+   recv iL (xL : A).
+   -- TODO: fwd ?A ^ n (iH, oL).
+   (slice (iH, oL) n as _
+      fwd(?A)(iH, oL)).
+   send oH xL
+
 seq0_explicit =
   proc(c : [: :])
   c[: :]
@@ -1118,6 +1331,17 @@ switch
       ( fwd A (a,na)
       | fwd B (b,nb)
       | fwd C (c,nc))
+tabulate_seq =
+  \ (A : Type)
+    (f : (i : Int)-> A)
+    (n : Int)->
+  proc(a : [: !A^n :])
+    split a [: a_i^n :].
+    slice (a_i) n as i
+      a_i <- (f i)
+
+tabulate_seq_Double_40 =
+  tabulate_seq Double (\(i : Int)-> 1.0 -D (0.05 *D Int2Double i)) 41
 ten_loli_par =
  \(A B : Session)->
  proc(c : [A,B] -o {A,B})
@@ -1151,7 +1375,7 @@ tensor2_tensor0_tensor0_sequence = proc(cd : [[], []])
   cd[c,d] c[] d[]
 tensor2_using_dual = proc(c : [!Int,~!Int]) c[d,e](recv e (x : Int) | send d 42)
 test2 = proc()
-  new (c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d)
+  new [c : {?Int. !Int. ?Int, !Int. ?Int. !Int}, d].
   (
     c{c0,c1}
     recv c0 (x0 : Int)
@@ -1172,7 +1396,7 @@ test2 = proc()
     )
   )
 test3 = proc()
-  new (c : ?Int. [!Int, !Int], d)
+  new [c : ?Int. [!Int, !Int], d].
   (
     recv c (x0 : Int)
     c[c0,c1]
@@ -1183,7 +1407,7 @@ test3 = proc()
     ( recv d0 (y0 : Int) | recv d1 (z0 : Int) )
   )
 test4_inferred = proc(r)
-  new (c, d)
+  new [c, d].
   (
     recv c (x0 : Int)
     recv c (x1 : Int)
@@ -1195,7 +1419,7 @@ test4_inferred = proc(r)
     send d 3
   )
 test4 = proc(r : !Int)
-  new (c : ?Int. ?Int. ?Int, d)
+  new [c : ?Int. ?Int. ?Int, d].
   (
     recv c (x0 : Int)
     recv c (x1 : Int)
@@ -1328,6 +1552,13 @@ uncurry =
   ( fwd(S)(fx,x)
   | fwd(T)(fy,y)
   | fwd(U)(o,fo))
+With  = \(SL SR : Session)-> ?(b : LR). (case b of { `left -> SL, `right -> SR })
+with =
+  \(SL SR : Session)
+   (pL : < SL >)(pR : < SR >)->
+  proc(c : With SL SR)
+    recv c (x : LR).
+    @(case x of { `left -> pL, `right -> pR })(c)
 zap =
   \(S T : Session)(n : Int)->
   proc(c : [S -o T ^ n] -o [S ^ n] -o [T ^ n])

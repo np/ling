@@ -126,7 +126,7 @@ transNewPatt (SeqNewPatt chandecs) = L.SeqNewPatt (transChanDec <$> chandecs)
 
 transNewAlloc :: NewAlloc -> L.NewAlloc
 transNewAlloc (New newpatt) = L.New (transNewPatt newpatt)
-transNewAlloc (OldNew chandecs) = L.OldNew (transChanDec <$> chandecs)
+transNewAlloc (OldNew chandecs) = L.New (L.TenNewPatt (transChanDec <$> chandecs))
 transNewAlloc (NewSAnn term optsig newpatt) = L.NewSAnn (transTerm term) (transOptSig optsig) (transNewPatt newpatt)
 transNewAlloc (NewNAnn opnname allocterms newpatt) = L.NewNAnn (transOpName opnname) (transAllocTerm <$> allocterms) (transNewPatt newpatt)
 

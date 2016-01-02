@@ -66,10 +66,16 @@ data CPatt
     | ArrayP !TraverseKind ![CPatt]
   deriving (Eq, Ord, Show, Read)
 
+data NewPatt
+  = NewChans { _newKind :: !TraverseKind
+             , _newChans :: ![ChanDec] }
+  | NewChan  { _newChan :: !Channel
+             , _newSig  :: !(Maybe Typ) }
+  deriving (Eq, Ord, Show, Read)
+
 data Act
   = Nu       { _newAnns :: ![Term]
-             , _newKind :: !TraverseKind
-             , _newChans :: ![ChanDec] }
+             , _newPatt :: !NewPatt }
   -- TODO? Split Channel CPatt
   | Split    !TraverseKind !Channel ![ChanDec]
   | Send     !Channel !Term
@@ -147,9 +153,11 @@ makeLenses ''RFactor
 makeLenses ''Proc
 makeLenses ''Program
 makeLenses ''RSession
+makeLenses ''NewPatt
 makePrisms ''Literal
 makePrisms ''ChanDec
 makePrisms ''Act
+makePrisms ''NewPatt
 makePrisms ''Assertion
 makePrisms ''CPatt
 makePrisms ''Dec
@@ -272,9 +280,9 @@ kindSymbols = \case
   SeqK -> "[: ... :]"
 
 kindLabel :: TraverseKind -> String
-kindLabel ParK = "par/⅋"
-kindLabel TenK = "tensor/⊗"
-kindLabel SeqK = "sequence/»"
+kindLabel ParK = "par/⅋/{}"
+kindLabel TenK = "tensor/⊗/[]"
+kindLabel SeqK = "sequence/»/[::]"
 
 actLabel :: Act -> String
 actLabel = \case
@@ -285,16 +293,6 @@ actLabel = \case
   Ax{}        -> "fwd"
   At{}        -> "@"
   LetA{}      -> "let"
-
-actNeedsDot :: Act -> Bool
-actNeedsDot = \case
-  Nu{}       -> False
-  Split{}    -> False
-  Send{}     -> True
-  Recv{}     -> True
-  Ax{}       -> True
-  At{}       -> True
-  LetA{}     -> True
 
 isSendRecv :: Act -> Bool
 isSendRecv = \case

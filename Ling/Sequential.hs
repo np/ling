@@ -184,32 +184,31 @@ transNu (anns, k, cds)
   | otherwise = (anns, k, cds)
 -}
 
+transNew :: Defs -> NewPatt -> Endom Env
+transNew defs = \case
+  NewChans _ [] ->
+    id
+  NewChans _ cds0 ->
+    let
+      cds1 = [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
+      cds2@(Arg c0 c0S:_) = cds1 & each . argBody . _Just %~ unRepl
+                                  & unsafePartsOf (each . argBody) %~ extractDuals
+      l = Root c0
+    in
+    addLocs  (sessionStatus defs (const Empty) l c0S) .
+    addChans [(c,(l,oneS cS)) | Arg c cS <- cds2]
+  NewChan c os ->
+    error "Sequential.transNew: TODO"
+
 transAct :: Defs -> Act -> Endom Env
-transAct defs act =
-  case act of
-    Nu _ _ [] ->
-      id
-    Nu _ _ cds0 ->
-      let
-        cds1 = [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
-        cds2@(Arg c0 c0S:_) = cds1 & each . argBody . _Just %~ unRepl
-                                   & unsafePartsOf (each . argBody) %~ extractDuals
-        l = Root c0
-      in
-      addLocs  (sessionStatus defs (const Empty) l c0S) .
-      addChans [(c,(l,oneS cS)) | Arg c cS <- cds2]
-    Split _ c ds ->
-      transSplit c ds
-    Send c _ ->
-      actEnv c
-    Recv c _ ->
-      actEnv c
-    Ax{} ->
-      id
-    At{} ->
-      id
-    LetA ldefs ->
-      edefs <>~ ldefs
+transAct defs = \case
+  Nu _ newpatt -> transNew defs newpatt
+  Split _ c ds -> transSplit c ds
+  Send c _     -> actEnv c
+  Recv c _     -> actEnv c
+  Ax{}         -> id
+  At{}         -> id
+  LetA ldefs   -> edefs <>~ ldefs
 
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
 transProcs env p0s waiting k =

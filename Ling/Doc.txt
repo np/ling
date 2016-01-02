@@ -178,8 +178,8 @@ All other symbols are terminals.
   |  |  **|**  | //AllocTerm// //[AllocTerm]// 
   | //NewPatt// | -> | ``[`` //[ChanDec]// ``]`` 
   |  |  **|**  | ``[:`` //[ChanDec]// ``:]`` 
-  | //NewAlloc// | -> | ``new`` ``(`` //[ChanDec]// ``)`` 
-  |  |  **|**  | ``new`` //NewPatt// 
+  |  |  **|**  | ``(`` //Name// //OptSig// ``)`` 
+  | //NewAlloc// | -> | ``new`` //NewPatt// 
   |  |  **|**  | ``new/`` ``(`` //Term// //OptSig// ``)`` //NewPatt// 
   |  |  **|**  | //OpName// //[AllocTerm]// //NewPatt// 
 

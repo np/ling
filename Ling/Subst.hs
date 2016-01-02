@@ -71,12 +71,17 @@ instance (Subst a, Subst b) => Subst (a, b) where
 hide :: Fold s Name -> s -> Endom Defs
 hide f = composeMapOf f sans
 
+instance Subst NewPatt where
+  subst f = \case
+    NewChans k cs -> NewChans k (subst f cs)
+    NewChan c os  -> NewChan c (subst f os)
+
 instance Subst Act where
   subst f = \case
     Split k c ds -> Split k c (subst f ds)
     Send c e     -> Send c (subst f e)
     Recv c arg   -> Recv c (subst f arg)
-    Nu ann k cs  -> Nu (subst f ann) k (subst f cs)
+    Nu ann npatt -> Nu (subst f ann) (subst f npatt)
     LetA{}       -> LetA ø
     Ax s cs      -> Ax (subst f s) cs
     At t cs      -> At (subst f t) (subst f cs)

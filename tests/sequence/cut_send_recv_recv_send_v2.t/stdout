@@ -1,9 +1,9 @@
 
-{- Sequential program -}
+{- Sequential Expanded program -}
 
 cut_send_recv_recv_send_v2 =
   proc ()
-  new (c : !Int.?Int, d : ?Int.!Int)
+  new [c : !Int.?Int, d : ?Int.!Int].
   c <- 1.
   let y : Int <- d.
   d <- 2.

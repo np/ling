@@ -160,9 +160,9 @@ runErr (Bad s) = failIO s
 transOpts :: Opts -> [String]
 transOpts opts = execWriter $ do
   when (opts ^. doRefresh) $ tell ["Fresh"]
-  when (opts ^. doExpand)  $ tell ["Expanded"]
   when (opts ^. doSeq)     $ tell ["Sequential"]
   when (opts ^. doFuse)    $ tell ["Fused"]
+  when (opts ^. doExpand)  $ tell ["Expanded"]
 
 transP :: Opts -> Program -> IO ()
 transP opts prg = do
@@ -177,7 +177,7 @@ transP opts prg = do
       [] | opts ^. noNorm -> putStrLn $ "\n{- Pretty-printed program -}\n\n" ++ pretty prg
          | otherwise      -> putStrLn $ "\n{- Normalized program -}\n\n" ++ pretty nprg
       ts | opts ^. noNorm -> usage "--no-norm cannot be combined with --fresh, --expand, --seq, or --fuse"
-         | otherwise      -> putStrLn $ "\n{- " ++ unwords ts ++ " program -}\n\n" ++ pretty fprg
+         | otherwise      -> putStrLn $ "\n{- " ++ unwords ts ++ " program -}\n\n" ++ pretty eprg
   when (opts ^. compile) $
     putStrLn $ "\n/* C program */\n\n" ++ C.printTree cprg
 
@@ -185,13 +185,13 @@ transP opts prg = do
     nprg = norm prg
     rprg | opts ^. doRefresh = N.transProgramDecs (const hDec) nprg
          | otherwise         = nprg
-    eprg | opts ^. doExpand  = N.transProgramTerms subst rprg
+    sprg | opts ^. doSeq     = Sequential.transProgram rprg
          | otherwise         = rprg
-    sprg | opts ^. doSeq     = Sequential.transProgram eprg
-         | otherwise         = eprg
     fprg | opts ^. doFuse    = fuseProgram sprg
          | otherwise         = sprg
-    cprg = Compile.transProgram $ addPrims (opts ^. compilePrims) fprg
+    eprg | opts ^. doExpand  = N.transProgramTerms subst fprg
+         | otherwise         = fprg
+    cprg = Compile.transProgram $ addPrims (opts ^. compilePrims) eprg
 
 flagSpec :: [(String, (Endom Opts, String))]
 flagSpec =
@@ -199,12 +199,12 @@ flagSpec =
   [ ("check"        , add check                   , "Type check the program (default on)")
   , ("pretty"       , add showPretty              , "Display the program (can be combined with transformations)")
   , ("compile"      , add compile                 , "Display the compiled program (C language)")
-  , ("refresh"      , add doRefresh               , "Enable the internal renaming using fresh names")
   , ("expand"       , add doExpand                , "Rewrite the program with the definitions expanded")
   , ("fuse"         , add doFuse                  , "Display the fused program")
   , ("seq"          , add doSeq                   , "Display the sequential program")
-  , ("show-tokens"  , add showTokens              , "Display the program as a list of tokens from the lexer")
+  , ("refresh"      , add doRefresh               , "Enable the internal renaming using fresh names")
   , ("show-ast"     , add showAST                 , "Display the program as an Abstract Syntax Tree")
+  , ("show-tokens"  , add showTokens              , "Display the program as a list of tokens from the lexer")
   , ("debug-check"  , add debugCheck              , "Display debugging information while checking")
   , ("compile-prims", add compilePrims            , "Also compile the primitive definitions")
   , ("strict-par"   , add (checkOpts . strictPar) , "Make the checker stricter about pars (no mix rule)")

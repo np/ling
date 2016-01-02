@@ -199,17 +199,27 @@ instance Equiv RFactor where
 instance Equiv Session where
   equiv = equivAt tSession
 
+instance Equiv NewPatt where
+  equiv env np0 np1 = case (np0, np1) of
+    (NewChans k0 cds0, NewChans k1 cds1) ->
+      k0 == k1 &&
+      -- Annotations are ignored as they are semantic preserving
+      on (==)        (each %~ _cdChan) cds0 cds1 &&
+      on (equiv env) (each %~ _cdRepl) cds0 cds1
+    (NewChan c0 _os0, NewChan c1 _os1) ->
+      -- Type annotations are ignored as they are semantic preserving
+      c0 == c1
+    (NewChans{}, _) -> False
+    (NewChan{}, _) -> False
+
 -- NOTE that type and session annotations are ignored as in the `Abs` instance.
 instance Equiv Act where
   equiv env a0 a1 = case (a0 , a1) of
     (Recv c0 _b0, Recv c1 _b1) -> c0 == c1
     (Send c0 t0, Send c1 t1) -> c0 == c1 && equiv env t0 t1
     (At t0 p0, At t1 p1) -> equiv env t0 t1 && p0 == p1
-    (Nu _ann0 k0 cds0, Nu _ann1 k1 cds1) ->
-       k0 == k1 &&
-       -- Annotations are ignored as they are semantic preserving
-       on (==)        (each %~ _cdChan) cds0 cds1 &&
-       on (equiv env) (each %~ _cdRepl) cds0 cds1
+    (Nu _ann0 newpatt0, Nu _ann1 newpatt1) ->
+       equiv env newpatt0 newpatt1
     (Split k0 c0 cds0, Split k1 c1 cds1) ->
        (k0, c0) == (k1, c1) &&
        on (==)        (each %~ _cdChan) cds0 cds1 &&

@@ -32,9 +32,60 @@ char * showDouble_lin (const double n_lin);
 char * showChar_lin (const char c_lin);
 char * showString_lin (const char * s_lin);
 char * __plus__plus_S__lin (const char * s0_lin, const char * s1_lin);
+void ap_SInt_SBool_lin (struct {
+  struct {
+    int f0 ;
+    void * f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    void * f1 ;
+    }
+  f1 ;
+  }
+* c_lin){
+  const int x__x_lin = c_lin -> f1 . f0 ;
+  c_lin -> f0 . f0 = x__x_lin ;
+  const void * x__fo_lin = c_lin -> f0 . f1 ;
+  c_lin -> f1 . f1 = x__fo_lin ;
+  }
 void pnot_lin (void * c_lin){
   const void * x_lin = c_lin ;
   c_lin = x_lin == con_false ? con_true : con_false ;
+  }
+void com_new_SInt_lin () {
+  int c_lin ;
+  c_lin = 42 ;
+  const int x__q_lin = c_lin ;
+  }
+void curry_SInt_SBool_SDouble_lin (struct {
+  struct {
+    struct {
+      int f0 ;
+      void * f1 ;
+      }
+    f0 ;
+    double f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    struct {
+      void * f0 ;
+      double f1 ;
+      }
+    f1 ;
+    }
+  f1 ;
+  }
+* c_lin){
+  const int x__x_lin = c_lin -> f1 . f0 ;
+  c_lin -> f0 . f0 . f0 = x__x_lin ;
+  const void * x__y_lin = c_lin -> f1 . f1 . f0 ;
+  c_lin -> f0 . f0 . f1 = x__y_lin ;
+  const double x__fo_lin = c_lin -> f0 . f1 ;
+  c_lin -> f1 . f1 . f1 = x__fo_lin ;
   }
 void cutEmptyParTensor_lin () {
   }
@@ -136,16 +187,21 @@ void div_mod_server_simple_lin (const int * rm_lin, const int * rn_lin, int * sd
   * sdiv_lin = (m_lin / n_lin);
   * smod_lin = (m_lin % n_lin);
   }
-void double_lin (const int * i_lin, int * r_lin){
-  const int xi_lin = * i_lin ;
+void double_lin (const int * a_lin, int * b_lin){
+  const int x_lin = * a_lin ;
+  * b_lin = (x_lin + x_lin);
+  }
+void double_21_lin (int * b_lin){
   int c_lin ;
-  c_lin = xi_lin ;
+  c_lin = 21 ;
   const int x_lin = c_lin ;
-  c_lin = xi_lin ;
-  const int y_lin = c_lin ;
-  c_lin = (x_lin + y_lin);
-  const int z_lin = c_lin ;
-  * r_lin = z_lin ;
+  * b_lin = (x_lin + x_lin);
+  }
+void double_21_fused_lin (int * b_lin){
+  * b_lin = (21 + 21);
+  }
+void double_21_fused_and_reduced_lin (int * b_lin){
+  * b_lin = 42 ;
   }
 void send_42_lin (int * c_lin){
   * c_lin = 42 ;
@@ -166,6 +222,29 @@ void fake_div_mod_server_ten2_lin (const struct {
   s_lin -> f1 = 21 ;
   const int m_lin = r_lin -> f0 ;
   const int n_lin = r_lin -> f1 ;
+  }
+void feed_fwd_send_then_recv_Int_String_42_showInt_lin () {
+  struct {
+    union {
+      int u0 ;
+      char * u1 ;
+      }
+    f0 ;
+    union {
+      int u0 ;
+      char * u1 ;
+      }
+    f1 ;
+    }
+  a_lin ;
+  a_lin . f1 = 42 ;
+  const int x__c__1__p_lin = a_lin . f1 ;
+  a_lin . f0 = x__c__1__p_lin ;
+  const int x_lin = a_lin . f0 ;
+  a_lin . f0 = showInt_lin (x_lin);
+  const char * x__c__0__p_lin = a_lin . f0 ;
+  a_lin . f1 = x__c__0__p_lin ;
+  const char * o_lin = a_lin . f1 ;
   }
 void fwd0_snd0_lin (const struct {
   }
@@ -427,6 +506,38 @@ void fwd_ten2_par2_lin (struct {
   i_lin -> f1 = x__o__1_lin ;
   const int x__i__1_lin = i_lin -> f1 ;
   o_lin -> f1 = x__i__1_lin ;
+  }
+void group_nested_seq_SInt_SDouble_SBool_SString_lin (struct {
+  struct {
+    struct {
+      int f0 ;
+      double f1 ;
+      }
+    f0 ;
+    struct {
+      void * f0 ;
+      char * f1 ;
+      }
+    f1 ;
+    }
+  f0 ;
+  struct {
+    int f0 ;
+    double f1 ;
+    void * f2 ;
+    char * f3 ;
+    }
+  f1 ;
+  }
+* c_lin){
+  const int x__a_lin = c_lin -> f0 . f0 . f0 ;
+  c_lin -> f1 . f0 = x__a_lin ;
+  const double x__b_lin = c_lin -> f0 . f0 . f1 ;
+  c_lin -> f1 . f1 = x__b_lin ;
+  const void * x__c_lin = c_lin -> f0 . f1 . f0 ;
+  c_lin -> f1 . f2 = x__c_lin ;
+  const char * x__d_lin = c_lin -> f0 . f1 . f1 ;
+  c_lin -> f1 . f3 = x__d_lin ;
   }
 void * id_lin (const int A_lin, const void * x_lin);
 void idproc_lin (const int * c_lin, int * d_lin){
@@ -767,6 +878,33 @@ void replicate_par_lin (int c_lin [10]) {
   i_lin < 10 ;
   i_lin = i_lin + 1){
     c_lin [i_lin]= i_lin ;
+    } ;
+  }
+void replicate_proc_Int_10_lin (struct {
+  int f0 ;
+  int f1 [10];
+  }
+* c_lin){
+  for (int __lin = 0 ;
+  __lin < 10 ;
+  __lin = __lin + 1){
+    const int x__i_lin = c_lin -> f0 ;
+    c_lin -> f1 [__lin]= x__i_lin ;
+    } ;
+  }
+void replicate_proc_alt_Int_10_lin (struct {
+  int f0 ;
+  int f1 [10];
+  }
+* c_lin){
+  const int x_lin = c_lin -> f0 ;
+  for (int __lin = 0 ;
+  __lin < 10 ;
+  __lin = __lin + 1){
+    int j_lin ;
+    j_lin = x_lin ;
+    const int x__j_lin = j_lin ;
+    c_lin -> f1 [__lin]= x__j_lin ;
     } ;
   }
 void replicate_ten_lin (int c_lin [10]) {

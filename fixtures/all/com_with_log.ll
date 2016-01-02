@@ -5,9 +5,9 @@ com_with_log =
   (q : <     ~S >)
   (s : < ~Log S >)->
   proc()
-  new(c : S,      c' : ~S)
-  new(d : ~S,     d' : S)
-  new(l : ~Log S, l' : Log S)
+  new [c : S,      c' : ~S].
+  new [d : ~S,     d' : S].
+  new [l : ~Log S, l' : Log S].
   ( @p(c)
   | @q(d)
   | @s(l)

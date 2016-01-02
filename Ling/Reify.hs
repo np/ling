@@ -86,7 +86,7 @@ instance Norm Proc where
   type Normalized Proc        = N.Proc
   reify = \case
     N.Act act -> reifyAct act
-    proc0 `N.Dot` proc1 -> reifyDot proc0 (reify proc1)
+    proc0 `N.Dot` proc1 -> reify proc0 `pDot` reify proc1
     N.Procs (Prll procs) -> pPrll $ reify procs
     N.NewSlice cs t x p ->
       NewSlice ((justChannel #) <$> cs) (t ^. N.rterm . reified) x (reify p)
@@ -110,11 +110,11 @@ kTopPatt = \case
   N.ParK -> ParTopPatt
   N.SeqK -> SeqTopPatt
 
-kNewPatt :: N.TraverseKind -> [ChanDec] -> NewPatt
-kNewPatt = \case
+newChans :: N.TraverseKind -> [ChanDec] -> NewPatt
+newChans = \case
   N.TenK -> TenNewPatt
   N.SeqK -> SeqNewPatt
-  N.ParK -> error "kNewPatt: IMPOSSIBLE"
+  N.ParK -> error "newChans: IMPOSSIBLE"
 
 instance Norm CPatt where
   type Normalized CPatt = N.CPatt
@@ -136,11 +136,6 @@ instance Norm TopCPatt where
     TenTopPatt ps   -> N.ArrayP N.TenK (norm ps)
     ParTopPatt ps   -> N.ArrayP N.ParK (norm ps)
     SeqTopPatt ps   -> N.ArrayP N.SeqK (norm ps)
-
-reifyDot :: N.Proc -> Endom Proc
-reifyDot = \case
-  N.Act act | not (N.actNeedsDot act) -> pNxt (reifyAct act)
-  proc0 -> pDot (reify proc0)
 
 justChannel :: Iso' ChanDec Name
 justChannel = iso go (\c-> CD c One NoSession)
@@ -167,7 +162,7 @@ normAct = \case
     SplitAx  n s c    -> toProc ... (splitAx        n (norm s) c)
 -}
 
-    Nu newalloc       -> toProc $ N._Nu # (\(x,(y,z))->(x,y,z)) (norm newalloc)
+    Nu newalloc       -> toProc $ N._Nu # norm newalloc
     ParSplit c ds     -> toProc $ N.Split N.ParK (unSplit c) (norm ds)
     TenSplit c ds     -> toProc $ N.Split N.TenK (unSplit c) (norm ds)
     SeqSplit c ds     -> toProc $ N.Split N.SeqK (unSplit c) (norm ds)
@@ -201,7 +196,7 @@ newRecv c (VD x os) = NewRecv x os c
 
 reifyAct :: N.Act -> Proc
 reifyAct = \case
-  N.Nu anns k cs      -> PAct $ Nu (reify (anns, (k, cs)))
+  N.Nu anns newpatt   -> PAct $ Nu (reify (anns, newpatt))
   N.Split N.ParK c ds -> PAct $ ParSplit (SoSplit c) (reify ds)
   N.Split N.TenK c ds -> PAct $ TenSplit (SoSplit c) (reify ds)
   N.Split N.SeqK c ds -> PAct $ SeqSplit (SoSplit c) (reify ds)
@@ -366,25 +361,25 @@ instance Norm AllocTerm where
   norm (AParen t os) = N.optSig (norm t) (norm os)
 
 instance Norm NewPatt where
-  type Normalized NewPatt = (N.TraverseKind, [N.ChanDec])
-  reify (k, cds) = kNewPatt k (reify cds)
-  norm (TenNewPatt cds) = (N.TenK, norm cds)
-  norm (SeqNewPatt cds) = (N.SeqK, norm cds)
+  type Normalized NewPatt = N.NewPatt
+  reify = \case
+    N.NewChans k cds -> newChans k (reify cds)
+    N.NewChan c os   -> CntNewPatt (reify c) (reify os)
 
-oldNew :: NewPatt -> NewAlloc
-oldNew (TenNewPatt cds) = OldNew cds
-oldNew newpatt          = New newpatt
+  norm = \case
+    TenNewPatt cds  -> N.NewChans N.TenK $ norm cds
+    SeqNewPatt cds  -> N.NewChans N.SeqK $ norm cds
+    CntNewPatt c os -> N.NewChan  (norm c) (norm os)
 
 instance Norm NewAlloc where
-  type Normalized NewAlloc = ([N.Term], (N.TraverseKind, [N.ChanDec]))
+  type Normalized NewAlloc = ([N.Term], N.NewPatt)
   reify (os, kcds) =
     case os of
-      [] -> oldNew (reify kcds)
+      [] -> New (reify kcds)
       [N.Def (Name d) ts] -> NewNAnn (OpName ("new/" ++ d)) (reify ts) (reify kcds)
       [t] -> NewSAnn (reify t) NoSig (reify kcds)
       _ -> error "reify/NewAlloc: IMPOSSIBLE"
   norm (New newpatt) = ([], norm newpatt)
-  norm (OldNew cds) = ([], (N.TenK, norm cds))
   norm (NewSAnn t os newpatt) = ([N.optSig (norm t) (norm os)], norm newpatt)
   norm (NewNAnn (OpName newd) ts newpatt)
     | Just d <- newd ^? prefixed "new/" = ([N.Def (Name d) (norm ts)], norm newpatt)

@@ -52,13 +52,15 @@ doFuse anns =
       | i > 0     -> Just $ anns & each . _AllocAnn . _Fuse %~ pred
       | otherwise -> Nothing
 
+type NU = [ChanDec] -> Act
+
 fuseDot :: Op2 Proc
 fuseDot = \case
-  Act (Nu anns k cds) | Just anns' <- doFuse anns ->
-    case cds of
-      [c, d] -> fuseProc . fuseChanDecs (anns', k) [(c, d)]
-      _      -> error . unlines $ [ "Unsupported fusion for multi-sided `new` " ++ pretty cds
-                                  , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
+  Act (Nu anns newpatt) | Just anns' <- doFuse anns ->
+    case newpatt of
+      NewChans k [c, d] -> fuseProc . fuseChanDecs (Nu anns' . NewChans k) [(c, d)]
+      _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty newpatt
+                             , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
   proc0@NewSlice{} -> (fuseProc proc0 `dotP`) . fuseProc
   proc0 -> (proc0 `dotP`) . fuseProc
 
@@ -72,16 +74,17 @@ fuseProc = \case
   Procs procs -> Procs $ over each fuseProc procs
   NewSlice cs t x proc0 -> NewSlice cs t x $ fuseProc proc0
 
-fuseChanDecs :: ([Allocation], TraverseKind) -> [(ChanDec,ChanDec)] -> Endom Proc
-fuseChanDecs _    []           = id
-fuseChanDecs anns ((c0,c1):cs) = fuse2Chans anns c0 c1 . fuseChanDecs anns cs
+fuseChanDecs :: NU -> [(ChanDec,ChanDec)] -> Endom Proc
+fuseChanDecs _  []           = id
+fuseChanDecs nu ((c0,c1):cs) = fuse2Chans nu c0 c1 . fuseChanDecs nu cs
 
-fuseSendRecv :: ([Allocation], TraverseKind) -> ChanDec -> Term -> ChanDec -> VarDec -> Order Act
-fuseSendRecv (anns, k) c0 e c1 (Arg x mty) =
-  Order [LetA (aDef x mty e), Nu anns k ([c0,c1] & each . cdSession . _Just . rsession %~ sessionStep)]
+fuseSendRecv :: NU -> ChanDec -> Term -> ChanDec -> VarDec -> Order Act
+fuseSendRecv nu c0 e c1 (Arg x mty) =
+  Order [LetA (aDef x mty e), nu ([c0,c1] & each . cdSession . _Just . rsession %~ sessionStep)]
 
-nu2 :: ([Allocation], TraverseKind) -> ChanDec -> ChanDec -> Act
-nu2 (anns, k) c0 c1 = Nu anns k [c0,c1]
+two :: ([a] -> b) -> a -> a -> b
+two f x y = f [x, y]
+
 {-
 new(c : {A,B}, d : [~A,~B])
 
@@ -89,13 +92,13 @@ new(c0 : A, d0 : ~A)
 new(c1 : B, d1 : ~B)
 -}
 
-fuse2Acts :: ([Allocation], TraverseKind) -> ChanDec -> Act -> ChanDec -> Act -> Order Act
-fuse2Acts anns c0 act0 c1 act1 =
+fuse2Acts :: NU -> ChanDec -> Act -> ChanDec -> Act -> Order Act
+fuse2Acts nu c0 act0 c1 act1 =
   case (act0, act1) of
-    (Split _k0 _c0 cs0, Split _k1 _c1 cs1) -> Order $ zipWith (nu2 anns) cs0 cs1
+    (Split _k0 _c0 cs0, Split _k1 _c1 cs1) -> Order $ zipWith (two nu) cs0 cs1
               -- By typing, k0 and k1 should match, we could assert that for debugging.
-    (Send _d0 e,   Recv _d1 arg) -> fuseSendRecv anns c0 e c1 arg
-    (Recv _d0 arg, Send _d1 e)   -> fuseSendRecv anns c1 e c0 arg
+    (Send _d0 e,   Recv _d1 arg) -> fuseSendRecv nu c0 e c1 arg
+    (Recv _d0 arg, Send _d1 e)   -> fuseSendRecv nu c1 e c0 arg
               -- By typing, (c0,c1) and (d0,d1) should be equal, we could assert that for debugging.
     (Split{}, _)    -> error "fuse2Acts/Split: IMPOSSIBLE `split` should match another `split`"
     (Send{}, _)     -> error "fuse2Acts/Send: IMPOSSIBLE `send` should match `recv`"
@@ -105,8 +108,8 @@ fuse2Acts anns c0 act0 c1 act1 =
     (Ax{}, _)       -> error "fuse2Acts/Ax: should be expanded before"
     (At{}, _)       -> error "fuse2Acts/At: should be expanded before"
 
-fuse2Chans :: ([Allocation], TraverseKind) -> ChanDec -> ChanDec -> Endom Proc
-fuse2Chans anns cd0 cd1 p0 =
+fuse2Chans :: NU -> ChanDec -> ChanDec -> Endom Proc
+fuse2Chans nu cd0 cd1 p0 =
   case mact0 of
     Nothing -> p0 -- error "fuse2Chans: mact0 is Nothing"
     Just actA ->
@@ -120,7 +123,7 @@ fuse2Chans anns cd0 cd1 p0 =
         Nothing ->
           error $ "fuse2Chans: cannot find " ++ pretty (cdB ^. cdChan) ++ " in " ++ pretty p0
         Just actB ->
-          p0 & fetchActProc predA .~ toProc (fuse2Acts anns cdA actA cdB actB)
+          p0 & fetchActProc predA .~ toProc (fuse2Acts nu cdA actA cdB actB)
              & fetchActProc predB .~ ø
   where
     c0 = cd0 ^. cdChan

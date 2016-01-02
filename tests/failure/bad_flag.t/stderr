@@ -6,12 +6,12 @@ option ::=
   | --check         # Type check the program (default on)
   | --pretty        # Display the program (can be combined with transformations)
   | --compile       # Display the compiled program (C language)
-  | --refresh       # Enable the internal renaming using fresh names
   | --expand        # Rewrite the program with the definitions expanded
   | --fuse          # Display the fused program
   | --seq           # Display the sequential program
-  | --show-tokens   # Display the program as a list of tokens from the lexer
+  | --refresh       # Enable the internal renaming using fresh names
   | --show-ast      # Display the program as an Abstract Syntax Tree
+  | --show-tokens   # Display the program as a list of tokens from the lexer
   | --debug-check   # Display debugging information while checking
   | --compile-prims # Also compile the primitive definitions
   | --strict-par    # Make the checker stricter about pars (no mix rule)

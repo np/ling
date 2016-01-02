@@ -180,10 +180,10 @@ instance Print NewPatt where
   prt i e = case e of
     TenNewPatt chandecs -> prPrec i 0 (concatD [doc (showString "["), prt 0 chandecs, doc (showString "]")])
     SeqNewPatt chandecs -> prPrec i 0 (concatD [doc (showString "[:"), prt 0 chandecs, doc (showString ":]")])
+    CntNewPatt name optsig -> prPrec i 0 (concatD [doc (showString "("), prt 0 name, prt 0 optsig, doc (showString ")")])
 
 instance Print NewAlloc where
   prt i e = case e of
-    OldNew chandecs -> prPrec i 0 (concatD [doc (showString "new"), doc (showString "("), prt 0 chandecs, doc (showString ")")])
     New newpatt -> prPrec i 0 (concatD [doc (showString "new"), prt 0 newpatt])
     NewSAnn term optsig newpatt -> prPrec i 0 (concatD [doc (showString "new/"), doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")"), prt 0 newpatt])
     NewNAnn opname allocterms newpatt -> prPrec i 0 (concatD [prt 0 opname, prt 0 allocterms, prt 0 newpatt])
@@ -241,3 +241,7 @@ instance Print N.RFactor where
 instance Print N.ChanDec where
   prt     i cd = prt i (reify cd :: ChanDec)
   prtList i cds = prtList i (map reify cds :: [ChanDec])
+
+instance Print N.NewPatt where
+  prt     i cd = prt i (reify cd :: NewPatt)
+  prtList i cds = prtList i (map reify cds :: [NewPatt])

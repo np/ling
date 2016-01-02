@@ -6,8 +6,8 @@ mk_ten2_2new_2fwd =
   (p1 : < S1 >)->
   proc(c : [S0, S1])
   c[c0,c1]
-  new(d0 : ~S0, e0 : S0)
-  new(d1 : ~S1, e1 : S1)
+  new [d0 : ~S0, e0 : S0].
+  new [d1 : ~S1, e1 : S1].
   ( @p0(e0)
   | fwd S0 (c0, d0)
   | @p1(e1)
