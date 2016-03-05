@@ -171,7 +171,7 @@ transP opts prg = do
     cpprint prg
   when (opts ^. check) $ do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not (opts ^. noPrims)) $ nprg
-    putStrLn "Checking Sucessful!"
+    putStrLn "Checking successful!"
   when (opts ^. showPretty) $
     case transOpts opts of
       [] | opts ^. noNorm -> putStrLn $ "\n{- Pretty-printed program -}\n\n" ++ pretty prg
