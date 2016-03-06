@@ -1,94 +1,212 @@
-name:                ling
-version:             0.1.0.0
--- synopsis:
--- description:
-license:             BSD3
-license-file:        LICENSE
-author:              Nicolas Pouillard
-maintainer:          nicolas.pouillard@gmail.com
--- copyright:
-category:            Language
-build-type:          Simple
--- extra-source-files:
-cabal-version:       >=1.10
+-- This file has been generated from package.yaml by hpack version 0.10.0.
+--
+-- see: https://github.com/sol/hpack
 
-executable Ling
-  main-is: Ling.hs
-  ghc-options:       -Wall -O0
-  other-modules:
-   Ling.Abs,
-   Ling.Check.Base,
-   Ling.Check.Core,
-   Ling.Check.Program,
-   Ling.Compile.C,
-   Ling.Defs,
-   Ling.Equiv,
-   Ling.ErrM,
-   Ling.Free,
-   Ling.Fuse,
-   Ling.Layout,
-   Ling.Lex,
-   Ling.Norm,
-   Ling.Par,
-   Ling.Prelude,
-   Ling.Print.Class,
-   Ling.Print,
-   Ling.Proc,
-   Ling.Proto,
-   Ling.Proto.Skel,
-   Ling.Raw,
-   Ling.Reduce,
-   Ling.Reify,
-   Ling.Rename,
-   Ling.Scoped,
-   Ling.Sequential,
-   Ling.Session,
-   Ling.Subst,
-   Ling.SubTerms,
-   MiniC.Abs,
-   MiniC.Lex,
-   MiniC.Par,
-   MiniC.Print
+name:           ling
+version:        0.1.0.0
+category:       Language
+homepage:       https://github.com/np/ling#readme
+bug-reports:    https://github.com/np/ling/issues
+author:         Nicolas Pouillard <nicolas.pouillard@gmail.com>
 
-  -- other-extensions:
-  build-depends:       base >=4.7 && <4.9, array, containers, SHA,
-                       lens, mtl >=2.2.1, template-haskell
-                       -- , ghci-pretty
-  build-tools:         alex, happy
-  -- hs-source-dirs:
-  default-language:    Haskell2010
+maintainer:     nicolas.pouillard@gmail.com
+copyright:      2015-2016 Nicolas Pouillard
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+source-repository head
+  type: git
+  location: https://github.com/np/ling
+
+library
+  hs-source-dirs:
+      .
+  build-depends:
+      base >=4.7 && <4.9
+    , array
+    , containers
+    , SHA
+    , lens
+    , mtl >=2.2.1
+    , template-haskell
+  exposed-modules:
+      Ling
+      Ling.Abs
+      Ling.Check.Base
+      Ling.Check.Core
+      Ling.Check.Program
+      Ling.Compile.C
+      Ling.Defs
+      Ling.Equiv
+      Ling.ErrM
+      Ling.Fmt
+      Ling.Fmt.Albert.Abs
+      Ling.Fmt.Albert.Layout
+      Ling.Fmt.Albert.Migrate
+      Ling.Fmt.Albert.Print
+      Ling.Fmt.Albert.Skel
+      Ling.Fmt.Albert.Test
+      Ling.Fmt.Benjamin.Abs
+      Ling.Fmt.Benjamin.Layout
+      Ling.Fmt.Benjamin.Migrate
+      Ling.Fmt.Benjamin.Print
+      Ling.Fmt.Benjamin.Skel
+      Ling.Fmt.Benjamin.Test
+      Ling.Free
+      Ling.Fuse
+      Ling.Fwd
+      Ling.Layout
+      Ling.Norm
+      Ling.Prelude
+      Ling.Print
+      Ling.Print.Class
+      Ling.Proc
+      Ling.Proto
+      Ling.Proto.Skel
+      Ling.Raw
+      Ling.Reduce
+      Ling.Reify
+      Ling.Rename
+      Ling.Scoped
+      Ling.Sequential
+      Ling.Session
+      Ling.Skel
+      Ling.Subst
+      Ling.SubTerms
+      Ling.Test
+      Ling.Type
+      MiniC.Abs
+      MiniC.Print
+      MiniC.Skel
+      MiniC.Test
+  default-language: Haskell2010
 
 executable ling-fmt
   main-is: Ling/Fmt.hs
-  ghc-options: -Wall -O0
+  hs-source-dirs:
+      .
+  build-depends:
+      base >=4.7 && <4.9
+    , array
+    , containers
+    , SHA
+    , lens
+    , mtl >=2.2.1
+    , template-haskell
+    , ling
   other-modules:
-   Ling.Abs,
-   Ling.ErrM,
-   Ling.Fmt.Albert.Abs,
-   Ling.Fmt.Albert.Layout,
-   Ling.Fmt.Albert.Lex,
-   Ling.Fmt.Albert.Migrate,
-   Ling.Fmt.Albert.Par,
-   Ling.Fmt.Benjamin.Abs,
-   Ling.Fmt.Benjamin.Layout,
-   Ling.Fmt.Benjamin.Lex,
-   Ling.Fmt.Benjamin.Migrate,
-   Ling.Fmt.Benjamin.Par,
-   Ling.Free,
-   Ling.Norm,
-   Ling.Prelude,
-   Ling.Print.Class,
-   Ling.Print,
-   Ling.Proc,
-   Ling.Raw,
-   Ling.Reify,
-   Ling.Rename,
-   Ling.Scoped,
-   Ling.Session
+      Ling
+      Ling.Abs
+      Ling.Check.Base
+      Ling.Check.Core
+      Ling.Check.Program
+      Ling.Compile.C
+      Ling.Defs
+      Ling.Equiv
+      Ling.ErrM
+      Ling.Fmt.Albert.Abs
+      Ling.Fmt.Albert.Layout
+      Ling.Fmt.Albert.Migrate
+      Ling.Fmt.Albert.Print
+      Ling.Fmt.Albert.Skel
+      Ling.Fmt.Albert.Test
+      Ling.Fmt.Benjamin.Abs
+      Ling.Fmt.Benjamin.Layout
+      Ling.Fmt.Benjamin.Migrate
+      Ling.Fmt.Benjamin.Print
+      Ling.Fmt.Benjamin.Skel
+      Ling.Fmt.Benjamin.Test
+      Ling.Free
+      Ling.Fuse
+      Ling.Fwd
+      Ling.Layout
+      Ling.Norm
+      Ling.Prelude
+      Ling.Print
+      Ling.Print.Class
+      Ling.Proc
+      Ling.Proto
+      Ling.Proto.Skel
+      Ling.Raw
+      Ling.Reduce
+      Ling.Reify
+      Ling.Rename
+      Ling.Scoped
+      Ling.Sequential
+      Ling.Session
+      Ling.Skel
+      Ling.Subst
+      Ling.SubTerms
+      Ling.Test
+      Ling.Type
+      MiniC.Abs
+      MiniC.Print
+      MiniC.Skel
+      MiniC.Test
+  default-language: Haskell2010
 
-  -- other-extensions:
-  build-depends:       base >=4.7 && <4.9, array, containers, SHA,
-                       lens, mtl >=2.2.1, template-haskell
-  build-tools:         alex, happy
-  -- hs-source-dirs:
-  default-language:    Haskell2010
+executable ling
+  main-is: Ling.hs
+  hs-source-dirs:
+      .
+  build-depends:
+      base >=4.7 && <4.9
+    , array
+    , containers
+    , SHA
+    , lens
+    , mtl >=2.2.1
+    , template-haskell
+    , ling
+  other-modules:
+      Ling.Abs
+      Ling.Check.Base
+      Ling.Check.Core
+      Ling.Check.Program
+      Ling.Compile.C
+      Ling.Defs
+      Ling.Equiv
+      Ling.ErrM
+      Ling.Fmt
+      Ling.Fmt.Albert.Abs
+      Ling.Fmt.Albert.Layout
+      Ling.Fmt.Albert.Migrate
+      Ling.Fmt.Albert.Print
+      Ling.Fmt.Albert.Skel
+      Ling.Fmt.Albert.Test
+      Ling.Fmt.Benjamin.Abs
+      Ling.Fmt.Benjamin.Layout
+      Ling.Fmt.Benjamin.Migrate
+      Ling.Fmt.Benjamin.Print
+      Ling.Fmt.Benjamin.Skel
+      Ling.Fmt.Benjamin.Test
+      Ling.Free
+      Ling.Fuse
+      Ling.Fwd
+      Ling.Layout
+      Ling.Norm
+      Ling.Prelude
+      Ling.Print
+      Ling.Print.Class
+      Ling.Proc
+      Ling.Proto
+      Ling.Proto.Skel
+      Ling.Raw
+      Ling.Reduce
+      Ling.Reify
+      Ling.Rename
+      Ling.Scoped
+      Ling.Sequential
+      Ling.Session
+      Ling.Skel
+      Ling.Subst
+      Ling.SubTerms
+      Ling.Test
+      Ling.Type
+      MiniC.Abs
+      MiniC.Print
+      MiniC.Skel
+      MiniC.Test
+  default-language: Haskell2010

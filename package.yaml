@@ -1,0 +1,40 @@
+name:                ling
+version:             0.1.0.0
+# synopsis:
+# description:
+license:             BSD3
+author: >
+  Nicolas Pouillard <nicolas.pouillard@gmail.com>
+maintainer:          nicolas.pouillard@gmail.com
+copyright:           2015-2016 Nicolas Pouillard
+github:              np/ling
+category:            Language
+
+dependencies:
+- base >=4.7 && <4.9
+- array
+- containers
+- SHA
+- lens
+- mtl >=2.2.1
+- template-haskell
+
+# - ghci-pretty <= ..
+
+library:
+  source-dirs: .
+
+#build-tools:
+#- alex
+#- happy
+
+executables:
+  ling:
+    main: Ling.hs
+    source-dirs: .
+    dependencies: ling
+
+  ling-fmt:
+    main: Ling/Fmt.hs
+    source-dirs: .
+    dependencies: ling
