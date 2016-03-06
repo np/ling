@@ -291,4 +291,3 @@ isLayoutClose = isTokenIn [layoutClose]
 -- | Get the number of characters in the token.
 tokenLength :: Token -> Int
 tokenLength t = length $ prToken t
-

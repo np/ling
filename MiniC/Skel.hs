@@ -113,4 +113,3 @@ transLVal x = case x of
   LFld lval ident -> failure x
   LArr lval exp -> failure x
   LPtr lval -> failure x
-

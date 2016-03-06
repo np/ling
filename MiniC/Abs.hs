@@ -100,4 +100,3 @@ data LVal
     | LArr LVal Exp
     | LPtr LVal
   deriving (Eq, Ord, Show, Read)
-

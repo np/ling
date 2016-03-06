@@ -148,4 +148,3 @@ transNewAlloc x = case x of
   New newpatt -> failure x
   NewSAnn term optsig newpatt -> failure x
   NewNAnn opname allocterms newpatt -> failure x
-

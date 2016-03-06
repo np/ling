@@ -141,4 +141,3 @@ data NewAlloc
     | NewSAnn Term OptSig NewPatt
     | NewNAnn OpName [AllocTerm] NewPatt
   deriving (Eq, Ord, Show, Read)
-
