@@ -266,4 +266,3 @@ instance Print NewAlloc where
     New newpatt -> prPrec i 0 (concatD [doc (showString "new"), prt 0 newpatt])
     NewSAnn term optsig newpatt -> prPrec i 0 (concatD [doc (showString "new/"), doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")"), prt 0 newpatt])
     NewNAnn opname allocterms newpatt -> prPrec i 0 (concatD [prt 0 opname, prt 0 allocterms, prt 0 newpatt])
-

@@ -212,4 +212,3 @@ instance Print LVal where
     LFld lval id -> prPrec i 2 (concatD [prt 2 lval, doc (showString "."), prt 0 id])
     LArr lval exp -> prPrec i 2 (concatD [prt 2 lval, doc (showString "["), prt 0 exp, doc (showString "]")])
     LPtr lval -> prPrec i 0 (concatD [doc (showString "*"), prt 2 lval])
-
