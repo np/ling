@@ -86,10 +86,10 @@ two :: ([a] -> b) -> a -> a -> b
 two f x y = f [x, y]
 
 {-
-new(c : {A,B}, d : [~A,~B])
+new[c : {A,B}, d : [~A,~B]]
 
-new(c0 : A, d0 : ~A)
-new(c1 : B, d1 : ~B)
+new[c0 : A, d0 : ~A]
+new[c1 : B, d1 : ~B]
 -}
 
 fuse2Acts :: NU -> ChanDec -> Act -> ChanDec -> Act -> Order Act

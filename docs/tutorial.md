@@ -164,7 +164,7 @@ hence `42`.
 
 ~~~{.haskell}
 double_21 = proc(sdbl : !Int)
-  new (rn : ?Int, sn : !Int)
+  new [rn : ?Int, sn : !Int]
   ( @double_server(rn, sdbl)
   | send sn 21)
 ~~~
@@ -175,7 +175,7 @@ to match the ones in the reference. Here is the previous example, expanded:
 
 ```{.haskell}
 double_21_expanded = proc(sdbl : !Int)
-  new (rn : ?Int, sn : !Int)
+  new [rn : ?Int, sn : !Int]
   ( recv rn   (n : Int).
     send sdbl (n + n)
   | send sn 21)
@@ -184,7 +184,7 @@ double_21_expanded = proc(sdbl : !Int)
 The semantics of `double_21(s)` is equivalent to `send s 42`.
 
 More generally the process
-`new (r : ?A, s : !A) (recv r (n : A). P | send s t. Q)`
+`new [r : ?A, s : !A] (recv r (n : A). P | send s t. Q)`
 is equivalent to the process
 `(P[n := t] | Q)` where one substitutes `t` for `n` in `P`.
 

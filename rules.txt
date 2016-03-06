@@ -1,3 +1,6 @@
+WARNING this document is outdated.
+In particular the use of skeletons is important.
+
 map f C = {f E | E ∈ C}
 indep D C = map (∩ D) C ≢ {D}
 subst D c E = fold D (λ d E → E := E[d:=c]) E
@@ -54,7 +57,7 @@ D  := {d,d'}
 C' := map (/D) C
 indep D C
 --------------------------------
-Γ => new (d:S,d':~S) P => Δ', C'
+Γ => new [d:S,d':~S] P => Δ', C'
 
 
 TODO:

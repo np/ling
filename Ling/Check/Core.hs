@@ -175,6 +175,9 @@ checkNewPatt proto = \case
 
 
 {-
+WARNING this comment is outdated.
+In particular the use of skeletons is important.
+
 Γ(P) is the protocol, namely mapping from channel to sessions of the process P
 Δ(P) is the set of sequential channels, namely each set of C ∈ Δ(P) is a set
          of channels used in the same process, thus they cannot be in "tensor"
@@ -198,15 +201,15 @@ or classically:
 Γ()(c) = end
 Γ(P | Q)(c) = Γ(P)(c) `or` Γ(Q)(c) where Γ(P)#Γ(Q)
 
-Γ(send c t P)(c) = !T(t). Γ(P)(c)
-Γ(send c t P)(d) = Γ(P)(d)
+Γ(c <- t. P)(c) = !T(t). Γ(P)(c)
+Γ(c <- t. P)(d) = Γ(P)(d)
 
-Γ(recv c (x : T) P)(c) = ?(x : T). Γ(P)(c)
-Γ(recv c (x : T) P)(d) = Γ(P)(d)
+Γ(let (x : T) <- P)(c) = ?(x : T). Γ(P)(c)
+Γ(let (x : T) <- P)(d) = Γ(P)(d)
 
-Γ(new (c : S, d) P)(c) = end
-Γ(new (c : S, d) P)(d) = end
-Γ(new (c : S, d) P)(e) = Γ(P)(e)
+Γ(new [c : S, d] P)(c) = end
+Γ(new [c : S, d] P)(d) = end
+Γ(new [c : S, d] P)(e) = Γ(P)(e)
 
 Γ(c[c0,...,cN] P)(c) = [Γ(P)(c0),...,Γ(P)(cN)]
 Γ(c[c0,...,cN] P)(d) = (Γ(P)/(c0,...,cN))(d)
