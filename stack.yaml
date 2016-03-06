@@ -2,7 +2,7 @@ flags: {}
 packages:
 - '.'
 extra-deps:
-  - BNFC-2.8
+  - BNFC-2.8.1
   - cabal-helper-0.5.3.0
  #- ghci-pretty-0.0.2
  #- ipprint-0.6
