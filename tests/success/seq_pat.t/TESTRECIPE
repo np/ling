@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=seq_pat.t
-command=Ling
+command=ling
 args=( --check seq_pat.ll )
 exit_code=0
 stdin_file=/dev/null

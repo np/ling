@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=non_dep_fun_dom_args.t
-command=Ling
+command=ling
 args=( --check non_dep_fun_dom_args.ll )
 exit_code=0
 stdin_file=/dev/null

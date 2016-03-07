@@ -1,4 +1,4 @@
-Here are some instructions on how to use the Ling tool chain.
+Here are some instructions on how to use the `ling` tool chain.
 
 ## Requirements
 
@@ -21,7 +21,7 @@ $ stack build
 Finally you can run the compiler on a simple example:
 
 ```
-$ stack exec -- Ling --seq --fuse --pretty --compile fixtures/compile/double.ll
+$ stack exec -- ling --seq --fuse --pretty --compile fixtures/compile/double.ll
 ```
 
 The command above is type checking, apply sequencing and fusion. It finally

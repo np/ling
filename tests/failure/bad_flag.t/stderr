@@ -1,6 +1,6 @@
 Unexpected flag --typo
 
-Usage: Ling [option...] [file...]
+Usage: ling [option...] [file...]
 
 option ::=
   | --check         # Type check the program (default on)

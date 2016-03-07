@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=test4.t
-command=Ling
+command=ling
 args=( --check test4.ll )
 exit_code=0
 stdin_file=/dev/null

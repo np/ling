@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=mk_ten2_2new_2fwd.t
-command=Ling
+command=ling
 args=( --check mk_ten2_2new_2fwd.ll )
 exit_code=0
 stdin_file=/dev/null

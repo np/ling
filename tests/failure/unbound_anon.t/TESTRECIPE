@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=unbound_anon.t
-command=Ling
+command=ling
 args=( --check unbound_anon.ll )
 exit_code=1
 stdin_file=/dev/null

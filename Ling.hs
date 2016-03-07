@@ -214,7 +214,7 @@ flagSpec =
   ] where add opt opts = opts & opt .~ True
 
 usage :: String -> IO a
-usage msg = failIO $ unlines (msg : "" : "Usage: Ling [option...] [file...]" : "" : "option ::=" : (fmtFlag <$> flagSpec))
+usage msg = failIO $ unlines (msg : "" : "Usage: ling [option...] [file...]" : "" : "option ::=" : (fmtFlag <$> flagSpec))
   where
     fmtFlag (flag, (_, desc)) = "  | --" ++ pad flag ++ " # " ++ desc
     Just maxlen = maximumOf (each . _1 . to length) flagSpec

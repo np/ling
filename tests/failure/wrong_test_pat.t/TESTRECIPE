@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testname=wrong_test_pat.t
-command=Ling
+command=ling
 args=( --check wrong_test_pat.ll )
 exit_code=1
 stdin_file=/dev/null
