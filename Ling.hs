@@ -2,7 +2,7 @@
 {-# LANGUAGE QuasiQuotes     #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Main where
+module Ling where
 
 import           Control.Monad.Writer (tell, execWriter)
 

@@ -23,6 +23,15 @@ dependencies:
 
 library:
   source-dirs: .
+  other-modules:
+    - Ling.Fmt.Albert.Lex
+    - Ling.Fmt.Albert.Par
+    - Ling.Fmt.Benjamin.Lex
+    - Ling.Fmt.Benjamin.Par
+    - Ling.Lex
+    - Ling.Par
+    - MiniC.Lex
+    - MiniC.Par
 
 #build-tools:
 #- alex
@@ -30,11 +39,11 @@ library:
 
 executables:
   ling:
-    main: Ling.hs
-    source-dirs: .
+    main: Main.hs
+    source-dirs: exec
     dependencies: ling
 
   ling-fmt:
-    main: Ling/Fmt.hs
-    source-dirs: .
+    main: ling-fmt.hs
+    source-dirs: exec
     dependencies: ling

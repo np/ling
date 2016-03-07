@@ -4,7 +4,7 @@
 module MiniC.Par where
 import MiniC.Abs
 import MiniC.Lex
-import MiniC.ErrM
+import Ling.ErrM
 
 }
 

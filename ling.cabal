@@ -47,13 +47,11 @@ library
       Ling.Fmt.Albert.Migrate
       Ling.Fmt.Albert.Print
       Ling.Fmt.Albert.Skel
-      Ling.Fmt.Albert.Test
       Ling.Fmt.Benjamin.Abs
       Ling.Fmt.Benjamin.Layout
       Ling.Fmt.Benjamin.Migrate
       Ling.Fmt.Benjamin.Print
       Ling.Fmt.Benjamin.Skel
-      Ling.Fmt.Benjamin.Test
       Ling.Free
       Ling.Fuse
       Ling.Fwd
@@ -75,18 +73,25 @@ library
       Ling.Skel
       Ling.Subst
       Ling.SubTerms
-      Ling.Test
       Ling.Type
       MiniC.Abs
       MiniC.Print
       MiniC.Skel
-      MiniC.Test
+  other-modules:
+      Ling.Fmt.Albert.Lex
+      Ling.Fmt.Albert.Par
+      Ling.Fmt.Benjamin.Lex
+      Ling.Fmt.Benjamin.Par
+      Ling.Lex
+      Ling.Par
+      MiniC.Lex
+      MiniC.Par
   default-language: Haskell2010
 
 executable ling-fmt
-  main-is: Ling/Fmt.hs
+  main-is: ling-fmt.hs
   hs-source-dirs:
-      .
+      exec
   build-depends:
       base >=4.7 && <4.9
     , array
@@ -97,60 +102,13 @@ executable ling-fmt
     , template-haskell
     , ling
   other-modules:
-      Ling
-      Ling.Abs
-      Ling.Check.Base
-      Ling.Check.Core
-      Ling.Check.Program
-      Ling.Compile.C
-      Ling.Defs
-      Ling.Equiv
-      Ling.ErrM
-      Ling.Fmt.Albert.Abs
-      Ling.Fmt.Albert.Layout
-      Ling.Fmt.Albert.Migrate
-      Ling.Fmt.Albert.Print
-      Ling.Fmt.Albert.Skel
-      Ling.Fmt.Albert.Test
-      Ling.Fmt.Benjamin.Abs
-      Ling.Fmt.Benjamin.Layout
-      Ling.Fmt.Benjamin.Migrate
-      Ling.Fmt.Benjamin.Print
-      Ling.Fmt.Benjamin.Skel
-      Ling.Fmt.Benjamin.Test
-      Ling.Free
-      Ling.Fuse
-      Ling.Fwd
-      Ling.Layout
-      Ling.Norm
-      Ling.Prelude
-      Ling.Print
-      Ling.Print.Class
-      Ling.Proc
-      Ling.Proto
-      Ling.Proto.Skel
-      Ling.Raw
-      Ling.Reduce
-      Ling.Reify
-      Ling.Rename
-      Ling.Scoped
-      Ling.Sequential
-      Ling.Session
-      Ling.Skel
-      Ling.Subst
-      Ling.SubTerms
-      Ling.Test
-      Ling.Type
-      MiniC.Abs
-      MiniC.Print
-      MiniC.Skel
-      MiniC.Test
+      Main
   default-language: Haskell2010
 
 executable ling
-  main-is: Ling.hs
+  main-is: Main.hs
   hs-source-dirs:
-      .
+      exec
   build-depends:
       base >=4.7 && <4.9
     , array
@@ -160,53 +118,4 @@ executable ling
     , mtl >=2.2.1
     , template-haskell
     , ling
-  other-modules:
-      Ling.Abs
-      Ling.Check.Base
-      Ling.Check.Core
-      Ling.Check.Program
-      Ling.Compile.C
-      Ling.Defs
-      Ling.Equiv
-      Ling.ErrM
-      Ling.Fmt
-      Ling.Fmt.Albert.Abs
-      Ling.Fmt.Albert.Layout
-      Ling.Fmt.Albert.Migrate
-      Ling.Fmt.Albert.Print
-      Ling.Fmt.Albert.Skel
-      Ling.Fmt.Albert.Test
-      Ling.Fmt.Benjamin.Abs
-      Ling.Fmt.Benjamin.Layout
-      Ling.Fmt.Benjamin.Migrate
-      Ling.Fmt.Benjamin.Print
-      Ling.Fmt.Benjamin.Skel
-      Ling.Fmt.Benjamin.Test
-      Ling.Free
-      Ling.Fuse
-      Ling.Fwd
-      Ling.Layout
-      Ling.Norm
-      Ling.Prelude
-      Ling.Print
-      Ling.Print.Class
-      Ling.Proc
-      Ling.Proto
-      Ling.Proto.Skel
-      Ling.Raw
-      Ling.Reduce
-      Ling.Reify
-      Ling.Rename
-      Ling.Scoped
-      Ling.Sequential
-      Ling.Session
-      Ling.Skel
-      Ling.Subst
-      Ling.SubTerms
-      Ling.Test
-      Ling.Type
-      MiniC.Abs
-      MiniC.Print
-      MiniC.Skel
-      MiniC.Test
   default-language: Haskell2010

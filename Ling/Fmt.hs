@@ -1,3 +1,4 @@
+module Ling.Fmt where
 import           System.Environment      (getArgs)
 import           System.Exit             (exitFailure)
 import           System.IO
