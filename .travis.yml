@@ -31,26 +31,26 @@ matrix:
   # https://github.com/hvr/multi-ghc-travis
 # - env: BUILD=cabal GHCVER=7.10.3 CABALVER=1.22
 #   compiler: ": #GHC 7.10.3"
-#   addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.3,alex,happy], sources: [hvr-ghc]}}
+#   addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.3,alex-3.1.7,happy], sources: [hvr-ghc]}}
 
   # Build with the newest GHC and cabal-install. This is an accepted failure,
   # see below.
 # - env: BUILD=cabal GHCVER=head  CABALVER=head
 #   compiler: ": #GHC HEAD"
-#   addons: {apt: {packages: [cabal-install-head,ghc-head,alex,happy], sources: [hvr-ghc]}}
+#   addons: {apt: {packages: [cabal-install-head,ghc-head,alex-3.1.7,happy], sources: [hvr-ghc]}}
 
 # - env: BUILD=stack ARGS="--resolver lts-3"
 #   compiler: ": #stack 7.10.2"
-#   addons: {apt: {packages: [ghc-7.10.2,alex,happy], sources: [hvr-ghc]}}
+#   addons: {apt: {packages: [ghc-7.10.2,alex-3.1.7,happy], sources: [hvr-ghc]}}
 
   - env: BUILD=stack ARGS="--resolver lts-5"
     compiler: ": #stack 7.10.3"
-    addons: {apt: {packages: [ghc-7.10.3,alex,happy], sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ghc-7.10.3,alex-3.1.7,happy], sources: [hvr-ghc]}}
 
   # Nightly builds are allowed to fail
 # - env: BUILD=stack ARGS="--resolver nightly"
 #   compiler: ": #stack nightly"
-#   addons: {apt: {packages: [libgmp-dev,alex,happy]}}
+#   addons: {apt: {packages: [libgmp-dev,alex-3.1.7,happy]}}
 
 # - env: BUILD=stack ARGS="--resolver lts-3"
 #   compiler: ": #stack 7.10.2 osx"
