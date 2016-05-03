@@ -76,8 +76,6 @@ checkPref :: Pref -> Proto -> TC Proto
 checkPref (Prll pref) proto
   | null pref =
       return proto
-  | [act] <- pref =
-      checkAct act proto
   | all isSendRecv pref = do
       css <- mapM sendRecvSession pref
       let proto' = protoSendRecv css proto
@@ -88,6 +86,8 @@ checkPref (Prll pref) proto
         [ "Inferred protocol for the whole process:"
         ] ++ prettyProto proto'
       return proto'
+  | [act] <- pref =
+      checkAct act proto
   | otherwise =
       tcError $ "Unsupported parallel prefix " ++ pretty pref
 
@@ -242,10 +242,8 @@ checkAct act proto =
           ParK -> checkSomeOrderChans proto (l2s ds) $> proto
           SeqK -> checkOrderedChans proto ds $> proto
       return $ substChans (ds, (c,oneS s)) proto'
-    Send{} ->
-      (`protoSendRecv` proto) . pure <$> sendRecvSession act
-    Recv{} ->
-      (`protoSendRecv` proto) . pure <$> sendRecvSession act
+    Send{} -> error "IMPOSSIBLE: use checkPref instead"
+    Recv{} -> error "IMPOSSIBLE: use checkPref instead"
     Ax s cs -> do
       proto' <- checkAx s cs
       return $ proto' `dotProto` proto
