@@ -53,7 +53,7 @@ alias cmdrprettyall='cmdrecord tests/pretty/all.t  --env empty -- ling --pretty 
 alias cmdrnormall='cmdrecord tests/norm/all.t  --env empty -- ling --pretty --no-check < fixtures/success/*.ll'
 alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty -- ling --strict-par --check  < fixtures/strict-par-success/*.ll'
 # nixpkgs commit ef17efa99b0e644bbd2a28c0c3cfe5a2e57b21ea
-current_nixpkgs=$HOME/hub/np/nixpkgs
+current_nixpkgs=$HOME/hub/NixOS/nixpkgs-stack
 [ ! -d "$current_nixpkgs" ] || export NIX_PATH=nixpkgs=$current_nixpkgs
 DIST=`pwd`/dist
 export PATH="$DIST"/build/ling:"$DIST"/build/ling-fmt:"$DIST"/shims:$PATH
