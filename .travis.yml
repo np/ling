@@ -94,7 +94,7 @@ install:
   case "$BUILD" in
     stack)
       stack --no-terminal --install-ghc $ARGS test --only-dependencies
-      stack --no-terminal build alex happy
+      stack --no-terminal $ARGS build alex happy
       ;;
     cabal)
       cabal --version
