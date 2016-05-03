@@ -121,6 +121,8 @@ script:
       ;;
   esac
   export PATH="$(stack path --local-install-root)"/bin:"$(pwd)"/tools:$PATH
+  stack path
+  echo $PATH
   ling fixtures/compile/double.ll
   echo | ling-fmt
   ./check.sh
