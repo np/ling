@@ -56,14 +56,6 @@ wrapSessions :: [RSession] -> Session
 wrapSessions [s `Repl` (is litR1 -> True)] = s
 wrapSessions ss                            = Array ParK ss
 
--- LENS ME
-mapR :: Endom Session -> Endom RSession
-mapR f (Repl s a) = Repl (f s) a
-
--- LENS ME
-mapSessions :: Endom Session -> Endom Sessions
-mapSessions = map . mapR
-
 constArrOp :: TraverseKind -> SessionOp
 constArrOp = SessionOp idEndom . constEndom
 
@@ -163,9 +155,9 @@ instance Dual Raw.Term where
   isMaster  = error "Raw.Term.isMaster: not implemented"
 
 instance Dual RSession where
-  dual   = mapR dual
-  log    = mapR log
-  sessionOp = mapR . sessionOp
+  dual   = rsession %~ dual
+  log    = rsession %~ log
+  sessionOp = over rsession . sessionOp
   isMaster = isMaster . view rsession
 
 instance (Dual a, Dual b) => Dual (a, b) where

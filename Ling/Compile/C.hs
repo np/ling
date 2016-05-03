@@ -56,6 +56,15 @@ import qualified MiniC.Print     as C
 type ATyp = (C.Typ, [C.Arr])
 type AQTyp = (C.QTyp, [C.Arr])
 
+qQual :: Lens' C.QTyp C.Qual
+qQual f (C.QTyp q t) = (`C.QTyp` t) <$> f q
+
+qTyp :: Lens' C.QTyp C.Typ
+qTyp f (C.QTyp q t) = (C.QTyp q) <$> f t
+
+aqATyp :: Lens' AQTyp ATyp
+aqATyp = qTyp `alongside` id
+
 voidQ :: C.QTyp
 voidQ = C.QTyp C.NoQual C.TVoid
 
@@ -437,16 +446,6 @@ transMaybeCTyp env qual = \case
   Nothing -> error "transMabyeCTyp: Missing type annotation"
   Just ty -> transCTyp env qual ty
 
-{-
-mapQTyp :: Endom C.Typ -> Endom C.QTyp
-mapQTyp f (C.QTyp  q t) = C.QTyp q (f t)
--}
-
--- LENSME
-mapAQTyp :: Endom ATyp -> Endom AQTyp
-mapAQTyp f (C.QTyp  q t , arrs) = (C.QTyp q t', arrs')
-  where (t', arrs') = f (t, arrs)
-
 transSession :: Env -> Session -> AQTyp
 transSession env x = case x of
   IO rw (Arg n ty) s
@@ -464,7 +463,7 @@ transRFactor env (RFactor t) = transTerm env t
 transRSession :: Env -> RSession -> AQTyp
 transRSession env (s `Repl` r)
   | litR1 `is` r = transSession env s
-  | otherwise    = mapAQTyp (\t -> tArr t (transRFactor env r)) (transSession env s)
+  | otherwise    = transSession env s & aqATyp %~ (`tArr` transRFactor env r)
 
 transSessions :: Env -> Sessions -> [AQTyp]
 transSessions = map . transRSession
@@ -481,7 +480,7 @@ isPtrQTyp _                = True
 mkPtrTyp :: AQTyp -> (AQTyp, Endom C.LVal)
 mkPtrTyp ctyp
   | isPtrQTyp ctyp = (ctyp, id)
-  | otherwise      = (mapAQTyp tPtr ctyp, C.LPtr)
+  | otherwise      = (ctyp & aqATyp %~ tPtr, C.LPtr)
 
 transChanDec :: Env -> ChanDec -> (C.Dec , (Channel, C.LVal))
 transChanDec env (ChanDec c _ (Just session)) =

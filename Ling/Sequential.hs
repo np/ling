@@ -80,7 +80,7 @@ statusStep Empty = Full
 -}
 
 actEnv :: Channel -> Endom Env
-actEnv c env = env & chans   . at c . mapped %~ bimap Next (mapR sessionStep)
+actEnv c env = env & chans   . at c . mapped %~ bimap Next (rsession %~ sessionStep)
                    & locs    . at l %~ mnot ()
                    & writers . at l %~ mnot c
   where l = fst (env!c)

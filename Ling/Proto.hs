@@ -145,7 +145,7 @@ protoSendRecv :: [(Channel, Endom Session)] -> Endom Proto
 protoSendRecv cfs p =
   p & composeMapOf each addChanOnly crs
     & skel %~ prllActS cs
-  where crs = [ (c,mapR f (p ^. chanSession c . endedRS)) | (c,f) <- cfs ]
+  where crs = [ (c, p ^. chanSession c . endedRS & rsession %~ f) | (c,f) <- cfs ]
         cs = fst <$> cfs
 
 -- Make sure the channel is used.
