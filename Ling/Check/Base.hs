@@ -110,8 +110,13 @@ checkPrefWellFormness (Prll pref) = do
   checkDisjointness "bound channels" $ bcAct <$> pref
   checkDisjointness "bound names"    $ bvAct <$> pref
 
-checkEqSessions :: (MonadTC m, Print channel)
-                => channel -> RSession -> RSession -> m ()
+-- IsSession could be a type synonym of kind Constraint
+class (Eq s, Subst s, Print s, Equiv s, Dual s) => IsSession s
+instance IsSession Session
+instance IsSession RSession
+
+checkEqSessions :: (IsSession s, MonadTC m, Print channel)
+                => channel -> s -> s -> m ()
 checkEqSessions c s0 s1 =
   checkEquivalence
     ("On channel " ++ pretty c ++ " sessions are not equivalent.")
