@@ -115,7 +115,7 @@ ParSplit. Act ::= OptSplit "{" [ChanDec] "}" ;
 TenSplit. Act ::= OptSplit "[" [ChanDec] "]" ;
 SeqSplit. Act ::= OptSplit "[:" [ChanDec] ":]" ;
 Send.     Act ::= "send" Name ATerm ;
-NewSend.  Act ::= Name "<-" ATerm ;
+NewSend.  Act ::= Name OptSession "<-" ATerm ;
 Recv.     Act ::= "recv" Name VarDec ;
 NewRecv.  Act ::= "let" Name OptSig "<-" Name ;
 LetRecv.  Act ::= "let" Name OptSig "<=" ATerm ;

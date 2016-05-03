@@ -32,7 +32,7 @@ fcAct :: FreeChans Act
 fcAct = \case
   Nu{}            -> ø
   Split _ c _     -> l2s [c]
-  Send c _        -> l2s [c]
+  Send c _ _      -> l2s [c]
   Recv c _        -> l2s [c]
   Ax _ cs         -> l2s cs
   At _ p          -> fcPat p

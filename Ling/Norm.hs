@@ -78,7 +78,7 @@ data Act
              , _newPatt :: !NewPatt }
   -- TODO? Split Channel CPatt
   | Split    !TraverseKind !Channel ![ChanDec]
-  | Send     !Channel !Term
+  | Send     !Channel !(Maybe Session) !Term
   | Recv     !Channel !VarDec
   | Ax       !Session ![Channel]
   | At       !Term !CPatt

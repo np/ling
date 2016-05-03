@@ -91,7 +91,7 @@ transAct x = case x of
   TenSplit optsplit chandecs -> failure x
   SeqSplit optsplit chandecs -> failure x
   Send name aterm -> failure x
-  NewSend name aterm -> failure x
+  NewSend name optsession aterm -> failure x
   Recv name vardec -> failure x
   NewRecv name1 optsig name2 -> failure x
   LetRecv name optsig aterm -> failure x

@@ -205,7 +205,7 @@ Act : NewAlloc { Ling.Abs.Nu $1 }
     | OptSplit '[' ListChanDec ']' { Ling.Abs.TenSplit $1 $3 }
     | OptSplit '[:' ListChanDec ':]' { Ling.Abs.SeqSplit $1 $3 }
     | 'send' Name ATerm { Ling.Abs.Send $2 $3 }
-    | Name '<-' ATerm { Ling.Abs.NewSend $1 $3 }
+    | Name OptSession '<-' ATerm { Ling.Abs.NewSend $1 $2 $4 }
     | 'recv' Name VarDec { Ling.Abs.Recv $2 $3 }
     | 'let' Name OptSig '<-' Name { Ling.Abs.NewRecv $2 $3 $5 }
     | 'let' Name OptSig '<=' ATerm { Ling.Abs.LetRecv $2 $3 $5 }

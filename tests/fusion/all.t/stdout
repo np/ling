@@ -99,7 +99,7 @@ com_new =
 com_new_SInt =
   proc ()
   let S#9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f : Session = (!Int).
-  let p#16d708b6037bdb9a3317d0f89d3ac53c38b89f57fd652822c157ce1a36ffde85 : < S#9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f > = (proc (c'#p : !Int)
+  let p#ba3a8b0ff7935edb89a5dbb5ca23fa76c26d6a257c89ee6456632b3dbf236a96 : < S#9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f > = (proc (c'#p : !Int)
   c'#p <- 42).
   let q#50c42bd6e55258e549a377f84f24f7922ef4df461e4e7fa8ca3fc9c269b9c854 : < ~ S#9d0e6419e8e81fdd91f69b5295e6be02dd71e61da0e1d9bd49d293cfbe8b080f > = (proc (d#q : ?Int)
   let x#q : Int <- d#q).
@@ -323,7 +323,7 @@ feed_fwd_send_then_recv_Int_String_42_showInt =
   let O#67854d610734b7b7716af5b9560d57c32ea1515c7e798e9fd72b05bdf2dd81e1 : Type = String.
   let f#dacf99f41e2ffb080aad993596a85d3fe3e2cee59b378f6f3c5362f2e959d5f1 : (x#f : I#0727bcf293b88ef6f7b5144f4e5ae5335d9acc66d21280d5c1cfb6a646b230c5)-> O#67854d610734b7b7716af5b9560d57c32ea1515c7e798e9fd72b05bdf2dd81e1 = showInt.
   let i#8ee8e8e560a5dc8968ed8e311b5edf2766dbcd161fda10b351dfab31093bd880 : I#0727bcf293b88ef6f7b5144f4e5ae5335d9acc66d21280d5c1cfb6a646b230c5 = 42.
-  let p#a6a03d966f2d3164befe1349622e83a42168546f7e41985aad90208089431c2b : < {!I#0727bcf293b88ef6f7b5144f4e5ae5335d9acc66d21280d5c1cfb6a646b230c5.?O#67854d610734b7b7716af5b9560d57c32ea1515c7e798e9fd72b05bdf2dd81e1, ?I#0727bcf293b88ef6f7b5144f4e5ae5335d9acc66d21280d5c1cfb6a646b230c5.!O#67854d610734b7b7716af5b9560d57c32ea1515c7e798e9fd72b05bdf2dd81e1}> = (proc (c#p)
+  let p#ef218b2490574b7bdae6d902cbff3d5bca1cc942e111198b1954b433f4b26142 : < {!I#0727bcf293b88ef6f7b5144f4e5ae5335d9acc66d21280d5c1cfb6a646b230c5.?O#67854d610734b7b7716af5b9560d57c32ea1515c7e798e9fd72b05bdf2dd81e1, ?I#0727bcf293b88ef6f7b5144f4e5ae5335d9acc66d21280d5c1cfb6a646b230c5.!O#67854d610734b7b7716af5b9560d57c32ea1515c7e798e9fd72b05bdf2dd81e1}> = (proc (c#p)
   split c#p {c#0#p : !Int.?String, c#1#p : ?Int.!String}.
   let x#c#1#p : Int <- c#1#p.
   c#0#p <- x#c#1#p.

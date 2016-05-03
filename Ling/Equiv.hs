@@ -216,7 +216,7 @@ instance Equiv NewPatt where
 instance Equiv Act where
   equiv env a0 a1 = case (a0 , a1) of
     (Recv c0 _b0, Recv c1 _b1) -> c0 == c1
-    (Send c0 t0, Send c1 t1) -> c0 == c1 && equiv env t0 t1
+    (Send c0 _os0 t0, Send c1 _os1 t1) -> c0 == c1 && equiv env t0 t1
     (At t0 p0, At t1 p1) -> equiv env t0 t1 && p0 == p1
     (Nu _ann0 newpatt0, Nu _ann1 newpatt1) ->
        equiv env newpatt0 newpatt1

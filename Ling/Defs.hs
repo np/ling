@@ -95,7 +95,7 @@ instance PushDefs Act where
   pushDefs sa =
     case sa ^. scoped of
       Split k c ds    -> Split k c $ mkLet__ (sa $> ds)
-      Send c e        -> Send c $ mkLet_ id (sa $> e)
+      Send c os e     -> uncurry (Send c) $ mkLet_ (subTerms `beside` id) (sa $> (os, e))
       Recv c arg      -> Recv c $ mkLet_ varDecTerms (sa $> arg)
       Nu anns newpatt -> Nu (mkLet_ list (sa $> anns)) (mkLet__ (sa $> newpatt))
       LetA{}          -> error "`let` is not supported in parallel actions (pushDefs)"

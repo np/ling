@@ -33,7 +33,7 @@ fwdIO redSession used (Read,  arg, s) (c:ds)   = recv `dotP` Prll sends `dotP` f
   where (x, used') = avoidUsed (arg^.argName) c used
         vx         = Def x []
         recv       = Recv c (arg & argName .~ x)
-        sends      = [ Send d vx | d <- ds ]
+        sends      = [ Send d Nothing vx | d <- ds ]
 fwdIO _          _    _               _        = error "fwdIO: Not enough channels for this forwarder (or the session is not a sink)"
 
 fwdArray :: TraverseKind -> MkFwd [RSession]

@@ -307,7 +307,7 @@ transAct env act =
       -- operational choices on channel allocation.
     Split _ c ds ->
       (transSplit c ds env, [])
-    Send c expr ->
+    Send c _ expr ->
       (env, [C.SPut (env ! c) (transTerm env expr)])
     Recv c (Arg x typ) ->
       (addEVar x (transName x) env, sDec ctyp y cinit)

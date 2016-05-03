@@ -127,7 +127,7 @@ instance Rename NewPatt where
 instance Rename Act where
   rename f = \case
     Split k c ds    -> Split k (rename f c) (rename f ds)
-    Send c e        -> Send (rename f c) (rename f e)
+    Send c os e     -> Send (rename f c) (rename f os) (rename f e)
     Recv c arg      -> Recv (rename f c) (rename f arg)
     Nu ann newpatt  -> Nu (rename f ann) (rename f newpatt)
     Ax s cs         -> Ax (rename f s) (rename f cs)

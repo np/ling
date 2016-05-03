@@ -67,7 +67,7 @@ sendRecvSession :: Act -> TC (Channel, Endom Session)
 sendRecvSession = \case
   -- TODO this cannot infer dependent sends!
   -- https://github.com/np/ling/issues/13
-  Send c e -> (,) c . sendS <$> inferTerm e
+  Send c _ e -> (,) c . sendS <$> inferTerm e
   Recv c arg@(Arg _c typ) ->
     checkMaybeTyp typ $> (c, depRecv arg)
   _ -> tcError "typeSendRecv: Not Send/Recv"

@@ -166,13 +166,22 @@ normAct = \case
     ParSplit c ds     -> toProc $ N.Split N.ParK (unSplit c) (norm ds)
     TenSplit c ds     -> toProc $ N.Split N.TenK (unSplit c) (norm ds)
     SeqSplit c ds     -> toProc $ N.Split N.SeqK (unSplit c) (norm ds)
-    Send     c t      -> toProc $ N.Send         c (norm t)
-    Recv     c a      -> toProc $ N.Recv         c (norm a)
-    NewSend  c t      -> toProc $ N.Send         c (norm t)
-    NewRecv x os c    -> toProc $ N.Recv         c (norm (VD x os))
+    Send     c t      -> toProc $ N.Send c Nothing     (norm t)
+    Recv     c a      -> toProc $ N.Recv c             (norm a)
+    NewSend  c os t   -> toProc $ N.Send c (normOS os) (norm t)
+    NewRecv x os c    -> toProc $ N.Recv c             (norm (VD x os))
     At       t pa     -> toProc $ N.At   (norm t) (norm pa)
     LetA     x os t   -> toProc $ N.LetA (N.aDef (norm x) (norm os) (norm t))
     LetRecv _x _os _t -> error "`let ... <= ...` is not supported yet (Issue #16)"
+
+normOS :: OptSession -> Maybe N.Session
+normOS NoSession     = Nothing
+normOS (SoSession s) = Just (normS s)
+
+normS :: RSession -> N.Session
+normS (Repl s r)
+  | r <- One  = norm (RawSession s)
+  | otherwise = error "Unsupported replication in session annotation"
 
 instance Norm Name where
   type Normalized Name = Name
@@ -200,8 +209,8 @@ reifyAct = \case
   N.Split N.ParK c ds -> PAct $ ParSplit (SoSplit c) (reify ds)
   N.Split N.TenK c ds -> PAct $ TenSplit (SoSplit c) (reify ds)
   N.Split N.SeqK c ds -> PAct $ SeqSplit (SoSplit c) (reify ds)
-  N.Send     c t      -> PAct $ NewSend          c (reify t)
-  N.Recv     c a      -> PAct $ newRecv          c (reify a)
+  N.Send     c os t   -> PAct $ NewSend c (reify (oneS <$> os)) (reify t)
+  N.Recv     c a      -> PAct $ newRecv c                       (reify a)
   N.Ax       s cs     -> PAct $ Ax (reify s) ((justChannel #) <$> cs)
   N.At       t ps     -> PAct $ At (reify t) (reify ps)
   N.LetA defs         -> reifyDefsA defs

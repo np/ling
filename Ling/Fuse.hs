@@ -97,8 +97,8 @@ fuse2Acts nu c0 act0 c1 act1 =
   case (act0, act1) of
     (Split _k0 _c0 cs0, Split _k1 _c1 cs1) -> Order $ zipWith (two nu) cs0 cs1
               -- By typing, k0 and k1 should match, we could assert that for debugging.
-    (Send _d0 e,   Recv _d1 arg) -> fuseSendRecv nu c0 e c1 arg
-    (Recv _d0 arg, Send _d1 e)   -> fuseSendRecv nu c1 e c0 arg
+    (Send _d0 _ e, Recv _d1 arg) -> fuseSendRecv nu c0 e c1 arg
+    (Recv _d0 arg, Send _d1 _ e) -> fuseSendRecv nu c1 e c0 arg
               -- By typing, (c0,c1) and (d0,d1) should be equal, we could assert that for debugging.
     (Split{}, _)    -> error "fuse2Acts/Split: IMPOSSIBLE `split` should match another `split`"
     (Send{}, _)     -> error "fuse2Acts/Send: IMPOSSIBLE `send` should match `recv`"

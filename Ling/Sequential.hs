@@ -143,7 +143,7 @@ isReady env = \case
   -- `At` is considered non-ready. Therefor we cannot put
   -- a process like (@p0() | @p1()) in sequence.
   At{}       -> False
-  Send c _   -> statusAt c env == Just Empty
+  Send c _ _ -> statusAt c env == Just Empty
   Recv c _   -> statusAt c env == Just Full
 
 transSplit :: Channel -> [ChanDec] -> Endom Env
@@ -210,7 +210,7 @@ transAct :: Defs -> Act -> Endom Env
 transAct defs = \case
   Nu _ newpatt -> transNew defs newpatt
   Split _ c ds -> transSplit c ds
-  Send c _     -> actEnv c
+  Send c _ _   -> actEnv c
   Recv c _     -> actEnv c
   Ax{}         -> id
   At{}         -> id
