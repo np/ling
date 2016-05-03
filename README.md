@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/np/ling.svg?branch=master)](https://travis-ci.org/np/ling)
+
 Here are some instructions on how to use the `ling` tool chain.
 
 ## Requirements
