@@ -258,10 +258,10 @@ instance Norm ATerm where
     Con n      -> N.Con (norm n)
     TTyp       -> N.TTyp
     TProto ss  -> N.TProto (norm ss)
-    End        -> N.TSession (endS # ())
-    Par s      -> N.TSession $ N.Array N.ParK (norm s)
-    Ten s      -> N.TSession $ N.Array N.TenK (norm s)
-    Seq s      -> N.TSession $ N.Array N.SeqK (norm s)
+    End        -> (endS # ()) ^. N.tSession
+    Par s      -> N.Array N.ParK (norm s) ^. N.tSession
+    Ten s      -> N.Array N.TenK (norm s) ^. N.tSession
+    Seq s      -> N.Array N.SeqK (norm s) ^. N.tSession
     Paren t os -> N.optSig (norm t) (norm os)
 
 mkVDsA :: ATerm -> [VarDec]
@@ -331,9 +331,9 @@ instance Norm Term where
     Lam  u t     -> normVarDecs N.Lam  (mkVDsLam u) t
     TFun u t     -> normVarDecs N.TFun (mkVDs u) t
     TSig u t     -> normVarDecs N.TSig (mkVDs u) t
-    Snd t s      -> N.TSession $ normVarDecs (N.IO N.Write) (mkVDs t) s
-    Rcv t s      -> N.TSession $ normVarDecs (N.IO N.Read ) (mkVDs t) s
-    Loli s t     -> N.TSession $ norm (RawSession s) `loli` norm (RawSession t)
+    Snd t s      -> normVarDecs (N.IO N.Write) (mkVDs t) s ^. N.tSession
+    Rcv t s      -> normVarDecs (N.IO N.Read ) (mkVDs t) s ^. N.tSession
+    Loli s t     -> norm (RawSession s) `loli` norm (RawSession t) ^. N.tSession
     Dual s       -> dual (norm s)
     TRecv _c     -> error "Receive as an expression (Issue #16) is not supported yet"
     Let x os t u -> N.Let (N.aDef (norm x) (norm os) (norm t)) (norm u)

@@ -45,7 +45,7 @@ instance Subst Term where
     e0@Lit{}   -> e0
     Proc cs p  -> Proc (subst f cs) (subst f p)
     TProto rs  -> TProto (subst f rs)
-    TSession s -> TSession (subst f s)
+    TSession s -> subst f s ^. tSession
 
 instance Subst Defs where
   subst = over each . subst
