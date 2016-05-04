@@ -30,7 +30,7 @@ checkChanDec proto (ChanDec c r ms0) = do
     Just s0 ->
       case ms1 of
         Nothing -> assert (endRS `is` s0) ["Unused channel " ++ pretty c]
-        Just s1 -> errorScope c (checkRSession s0) >> checkEqSessions c s0 s1
+        Just s1 -> errorScope c (checkRSession s0) >> checkEqSessions c (pure s0) (pure s1)
   return $ ms1 ^. endedRS
 
   where ms1 = proto ^. chanSession c

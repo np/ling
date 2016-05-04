@@ -116,12 +116,12 @@ instance IsSession Session
 instance IsSession RSession
 
 checkEqSessions :: (IsSession s, MonadTC m, Print channel)
-                => channel -> s -> s -> m ()
+                => channel -> Scoped s -> Scoped s -> m ()
 checkEqSessions c s0 s1 =
   checkEquivalence
     ("On channel " ++ pretty c ++ " sessions are not equivalent.")
-    "Given session (expanded):" (pure s0)
-    "Inferred session:"         (pure s1)
+    "Given session (expanded):" s0
+    "Inferred session:"         s1
 
 checkOneR :: MonadError TCErr m => RFactor -> m ()
 checkOneR r = assert (r == ø) ["Unexpected replication:", pretty r]
