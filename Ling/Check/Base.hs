@@ -247,7 +247,7 @@ tcScope a = (\x -> Scoped x ø a) <$> view edefs
 caseType :: MonadTC m => Term -> Typ -> [(Name, Typ)] -> m Typ
 caseType t ty brs = do
   sty <- reduceTerm <$> tcScope ty
-  case sty ^. scoped of
+  case sty ^. reduced . scoped of
     Def d [] -> do
       def <- view $ ddefs . at d
       case def of

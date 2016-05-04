@@ -55,11 +55,11 @@ class Equiv a where
 equivAt :: Equiv a => Getter s a -> IsEquiv s
 equivAt f env x y = equiv env (x^.f) (y^.f)
 
-reduceEquiv :: (Print a, Print b) =>
-               (Scoped a -> Scoped b) -> IsEquiv b -> IsEquiv a
+reduceEquiv :: (Print a, Print reduced) =>
+               (Scoped a -> Reduced reduced) -> IsEquiv reduced -> IsEquiv a
 reduceEquiv red eqv env a0 a1 = eqv env' (a0'^.scoped) (a1'^.scoped)
   where
-    red' l = red . Scoped (env^.egdefs) (env^.l)
+    red' l = view reduced . red . Scoped (env^.egdefs) (env^.l)
     a0'    = red' edefs0 a0
     a1'    = red' edefs1 a1
     env'  = env & edefs0 <>~ a0' ^. ldefs

@@ -4,6 +4,7 @@ module Ling.Defs where
 
 import Ling.Norm
 import Ling.Prelude
+import Ling.Reduce
 import Ling.Scoped
 import Ling.Session
 import Ling.SubTerms
@@ -38,6 +39,9 @@ pushDefs__ l ss = (ss ^. scoped) & l %~ pushDefs . (ss $>)
 -- If one considers this layer of definitions to be local definitions.
 unScopedTerm :: Scoped Term -> Term
 unScopedTerm (Scoped _ defs t) = mkLet defs t
+
+pushDefsR :: PushDefs a => Reduced a -> a
+pushDefsR = pushDefs . view reduced
 
 class PushDefs a where
   pushDefs :: Scoped a -> a

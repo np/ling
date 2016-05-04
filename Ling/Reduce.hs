@@ -1,5 +1,7 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving   #-}
+{-# LANGUAGE LambdaCase                   #-}
+{-# LANGUAGE Rank2Types                   #-}
+{-# LANGUAGE TemplateHaskell              #-}
 module Ling.Reduce where
 
 import           Ling.Norm
@@ -7,25 +9,35 @@ import           Ling.Prelude hiding (subst1)
 import           Ling.Scoped
 import           Ling.Session
 
-reduceApp :: Scoped Term -> [Term] -> Scoped Term
+newtype Reduced a = Reduced { _reduced :: Scoped a }
+  deriving (Eq, Monoid)
+
+makePrisms ''Reduced
+makeLenses ''Reduced
+
+type Reduce a = Scoped a -> Reduced a
+
+reduceApp :: Scoped Term -> [Term] -> Reduced Term
 reduceApp st0 = \case
-  []     -> st1
+  []     -> rt1
   (u:us) ->
     case st1 ^. scoped of
       Lam (Arg x mty) t2 -> reduceApp (st1 *> subst1 (x, Ann mty u) t2) us
-      Def x es           -> st1 $> Def x (es ++ u : us)
+      Def x es           -> Reduced $ st1 $> Def x (es ++ u : us)
       _                  -> error "Ling.Reduce.reduceApp: IMPOSSIBLE"
 
-  where st1 = reduceTerm st0
+  where
+    rt1 = reduceTerm st0
+    st1 = rt1 ^. reduced
 
-reduceCase :: Scoped Term -> [Branch] -> Scoped Term
+reduceCase :: Scoped Term -> [Branch] -> Reduced Term
 reduceCase st0 brs =
-  case st1 ^. scoped of
+  case st1 ^. reduced . scoped of
     Con{} -> reduceTerm scase
-    _     -> scase
+    _     -> Reduced scase
 
   where st1   = reduceTerm st0
-        scase = (`mkCase` brs) <$> st1
+        scase = (`mkCase` brs) <$> st1 ^. reduced
 
 reducePrim :: String -> [Literal] -> Maybe Literal
 reducePrim "_+_"        [LInteger x, LInteger y] = Just $ LInteger (x + y)
@@ -47,39 +59,39 @@ reducePrim "showChar"   [LChar    x]             = Just $ LString  (show x)
 reducePrim "showString" [LString  x]             = Just $ LString  (show x)
 reducePrim _            _                        = Nothing
 
-reduceDef :: Scoped Name -> [Term] -> Scoped Term
+reduceDef :: Scoped Name -> [Term] -> Reduced Term
 reduceDef sd es
   | Just st <- scopedName sd              = reduceApp st es
   | Just ls <- es ^? below _Lit
-  , Just  l <- reducePrim (unName # d) ls = pure $ Lit l
-  | otherwise                             = sd $> Def d es
+  , Just  l <- reducePrim (unName # d) ls = Reduced . pure $ Lit l
+  | otherwise                             = Reduced $ sd $> Def d es
 
   where d = sd ^. scoped
 
-reduceTerm :: Endom (Scoped Term)
+reduceTerm :: Reduce Term
 reduceTerm st0 =
   case t0 of
     Let defs t  -> reduceTerm (st0 *> Scoped ø defs () $> t)
     Def d es    -> reduceDef  (st0 $> d) es
     Case t brs  -> reduceCase (st0 $> t) brs
-    Lit{}       -> pure t0
-    TTyp        -> pure t0
-    Con{}       -> pure t0
-    Lam{}       -> st0
-    Proc{}      -> st0
-    TFun{}      -> st0
-    TSig{}      -> st0
-    TProto{}    -> st0
+    Lit{}       -> Reduced $ pure t0
+    TTyp        -> Reduced $ pure t0
+    Con{}       -> Reduced $ pure t0
+    Lam{}       -> Reduced st0
+    Proc{}      -> Reduced st0
+    TFun{}      -> Reduced st0
+    TSig{}      -> Reduced st0
+    TProto{}    -> Reduced st0
     TSession s0 ->
-      view tSession <$> case s0 of
-        TermS p t1 -> termS p <$> reduceTerm (st0 $> t1)
-        Array k ss -> st0 $> Array k ss
-        IO rw vd s -> st0 $> IO rw vd s
+      case s0 of
+        TermS p t1 -> reduceTerm (st0 $> t1) & reduced . scoped %~ sessionOp p
+        Array k ss -> Reduced $ st0 $> Array k ss ^. tSession
+        IO rw vd s -> Reduced $ st0 $> IO rw vd s ^. tSession
 
   where t0 = st0 ^. scoped
 
-reduce_ :: Traversal' s Term -> Endom (Scoped s)
-reduce_ trv s = trv (reduceTerm . (s $>)) (s ^. scoped)
+reduce_ :: Traversal' s Term -> Reduce s
+reduce_ trv s = Reduced $ trv (view reduced . reduceTerm . (s $>)) (s ^. scoped)
 
 flatRSession :: Scoped RSession -> [Scoped RSession]
 flatRSession ssr
@@ -88,10 +100,10 @@ flatRSession ssr
                                    ++ flatRSession (sr1 $> s `Repl` rR)
   | otherwise                       = [ssr]
 
-  where sr1 = reduce_ rterm (ssr $> r0)
+  where sr1 = reduce_ rterm (ssr $> r0) ^. reduced
         s   = ssr ^. scoped . rsession
         r0  = ssr ^. scoped . rfactor
         r1  = sr1 ^. scoped
 
-flatSessions :: Endom (Scoped Sessions)
-flatSessions ss = sequenceA $ (ss ^. scoped) >>= flatRSession . (ss $>)
+flatSessions :: Reduce Sessions
+flatSessions ss = Reduced . sequenceA $ (ss ^. scoped) >>= flatRSession . (ss $>)

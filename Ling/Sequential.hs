@@ -22,7 +22,7 @@ import Ling.Session
 import Ling.Proc
 import Ling.Norm
 import Ling.Scoped (Scoped(Scoped))
-import Ling.Defs (pushDefs)
+import Ling.Defs (pushDefsR)
 import Ling.Reduce (reduceTerm)
 
 data Status = Full | Empty deriving (Eq,Read,Show)
@@ -280,7 +280,7 @@ transProgram :: Endom Program
 transProgram = transProgramTerms transTermProc
 
 reduceTerm' :: Defs -> Endom Term
-reduceTerm' defs = pushDefs . reduceTerm . Scoped defs ø
+reduceTerm' defs = pushDefsR . reduceTerm . Scoped defs ø
 -- -}
 -- -}
 -- -}

@@ -116,7 +116,7 @@ inferNewChan :: Print channel => channel -> Session -> TC Typ
 inferNewChan c = go Read where
   go rw' s = do
     s' <- reduce_ tSession <$> tcScope s
-    case pushDefs s' of
+    case pushDefsR s' of
       IO rw (Arg _ mty) s1 -> do
         when (rw == rw') . tcError . concat $ ["Unexpected ", map toLower (show rw), " on channel ", pretty c]
         let ty0 = mty ?| error "IMPOSSIBLE: inferred session must have type annotations"
@@ -256,7 +256,7 @@ checkAct act proto =
 
 unTProto :: Term -> TC Sessions
 unTProto t0 =
-  case pushDefs (reduceTerm (pure t0)) of
+  case pushDefsR (reduceTerm (pure t0)) of
     TProto ss  -> return ss
     Case u brs -> mkCaseSessions (==) u <$> branches unTProto brs
   {-
@@ -377,7 +377,7 @@ inferDef f es = do
 checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC Typ
 checkApp _ _ ty0 []     = return $ unScopedTerm ty0
 checkApp f n ty0 (e:es) =
-  let ty1 = reduceTerm ty0 in
+  let ty1 = reduceTerm ty0 ^. reduced in
   case ty1 ^. scoped of
     TFun (Arg x mty) s -> do
       debug . unlines $

@@ -39,7 +39,7 @@ module Ling.Compile.C where
 import           Prelude         hiding (log)
 
 import qualified Data.Map        as Map
-import           Ling.Defs       (pushDefs)
+import           Ling.Defs       (pushDefsR)
 import           Ling.Fwd        (fwdProc')
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
@@ -528,10 +528,10 @@ transProgram (Program decs) =
   C.PPrg (mapAccumL transDec emptyEnv decs ^.. _2 . each . each)
 
 reduceTerm' :: Env -> Endom Term
-reduceTerm' env = pushDefs . reduceTerm . Scoped (env ^. edefs) ø
+reduceTerm' env = pushDefsR . reduceTerm . Scoped (env ^. edefs) ø
 
 reduceSession :: Env -> Endom Session
-reduceSession env = pushDefs . reduce_ tSession . Scoped (env ^. edefs) ø
+reduceSession env = pushDefsR . reduce_ tSession . Scoped (env ^. edefs) ø
 -- -}
 -- -}
 -- -}
