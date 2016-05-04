@@ -64,6 +64,7 @@ reduceDef sd es
   | Just st <- scopedName sd              = reduceApp st es
   | Just ls <- es ^? below _Lit
   , Just  l <- reducePrim (unName # d) ls = Reduced . pure $ Lit l
+  | "_:_" <- unName # d, [_,e] <- es      = Reduced . pure $ e
   | otherwise                             = Reduced $ sd $> Def d es
 
   where d = sd ^. scoped
