@@ -63,13 +63,28 @@ checkProc proc0 = do
 
     _ -> error $ "checkProc: IMPOSSIBLE " ++ show proc0
 
-sendRecvSession :: Act -> TC (Channel, Endom Session)
+sendRecvSession :: Act -> TC (Channel, EndoM TC Session)
 sendRecvSession = \case
-  -- TODO this cannot infer dependent sends!
-  -- https://github.com/np/ling/issues/13
-  Send c _ e -> (,) c . sendS <$> inferTerm e
+  Send c os e ->
+    -- See for the use of this type annotation: https://github.com/np/ling/issues/13
+    case os of
+      Nothing -> (,) c . (pure .) . sendS <$> inferTerm e
+      Just s0  -> do
+        checkSession s0
+        s1 <- pushDefsR . reduce_ tSession <$> tcScope s0
+        case s1 of
+          IO Write (Arg x typ) s2 ->
+            checkSig typ (Just e) $>
+              (c, \s -> checkEqSessions c (pure s) (subst1 (x, Ann typ e) s2) $> s0)
+          _ ->
+            tcError . unlines $
+              ["Annotation when sending on channel " <> pretty c <> " should be of the form `!(_ : _). _`."
+              ,"Instead the current annotation:"
+              ,"  " <> pretty s0
+              ,"which reduces to: "
+              ,"  " <> pretty s1]
   Recv c arg@(Arg _c typ) ->
-    checkMaybeTyp typ $> (c, depRecv arg)
+    checkMaybeTyp typ $> (c, (pure .) $ depRecv arg)
   _ -> tcError "typeSendRecv: Not Send/Recv"
 
 checkPref :: Pref -> Proto -> TC Proto
@@ -78,13 +93,14 @@ checkPref (Prll pref) proto
       return proto
   | all isSendRecv pref = do
       css <- mapM sendRecvSession pref
-      let proto' = protoSendRecv css proto
-      debug . unlines $
-        [ "Checked parallel prefix: `" ++ pretty pref ++ "`"
-        , "Inferred protocol for the sub-process:"
-        ] ++ prettyProto proto ++
-        [ "Inferred protocol for the whole process:"
-        ] ++ prettyProto proto'
+      proto' <- protoSendRecv css proto
+      when (length pref >= 1) $
+        debug . unlines $
+          [ "Checked parallel prefix: `" ++ pretty pref ++ "`"
+          , "Inferred protocol for the sub-process:"
+          ] ++ prettyProto proto ++
+          [ "Inferred protocol for the whole process:"
+          ] ++ prettyProto proto'
       return proto'
   | [act] <- pref =
       checkAct act proto

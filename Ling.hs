@@ -100,6 +100,36 @@ EndoSeqIO = \(T : Type)-> SeqIO T T
 DotSort = \(A : Type)(n : Int)-> EndoIO (Vec A n)
 ParSort = \(A : Type)(n : Int)-> EndoLoli (!Vec A n)
 SeqSort = \(A : Type)(n : Int)-> [: ?Vec A n, !Vec A n :]
+With = \(SL SR : Session)-> ?(b : LR). (case b of { `left -> SL, `right -> SR })
+Oplus = \(SL SR : Session)-> !(b : LR). (case b of { `left -> SL, `right -> SR })
+with =
+  \(SL SR : Session)
+   (pL : < SL >)(pR : < SR >)->
+  proc(c : With SL SR)
+    let x : LR <- c.
+    @(case x of { `left -> pL, `right -> pR })(c)
+oplus =
+  \(SL SR : Session)
+   (b : LR)
+   (p : < case b of { `left -> SL, `right -> SR } >)->
+  proc(c)
+    c : Oplus SL SR <- b.
+    @p(c)
+receiver =
+  \(A : Type)
+   (S : A -> Session)
+   (p : (x : A)-> < S x >)->
+  proc(c)
+    let x : A <- c.
+    @(p x)(c)
+sender =
+  \(A : Type)
+   (S : A -> Session)
+   (t : A)
+   (p : < S t >)->
+  proc(c)
+    c : !(x : A). S x <- t.
+    @p(c)
 Allocation : Type
 auto : Allocation
 fused : Allocation

@@ -141,12 +141,14 @@ mkProto k = arrayProto k . map (uncurry pureProto)
 --    protoSendRecv [(c0,sendS t0), (c1, recvS t1)] (pureProto c0 s0) ^. chans
 --    ==
 --    [(c0,sendS t0 s0), (c1, recvS t1 (endS # ()))]
-protoSendRecv :: [(Channel, Endom Session)] -> Endom Proto
-protoSendRecv cfs p =
-  p & composeMapOf each addChanOnly crs
-    & skel %~ prllActS cs
-  where crs = [ (c, p ^. chanSession c . endedRS & rsession %~ f) | (c,f) <- cfs ]
-        cs = fst <$> cfs
+protoSendRecv :: Monad m => [(Channel, EndoM m Session)] -> EndoM m Proto
+protoSendRecv cfs p = do
+  p' <- foldrM go p cfs
+  pure $ p' & skel %~ prllActS (cfs ^.. each . _1)
+  where
+    go (c,f) p2 = do
+        s' <- (p ^. chanSession c . endedRS) & rsession %%~ f
+        pure $ addChanOnly (c, s') p2
 
 -- Make sure the channel is used.
 -- When the session is ended we want to skip this check and allow the
