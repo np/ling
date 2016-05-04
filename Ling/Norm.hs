@@ -316,18 +316,38 @@ type Brs a = [(ConName, a)]
 branches :: Traversal (Brs a) (Brs b) a b
 branches = traverse . _2
 
-type MkCase a = Term -> Brs a -> a
+data CaseView a
+  = NoCase Term
+  -- ^ One branch has matched so this is not a `case` anymore.
+  --   Or all the branches where equivalent so a/the branch was selected.
+  | SoCase { _caseOf :: Term, _caseBrs :: Brs a }
 
-mkCaseBy :: Rel Term -> MkCase Term
-mkCaseBy rel t brs
-  | Con con <- t, Just rhs <- lookup con brs    = rhs
-  | Just (_, s) <- theUniqBy (rel `on` snd) brs = s
-  | otherwise                                   = Case t brs
+makeLenses ''CaseView
 
-mkCase :: MkCase Term
+unCaseView :: CaseView Term -> Term
+unCaseView = \case
+  NoCase t     -> t
+  SoCase t brs -> Case t brs
+
+instance Functor CaseView where
+  fmap = over (caseBrs . branches)
+
+type MkCase a b = Term -> Brs a -> b
+type MkCase' a = MkCase a a
+
+mkCaseViewBy :: Rel Term -> MkCase Term (CaseView Term)
+mkCaseViewBy rel t brs
+  | Con con <- t, Just rhs <- lookup con brs    = NoCase rhs
+  | Just (_, s) <- theUniqBy (rel `on` snd) brs = NoCase s
+  | otherwise                                   = SoCase t brs
+
+mkCaseBy :: Rel Term -> MkCase' Term
+mkCaseBy rel t = unCaseView . mkCaseViewBy rel t
+
+mkCase :: MkCase' Term
 mkCase = mkCaseBy (==)
 
-mkCaseRSession :: Rel Term -> MkCase RSession
+mkCaseRSession :: Rel Term -> MkCase' RSession
 mkCaseRSession rel u = repl . bimap h h . unzip . fmap unRepl
   where
     repl   (s, r)    = (s ^. from tSession) `Repl` (r ^. from rterm)
@@ -335,7 +355,7 @@ mkCaseRSession rel u = repl . bimap h h . unzip . fmap unRepl
                         (con, rs ^. rfactor . rterm))
     h                = mkCaseBy rel u
 
-mkCaseSessions :: Rel Term -> MkCase Sessions
+mkCaseSessions :: Rel Term -> MkCase' Sessions
 mkCaseSessions rel u brs =
   [mkCaseRSession rel u (brs & branches %~ unSingleton)]
   where
