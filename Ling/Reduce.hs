@@ -6,6 +6,7 @@ module Ling.Reduce where
 
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
+import           Ling.Print
 import           Ling.Scoped
 import           Ling.Session
 
@@ -14,6 +15,9 @@ newtype Reduced a = Reduced { _reduced :: Scoped a }
 
 makePrisms ''Reduced
 makeLenses ''Reduced
+
+instance Print a => Print (Reduced a) where
+  prt i = prt i . view reduced
 
 type Reduce a = Scoped a -> Reduced a
 
