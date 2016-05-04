@@ -558,12 +558,14 @@ cmp_recipes(){
 
 usage(){
   cat_info <<EOF
-Usage: $me [<option>*]  <testname>.t*
+Usage: $me [<option>*]  (<testname>.t | <suitename>.s)*
 
   option ::= --batch
+           | --help
+           | --logfile=<filename>
 
 EOF
-  echo error: "$@" >>"$log_file"
+  echo "$@" >>"$log_file"
   exit 1
 }
 
@@ -726,10 +728,10 @@ copy_products(){
 check_action_refdir(){
   local mydir="$1"
   local cwd="$(pwd)"
-  [ -e TESTRECIPE ] || usage "$cwd" is not a valid test directory, no TESTRECIPE found
+  [ -e TESTRECIPE ] || usage error: "$cwd" is not a valid test directory, no TESTRECIPE found
   clear_recipe_scope
   . TESTRECIPE
-  [ -n "$testname" ] || usage bad TESTRECIPE, no testname variable
+  [ -n "$testname" ] || usage error: bad TESTRECIPE, no testname variable
   local cmdtestbasename="$(basename "$cwd")"
   if [ "$cmdtestbasename" != "$testname" ]; then
     info "wrong TESTRECIPE, expected \`$cmdtestbasename' found \`$testname'"
@@ -745,41 +747,67 @@ check_action_refdir(){
   copy_sources "$cwd" "$mydir"
 }
 
+testcount=0
+failed_tests=( )
+
+check_testcase(){
+  local refdir="$1"
+  echo -n "$refdir..." >>"$log_file"
+  local mydir="${refdir%.t}".my
+  ensure_empty_dir -f "$mydir"
+  within_dir "$refdir" check_action_refdir "$(readlink -f "$mydir")"
+  within_dir "$mydir"  check_action_mydir
+  testcount=$((testcount+1))
+  if cmp_recipes "$refdir" "$mydir"; then
+    within_dir "$mydir" teardown
+  else
+    within_dir "$refdir" explain >>"$log_file"
+    within_dir "$mydir" teardown
+    failed_tests=( "${failed_tests[@]}" "$refdir" )
+  fi
+  # Even if in basic cases refdir is equivalent to mydir, in
+  # general this is not the case. For instance functions like
+  # setup, check and teardown are reset to their default version.
+  # Dynamic variables definition will be in-lined:
+  # env_var_PATH="$PATH"
+  # becomes:
+  # env_var_PATH='/usr/bin:...'
+  # bakdir="$(dirname "$testname")/${testname%.t}".bak
+  # [ ! -d "$bakdir" ] || rm -r "$bakdir"
+  # mv "$refdir" "$bakdir"
+  # mv "$mydir" "$refdir"
+}
+
+check_testsuite(){
+  info "$1"
+  if [ ! -d "$1" ]; then
+    usage "error: No such testsuite directory $1"
+  fi
+  local testcases=( "$1"/*.t )
+  if [ "${testcases[*]}" = "$1"/'*'.t ]; then
+    usage "error: No such testcases (*.t) in directory $1"
+  fi
+  for var_check_testsuite in "$1"/*.t; do
+    check_testcase "$var_check_testsuite"
+  done
+}
+
 check_action(){
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      --batch) shift; batch_mode=1;;
-      *) break
+      (--batch) shift; batch_mode=1;;
+      (--logfile=*) log_file="${1#--logfile=}"; shift;;
+      (--help) usage;;
+      (*) break;;
     esac
   done
-  [ "$#" -gt 0 ] || usage The test name was expected
-  local failed_tests=( )
-  local testcount=$#
-  for var_check_action_refdir; do
-    local refdir="$var_check_action_refdir"
-    echo -n "$refdir..." >>"$log_file"
-    local mydir="${refdir%.t}".my
-    ensure_empty_dir -f "$mydir"
-    within_dir "$refdir" check_action_refdir "$(readlink -f "$mydir")"
-    within_dir "$mydir"  check_action_mydir
-    if cmp_recipes "$refdir" "$mydir"; then
-      within_dir "$mydir" teardown
-    else
-      failed_tests=("${failed_tests[@]}" "$testname")
-      within_dir "$refdir" explain >>"$log_file"
-      within_dir "$mydir" teardown
-    fi
-    # Even if in basic cases refdir is equivalent to mydir, in
-    # general this is not the case. For instance functions like
-    # setup, check and teardown are reset to their default version.
-    # Dynamic variables definition will be in-lined:
-    # env_var_PATH="$PATH"
-    # becomes:
-    # env_var_PATH='/usr/bin:...'
-    # bakdir="$(dirname "$testname")/${testname%.t}".bak
-    # [ ! -d "$bakdir" ] || rm -r "$bakdir"
-    # mv "$refdir" "$bakdir"
-    # mv "$mydir" "$refdir"
+  [ "$#" -gt 0 ] || usage error: The test name was expected
+  for var_check_action; do
+    local arg="$var_check_action"
+    case "$arg" in
+      (*.t) check_testcase  "$arg";;
+      (*.s) check_testsuite "$arg";;
+    esac
   done
   if null "${failed_tests[@]}"; then
     echo "All $testcount tests $(green PASSED)" >>"$log_file"
