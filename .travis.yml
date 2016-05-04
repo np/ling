@@ -120,3 +120,9 @@ script:
         (cd dist && cabal install --force-reinstalls "$SRC_TGZ")
       ;;
   esac
+  export PATH="$(stack --no-terminal $ARGS path --local-install-root)"/bin:"$(pwd)"/tools:$PATH
+  stack --no-terminal $ARGS path
+  echo $PATH
+  ling fixtures/compile/double.ll
+  echo | ling-fmt
+  ./check.sh
