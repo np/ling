@@ -37,7 +37,7 @@ reduceApp st0 = \case
 reduceCase :: Scoped Term -> [Branch] -> Reduced Term
 reduceCase st0 brs =
   case st1 ^. reduced . scoped of
-    Con{} -> reduceTerm scase
+    Con{} -> reduceTerm (st0 *> scase)
     _     -> Reduced scase
 
   where st1   = reduceTerm st0

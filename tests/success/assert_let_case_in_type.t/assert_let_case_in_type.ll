@@ -1,0 +1,1 @@
+../../../fixtures/all/assert_let_case_in_type.ll
