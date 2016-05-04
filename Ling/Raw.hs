@@ -6,6 +6,8 @@ import           Control.Lens
 import           Ling.Abs
 import           Ling.Prelude
 
+type Type = Term
+
 makePrisms ''Program
 makePrisms ''Dec
 makePrisms ''Assertion
@@ -34,6 +36,9 @@ aTerm t               = RawApp t []
 paren :: Term -> ATerm
 paren (RawApp t []) = t
 paren t             = Paren t NoSig
+
+annot :: Term -> Type -> Term
+annot tm ty = RawApp (Paren tm (SoSig ty)) []
 
 pPrll :: [Proc] -> Proc
 pPrll = \case

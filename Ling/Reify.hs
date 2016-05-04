@@ -52,7 +52,9 @@ instance Norm RawSession where
             N.Array k s      -> aTerm $ reifyArray k (reify s)
             N.IO N.Write a s -> Snd (reifyVarDec a) (reify s)
             N.IO N.Read a s  -> Rcv (reifyVarDec a) (reify s)
-            N.TermS o e      -> sessionOp o (reify e)
+            N.TermS o e      -> sessionOp o (reify e
+                                          -- `annot` RawApp (Var $ Name "Session") []
+                                            )
 
 reifySession :: N.Session -> Term
 reifySession = rawSession . reify
