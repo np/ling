@@ -208,7 +208,7 @@ checkTypeEquivalence t0 t1 =
                     "Expected:" (pure t0)
                     "Inferred:" (pure t1)
 
-checkNotIn :: (Ord name, Print name, MonadTC m) => Lens' TCEnv (Map name v) -> String -> name -> m ()
+checkNotIn :: (Ord name, Print name, MonadTC m) => Getter TCEnv (Map name v) -> String -> name -> m ()
 checkNotIn l msg c = do
   b <- view $ l . hasKey c
   assert (not b) ["Already defined " ++ msg ++ ": ", pretty c]
