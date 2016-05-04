@@ -22,7 +22,12 @@ eqEnv :: MonadReader s m => Lens' s Defs -> m EqEnv
 eqEnv l = views l (EqEnv [] ø ø)
 
 swapEnv :: Endom EqEnv
-swapEnv (EqEnv nms gds ds0 ds1) = EqEnv (map swap nms) gds ds1 ds0
+swapEnv e =
+  EqEnv { _eqnms  = map swap (e ^. eqnms)
+        , _edefs0 = e ^. edefs1
+        , _edefs1 = e ^. edefs0
+        , _egdefs = e ^. egdefs
+        }
 
 ext :: Name -> Name -> Endom EqEnv
 ext x0 x1 env
