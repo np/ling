@@ -1658,7 +1658,7 @@ test4 =
   r <- (x0 + x1 + x2)
 
 type_annotation =
-  (42 : Int)
+  42
 
 ZeroCh : Type =
   (A : Type)-> A
