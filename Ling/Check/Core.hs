@@ -50,7 +50,7 @@ checkProc proc0 = do
 
     _ | Just (pref@(Prll acts), proc1) <- proc0 ^? _PrefDotProc -> do
       checkPrefWellFormness pref
-      let defs = acts ^. each . to actDefs
+      let defs = acts ^. each . actDefs
       pushDefs . Scoped ø defs <$>
         (checkPref pref =<<
             checkDefs defs

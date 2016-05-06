@@ -267,7 +267,7 @@ instance Equiv Proc where
     | Just (Prll pr0) <- proc0 ^? _Pref
     , Just (Prll pr1) <- proc1 ^? _Pref =
       let
-        prefDefs = each . to actDefs
+        prefDefs = each . actDefs
         vd0 = ignoreArgBody <$> (actVarDecs =<< pr0)
         vd1 = ignoreArgBody <$> (actVarDecs =<< pr1)
       in

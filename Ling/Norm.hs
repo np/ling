@@ -33,22 +33,22 @@ data Program = Program { _prgDecs :: ![Dec] }
   deriving (Eq,Ord,Show,Read)
 
 data Dec
-  = Sig !Name !(Maybe Typ) !(Maybe Term)
-  | Dat !Name ![Name]
-  | Assert !Assertion
+  = Sig { _decName :: !Name, _decType :: !(Maybe Typ), _decTerm :: !(Maybe Term) }
+  | Dat { _decName :: !Name, _decConstructors :: ![Name] }
+  | Assert { _decAssertion :: !Assertion }
   deriving (Eq,Ord,Show,Read)
 
 data Assertion
-  = Equal !Term !Term !(Maybe Typ)
+  = Equal { _assertLeft, _assertRight :: !Term, _assertType :: !(Maybe Typ) }
   deriving (Eq,Ord,Show,Read)
 
 infixr 4 `Dot`
 
 -- See `Ling.WellFormed` for the conditions on Proc
 data Proc
-  = Act !Act
-  | Procs !(Prll Proc)
-  | Dot Proc Proc
+  = Act { _procAct :: !Act }
+  | Procs { _procProcs :: !(Prll Proc) }
+  | Dot { _procDotL, _procDotR :: Proc }
   | NewSlice ![Channel] !RFactor !Name Proc
   deriving (Eq,Ord,Show,Read)
 
@@ -62,8 +62,9 @@ data TraverseKind
   deriving (Eq,Ord,Show,Read,Enum)
 
 data CPatt
-    = ChanP !ChanDec
-    | ArrayP !TraverseKind ![CPatt]
+    = ChanP  { _cpChanDec :: !ChanDec }
+    | ArrayP { _cpArrayKind :: !TraverseKind
+             , _cpPatts :: ![CPatt] }
   deriving (Eq, Ord, Show, Read)
 
 data NewPatt
@@ -76,12 +77,18 @@ data NewPatt
 data Act
   = Nu       { _newAnns :: ![Term]
              , _newPatt :: !NewPatt }
-  | Split    !Channel !CPatt
-  | Send     !Channel !(Maybe Session) !Term
-  | Recv     !Channel !VarDec
-  | Ax       !Session ![Channel]
-  | At       !Term !CPatt
-  | LetA     !Defs
+  | Split    { _actChan :: !Channel
+             , _actPatt :: !CPatt }
+  | Send     { _actChan :: !Channel
+             , _actMSes :: !(Maybe Session)
+             , _actTerm :: !Term }
+  | Recv     { _actChan :: !Channel
+             , _actVarD :: !VarDec }
+  | Ax       { _actSess :: !Session -- Maybe
+             , _axChans :: ![Channel] }
+  | At       { _actTerm :: !Term
+             , _actPatt :: !CPatt }
+  | LetA     { _actDefs :: !Defs }
   deriving (Eq,Ord,Show,Read)
 
 type DataTypeName = Name
@@ -90,19 +97,25 @@ type Branch = (ConName,Term)
 
 type Typ = Term
 data Term
-  = Def !Name ![Term]
-  | Let !Defs Term
-  | Lit !Literal
-  | Lam !VarDec Term
-  | Con !ConName
-  | Case Term ![Branch]
-  --          ^ Sorted
-  | Proc ![ChanDec] !Proc
+  = Def { _tmVar :: !Name, _tmArgs :: ![Term] }
+  | Let { _tmDefs :: !Defs, _tmTerm :: Term }
+  | Lit { _tmLit :: !Literal }
+  | Lam { _tmVarD :: !VarDec
+        , _tmTerm :: Term }
+  | Con { _tmCon :: !ConName }
+  | Case { _tmCasee    :: Term
+         , _tmBranches :: ![Branch]
+         -- ^ Sorted
+         }
+  | Proc { _tmBndChans :: ![ChanDec]
+         , _tmProc :: !Proc }
   | TTyp
-  | TFun !VarDec Typ
-  | TSig !VarDec Typ
-  | TProto ![RSession]
-  | TSession !Session
+  | TFun { _tmVarD :: !VarDec
+         , _tmTerm :: Term }
+  | TSig { _tmVarD :: !VarDec
+         , _tmTerm :: Term }
+  | TProto { _tmSessions :: !Sessions }
+  | TSession !Session -- tSession is used instead of _tmSession
   deriving (Eq,Ord,Show,Read)
 
 tSession :: Iso' Session Term
@@ -124,9 +137,9 @@ idOp :: SessionOp
 idOp = SessionOp idEndom idEndom
 
 data Session
-  = TermS !SessionOp !Term
-  | IO !RW !VarDec Session
-  | Array !TraverseKind !Sessions
+  = TermS { _sSessionOp :: !SessionOp, _sTerm :: !Term }
+  | IO { _ioRW :: !RW, _ioVarD :: !VarDec, _ioSession :: Session }
+  | Array { _arrayKind :: !TraverseKind, _arraySessions :: !Sessions }
   deriving (Eq,Ord,Show,Read)
 
 depSend, depRecv :: VarDec -> Endom Session
@@ -146,13 +159,19 @@ data RSession
 type Sessions = [RSession]
 type NSession = Maybe Session
 
+makeLenses ''Act
+makeLenses ''Assertion
 makeLenses ''ChanDec
+makeLenses ''CPatt
+makeLenses ''Dec
 makeLenses ''Defs
-makeLenses ''RFactor
+makeLenses ''NewPatt
 makeLenses ''Proc
 makeLenses ''Program
+makeLenses ''RFactor
 makeLenses ''RSession
-makeLenses ''NewPatt
+makeLenses ''Session
+makeLenses ''Term
 makePrisms ''Literal
 makePrisms ''ChanDec
 makePrisms ''Act
@@ -249,16 +268,6 @@ addName = Name "_+_"
 
 multName :: Name
 multName = Name "_*_"
-
-actDefs :: Act -> Defs
-actDefs = \case
-  LetA defs  -> defs
-  Recv{}     -> ø
-  Nu{}       -> ø
-  Split{}    -> ø
-  Send{}     -> ø
-  Ax{}       -> ø
-  At{}       -> ø
 
 -- WARNING: this does not include `let` definitions, these
 -- should be handled with their definitions.

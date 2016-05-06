@@ -103,7 +103,7 @@ instance Subst Proc where
     proc0 `Dot` proc1 ->
       subst f proc0 `Dot` subst f1 proc1
       where
-        defs0 = proc0 ^. procActs . to actDefs
+        defs0 = proc0 ^. procActs . actDefs
         f1 = hide (to bvProc . folded) proc0 f <> subst f defs0
     Procs procs -> Procs $ subst f procs
     NewSlice cs t x p -> NewSlice cs (subst f t) x (subst (hide id x f) p)
