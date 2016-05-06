@@ -274,10 +274,10 @@ instance Equiv Proc where
   equiv _ NewSlice{} _ = False
 
 instance Print EqEnv where
-  prt _i (EqEnv nms defs0 defs1 gdefs {-ldefs-}) =
+  prt _i (EqEnv nms defs0 defs1 gdefS) =
     concatD [ txt "EqEnv" , txt "\n"
             , txt "{ _eqnms  = " , prt 0 nms   , txt "\n"
             , txt ", _edefs0 = " , prt 0 defs0 , txt "\n"
             , txt ", _edefs1 = " , prt 0 defs1 , txt "\n"
-            , txt ", _egdefs = " , prt 0 gdefs , txt "\n"
+            , txt ", _egdefs = " , prt 0 gdefS , txt "\n"
             , txt "}" , txt "\n" ]
