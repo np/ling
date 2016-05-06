@@ -7,6 +7,10 @@ module Ling.Proc
   , _PrefDotProc
   , _ActAt
   , __Act
+  , _Chans
+  , _SplitCs
+  , _ArrayCs
+  , splitK
   , splitAx
   , subChanDecs
   , fetchActProc
@@ -158,8 +162,20 @@ __Act = prism con pat
     pat (Act act) = Right act
     pat proc0     = Left proc0
 
+_Chans :: Prism' [CPatt] [ChanDec]
+_Chans = below _ChanP
+
+_ArrayCs :: Prism' CPatt (TraverseKind, [ChanDec])
+_ArrayCs = _ArrayP . aside _Chans
+
+_SplitCs :: Prism' Act (Channel, TraverseKind, [ChanDec])
+_SplitCs = _Split . aside _ArrayCs . flat3
+
+splitK :: TraverseKind -> Channel -> [ChanDec] -> Act
+splitK k c cs = _SplitCs # (c, k, cs)
+
 splitAx :: Int -> Session -> Channel -> [Act]
-splitAx n s c = [Split ParK c cs, Ax s (_cdChan <$> cs)]
+splitAx n s c = [splitK ParK c cs, Ax s (_cdChan <$> cs)]
   where
     ss = oneS <$> fwds n s
     cs = subChanDecs ss c

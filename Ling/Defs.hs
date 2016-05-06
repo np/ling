@@ -98,7 +98,7 @@ instance PushDefs Proc where
 instance PushDefs Act where
   pushDefs sa =
     case sa ^. scoped of
-      Split k c ds    -> Split k c $ mkLet__ (sa $> ds)
+      Split c pat     -> Split c $ mkLet__ (sa $> pat)
       Send c os e     -> uncurry (Send c) $ mkLet_ (subTerms `beside` id) (sa $> (os, e))
       Recv c arg      -> Recv c $ mkLet_ varDecTerms (sa $> arg)
       Nu anns newpatt -> Nu (mkLet_ list (sa $> anns)) (mkLet__ (sa $> newpatt))

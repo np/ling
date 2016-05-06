@@ -126,7 +126,10 @@ LetA.     Act ::= "let" Name OptSig "=" ATerm ;
 
 AS.       ASession ::= ATerm ;
 
-SoSplit.  OptSplit ::= "split" Name ;
+NoAs. OptAs ::= ;
+SoAs. OptAs ::= "as" ;
+
+SoSplit.  OptSplit ::= "split" Name OptAs ;
 NoSplit.  OptSplit ::= Name ;
 
 OldTopPatt. TopCPatt ::= "(" [ChanDec] ")" ;

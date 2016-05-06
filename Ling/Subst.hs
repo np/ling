@@ -78,7 +78,7 @@ instance Subst NewPatt where
 
 instance Subst Act where
   subst f = \case
-    Split k c ds -> Split k c (subst f ds)
+    Split c pat  -> Split c (subst f pat)
     Send c os e  -> Send c (subst f os) (subst f e)
     Recv c arg   -> Recv c (subst f arg)
     Nu ann npatt -> Nu (subst f ann) (subst f npatt)

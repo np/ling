@@ -44,7 +44,7 @@ import           Ling.Fwd        (fwdProc')
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
 import           Ling.Print
-import           Ling.Proc       (_Pref)
+import           Ling.Proc       (_Pref, _ArrayCs)
 import           Ling.Reduce     (reduceTerm, reduce_)
 --import           Ling.Rename     (hDec)
 import           Ling.Scoped     (Scoped(Scoped))
@@ -314,8 +314,10 @@ transAct env act =
     Nu _ann newpatt -> transNewPatt env newpatt
       -- Issue #24: the annotation should be used to decide
       -- operational choices on channel allocation.
-    Split _ c ds ->
-      (transSplit c ds env, [])
+    Split c pat ->
+      case pat ^? _ArrayCs of
+        Just (_, ds) -> (transSplit c ds env, [])
+        Nothing -> error "Sequential.transAct unsupported split"
     Send c _ expr ->
       (env, [C.SPut (env ! c) (transTerm env expr)])
     Recv c (Arg x typ) ->

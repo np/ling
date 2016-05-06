@@ -32,6 +32,7 @@ import Ling.ErrM
 %name pListProc ListProc
 %name pAct Act
 %name pASession ASession
+%name pOptAs OptAs
 %name pOptSplit OptSplit
 %name pTopCPatt TopCPatt
 %name pCPatt CPatt
@@ -215,8 +216,11 @@ Act : NewAlloc { Ling.Fmt.Benjamin.Abs.Nu $1 }
     | 'let' Name OptSig '=' ATerm { Ling.Fmt.Benjamin.Abs.LetA $2 $3 $5 }
 ASession :: { ASession }
 ASession : ATerm { Ling.Fmt.Benjamin.Abs.AS $1 }
+OptAs :: { OptAs }
+OptAs : {- empty -} { Ling.Fmt.Benjamin.Abs.NoAs }
+      | 'as' { Ling.Fmt.Benjamin.Abs.SoAs }
 OptSplit :: { OptSplit }
-OptSplit : 'split' Name { Ling.Fmt.Benjamin.Abs.SoSplit $2 }
+OptSplit : 'split' Name OptAs { Ling.Fmt.Benjamin.Abs.SoSplit $2 $3 }
          | Name { Ling.Fmt.Benjamin.Abs.NoSplit $1 }
 TopCPatt :: { TopCPatt }
 TopCPatt : '(' ListChanDec ')' { Ling.Fmt.Benjamin.Abs.OldTopPatt $2 }

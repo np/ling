@@ -32,7 +32,8 @@ import Ling.ErrM
 %name pListProc ListProc
 %name pAct Act
 %name pASession ASession
-%name pOptSplit OptSplit
+%name pSplit Split
+%name pOptAs OptAs
 %name pTopCPatt TopCPatt
 %name pCPatt CPatt
 %name pListCPatt ListCPatt
@@ -201,9 +202,7 @@ ListProc : {- empty -} { [] }
          | Proc '|' ListProc { (:) $1 $3 }
 Act :: { Act }
 Act : NewAlloc { Ling.Abs.Nu $1 }
-    | OptSplit '{' ListChanDec '}' { Ling.Abs.ParSplit $1 $3 }
-    | OptSplit '[' ListChanDec ']' { Ling.Abs.TenSplit $1 $3 }
-    | OptSplit '[:' ListChanDec ':]' { Ling.Abs.SeqSplit $1 $3 }
+    | Split { Ling.Abs.Split $1 }
     | 'send' Name ATerm { Ling.Abs.Send $2 $3 }
     | Name OptSession '<-' ATerm { Ling.Abs.NewSend $1 $2 $4 }
     | 'recv' Name VarDec { Ling.Abs.Recv $2 $3 }
@@ -215,9 +214,13 @@ Act : NewAlloc { Ling.Abs.Nu $1 }
     | 'let' Name OptSig '=' ATerm { Ling.Abs.LetA $2 $3 $5 }
 ASession :: { ASession }
 ASession : ATerm { Ling.Abs.AS $1 }
-OptSplit :: { OptSplit }
-OptSplit : 'split' Name { Ling.Abs.SoSplit $2 }
-         | Name { Ling.Abs.NoSplit $1 }
+Split :: { Split }
+Split : 'split' Name OptAs CPatt { Ling.Abs.PatSplit $2 $3 $4 }
+      | Name '{' ListChanDec '}' { Ling.Abs.ParSplit $1 $3 }
+      | Name '[' ListChanDec ']' { Ling.Abs.TenSplit $1 $3 }
+      | Name '[:' ListChanDec ':]' { Ling.Abs.SeqSplit $1 $3 }
+OptAs :: { OptAs }
+OptAs : {- empty -} { Ling.Abs.NoAs } | 'as' { Ling.Abs.SoAs }
 TopCPatt :: { TopCPatt }
 TopCPatt : '(' ListChanDec ')' { Ling.Abs.OldTopPatt $2 }
          | '{' ListCPatt '}' { Ling.Abs.ParTopPatt $2 }

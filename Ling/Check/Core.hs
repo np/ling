@@ -246,18 +246,22 @@ checkAct act proto =
     Nu anns newpatt -> do
       for_ anns $ checkTerm allocationTyp
       checkNewPatt proto newpatt
-    Split k c dOSs -> do
-      assertAbsent proto c
-      for_ dOSs $ checkChanDec proto
-      let ds         = dOSs ^.. each . cdChan
-          dsSessions = ds & each %~ \d -> proto ^. chanSession d . endedRS
-          s          = array k dsSessions
-      proto' <-
-        case k of
-          TenK -> checkConflictingChans proto (Just c) ds
-          ParK -> checkSomeOrderChans proto (l2s ds) $> proto
-          SeqK -> checkOrderedChans proto ds $> proto
-      return $ substChans (ds, (c,oneS s)) proto'
+    Split c pat ->
+      case pat ^? _ArrayCs of
+        Just (k, dOSs) -> do
+          assertAbsent proto c
+          for_ dOSs $ checkChanDec proto
+          let ds         = dOSs ^.. each . cdChan
+              dsSessions = ds & each %~ \d -> proto ^. chanSession d . endedRS
+              s          = array k dsSessions
+          proto' <-
+            case k of
+              TenK -> checkConflictingChans proto (Just c) ds
+              ParK -> checkSomeOrderChans proto (l2s ds) $> proto
+              SeqK -> checkOrderedChans proto ds $> proto
+          return $ substChans (ds, (c,oneS s)) proto'
+        Nothing ->
+          error "Check.Core: unsupported split"
     Send{} -> error "IMPOSSIBLE: use checkPref instead"
     Recv{} -> error "IMPOSSIBLE: use checkPref instead"
     Ax s cs -> do

@@ -102,13 +102,11 @@ instance (Rename a, Rename b) => Rename (a, b) where
 instance Rename ChanDec where
   rename f (ChanDec c r os) = ChanDec (rename (boundChans id c f) c) (rename f r) (rename f os)
 
-{-
 -- This instance is reserved for CPatt used in a binding position
 instance Rename CPatt where
   rename f = \case
     ChanP cd    -> ChanP (rename f cd)
     ArrayP k ps -> ArrayP k (rename f ps)
--}
 
 renameAtCPatt :: Ren -> Endom CPatt
 renameAtCPatt f = \case
@@ -126,7 +124,7 @@ instance Rename NewPatt where
 
 instance Rename Act where
   rename f = \case
-    Split k c ds    -> Split k (rename f c) (rename f ds)
+    Split c pat     -> Split (rename f c) (rename f pat)
     Send c os e     -> Send (rename f c) (rename f os) (rename f e)
     Recv c arg      -> Recv (rename f c) (rename f arg)
     Nu ann newpatt  -> Nu (rename f ann) (rename f newpatt)

@@ -81,9 +81,7 @@ data Proc
 
 data Act
     = Nu NewAlloc
-    | ParSplit OptSplit [ChanDec]
-    | TenSplit OptSplit [ChanDec]
-    | SeqSplit OptSplit [ChanDec]
+    | Split Split
     | Send Name ATerm
     | NewSend Name OptSession ATerm
     | Recv Name VarDec
@@ -98,7 +96,14 @@ data Act
 data ASession = AS ATerm
   deriving (Eq, Ord, Show, Read)
 
-data OptSplit = SoSplit Name | NoSplit Name
+data Split
+    = PatSplit Name OptAs CPatt
+    | ParSplit Name [ChanDec]
+    | TenSplit Name [ChanDec]
+    | SeqSplit Name [ChanDec]
+  deriving (Eq, Ord, Show, Read)
+
+data OptAs = NoAs | SoAs
   deriving (Eq, Ord, Show, Read)
 
 data TopCPatt

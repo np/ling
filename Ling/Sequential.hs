@@ -146,6 +146,12 @@ isReady env = \case
   Send c _ _ -> statusAt c env == Just Empty
   Recv c _   -> statusAt c env == Just Full
 
+transSplitPatt :: Channel -> CPatt -> Endom Env
+transSplitPatt c pat env =
+  case pat ^? _ArrayCs of
+    Just (_, cs) -> transSplit c cs env
+    Nothing -> error "Sequential.transSplitPatt: unsupported pattern"
+
 transSplit :: Channel -> [ChanDec] -> Endom Env
 transSplit c dOSs env =
   rmChan c $
@@ -209,7 +215,7 @@ transNew defs = \case
 transAct :: Defs -> Act -> Endom Env
 transAct defs = \case
   Nu _ newpatt -> transNew defs newpatt
-  Split _ c ds -> transSplit c ds
+  Split c pat  -> transSplitPatt c pat
   Send c _ _   -> actEnv c
   Recv c _     -> actEnv c
   Ax{}         -> id

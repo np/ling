@@ -25,13 +25,21 @@ fcPat = \case
   ArrayP _ ps -> fcPats ps
   ChanP cd    -> bcChanDecs [cd]
 
+bcPat :: BoundChans CPatt
+bcPat = \case
+  ArrayP _ pats -> bcPats pats
+  ChanP cd      -> bcChanDecs [cd]
+
 fcPats :: FreeChans [CPatt]
 fcPats = mconcat . map fcPat
+
+bcPats :: BoundChans [CPatt]
+bcPats = mconcat . map bcPat
 
 fcAct :: FreeChans Act
 fcAct = \case
   Nu{}            -> ø
-  Split _ c _     -> l2s [c]
+  Split c _       -> l2s [c]
   Send c _ _      -> l2s [c]
   Recv c _        -> l2s [c]
   Ax _ cs         -> l2s cs
@@ -46,7 +54,7 @@ bcNewPatt = \case
 bcAct :: BoundChans Act
 bcAct = \case
   Nu _ newpatt -> bcNewPatt newpatt
-  Split _ _ ds -> bcChanDecs ds
+  Split _ pat  -> bcPat pat
   Send{}       -> ø
   Recv{}       -> ø
   Ax{}         -> ø

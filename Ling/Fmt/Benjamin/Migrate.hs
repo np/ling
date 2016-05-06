@@ -97,9 +97,9 @@ transProc = \case
 transAct :: Act -> L.Act
 transAct = \case
   Nu newalloc -> L.Nu (transNewAlloc newalloc)
-  ParSplit optsplit chandecs -> L.ParSplit (transOptSplit optsplit) (transChanDec <$> chandecs)
-  TenSplit optsplit chandecs -> L.TenSplit (transOptSplit optsplit) (transChanDec <$> chandecs)
-  SeqSplit optsplit chandecs -> L.SeqSplit (transOptSplit optsplit) (transChanDec <$> chandecs)
+  ParSplit optsplit chandecs -> transOptSplit L.ParPatt optsplit chandecs
+  TenSplit optsplit chandecs -> transOptSplit L.TenPatt optsplit chandecs
+  SeqSplit optsplit chandecs -> transOptSplit L.SeqPatt optsplit chandecs
   Send name aterm -> L.Send (transName name) (transATerm aterm)
   Recv name vardec -> L.Recv (transName name) (transVarDec vardec)
   NewSend name aterm -> L.NewSend (transName name) L.NoSession (transATerm aterm)
@@ -110,10 +110,14 @@ transAct = \case
   LetA x os t -> L.LetA (transName x) (transOptSig os) (transATerm t)
   LetRecv x os t -> L.LetRecv (transName x) (transOptSig os) (transATerm t)
 
-transOptSplit :: OptSplit -> L.OptSplit
-transOptSplit = \case
-  NoSplit name -> L.NoSplit (transName name)
-  SoSplit name -> L.SoSplit (transName name)
+optSplitName :: OptSplit -> Name
+optSplitName = \case
+  NoSplit name   -> name
+  SoSplit name _ -> name
+
+transOptSplit :: ([L.CPatt] -> L.CPatt) -> OptSplit -> [ChanDec] -> L.Act
+transOptSplit k optsplit cs = L.Split
+  (L.PatSplit (transName $ optSplitName optsplit) L.SoAs (k (L.ChaPatt . transChanDec <$> cs)))
 
 transAllocTerm :: AllocTerm -> L.AllocTerm
 transAllocTerm (AVar d) = L.AVar (transName d)

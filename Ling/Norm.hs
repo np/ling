@@ -76,8 +76,7 @@ data NewPatt
 data Act
   = Nu       { _newAnns :: ![Term]
              , _newPatt :: !NewPatt }
-  -- TODO? Split Channel CPatt
-  | Split    !TraverseKind !Channel ![ChanDec]
+  | Split    !Channel !CPatt
   | Send     !Channel !(Maybe Session) !Term
   | Recv     !Channel !VarDec
   | Ax       !Session ![Channel]
@@ -279,20 +278,15 @@ kindSymbols = \case
   TenK -> "[ ... ]"
   SeqK -> "[: ... :]"
 
-kindLabel :: TraverseKind -> String
-kindLabel ParK = "par/⅋/{}"
-kindLabel TenK = "tensor/⊗/[]"
-kindLabel SeqK = "sequence/»/[::]"
-
 actLabel :: Act -> String
 actLabel = \case
-  Nu{}        -> "new"
-  Split k _ _ -> "split:" ++ kindLabel k
-  Send{}      -> "send"
-  Recv{}      -> "recv"
-  Ax{}        -> "fwd"
-  At{}        -> "@"
-  LetA{}      -> "let"
+  Nu{}    -> "new"
+  Split{} -> "split"
+  Send{}  -> "send"
+  Recv{}  -> "recv"
+  Ax{}    -> "fwd"
+  At{}    -> "@"
+  LetA{}  -> "let"
 
 isSendRecv :: Act -> Bool
 isSendRecv = \case

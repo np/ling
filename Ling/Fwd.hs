@@ -16,7 +16,7 @@ type MkFwd a = (Session -> Session) -> UsedNames -> a -> [Channel] -> Proc
 fwdSplit :: ([Proc] -> Proc) -> [TraverseKind] -> MkFwd [RSession]
 fwdSplit fprocs ks redSession used rss cs
   | null cs   = ø
-  | null rss  = toProc $ Order (zipWith3 Split ks cs (repeat []))
+  | null rss  = toProc $ Order (zipWith3 splitK ks cs (repeat []))
   | otherwise = Order pref `dotP` fprocs ps
   -- These splits are independant, they are put in sequence because
   -- splitting always commutes anyway.
@@ -24,7 +24,7 @@ fwdSplit fprocs ks redSession used rss cs
     cdss = zipWith subChanDecs (transpose (fwds (length cs) <$> rss)) cs
     css  = map _cdChan <$> cdss
     ps   = zipWith (fwdR redSession used) rss (transpose css)
-    pref = zipWith3 Split ks cs cdss
+    pref = zipWith3 splitK ks cs cdss
 
 fwdIO :: MkFwd (RW, VarDec, Session)
 fwdIO _          _    _               []       = ø
@@ -63,7 +63,7 @@ fwdProc' redSession s cs = fwdP redSession ø s cs
 -- The session 'Fwd n session' is a par.
 -- This function builds a process which first splits this par.
 fwdProc :: Int -> Session -> Channel -> Proc
-fwdProc n s c = Split ParK c cs `dotP` fwdP id ø s (_cdChan <$> cs)
+fwdProc n s c = splitK ParK c cs `dotP` fwdP id ø s (_cdChan <$> cs)
   where
     ss = oneS <$> fwds n s
     cs = subChanDecs ss c

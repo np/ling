@@ -135,9 +135,7 @@ All other symbols are terminals.
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
   | //Act// | -> | //NewAlloc// 
-  |  |  **|**  | //OptSplit// ``{`` //[ChanDec]// ``}`` 
-  |  |  **|**  | //OptSplit// ``[`` //[ChanDec]// ``]`` 
-  |  |  **|**  | //OptSplit// ``[:`` //[ChanDec]// ``:]`` 
+  |  |  **|**  | //Split// 
   |  |  **|**  | ``send`` //Name// //ATerm// 
   |  |  **|**  | //Name// //OptSession// ``<-`` //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
@@ -148,8 +146,12 @@ All other symbols are terminals.
   |  |  **|**  | ``@`` //ATerm// //TopCPatt// 
   |  |  **|**  | ``let`` //Name// //OptSig// ``=`` //ATerm// 
   | //ASession// | -> | //ATerm// 
-  | //OptSplit// | -> | ``split`` //Name// 
-  |  |  **|**  | //Name// 
+  | //Split// | -> | ``split`` //Name// //OptAs// //CPatt// 
+  |  |  **|**  | //Name// ``{`` //[ChanDec]// ``}`` 
+  |  |  **|**  | //Name// ``[`` //[ChanDec]// ``]`` 
+  |  |  **|**  | //Name// ``[:`` //[ChanDec]// ``:]`` 
+  | //OptAs// | -> | **eps**
+  |  |  **|**  | ``as`` 
   | //TopCPatt// | -> | ``(`` //[ChanDec]// ``)`` 
   |  |  **|**  | ``{`` //[CPatt]// ``}`` 
   |  |  **|**  | ``[`` //[CPatt]// ``]`` 

@@ -217,20 +217,25 @@ instance Equiv NewPatt where
     (NewChans{}, _) -> False
     (NewChan{}, _) -> False
 
+instance Equiv CPatt where
+  equiv env pat0 pat1 = case (pat0, pat1) of
+    (ChanP cd0, ChanP cd1) ->
+      ((==) `on` _cdChan) cd0 cd1 &&
+      ((equiv env) `on` _cdRepl) cd0 cd1
+    (ArrayP k0 pats0, ArrayP k1 pats1) ->
+       k0 == k1 && equiv env pats0 pats1
+    (ChanP{}, _) -> False
+    (ArrayP{}, _) -> False
+
 -- NOTE that type and session annotations are ignored as in the `Abs` instance.
 instance Equiv Act where
   equiv env a0 a1 = case (a0 , a1) of
-    (Recv c0 _b0, Recv c1 _b1) -> c0 == c1
-    (Send c0 _os0 t0, Send c1 _os1 t1) -> c0 == c1 && equiv env t0 t1
-    (At t0 p0, At t1 p1) -> equiv env t0 t1 && p0 == p1
-    (Nu _ann0 newpatt0, Nu _ann1 newpatt1) ->
-       equiv env newpatt0 newpatt1
-    (Split k0 c0 cds0, Split k1 c1 cds1) ->
-       (k0, c0) == (k1, c1) &&
-       on (==)        (each %~ _cdChan) cds0 cds1 &&
-       on (equiv env) (each %~ _cdRepl) cds0 cds1
-    (Ax _s0 cs0, Ax _s1 cs1) ->
-       cs0 == cs1
+    (Recv c0 _b0, Recv c1 _b1)             -> c0 == c1
+    (Send c0 _os0 t0, Send c1 _os1 t1)     -> c0 == c1 && equiv env t0 t1
+    (At t0 p0, At t1 p1)                   -> equiv env (t0, p0) (t1, p1)
+    (Nu _ann0 newpatt0, Nu _ann1 newpatt1) -> equiv env newpatt0 newpatt1
+    (Split c0 pat0, Split c1 pat1)         -> c0 == c1 && equiv env pat0 pat1
+    (Ax _s0 cs0, Ax _s1 cs1)               -> cs0 == cs1
 
     -- Equivalence of LetA is trivial since extensionally nothing is left
     -- of LetA after its expansion.

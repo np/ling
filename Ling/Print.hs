@@ -110,9 +110,7 @@ instance Print Proc where
 instance Print Act where
   prt i e = case e of
     Nu newalloc -> prPrec i 0 (concatD [prt 0 newalloc])
-    ParSplit optsplit chandecs -> prPrec i 0 (concatD [prt 0 optsplit, doc (showString "{"), prt 0 chandecs, doc (showString "}")])
-    TenSplit optsplit chandecs -> prPrec i 0 (concatD [prt 0 optsplit, doc (showString "["), prt 0 chandecs, doc (showString "]")])
-    SeqSplit optsplit chandecs -> prPrec i 0 (concatD [prt 0 optsplit, doc (showString "[:"), prt 0 chandecs, doc (showString ":]")])
+    Split split -> prPrec i 0 (concatD [prt 0 split])
     Send name aterm -> prPrec i 0 (concatD [doc (showString "send"), prt 0 name, prt 0 aterm])
     NewSend name optsession aterm -> prPrec i 0 (concatD [prt 0 name, prt 0 optsession, doc (showString "<-"), prt 0 aterm])
     Recv name vardec -> prPrec i 0 (concatD [doc (showString "recv"), prt 0 name, prt 0 vardec])
@@ -127,10 +125,17 @@ instance Print ASession where
   prt i e = case e of
     AS aterm -> prPrec i 0 (concatD [prt 0 aterm])
 
-instance Print OptSplit where
+instance Print Split where
   prt i e = case e of
-    SoSplit name -> prPrec i 0 (concatD [doc (showString "split"), prt 0 name])
-    NoSplit name -> prPrec i 0 (concatD [prt 0 name])
+    PatSplit name optas cpatt -> prPrec i 0 (concatD [doc (showString "split"), prt 0 name, prt 0 optas, prt 0 cpatt])
+    ParSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "{"), prt 0 chandecs, doc (showString "}")])
+    TenSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "["), prt 0 chandecs, doc (showString "]")])
+    SeqSplit name chandecs -> prPrec i 0 (concatD [prt 0 name, doc (showString "[:"), prt 0 chandecs, doc (showString ":]")])
+
+instance Print OptAs where
+  prt i e = case e of
+    NoAs -> prPrec i 0 (concatD [])
+    SoAs -> prPrec i 0 (concatD [doc (showString "as")])
 
 instance Print TopCPatt where
   prt i e = case e of

@@ -111,9 +111,7 @@ _.        Proc ::= Proc1 ;
 separator Proc "|" ;
 
 Nu.       Act ::= NewAlloc ;
-ParSplit. Act ::= OptSplit "{" [ChanDec] "}" ;
-TenSplit. Act ::= OptSplit "[" [ChanDec] "]" ;
-SeqSplit. Act ::= OptSplit "[:" [ChanDec] ":]" ;
+Split.    Act ::= Split ;
 Send.     Act ::= "send" Name ATerm ;
 NewSend.  Act ::= Name OptSession "<-" ATerm ;
 Recv.     Act ::= "recv" Name VarDec ;
@@ -126,8 +124,13 @@ LetA.     Act ::= "let" Name OptSig "=" ATerm ;
 
 AS.       ASession ::= ATerm ;
 
-SoSplit.  OptSplit ::= "split" Name ;
-NoSplit.  OptSplit ::= Name ;
+PatSplit. Split ::= "split" Name OptAs CPatt ;
+ParSplit. Split ::= Name "{" [ChanDec] "}" ;
+TenSplit. Split ::= Name "[" [ChanDec] "]" ;
+SeqSplit. Split ::= Name "[:" [ChanDec] ":]" ;
+
+NoAs. OptAs ::= ;
+SoAs. OptAs ::= "as" ;
 
 OldTopPatt. TopCPatt ::= "(" [ChanDec] ")" ;
 ParTopPatt. TopCPatt ::= "{"  [CPatt]  "}" ;

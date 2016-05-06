@@ -148,9 +148,12 @@ justChannel = iso go (\c-> CD c One NoSession)
     go (CD (Name x) Some{} NoSession) =
       error $ "unexpected session replication for channel " ++ x
 
-unSplit :: OptSplit -> Name
-unSplit (SoSplit x) = x
-unSplit (NoSplit x) = x
+normSplit :: Split -> (Name, N.CPatt)
+normSplit = \case
+  PatSplit c _ pat -> (c, norm pat)
+  ParSplit c ds    -> (c, _ArrayCs # (N.ParK, norm ds))
+  TenSplit c ds    -> (c, _ArrayCs # (N.TenK, norm ds))
+  SeqSplit c ds    -> (c, _ArrayCs # (N.SeqK, norm ds))
 
 normAct :: Act -> N.Proc
 normAct = \case
@@ -165,9 +168,7 @@ normAct = \case
 -}
 
     Nu newalloc       -> toProc $ N._Nu # norm newalloc
-    ParSplit c ds     -> toProc $ N.Split N.ParK (unSplit c) (norm ds)
-    TenSplit c ds     -> toProc $ N.Split N.TenK (unSplit c) (norm ds)
-    SeqSplit c ds     -> toProc $ N.Split N.SeqK (unSplit c) (norm ds)
+    Split split       -> toProc $ N._Split # normSplit split
     Send     c t      -> toProc $ N.Send c Nothing     (norm t)
     Recv     c a      -> toProc $ N.Recv c             (norm a)
     NewSend  c os t   -> toProc $ N.Send c (normOS os) (norm t)
@@ -208,9 +209,7 @@ newRecv c (VD x os) = NewRecv x os c
 reifyAct :: N.Act -> Proc
 reifyAct = \case
   N.Nu anns newpatt   -> PAct $ Nu (reify (anns, newpatt))
-  N.Split N.ParK c ds -> PAct $ ParSplit (SoSplit c) (reify ds)
-  N.Split N.TenK c ds -> PAct $ TenSplit (SoSplit c) (reify ds)
-  N.Split N.SeqK c ds -> PAct $ SeqSplit (SoSplit c) (reify ds)
+  N.Split c pat       -> PAct . Split $ PatSplit c NoAs (reify pat)
   N.Send     c os t   -> PAct $ NewSend c (reify (oneS <$> os)) (reify t)
   N.Recv     c a      -> PAct $ newRecv c                       (reify a)
   N.Ax       s cs     -> PAct $ Ax (reify s) ((justChannel #) <$> cs)

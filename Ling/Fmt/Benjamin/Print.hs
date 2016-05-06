@@ -200,9 +200,14 @@ instance Print ASession where
   prt i e = case e of
     AS aterm -> prPrec i 0 (concatD [prt 0 aterm])
 
+instance Print OptAs where
+  prt i e = case e of
+    NoAs -> prPrec i 0 (concatD [])
+    SoAs -> prPrec i 0 (concatD [doc (showString "as")])
+
 instance Print OptSplit where
   prt i e = case e of
-    SoSplit name -> prPrec i 0 (concatD [doc (showString "split"), prt 0 name])
+    SoSplit name optas -> prPrec i 0 (concatD [doc (showString "split"), prt 0 name, prt 0 optas])
     NoSplit name -> prPrec i 0 (concatD [prt 0 name])
 
 instance Print TopCPatt where

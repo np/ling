@@ -148,7 +148,9 @@ All other symbols are terminals.
   |  |  **|**  | ``@`` //ATerm// //TopCPatt// 
   |  |  **|**  | ``let`` //Name// //OptSig// ``=`` //ATerm// 
   | //ASession// | -> | //ATerm// 
-  | //OptSplit// | -> | ``split`` //Name// 
+  | //OptAs// | -> | **eps**
+  |  |  **|**  | ``as`` 
+  | //OptSplit// | -> | ``split`` //Name// //OptAs// 
   |  |  **|**  | //Name// 
   | //TopCPatt// | -> | ``(`` //[ChanDec]// ``)`` 
   |  |  **|**  | ``{`` //[CPatt]// ``}`` 

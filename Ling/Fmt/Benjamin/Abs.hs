@@ -98,7 +98,10 @@ data Act
 data ASession = AS ATerm
   deriving (Eq, Ord, Show, Read)
 
-data OptSplit = SoSplit Name | NoSplit Name
+data OptAs = NoAs | SoAs
+  deriving (Eq, Ord, Show, Read)
+
+data OptSplit = SoSplit Name OptAs | NoSplit Name
   deriving (Eq, Ord, Show, Read)
 
 data TopCPatt

@@ -180,6 +180,9 @@ infixed = _Name . prism' con pat . unOpName
       | let s = init xs, last xs == '_' && '_' `notElem` s = Just s
     pat _ = Nothing
 
+flat3 :: Iso (a,(b,c)) (d,(e,f)) (a,b,c) (d,e,f)
+flat3 = iso (\(x,(y,z))->(x,y,z)) (\(x,y,z)->(x,(y,z)))
+
 traceShowMsg :: Show a => String -> Endom a
 traceShowMsg msg x = trace (msg ++ " " ++ show x) x
 

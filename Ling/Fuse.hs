@@ -92,11 +92,18 @@ new[c0 : A, d0 : ~A]
 new[c1 : B, d1 : ~B]
 -}
 
-fuse2Acts :: NU -> ChanDec -> Act -> ChanDec -> Act -> Order Act
+type Fuse2 a = NU -> ChanDec -> a -> ChanDec -> a -> Order Act
+
+fuse2Pats :: Fuse2 CPatt
+fuse2Pats nu _c0 pat0 _c1 pat1
+  | Just (_, cs0) <- pat0 ^? _ArrayCs
+  , Just (_, cs1) <- pat1 ^? _ArrayCs = Order $ zipWith (two nu) cs0 cs1
+  | otherwise                         = error "Fuse.fuse2Pats unsupported split"
+
+fuse2Acts :: Fuse2 Act
 fuse2Acts nu c0 act0 c1 act1 =
   case (act0, act1) of
-    (Split _k0 _c0 cs0, Split _k1 _c1 cs1) -> Order $ zipWith (two nu) cs0 cs1
-              -- By typing, k0 and k1 should match, we could assert that for debugging.
+    (Split _c0 pat0, Split _c1 pat1) -> fuse2Pats nu c0 pat0 c1 pat1
     (Send _d0 _ e, Recv _d1 arg) -> fuseSendRecv nu c0 e c1 arg
     (Recv _d0 arg, Send _d1 _ e) -> fuseSendRecv nu c1 e c0 arg
               -- By typing, (c0,c1) and (d0,d1) should be equal, we could assert that for debugging.
