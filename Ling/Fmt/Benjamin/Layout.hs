@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-unused-matches -fno-warn-unused-binds #-}
 module Ling.Fmt.Benjamin.Layout where
 
 import Ling.Fmt.Benjamin.Lex

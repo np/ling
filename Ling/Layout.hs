@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-unused-binds #-}
+{-# OPTIONS_GHC -fno-warn-unused-matches -fno-warn-unused-binds #-}
 module Ling.Layout where
 
 import Ling.Lex

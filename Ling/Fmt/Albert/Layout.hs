@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-unused-matches -fno-warn-unused-binds #-}
 module Ling.Fmt.Albert.Layout where
 
 import Ling.Fmt.Albert.Lex

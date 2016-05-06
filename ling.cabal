@@ -46,12 +46,10 @@ library
       Ling.Fmt.Albert.Layout
       Ling.Fmt.Albert.Migrate
       Ling.Fmt.Albert.Print
-      Ling.Fmt.Albert.Skel
       Ling.Fmt.Benjamin.Abs
       Ling.Fmt.Benjamin.Layout
       Ling.Fmt.Benjamin.Migrate
       Ling.Fmt.Benjamin.Print
-      Ling.Fmt.Benjamin.Skel
       Ling.Free
       Ling.Fuse
       Ling.Fwd
@@ -70,13 +68,11 @@ library
       Ling.Scoped
       Ling.Sequential
       Ling.Session
-      Ling.Skel
       Ling.Subst
       Ling.SubTerms
       Ling.Type
       MiniC.Abs
       MiniC.Print
-      MiniC.Skel
   other-modules:
       Ling.Fmt.Albert.Lex
       Ling.Fmt.Albert.Par
