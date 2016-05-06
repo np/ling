@@ -182,7 +182,7 @@ normOS (SoSession s) = Just (normS s)
 
 normS :: RSession -> N.Session
 normS (Repl s r)
-  | r <- One  = norm (RawSession s)
+  | One <- r  = norm (RawSession s)
   | otherwise = error "Unsupported replication in session annotation"
 
 instance Norm Name where
