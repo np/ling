@@ -36,12 +36,12 @@ reduceApp st0 = \case
 
 reduceCase :: Scoped Term -> [Branch] -> Reduced Term
 reduceCase st0 brs =
-  case st1 ^. reduced . scoped of
+  case st1 ^. scoped of
     Con{} -> reduceTerm (st0 *> scase)
     _     -> Reduced scase
 
-  where st1   = reduceTerm st0
-        scase = (`mkCase` brs) <$> st1 ^. reduced
+  where st1   = reduceTerm st0 ^. reduced
+        scase = (`mkCase` brs) <$> st1
 
 reducePrim :: String -> [Literal] -> Maybe Literal
 reducePrim "_+_"        [LInteger x, LInteger y] = Just $ LInteger (x + y)
@@ -75,6 +75,7 @@ reduceDef sd es
 
 reduceTerm :: Reduce Term
 reduceTerm st0 =
+  -- tracePretty ("reduceTerm: gdefs=" <> pretty (st0 ^. gdefs) <> "\n st0=" <> pretty st0 <> "\n") $
   case t0 of
     Let defs t  -> reduceTerm (st0 *> Scoped ø defs () $> t)
     Def d es    -> reduceDef  (st0 $> d) es

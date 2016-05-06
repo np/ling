@@ -46,8 +46,17 @@ data TCEnv = TCEnv
   { _tcOpts    :: !TCOpts
   , _evars     :: Map Name Typ
   -- ^ The type of term variables
+  -- This includes the types for the defined:
+  -- * terms
+  -- * data types
+  -- * data constructors
   , _edefs     :: Defs
   -- ^ Term definitions
+  -- This holds not only the global definitions but also the local
+  -- definitions (using `let`). However `local` (from MonadState) is
+  -- used to keep the local definitions local.
+  -- Type checking should return well-scoped terms. Namely the local
+  -- definitions should be part of the definitions within 'Scoped'.
   , _ddefs     :: Map DataTypeName [Name]
   -- ^ Datatypes definitions
   , _ctyps     :: Map ConName DataTypeName

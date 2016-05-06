@@ -21,6 +21,9 @@ app t0 (u:us) =
     Lam (Arg x mty) t1 ->
       app (subst (aDef x mty u) t1) us
       -- app (substScoped (subst1 (x, Ann mty u) t1)) us
+
+    -- Since `pure x` is not providing any scope all what `reduceDef` can
+    -- do is to reduce the primitives.
     Def x es           -> reduceDef (pure x) (es ++ u : us) ^. reduced . scoped
     _                  -> error "Ling.Subst.app: IMPOSSIBLE"
 
