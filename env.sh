@@ -56,7 +56,11 @@ alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty
 current_nixpkgs=$HOME/hub/NixOS/nixpkgs-stack
 [ ! -d "$current_nixpkgs" ] || export NIX_PATH=nixpkgs=$current_nixpkgs
 DIST=`pwd`/dist
-export PATH="$DIST"/build/ling:"$DIST"/build/ling-fmt:"$DIST"/shims:$PATH
+if [ -d .stack-work ]; then
+  export PATH="$(stack --nix path --local-install-root)"/bin:"$DIST"/shims:$PATH
+else
+  export PATH="$DIST"/build/ling:"$DIST"/build/ling-fmt:"$DIST"/shims:$PATH
+fi
 
 # error() @ https://gist.github.com/3736727 {{{
 error(){
