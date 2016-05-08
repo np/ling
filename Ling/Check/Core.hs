@@ -351,10 +351,33 @@ inferProcTyp cds proc = do
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp
 
+checkPiLam :: (VarDec, Typ) -> (VarDec, Term) -> TC ()
+checkPiLam (at, bt) (arg, t) = do
+  debug . unlines $
+    ["Checking function"
+    ]
+  -- somehow check that at and arg agree on the same type
+  let bt' = bt -- should be updated to use arg name
+  checkVarDec arg (checkTerm bt' t)
+
+checkProtoProc :: [RSession] -> ([ChanDec], Proc) -> TC ()
+checkProtoProc ss (cs, proc) = do
+  let cs' = cs --should update RSession in cs with ss
+  ss' <- inferProcTyp cs' proc
+  debug . unlines $
+    ["Checking process term"
+    ,"exp:      " ++ pretty (Proc cs proc)
+    ,"expected: " ++ pretty (TProto ss)
+    ,"inferred: " ++ pretty ss'
+    ]
+  checkTypeEquivalence (TProto ss) ss'
+
 checkMaybeTyp :: Maybe Typ -> TC ()
 checkMaybeTyp = checkMaybeTerm TTyp
 
 checkTerm :: Typ -> Term -> TC ()
+checkTerm (TFun arg s) (Lam arg' t) = checkPiLam (arg,s) (arg',t)
+checkTerm (TProto ss) (Proc cs proc) = checkProtoProc ss (cs,proc)
 checkTerm expectedTyp e = do
   inferredTyp <- inferTerm e
   debug . unlines $
