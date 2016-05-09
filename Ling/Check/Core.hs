@@ -12,6 +12,7 @@ import           Ling.Print
 import           Ling.Proc
 import           Ling.Proto
 import           Ling.Reduce
+import qualified Ling.Rename          as R
 import           Ling.Scoped
 import           Ling.Session
 import           Ling.Prelude         hiding (subst1)
@@ -356,14 +357,28 @@ checkPiLam (at, bt) (arg, t) = do
   debug . unlines $
     ["Checking function"
     ]
-  -- somehow check that at and arg agree on the same type
-  let bt' = bt -- should be updated to use arg name
-  checkVarDec arg (checkTerm bt' t)
+  -- lot's of code for the Maybe type, I don't know enough about lens to
+  -- reduce the LOC here
+  at' <- case at ^. argBody of
+            Nothing -> error "Pi type should have a domain"
+            Just t -> return t
+  case arg ^. argBody of
+    Nothing -> return ()
+    Just ty -> checkTypeEquivalence at' ty
+  let bt' = R.rename1 (at ^. argName, arg ^. argName) bt
+      arg' = arg & argBody .~ (at ^. argBody)
+  checkVarDec arg' (checkTerm bt' t)
 
 checkProtoProc :: [RSession] -> ([ChanDec], Proc) -> TC ()
 checkProtoProc ss (cs, proc) = do
-  let cs' = cs --should update RSession in cs with ss
-  ss' <- inferProcTyp cs' proc
+  assert (length ss == length cs)
+    [ "Checking process term"
+    , "exp:      " ++ pretty (Proc cs proc)
+    , "expected: " ++ pretty (TProto ss)
+    , "The amount of sessions don't match the amount of channels"
+    ]
+  let chanSessions = l2m $ zip (map (^. cdChan) cs) ss
+  ss' <- local (cses .~ chanSessions) $ inferProcTyp cs proc
   debug . unlines $
     ["Checking process term"
     ,"exp:      " ++ pretty (Proc cs proc)

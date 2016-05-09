@@ -61,12 +61,13 @@ data TCEnv = TCEnv
   -- ^ Datatypes definitions
   , _ctyps     :: Map ConName DataTypeName
   -- ^ Data constructor ↦ type name
+  , _cses      :: Map Channel RSession
   }
 
 makeLenses ''TCEnv
 
 emptyTCEnv :: TCEnv
-emptyTCEnv = TCEnv defaultTCOpts ø ø ø ø
+emptyTCEnv = TCEnv defaultTCOpts ø ø ø ø ø
 
 tcEqEnv :: MonadReader TCEnv m => m EqEnv
 tcEqEnv = eqEnv edefs
