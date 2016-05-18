@@ -228,12 +228,22 @@ conTypeName c =
   maybe (tcError $ "No such constructor " ++ pretty c) return =<< view (ctyps . at c)
 
 debugCheck :: MonadTC m => (Err a -> String) -> Endom (m a)
-debugCheck fmt k =
+{-debugCheck fmt k =
   (do x <- k
       debug (fmt (Ok x))
       return x
   ) `catchError` \err ->
    do debug (fmt (Bad err))
+      throwError err-}
+debugCheck fmt = debugCheckM (pure . fmt)
+
+debugCheckM :: MonadTC m => (Err a -> m String) -> Endom (m a)
+debugCheckM fmt k =
+  (do x <- k
+      debug =<< fmt (Ok x)
+      return x
+  ) `catchError` \err ->
+   do debug =<< fmt (Bad err)
       throwError err
 
 errorScope :: (Print name, MonadError TCErr m) => name -> Endom (m a)
