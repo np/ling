@@ -2,7 +2,7 @@
 
 testname=merger.t
 command=ling
-args=( --seq merger.ll )
+args=( --pretty --no-check --seq --expand merger.ll )
 exit_code=0
 stdin_file=/dev/null
 stdout_file=stdout

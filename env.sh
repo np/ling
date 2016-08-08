@@ -1,3 +1,13 @@
+# MODE=nix
+# MODE=stack
+# MODE=cabal
+MODE=docker
+buildling() {
+  stack "${STACK_FLAGS[@]}" build --fast --pedantic "$@"
+}
+checkling() {
+  stack "${STACK_FLAGS[@]}" exec ./check.sh
+}
 cmdr() {
   local args=()
   while [ "$1" != -- ]; do
@@ -52,15 +62,6 @@ alias cmdrfmtall='cmdrecord tests/fmt/all.t  --env empty -- ling-fmt < fixtures/
 alias cmdrprettyall='cmdrecord tests/pretty/all.t  --env empty -- ling --pretty --no-check --no-norm < fixtures/all/*.ll'
 alias cmdrnormall='cmdrecord tests/norm/all.t  --env empty -- ling --pretty --no-check < fixtures/success/*.ll'
 alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty -- ling --strict-par --check  < fixtures/strict-par-success/*.ll'
-# nixpkgs commit ef17efa99b0e644bbd2a28c0c3cfe5a2e57b21ea
-current_nixpkgs=$HOME/hub/NixOS/nixpkgs-stack
-[ ! -d "$current_nixpkgs" ] || export NIX_PATH=nixpkgs=$current_nixpkgs
-DIST=`pwd`/dist
-if [ -d .stack-work ]; then
-  export PATH="$(stack --nix path --local-install-root)"/bin:"$DIST"/shims:$PATH
-else
-  export PATH="$DIST"/build/ling:"$DIST"/build/ling-fmt:"$DIST"/shims:$PATH
-fi
 
 # error() @ https://gist.github.com/3736727 {{{
 error(){
@@ -117,20 +118,52 @@ link(){
 }
 # }}}
 
-mkdir -p "$DIST"/shims
+DIST=`pwd`/dist
+case "$MODE" in
+  (docker)
+    cmdcheck() {
+      stack "${STACK_FLAGS[@]}" exec tools/cmdcheck "$@"
+    }
+    cmdrecord() {
+      stack "${STACK_FLAGS[@]}" exec tools/cmdrecord "$@"
+    }
+    rm -rf "$DIST"/shims
+    STACK_FLAGS=(--docker);;
+  (nix)
+    STACK_FLAGS=(--nix)
+    # nixpkgs commit ef17efa99b0e644bbd2a28c0c3cfe5a2e57b21ea
+    current_nixpkgs=$HOME/hub/NixOS/nixpkgs-stack
+    [ ! -d "$current_nixpkgs" ] || export NIX_PATH=nixpkgs=$current_nixpkgs
+    export PATH="$(stack "${STACK_FLAGS[@]}" path --local-install-root)"/bin:"$DIST"/shims:$PATH
 
-for i in \
-  bnfc \
-  cabal \
-  gcc \
-  ghc \
-  ghci \
-  ghc-make \
-  ghc-mod \
-  ghc-modi \
-  ghc-pkg \
-  hlint \
-  stylish-haskell
-do
-  link 'run-in-nix-shell' "$DIST"/shims/"$i"
-done
+    mkdir -p "$DIST"/shims
+
+    for i in \
+      ling \
+      ling-fmt \
+      bnfc \
+      cabal \
+      gcc \
+      ghc \
+      ghci \
+      ghc-make \
+      ghc-mod \
+      ghc-modi \
+      ghc-pkg \
+      hlint \
+      stylish-haskell
+    do
+      link 'run-in-nix-shell' "$DIST"/shims/"$i"
+    done
+    ;;
+  (stack)
+    rm -rf "$DIST"/shims
+    export PATH="$DIST"/build/ling:"$DIST"/build/ling-fmt:$PATH;;
+  (cabal)
+    rm -rf "$DIST"/shims
+    export PATH="$DIST"/build/ling:"$DIST"/build/ling-fmt:$PATH
+    buildling(){
+      echo TODO cabal build...
+    }
+    ;;
+esac

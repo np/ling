@@ -92,19 +92,22 @@ me=$(basename "$0")
 batch_mode=0
 print_directory=0
 log_level=0
-log_file=/dev/stderr
 chroot_args=( ) #/usr/sbin/chroot .)
 
+logger(){
+  cat >&2
+}
+
 info(){
-  echo "$me: $@" >>"$log_file"
+  echo "$me: $@" | logger
 }
 
 cat_info(){
-  cat "$@" >>"$log_file"
+  cat "$@" | logger
 }
 
 nest2_info(){
-  cat "$@" | nest2 >>"$log_file"
+  cat "$@" | nest2 | logger
 }
 
 log(){
@@ -185,11 +188,16 @@ show_vars(){
   done
 }
 
+# Adapted to write to $log_file instead of /dev/stderr
+# error() @ https://gist.github.com/np/3736727#file-error-sh {{{
+# Takes an exit code and a message, prints the message and then exits
 error(){
-  echo >>"$log_file"
-  info "$@"
-  exit 1
+  local code="$1"
+  shift
+  echo "error: $@" | logger
+  exit "$code"
 }
+# }}}
 
 internal_error(){
   info "$@"
@@ -286,7 +294,7 @@ ensure_empty_dir(){
       mkdir "$dir"
     fi
   elif [ -e "$dir" ]; then
-    error "$(printf %q "$dir")" already exists and is not a directory
+    error 1 "$(printf %q "$dir")" already exists and is not a directory
   else
     mkdir "$dir"
   fi
@@ -398,10 +406,14 @@ with_env_vars(){
   env -i PATH= "${env_defs[@]}" "$@"
 }
 
+expand_command(){
+  which "$command" || error 1 "The command \`$command' is not in PATH"
+}
+
 record(){
   # NOTE Should we check that std{in,err,out}_file are paths
   # for the current directory (no / in there)?
-  local full_command=$(which "$command")
+  local full_command=$(expand_command "$command")
 
   tee "$stdin_file" |
     with_env_vars '' "${env_vars[@]}" -- \
@@ -420,9 +432,9 @@ record(){
 assert_non_dirs(){
   for assert_non_dirs_file; do
     local file="$assert_non_dirs_file"
-    [ ! -d "$file" ] || error "\`$file' is a directory, list each files of the directory instead"
+    [ ! -d "$file" ] || error 1 "\`$file' is a directory, list each files of the directory instead"
     # Excluding all non-regular files also excludes /dev/null
-    # [ -f "$file" ] || error "\`$file' should be a regular file"
+    # [ -f "$file" ] || error 1 "\`$file' should be a regular file"
   done
 }
 
@@ -523,9 +535,9 @@ cmp_recipes_ref_part(){
   clear_recipe_scope
   . TESTRECIPE
   if check; then
-    echo -e "$CR$(green PASS): $testname            " >>"$log_file"
+    echo -e "$CR$(green PASS): $testname            " | logger
   else
-    echo -e "$CR$(red   FAIL): $testname            " >>"$log_file"
+    echo -e "$CR$(red   FAIL): $testname            " | logger
     false
   fi
 }
@@ -562,11 +574,13 @@ Usage: $me [<option>*]  (<testname>.t | <suitename>.s)*
 
   option ::= --batch
            | --help
-           | --logfile=<filename>
+           | --log=<FILE>
+           | --log-level=<NUMBER>
+           | --color=no
+           | --print-directory
 
 EOF
-  echo "$@" >>"$log_file"
-  exit 1
+  error 1 "$@"
 }
 
 check_valid_var(){
@@ -645,7 +659,7 @@ copy_file(){
 }
 
 check_action_mydir(){
-  local full_command=$(which "$command")
+  local full_command=$(expand_command "$command")
   stdout_file=stdout
   stderr_file=stderr
   setup
@@ -696,9 +710,9 @@ copy_source_or_product(){
   else
     case "$raw_file" in
       *://*)
-        error "URLs are not supported yet in sources";;
+        error 1 "URLs are not supported yet in sources";;
       *)
-        error "The source file \`$raw_file' does not exist";;
+        error 1 "The source file \`$raw_file' does not exist";;
     esac
   fi
 }
@@ -752,7 +766,7 @@ failed_tests=( )
 
 check_testcase(){
   local refdir="$1"
-  echo -n "$refdir..." >>"$log_file"
+  echo -n "$refdir..." | logger
   local mydir="${refdir%.t}".my
   ensure_empty_dir -f "$mydir"
   within_dir "$refdir" check_action_refdir "$(readlink -f "$mydir")"
@@ -761,7 +775,7 @@ check_testcase(){
   if cmp_recipes "$refdir" "$mydir"; then
     within_dir "$mydir" teardown
   else
-    within_dir "$refdir" explain >>"$log_file"
+    within_dir "$refdir" explain | logger
     within_dir "$mydir" teardown
     failed_tests=( "${failed_tests[@]}" "$refdir" )
   fi
@@ -795,10 +809,18 @@ check_testsuite(){
 check_action(){
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      (--batch) shift; batch_mode=1;;
-      (--logfile=*) log_file="${1#--logfile=}"; shift;;
+      (--batch) batch_mode=1; shift;;
+      (--log=*)
+        log_file="${1#--log=}"
+        logger(){
+          cat >>"$log_file"
+        }
+        shift;;
+      (--log-level=*) log_level="${1#--log-level=}"; shift;;
+      (--color=no) no_colors; shift;;
+      (--print-directory) print_directory=1; shift;;
       (--help) usage;;
-      (*) break;;
+      (*) break
     esac
   done
   [ "$#" -gt 0 ] || usage error: The test name was expected
@@ -810,9 +832,9 @@ check_action(){
     esac
   done
   if null "${failed_tests[@]}"; then
-    echo "All $testcount tests $(green PASSED)" >>"$log_file"
+    echo "All $testcount tests $(green PASSED)" | logger
   else
-    echo "$(length "${failed_tests[@]}") out of $testcount tests $(red FAILED)" >>"$log_file"
+    echo "$(length "${failed_tests[@]}") out of $testcount tests $(red FAILED)" | logger
     exit 2
   fi
 }

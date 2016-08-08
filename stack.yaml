@@ -7,4 +7,4 @@ extra-deps:
  #- ghci-pretty-0.0.2
  #- ipprint-0.6
  #- sr-extra-1.46.3.1
-resolver: lts-5.5
+resolver: lts-6.3

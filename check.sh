@@ -1,24 +1,50 @@
-#!/bin/sh
+#!/bin/bash
 set -e
-echo "== EXPECTED FAILURES =="
-cmdcheck "$@" tests/failure/*.t
-echo "== EXPECTED SUCCESSES =="
-cmdcheck "$@" tests/success/*.t
-echo "== EXPECTED SEQUENCE =="
-cmdcheck "$@" tests/sequence/*.t
-echo "== EXPECTED FUSION =="
-cmdcheck "$@" tests/fusion/*.t
-echo "== EXPECTED COMPILATION =="
-cmdcheck "$@" tests/compile/*.t
-echo "== EXPECTED NORMALIZED =="
-cmdcheck "$@" tests/norm/*.t
-echo "== EXPECTED PRETTY-PRINTER =="
-cmdcheck "$@" tests/pretty/*.t
-echo "== EXPECTED FMT =="
-cmdcheck "$@" tests/fmt/*.t
-echo "== EXPECTED STRICT-PAR FAILURES =="
-cmdcheck "$@" tests/strict-par-failure/*.t
-echo "== ISSUES CHECK =="
-cmdcheck "$@" issues/check/*.t
-echo "== ISSUES COMPILATION =="
-cmdcheck "$@" issues/compile/*.t
+ARGS=("$@")
+ALLBINS=(ling ling-fmt)
+export PATH=$PWD/tools:$PATH
+one(){
+  local title="$1"
+  shift
+  echo "== $title =="
+  if cmdcheck "${ARGS[@]}" "$@"; then
+    :
+  else
+    echo "Failed at $title, test suite aborted."
+    exit 1
+  fi
+}
+all(){
+  for d in tests/* issues/*; do
+    if [ "$d" != issues/keep.t ]; then
+      if [ -z "$(ls "$d"/*-title)" ]; then
+        echo "Missing DD-title file for directory $d"
+        exit 1
+      fi
+    fi
+  done
+  for t in $(ls -d1 tests/*/*-title issues/*/*-title | sort -t / -k 3); do
+    one "$(cat "$t")" "$(dirname "$t")"/*.t
+  done
+}
+
+if ling --no-check </dev/null >/dev/null; then
+  :
+else
+  echo "The ling command is not in \$PATH"
+  exit 1
+fi
+
+all
+
+case "$AUTO" in
+  (1|yes|true)
+    ALLFULLBINS=()
+    for b in "${ALLBINS[@]}"; do
+      ALLFULLBINS=("${ALLFULLBINS}" "$(which "$b")")
+    done
+    while : ; do
+      inotifywait -e delete "${ALLFULLBINS[@]}" || :
+      all
+    done;;
+esac
