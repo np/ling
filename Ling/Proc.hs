@@ -27,7 +27,7 @@ import Ling.Free (fcAct,fcProc)
 import Ling.Norm
 import Ling.Prelude
 import Ling.Rename
-import Ling.Session
+import Ling.Session.Core (oneS, fwds)
 
 infixr 4 `dotP`
 infixr 4 `dotPs`

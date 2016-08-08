@@ -45,7 +45,9 @@ suffixingBy suff = Ren f ø ø
       | otherwise     = x
 
 hDef :: Name -> Maybe Typ -> Term -> (Name, Maybe Typ, Term)
-hDef x mty tm = (hx, hmty, htm)
+hDef x mty tm
+  | x == anonName = (anonName, mty, tm)
+  | otherwise     = (hx, hmty, htm)
   where
     r    = suffixingBy (unName # x)
     hmty = rename r mty

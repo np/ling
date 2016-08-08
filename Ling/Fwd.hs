@@ -9,7 +9,7 @@ import Prelude hiding (pred)
 import Ling.Norm
 import Ling.Prelude
 import Ling.Proc
-import Ling.Session
+import Ling.Session.Core
 
 type MkFwd a = (Session -> Session) -> UsedNames -> a -> [Channel] -> Proc
 

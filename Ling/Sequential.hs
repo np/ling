@@ -79,10 +79,11 @@ statusStep Full  = Empty
 statusStep Empty = Full
 -}
 
-actEnv :: Channel -> Endom Env
-actEnv c env = env & chans   . at c . mapped %~ bimap Next (rsession %~ sessionStep)
-                   & locs    . at l %~ mnot ()
-                   & writers . at l %~ mnot c
+actEnv :: Channel -> Term -> Endom Env
+actEnv c tm env =
+  env & chans   . at c . mapped %~ bimap Next (rsession %~ sessionStep tm)
+      & locs    . at l %~ mnot ()
+      & writers . at l %~ mnot c
   where l = fst (env!c)
 
 sessionsStatus :: Defs -> (RW -> Status) -> Location -> Sessions -> [(Location,Status)]
@@ -216,8 +217,8 @@ transAct :: Defs -> Act -> Endom Env
 transAct defs = \case
   Nu _ newpatt -> transNew defs newpatt
   Split c pat  -> transSplitPatt c pat
-  Send c _ _   -> actEnv c
-  Recv c _     -> actEnv c
+  Send c _ t   -> actEnv c t
+  Recv c a     -> actEnv c (Def (a ^. argName) [])
   Ax{}         -> id
   At{}         -> id
   LetA ldefs   -> edefs <>~ ldefs

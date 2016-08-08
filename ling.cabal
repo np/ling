@@ -68,6 +68,7 @@ library
       Ling.Scoped
       Ling.Sequential
       Ling.Session
+      Ling.Session.Core
       Ling.Subst
       Ling.SubTerms
       Ling.Type

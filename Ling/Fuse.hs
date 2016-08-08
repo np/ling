@@ -80,7 +80,7 @@ fuseChanDecs nu ((c0,c1):cs) = fuse2Chans nu c0 c1 . fuseChanDecs nu cs
 
 fuseSendRecv :: NU -> ChanDec -> Term -> ChanDec -> VarDec -> Order Act
 fuseSendRecv nu c0 e c1 (Arg x mty) =
-  Order [LetA (aDef x mty e), nu ([c0,c1] & each . cdSession . _Just . rsession %~ sessionStep)]
+  Order [LetA (aDef x mty e), nu ([c0,c1] & each . cdSession . _Just . rsession %~ sessionStep (Def x []))]
 
 two :: ([a] -> b) -> a -> a -> b
 two f x y = f [x, y]

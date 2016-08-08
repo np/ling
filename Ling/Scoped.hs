@@ -17,6 +17,7 @@ import           Prelude      hiding (log)
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Rename
+import           Ling.Session.Core
 
 data Scoped a = Scoped { _gdefs, _ldefs :: Defs, _scoped :: a }
   deriving Eq
@@ -54,6 +55,12 @@ nullDefs = Map.null . _defsMap
 instance Monad Scoped where
   return  = pure
   s >>= f = s *> f (s ^. scoped)
+
+instance Dual a => Dual (Scoped a) where
+  sessionOp = fmap . sessionOp
+  dual      = fmap dual
+  log       = fmap log
+  isMaster  = isMaster . view scoped
 
 scopedName :: Scoped Name -> Maybe (Scoped Term)
 scopedName (Scoped g l x) =

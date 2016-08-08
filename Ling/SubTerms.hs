@@ -4,7 +4,7 @@ module Ling.SubTerms where
 
 import Ling.Norm
 import Ling.Prelude
-import Ling.Session
+import Ling.Session.Core
 
 class SubTerms a where
   subTerms :: Traversal' a Term

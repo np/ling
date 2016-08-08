@@ -8,7 +8,7 @@ import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Print
 import           Ling.Scoped
-import           Ling.Session
+import           Ling.Session.Core
 
 newtype Reduced a = Reduced { _reduced :: Scoped a }
   deriving (Eq, Monoid)

@@ -8,7 +8,7 @@ import qualified Ling.Norm    as N
 import           Ling.Prelude
 import           Ling.Proc
 import           Ling.Raw
-import           Ling.Session
+import           Ling.Session.Core
 import           Prelude      hiding (log)
 
 newtype RawSession = RawSession { rawSession :: Term }

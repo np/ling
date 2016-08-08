@@ -6,7 +6,7 @@ import Ling.Norm
 import Ling.Prelude
 import Ling.Reduce
 import Ling.Scoped
-import Ling.Session
+import Ling.Session.Core
 import Ling.SubTerms
 
 mkLet :: Defs -> Endom Term
