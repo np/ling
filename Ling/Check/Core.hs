@@ -12,6 +12,7 @@ import           Ling.Print
 import           Ling.Proc
 import           Ling.Proto
 import           Ling.Reduce
+import qualified Ling.Rename          as R
 import           Ling.Scoped
 import           Ling.Session
 import           Ling.Prelude         hiding (subst1)
@@ -52,7 +53,7 @@ checkProc proc0 = do
       checkPrefWellFormness pref
       let defs = acts ^. each . actDefs
       pushDefs . Scoped ø defs <$>
-        (checkPref pref =<<
+        (checkPref pref $
             checkDefs defs
               (checkVarDecs (acts >>= actVarDecs) (checkProc proc1)))
 
@@ -87,12 +88,13 @@ sendRecvSession = \case
     checkMaybeTyp typ $> (c, (pure .) $ depRecv arg)
   _ -> tcError "typeSendRecv: Not Send/Recv"
 
-checkPref :: Pref -> Proto -> TC Proto
-checkPref (Prll pref) proto
+checkPref :: Pref -> Endom (TC Proto)
+checkPref (Prll pref) kont
   | null pref =
-      return proto
+      kont
   | all isSendRecv pref = do
       css <- mapM sendRecvSession pref
+      proto <- kont
       proto' <- protoSendRecv css proto
       when (length pref >= 1) $
         debug . unlines $
@@ -103,7 +105,7 @@ checkPref (Prll pref) proto
           ] ++ prettyProto proto'
       return proto'
   | [act] <- pref =
-      checkAct act proto
+      checkAct act kont
   | otherwise =
       tcError $ "Unsupported parallel prefix " ++ pretty pref
 
@@ -234,9 +236,9 @@ or classically:
 Γ(c{c0,...,cN} P)(d) = (Γ(P)/(c0,...,cN))(d)
 
 -}
-checkAct :: Act -> Proto -> TC Proto
-checkAct act proto =
-  debugCheck (\proto' -> unlines $
+checkAct :: Act -> Endom (TC Proto)
+checkAct act kont =
+  debugCheckM (\proto' -> kont >>= \proto -> pure . unlines $
               [ "Checking act `" ++ pretty act ++ "`"
               , "Inferred protocol for the sub-process:"
               ] ++ prettyProto proto ++
@@ -245,10 +247,12 @@ checkAct act proto =
   case act of
     Nu anns newpatt -> do
       for_ anns $ checkTerm allocationTyp
+      proto <- kont
       checkNewPatt proto newpatt
     Split c pat ->
       case pat ^? _ArrayCs of
         Just (k, dOSs) -> do
+          proto <- kont
           assertAbsent proto c
           for_ dOSs $ checkChanDec proto
           let ds         = dOSs ^.. each . cdChan
@@ -266,12 +270,14 @@ checkAct act proto =
     Recv{} -> error "IMPOSSIBLE: use checkPref instead"
     Ax s cs -> do
       proto' <- checkAx s cs
+      proto <- kont
       return $ proto' `dotProto` proto
     LetA{} ->
-      return proto
+      kont
     At e p -> do
       ss <- unTProto =<< inferTerm e
       proto' <- checkCPatt (wrapSessions ss) p
+      proto <- kont
       return $ proto' `dotProto` proto
 
 unTProto :: Term -> TC Sessions
@@ -351,10 +357,47 @@ inferProcTyp cds proc = do
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp
 
+checkPiLam :: (VarDec, Typ) -> (VarDec, Term) -> TC ()
+checkPiLam (at, bt) (arg, t) = do
+  debug . unlines $
+    ["Checking function"
+    ]
+  -- lot's of code for the Maybe type, I don't know enough about lens to
+  -- reduce the LOC here
+  at' <- case at ^. argBody of
+            Nothing -> error "Pi type should have a domain"
+            Just t -> return t
+  case arg ^. argBody of
+    Nothing -> return ()
+    Just ty -> checkTypeEquivalence at' ty
+  let bt' = R.rename1 (at ^. argName, arg ^. argName) bt
+      arg' = arg & argBody .~ (at ^. argBody)
+  checkVarDec arg' (checkTerm bt' t)
+
+checkProtoProc :: [RSession] -> ([ChanDec], Proc) -> TC ()
+checkProtoProc ss (cs, proc) = do
+  assert (length ss == length cs)
+    [ "Checking process term"
+    , "exp:      " ++ pretty (Proc cs proc)
+    , "expected: " ++ pretty (TProto ss)
+    , "The amount of sessions don't match the amount of channels"
+    ]
+  let chanSessions = l2m $ zip (map (^. cdChan) cs) ss
+  ss' <- local (cses .~ chanSessions) $ inferProcTyp cs proc
+  debug . unlines $
+    ["Checking process term"
+    ,"exp:      " ++ pretty (Proc cs proc)
+    ,"expected: " ++ pretty (TProto ss)
+    ,"inferred: " ++ pretty ss'
+    ]
+  checkTypeEquivalence (TProto ss) ss'
+
 checkMaybeTyp :: Maybe Typ -> TC ()
 checkMaybeTyp = checkMaybeTerm TTyp
 
 checkTerm :: Typ -> Term -> TC ()
+checkTerm (TFun arg s) (Lam arg' t) = checkPiLam (arg,s) (arg',t)
+checkTerm (TProto ss) (Proc cs proc) = checkProtoProc ss (cs,proc)
 checkTerm expectedTyp e = do
   inferredTyp <- inferTerm e
   debug . unlines $
