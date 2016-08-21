@@ -253,7 +253,7 @@ checkAct act proto =
           for_ dOSs $ checkChanDec proto
           let ds         = dOSs ^.. each . cdChan
               dsSessions = ds & each %~ \d -> proto ^. chanSession d . endedRS
-              s          = array k dsSessions
+              s          = array k (Sessions dsSessions)
           proto' <-
             case k of
               TenK -> checkConflictingChans proto (Just c) ds
@@ -292,7 +292,7 @@ checkCPatt s = \case
     checkChanDec proto cd $> proto
   ArrayP kpat pats ->
     case s of
-      Array k ss -> do
+      Array k (Sessions ss) -> do
         assert (kpat == k)
           ["Expected an array splitting pattern with " ++ kindSymbols kpat ++
            " not " ++ kindSymbols k]
@@ -334,7 +334,7 @@ inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
   Proc cs proc -> inferProcTyp cs proc
   TFun arg s   -> checkVarDec arg (checkTyp s) $> TTyp
   TSig arg s   -> checkVarDec arg (checkTyp s) $> TTyp
-  TProto ss    -> for_ ss checkRSession        $> TTyp
+  TProto ss    -> for_ (ss ^. _Sessions) checkRSession $> TTyp
   TSession s   -> checkSession s               $> sessionTyp
 
 inferProcTyp :: [ChanDec] -> Proc -> TC Typ
@@ -346,7 +346,7 @@ inferProcTyp cds proc = do
   assert (proto' ^. isEmptyProto) $
     "These channels have not been introduced:" :
     prettyChanDecs proto'
-  return $ TProto rs
+  return $ TProto (Sessions rs)
 
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp
@@ -432,7 +432,7 @@ checkSession :: Session -> TC ()
 checkSession s0 = case s0 of
   TermS _ t   -> checkTerm sessionTyp t
   IO _ arg s  -> checkVarDec arg $ checkSession s
-  Array _ ss  -> for_ ss checkRSession
+  Array _ ss  -> for_ (ss ^. _Sessions) checkRSession
 
 -- The arguments are assumed to be already checked,
 -- otherwise use `checkVarDef`.

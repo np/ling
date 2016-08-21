@@ -215,6 +215,10 @@ instance Print N.Session where
   prt     i = prt i . reifySession
   prtList i = prtList i . reifySessions
 
+instance Print N.Sessions where
+  prt     i = prt i . view N._Sessions
+  prtList i = prtList i . map (view N._Sessions)
+
 instance Print N.RSession where
   prt     i = prt i . reifyRSession
   prtList i = prtList i . reifyRSessions

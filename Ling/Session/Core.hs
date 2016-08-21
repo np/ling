@@ -29,7 +29,7 @@ oneS :: Session -> RSession
 oneS s = Repl s ø
 
 loli :: Op2 Session
-loli s t = Array ParK $ oneS <$> [dual s, t]
+loli s t = Array ParK . Sessions $ oneS <$> [dual s, t]
 
 fwds :: Dual session => Int -> session -> [session]
 fwds n s
@@ -39,7 +39,7 @@ fwds n s
   | otherwise = s : dual s : replicate (n - 2) (log s)
 
 fwd :: Int -> Endom Session
-fwd n s = Array ParK $ oneS <$> fwds n s
+fwd n s = Array ParK . Sessions $ oneS <$> fwds n s
 
 -- Here one can tune what we consider ended.
 -- Being ended implies:
@@ -49,7 +49,7 @@ fwd n s = Array ParK $ oneS <$> fwds n s
 -- * `Array _ []` (thus `{}` and `[]`)
 -- * `Array _ [ended ,..., ended]`
 endS :: Prism' Session ()
-endS = only (Array SeqK [])
+endS = only (Array SeqK ø)
 
 endRS :: Prism' RSession ()
 endRS = nearly (oneS (endS # ())) $ \(s `Repl` r) -> endS `is` s && litR1 `is` r
@@ -169,6 +169,12 @@ instance Dual a => Dual [a] where
   log    = map log
   sessionOp = map . sessionOp
   isMaster = any isMaster
+
+instance Dual Sessions where
+  dual   = _Sessions %~ dual
+  log    = _Sessions %~ log
+  sessionOp = over _Sessions . sessionOp
+  isMaster = isMaster . view _Sessions
 
 instance Dual Term where
   sessionOp o = view tSession . termS o

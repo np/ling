@@ -13,8 +13,8 @@ import Ling.Session.Core
 
 type MkFwd a = (Session -> Session) -> UsedNames -> a -> [Channel] -> Proc
 
-fwdSplit :: ([Proc] -> Proc) -> [TraverseKind] -> MkFwd [RSession]
-fwdSplit fprocs ks redSession used rss cs
+fwdSplit :: ([Proc] -> Proc) -> [TraverseKind] -> MkFwd Sessions
+fwdSplit fprocs ks redSession used (Sessions rss) cs
   | null cs   = ø
   | null rss  = toProc $ Order (zipWith3 splitK ks cs (repeat []))
   | otherwise = Order pref `dotP` fprocs ps
@@ -36,7 +36,7 @@ fwdIO redSession used (Read,  arg, s) (c:ds)   = recv `dotP` Prll sends `dotP` f
         sends      = [ Send d Nothing vx | d <- ds ]
 fwdIO _          _    _               _        = error "fwdIO: Not enough channels for this forwarder (or the session is not a sink)"
 
-fwdArray :: TraverseKind -> MkFwd [RSession]
+fwdArray :: TraverseKind -> MkFwd Sessions
 fwdArray = \case
   SeqK -> fwdSplit dotsP   $ repeat SeqK
   TenK -> fwdSplit mconcat $ TenK : repeat ParK

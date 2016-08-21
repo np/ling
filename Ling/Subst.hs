@@ -117,5 +117,8 @@ instance Subst Session where
 instance Subst RSession where
   subst f (Repl s t) = Repl (subst f s) (subst f t)
 
+instance Subst Sessions where
+  subst = over _Sessions . subst
+
 instance Subst RFactor where
   subst = over _RFactor . subst

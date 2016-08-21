@@ -225,3 +225,6 @@ instance Rename RSession where
 
 instance Rename RFactor where
   rename = _RFactor . rename
+
+instance Rename Sessions where
+  rename = _Sessions . rename

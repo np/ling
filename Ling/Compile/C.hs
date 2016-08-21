@@ -468,7 +468,7 @@ transRSession env (s `Repl` r)
   | otherwise    = transSession env s & aqATyp %~ (`tArr` transRFactor env r)
 
 transSessions :: Env -> Sessions -> [AQTyp]
-transSessions = map . transRSession
+transSessions env = map (transRSession env) . view _Sessions
 
 isPtrTyp :: C.Typ -> Bool
 isPtrTyp (C.TPtr _) = True

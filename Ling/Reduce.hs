@@ -112,4 +112,4 @@ flatRSession ssr
         r1  = sr1 ^. scoped
 
 flatSessions :: Reduce Sessions
-flatSessions ss = Reduced . sequenceA $ (ss ^. scoped) >>= flatRSession . (ss $>)
+flatSessions ss = Reduced . fmap Sessions . sequenceA $ (ss ^. scoped . _Sessions) >>= flatRSession . (ss $>)

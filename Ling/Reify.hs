@@ -49,7 +49,7 @@ instance Norm RawSession where
   type Normalized RawSession = N.Session
   norm = review N.tSession . norm . rawSession
   reify = RawSession . \case
-            N.Array k s      -> aTerm $ reifyArray k (reify s)
+            N.Array k s      -> aTerm $ reifyArray k (reify (s ^. N._Sessions))
             N.IO N.Write a s -> Snd (reifyVarDec a) (reify s)
             N.IO N.Read a s  -> Rcv (reifyVarDec a) (reify s)
             N.TermS o e      -> sessionOp o (reify e
@@ -258,8 +258,8 @@ instance Norm ATerm where
     N.Lit l                   -> Lit l
     N.Con n                   -> Con (reify n)
     N.TTyp                    -> TTyp
-    N.TProto ss               -> TProto (reify ss)
-    N.TSession (N.Array k ss) -> reifyArray k (reify ss)
+    N.TProto ss               -> TProto (reify $ ss ^. N._Sessions)
+    N.TSession (N.Array k ss) -> reifyArray k (reify (ss ^. N._Sessions))
     e                         -> paren (reify e)
   norm = \case
     Var x      -> N.Def (norm x) []
@@ -267,11 +267,11 @@ instance Norm ATerm where
     Lit l      -> N.Lit l
     Con n      -> N.Con (norm n)
     TTyp       -> N.TTyp
-    TProto ss  -> N.TProto (norm ss)
+    TProto ss  -> N.TProto (N.Sessions (norm ss))
     End        -> (endS # ()) ^. N.tSession
-    Par s      -> N.Array N.ParK (norm s) ^. N.tSession
-    Ten s      -> N.Array N.TenK (norm s) ^. N.tSession
-    Seq s      -> N.Array N.SeqK (norm s) ^. N.tSession
+    Par s      -> (N.Array N.ParK . N.Sessions $ norm s) ^. N.tSession
+    Ten s      -> (N.Array N.TenK . N.Sessions $ norm s) ^. N.tSession
+    Seq s      -> (N.Array N.SeqK . N.Sessions $ norm s) ^. N.tSession
     Paren t os -> N.optSig (norm t) (norm os)
 
 mkVDsA :: ATerm -> [VarDec]
@@ -327,7 +327,7 @@ instance Norm Term where
     N.Lit l      -> RawApp (Lit l) []
     N.Con n      -> RawApp (Con (reify n)) []
     N.TTyp       -> RawApp TTyp []
-    N.TProto ss  -> RawApp (TProto (reify ss)) []
+    N.TProto ss  -> RawApp (TProto (reify (ss ^. N._Sessions))) []
     N.Proc cs p  -> TProc (reify cs) (reify p)
     N.Lam  arg s -> Lam  (reifyVarDec arg) (reify s)
     N.TFun arg s -> TFun (reifyVarDec arg) (reify s)

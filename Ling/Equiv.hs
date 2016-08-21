@@ -152,10 +152,10 @@ equivRedTerm env s0 s1 =
       (TSig arg0 u0, TSig arg1 u1) -> equiv env (Abs arg0 u0) (Abs arg1 u1)
       (Proc cds0 p0, Proc cds1 p1) -> equiv env (Telescope (chanDecArg<$>cds0) p0)
                                                 (Telescope (chanDecArg<$>cds1) p1)
-      (TProto ss0,   TProto ss1)   -> equiv env (RS ss0) (RS ss1)
+      (TProto ss0,   TProto ss1)   -> equiv env ss0 ss1
       (TSession se0, TSession se1) -> case (se0, se1) of
         (IO p0 ty0 se0', IO p1 ty1 se1') -> equiv env (p0, Abs ty0 se0') (p1, Abs ty1 se1')
-        (Array k0 ss0,   Array k1 ss1)   -> equiv env (k0, RS ss0) (k1, RS ss1)
+        (Array k0 ss0,   Array k1 ss1)   -> equiv env (k0, ss0) (k1, ss1)
 
         -- The normal form should prevent u0/u1 to be TSession (TermS _ _)
         -- themselves. Otherwise we would miss equivalences such as ~~A === A.
@@ -193,10 +193,8 @@ instance Equiv TraverseKind where
 instance Equiv RSession where
   equiv env (s0 `Repl` r0) (s1 `Repl` r1) = equiv env (s0, r0) (s1, r1)
 
-newtype RSessions = RS [RSession]
-
-instance Equiv RSessions where
-  equiv env (RS srs0) (RS srs1) = reduceEquiv flatSessions equiv env srs0 srs1
+instance Equiv Sessions where
+  equiv env = reduceEquiv flatSessions (equivAt _Sessions) env
 
 instance Equiv RFactor where
   equiv env (RFactor t0) (RFactor t1) = equiv env t0 t1

@@ -105,7 +105,7 @@ sessionStatus defs dflt l = \case
 rsessionStatus :: Defs -> (RW -> Status) -> Location -> RSession -> [(Location,Status)]
 rsessionStatus defs dflt l sr@(s `Repl` r)
   | litR1 `is` r = sessionStatus  defs dflt l s
-  | otherwise    = sessionsStatus defs dflt l [sr]
+  | otherwise    = sessionsStatus defs dflt l (Sessions [sr])
 
 statusAt :: Channel -> Env -> Maybe Status
 statusAt c env

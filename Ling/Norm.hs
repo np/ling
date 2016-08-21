@@ -1,9 +1,10 @@
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE Rank2Types            #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE FlexibleInstances            #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving   #-}
+{-# LANGUAGE LambdaCase                   #-}
+{-# LANGUAGE MultiParamTypeClasses        #-}
+{-# LANGUAGE Rank2Types                   #-}
+{-# LANGUAGE TemplateHaskell              #-}
+{-# LANGUAGE TypeFamilies                 #-}
 module Ling.Norm
   ( module Ling.Norm
   , Name(..)
@@ -156,7 +157,9 @@ data RSession
          }
   deriving (Eq,Ord,Show,Read)
 
-type Sessions = [RSession]
+newtype Sessions = Sessions [RSession]
+  deriving (Eq,Ord,Show,Read,Monoid)
+
 type NSession = Maybe Session
 
 makeLenses ''Act
@@ -186,6 +189,7 @@ makePrisms ''RFactor
 makePrisms ''RSession
 makePrisms ''RW
 makePrisms ''Session
+makePrisms ''Sessions
 makePrisms ''Term
 makePrisms ''TraverseKind
 
@@ -309,9 +313,9 @@ isSendRecv = \case
 
 allSndRcv :: Session -> Bool
 allSndRcv = \case
-  IO _ _ s   -> allSndRcv s
-  Array _ [] -> True
-  _          -> False
+  IO _ _ s              -> allSndRcv s
+  Array _ (Sessions []) -> True
+  _                     -> False
 
 
 type Brs a = [(ConName, a)]
@@ -360,10 +364,10 @@ mkCaseRSession rel u = repl . bimap h h . unzip . fmap unRepl
 
 mkCaseSessions :: Rel Term -> MkCase' Sessions
 mkCaseSessions rel u brs =
-  [mkCaseRSession rel u (brs & branches %~ unSingleton)]
+  Sessions [mkCaseRSession rel u (brs & branches %~ unSingleton)]
   where
-    unSingleton [x] = x
-    unSingleton _   = error "mkCaseSessions"
+    unSingleton (Sessions [x]) = x
+    unSingleton _              = error "mkCaseSessions"
 
 int0, int1 :: Term
 int0 = Lit (LInteger 0)

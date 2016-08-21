@@ -17,9 +17,9 @@ unRepl (s `Repl` r)
   | litR1 `is` r = s
   | otherwise    = error "unRepl: unexpected replicated session"
 
-wrapSessions :: [RSession] -> Session
-wrapSessions [s `Repl` (is litR1 -> True)] = s
-wrapSessions ss                            = Array ParK ss
+wrapSessions :: Sessions -> Session
+wrapSessions (Sessions [s `Repl` (is litR1 -> True)]) = s
+wrapSessions ss                                       = Array ParK ss
 
 constArrOp :: TraverseKind -> SessionOp
 constArrOp = SessionOp idEndom . constEndom
@@ -51,14 +51,14 @@ unsafeFlatRSession (s `Repl` r) =
 
 -- See flatSessions in Ling.Reduce
 unsafeFlatSessions :: Sessions -> [Session]
-unsafeFlatSessions = concatMap unsafeFlatRSession
+unsafeFlatSessions = concatMap unsafeFlatRSession . view _Sessions
 
 projSessions :: Integer -> Sessions -> Session
-projSessions _ [] = error "projSessions: out of bound"
-projSessions n (Repl s r:ss)
+projSessions _ (Sessions []) = error "projSessions: out of bound"
+projSessions n (Sessions (Repl s r:ss))
   | Just i <- r ^? litR = if n < i
                            then s
-                           else projSessions (n - i) ss
+                           else projSessions (n - i) (Sessions ss)
   | otherwise           = error "projSessions/Repl: only integer literals are supported"
 
 replRSession :: RFactor -> Endom RSession

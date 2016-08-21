@@ -16,13 +16,13 @@ ap =
 
 ap_SInt_SBool =
   proc (c : {[!Int, ?Bool],{?Int, !Bool}})
-  let S#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 : Session = (!Int).
-  let T#d2f4af09b8604bc10819c1d320a3ae2e7013068c80cbc11e70edc586ea0cab1f : Session = (!Bool).
+  let S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let T#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 : Session = (!Bool).
   split c {f, xo}.
   split xo {x, o}.
   split f [fi, fo].
-  fwd S#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 (fi, x).
-  fwd T#d2f4af09b8604bc10819c1d320a3ae2e7013068c80cbc11e70edc586ea0cab1f (o, fo)
+  fwd S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab (fi, x).
+  fwd T#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 (o, fo)
 
 assert
   `false
@@ -123,17 +123,17 @@ curry =
 
 curry_SInt_SBool_SDouble =
   proc (c : {[[!Int, !Bool],?Double],{?Int, {?Bool, !Double}}})
-  let S#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 : Session = (!Int).
-  let T#d2f4af09b8604bc10819c1d320a3ae2e7013068c80cbc11e70edc586ea0cab1f : Session = (!Bool).
-  let U#f9a5bc42504a0b68f36a6bdb814ea1a3b6f8b31fa4f5a5233640cc4560a7aa0a : Session = (!Double).
+  let S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let T#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 : Session = (!Bool).
+  let U#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 : Session = (!Double).
   split c {f, xyo}.
   split xyo {x, yo}.
   split yo {y, o}.
   split f [fxy, fo].
   split fxy [fx, fy].
-  fwd S#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 (fx, x).
-  fwd T#d2f4af09b8604bc10819c1d320a3ae2e7013068c80cbc11e70edc586ea0cab1f (fy, y).
-  fwd U#f9a5bc42504a0b68f36a6bdb814ea1a3b6f8b31fa4f5a5233640cc4560a7aa0a (o, fo)
+  fwd S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab (fx, x).
+  fwd T#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 (fy, y).
+  fwd U#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 (o, fo)
 
 cutEmptyParTensor =
   proc ()
@@ -314,7 +314,7 @@ feed_fwd_send_then_recv_Int_String_42_showInt =
   let O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449 : Type = String.
   let f#b2a9ac5d0016d5d9fd1f6b3a5a6e6e23b267e0d594d2cbc24980e407aa7ba77a : (x#f : I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad)-> O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449 = showInt.
   let i#1b38768212e0ec952e7048820f4309b9fa2609b6388a3e7bc2f44e126fec1bad : I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad = 42.
-  let p#b3fb22c40021e7ddcd2c170fb0acfd0d9b0aab37634a0ad44ff5e2f8a8b098dc : < {!I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.?O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449, ?I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.!O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449}> = (proc (c#p)
+  let p#ed04e7d813ad8964cb786921b61f44db3ecdbc9b8cb8a3a620665eb01859a981 : < {!I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.?O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449, ?I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.!O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449}> = (proc (c#p)
   split c#p {c#0#p : !Int.?String, c#1#p : ?Int.!String}.
   let x#c#1#p : Int <- c#1#p.
   c#0#p <- x#c#1#p.
@@ -591,23 +591,23 @@ group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)
 
 group_nested_seq_SInt_SDouble_SBool_SString =
   proc (c : {[: [: ?Int, ?Double :], [: ?Bool, ?String :] :], [: !Int, !Double, !Bool, !String :]})
-  let A#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 : Session = (!Int).
-  let B#f9a5bc42504a0b68f36a6bdb814ea1a3b6f8b31fa4f5a5233640cc4560a7aa0a : Session = (!Double).
-  let C#d2f4af09b8604bc10819c1d320a3ae2e7013068c80cbc11e70edc586ea0cab1f : Session = (!Bool).
-  let D#dd9f01640dee8da33950a262728b6b455cdfd0cfd78137cc9ff5dc433054ef3b : Session = (!String).
+  let A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 : Session = (!Double).
+  let C#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 : Session = (!Bool).
+  let D#79406b16ee627465d9f4142e730328a3f1f40acd3f8f9dd26307425f736021c3 : Session = (!String).
   split c {i, o}.
-  let A#9b733d124a9f5bdc3db9ad6905ffdb0374cdad28e09a5c53d5a7ed08ea39cc30 : Session = (~ A#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33).
-  let B#d8adc0879bda2fe29e4ce8347e59a2c8b594a5c179fed1569765e5ccd812f6b8 : Session = (~ B#f9a5bc42504a0b68f36a6bdb814ea1a3b6f8b31fa4f5a5233640cc4560a7aa0a).
-  let C#0487d60a17309f25549ece2f8f6b9f9ffb410bd56555b57d05abfaff10240a8e : Session = (~ C#d2f4af09b8604bc10819c1d320a3ae2e7013068c80cbc11e70edc586ea0cab1f).
-  let D#7ed150ef7e4a1ab8c1ec2d5d8655c5d1d5ee4b6fe3d05b12a71edd2e39c4e66a : Session = (~ D#dd9f01640dee8da33950a262728b6b455cdfd0cfd78137cc9ff5dc433054ef3b).
+  let A#6dc76b793cdad3d2195de5e6220592234d69f22ca5f2ad8eb70d79a53e5d7570 : Session = (~ A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab).
+  let B#bc576496bb1e424c9823afaef2d05868d4f2346e3fcf32fb6ddd488ea6688a4b : Session = (~ B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052).
+  let C#583d0022770ae6c7fbb83c95c9899338e1bea28eda4412a78670f85ff9a63a43 : Session = (~ C#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993).
+  let D#b806476d543c251fff8701d6501fe20b21f49f660111a4f3e1b4cfcbe84f9260 : Session = (~ D#79406b16ee627465d9f4142e730328a3f1f40acd3f8f9dd26307425f736021c3).
   split o [: na, nb, nc, nd :].
   split i [: ab, cd :].
   split ab [: a, b :].
   split cd [: c, d :].
-  fwd A#9b733d124a9f5bdc3db9ad6905ffdb0374cdad28e09a5c53d5a7ed08ea39cc30 (a, na).
-  fwd B#d8adc0879bda2fe29e4ce8347e59a2c8b594a5c179fed1569765e5ccd812f6b8 (b, nb).
-  fwd C#0487d60a17309f25549ece2f8f6b9f9ffb410bd56555b57d05abfaff10240a8e (c, nc).
-  fwd D#7ed150ef7e4a1ab8c1ec2d5d8655c5d1d5ee4b6fe3d05b12a71edd2e39c4e66a (d, nd)
+  fwd A#6dc76b793cdad3d2195de5e6220592234d69f22ca5f2ad8eb70d79a53e5d7570 (a, na).
+  fwd B#bc576496bb1e424c9823afaef2d05868d4f2346e3fcf32fb6ddd488ea6688a4b (b, nb).
+  fwd C#583d0022770ae6c7fbb83c95c9899338e1bea28eda4412a78670f85ff9a63a43 (c, nc).
+  fwd D#b806476d543c251fff8701d6501fe20b21f49f660111a4f3e1b4cfcbe84f9260 (d, nd)
 
 id : (A : Type)-> (x : A)-> A
 
@@ -1507,13 +1507,13 @@ ten_loli_par =
 
 ten_loli_par_sInt_sDouble =
   proc (c : {{?Int, ?Double},{!Int, !Double}})
-  let A#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 : Session = (!Int).
-  let B#f9a5bc42504a0b68f36a6bdb814ea1a3b6f8b31fa4f5a5233640cc4560a7aa0a : Session = (!Double).
+  let A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 : Session = (!Double).
   split c {i, o}.
   split i {na, nb}.
   split o {a, b}.
-  fwd A#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 (a, na).
-  fwd B#f9a5bc42504a0b68f36a6bdb814ea1a3b6f8b31fa4f5a5233640cc4560a7aa0a (b, nb)
+  fwd A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab (a, na).
+  fwd B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 (b, nb)
 
 ten_loli_par_sequential =
   \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})
