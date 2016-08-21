@@ -5,11 +5,14 @@ MODE=docker
 buildling() {
   stack "${STACK_FLAGS[@]}" build --fast --pedantic "$@"
 }
+envexec(){
+  stack "${STACK_FLAGS[@]}" --docker-run-args '--memory 100m --memory-swap 100m' exec "$@"
+}
 ling() {
-  stack "${STACK_FLAGS[@]}" exec ling -- "$@"
+  envexec ling -- "$@"
 }
 checkling() {
-  stack "${STACK_FLAGS[@]}" exec ./check.sh
+  envexec ./check.sh
 }
 cmdr() {
   local args=()
@@ -125,10 +128,10 @@ DIST=`pwd`/dist
 case "$MODE" in
   (docker)
     cmdcheck() {
-      stack "${STACK_FLAGS[@]}" exec tools/cmdcheck -- "$@"
+      envexec tools/cmdcheck -- "$@"
     }
     cmdrecord() {
-      stack "${STACK_FLAGS[@]}" exec tools/cmdrecord -- "$@"
+      envexec tools/cmdrecord -- "$@"
     }
     rm -rf "$DIST"/shims
     STACK_FLAGS=(--docker);;
