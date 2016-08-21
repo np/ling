@@ -13,7 +13,9 @@ import           Control.Lens.Extras       as X (is)
 import           Control.Monad             as X
 import           Control.Monad.Except      as X
 import           Control.Monad.Reader      as X
+import           Data.Bifoldable           as X
 import           Data.Bifunctor            as X
+import           Data.Bitraversable        as X
 import           Data.ByteString.Lazy.Lens as BL
 import           Data.Digest.Pure.SHA      (sha256, showDigest)
 import           Data.Foldable             as X
@@ -57,6 +59,9 @@ type Verbosity = Bool
 newtype Prll a = Prll { _unPrll :: [a] }
   deriving (Eq, Ord, Show, Read)
 
+makePrisms ''Prll
+makeLenses ''Prll
+
 ø :: Monoid a => a
 ø = mempty
 
@@ -64,8 +69,17 @@ instance Monoid (Prll a) where
   mempty                    = Prll ø
   Prll ps `mappend` Prll qs = Prll (ps <> qs)
 
+instance Each (Prll a) (Prll b) a b where
+  each = _Prll . each
+
 newtype Order a = Order { _unOrder :: [a] }
   deriving (Eq, Ord, Show, Read)
+
+makePrisms ''Order
+makeLenses ''Order
+
+instance Each (Order a) (Order b) a b where
+  each = _Order . each
 
 anonName :: Name
 anonName = Name "_"
@@ -73,22 +87,45 @@ anonName = Name "_"
 data Arg a = Arg { _argName :: Name, _argBody :: a }
   deriving (Eq, Ord, Show, Read)
 
-instance Functor Arg where
-  fmap f (Arg n x) = Arg n (f x)
+makePrisms ''Arg
+makeLenses ''Arg
+
+instance Functor Arg where fmap = over argBody
+
+instance t ~ Arg a' => Rewrapped (Arg a) t
+instance Wrapped (Arg a) where
+  type Unwrapped (Arg a) = (Name, a)
+  _Wrapped' = _Arg
 
 anonArg :: a -> Arg a
 anonArg = Arg anonName
 
 data Abs a b = Abs { _argAbs :: Arg a, _bodyAbs :: b }
 
-instance Functor (Abs a) where
-  fmap f (Abs arg x) = Abs arg (f x)
+makePrisms ''Abs
+makeLenses ''Abs
+
+instance Functor (Abs a) where fmap = over bodyAbs
 
 instance Bifunctor Abs where
   bimap f g (Abs arg x) = Abs (f <$> arg) (g x)
 
+instance Bifoldable Abs where
+  bifoldMap = bifoldMapDefault
+
+instance Bitraversable Abs where
+  bitraverse f g (Abs arg x) = Abs <$> argBody f arg <*> g x
+
+instance t ~ Abs a' b' => Rewrapped (Abs a b) t
+instance Wrapped (Abs a b) where
+  type Unwrapped (Abs a b) = (Arg a, b)
+  _Wrapped' = _Abs
+
 -- TODO: Rename into something like 'Telescoped' instead
 data Telescope a b = Telescope { _argsTele :: [Arg a], _bodyTele :: b }
+
+makePrisms ''Telescope
+makeLenses ''Telescope
 
 instance Functor (Telescope a) where
   fmap f (Telescope args x) = Telescope args (f x)
@@ -96,40 +133,26 @@ instance Functor (Telescope a) where
 instance Bifunctor Telescope where
   bimap f g (Telescope args x) = Telescope (fmap f <$> args) (g x)
 
+instance Bifoldable Telescope where
+  bifoldMap = bifoldMapDefault
+
+instance Bitraversable Telescope where
+  bitraverse f g (Telescope args x) = Telescope <$> (traverse . argBody) f args <*> g x
+
 data Ann a b = Ann { _annotation :: a, _annotated :: b }
   deriving (Eq, Ord, Read, Show)
+
+makePrisms ''Ann
+makeLenses ''Ann
 
 instance Bifunctor Ann where
   bimap f g (Ann a b) = Ann (f a) (g b)
 
-makePrisms ''Prll
-makePrisms ''Order
-makePrisms ''Arg
-makePrisms ''Abs
-makePrisms ''Telescope
-makePrisms ''Ann
-makeLenses ''Prll
-makeLenses ''Order
-makeLenses ''Arg
-makeLenses ''Abs
-makeLenses ''Telescope
-makeLenses ''Ann
+instance Bifoldable Ann where
+  bifoldMap = bifoldMapDefault
 
-instance Each (Prll a) (Prll b) a b where
-  each = _Prll . each
-
-instance Each (Order a) (Order b) a b where
-  each = _Order . each
-
-instance t ~ Arg a' => Rewrapped (Arg a) t
-instance Wrapped (Arg a) where
-  type Unwrapped (Arg a) = (Name, a)
-  _Wrapped' = _Arg
-
-instance t ~ Abs a' b' => Rewrapped (Abs a b) t
-instance Wrapped (Abs a b) where
-  type Unwrapped (Abs a b) = (Arg a, b)
-  _Wrapped' = _Abs
+instance Bitraversable Ann where
+  bitraverse f g (Ann a b) = Ann <$> f a <*> g b
 
 instance t ~ Ann a' b' => Rewrapped (Ann a b) t
 instance Wrapped (Ann a b) where

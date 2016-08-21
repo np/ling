@@ -70,7 +70,7 @@ subst1 :: Rename s => (Name, Ann (Maybe Typ) Term) -> s -> Scoped s
 subst1 (x, Ann mty tm) s =
   case tm of
     Def y [] | isInternalName y ->
-      pure $ rename1 (x, y) s
+      pure $ rename1I (x, y) s
     _ ->
       let (hx, hmty, htm) = hDef x mty tm in
-      Scoped ø (aDef hx hmty htm) (rename1 (x, hx) s)
+      Scoped ø (aDef hx hmty htm) (rename1I (x, hx) s)

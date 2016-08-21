@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE Rank2Types        #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Ling.Proc
@@ -23,8 +24,8 @@ module Ling.Proc
 import Prelude hiding (pred)
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import Ling.Free (fcAct,fcProc)
 import Ling.Norm
+import Ling.Print.Class
 import Ling.Prelude
 import Ling.Rename
 import Ling.Session.Core (oneS, fwds)
@@ -144,9 +145,9 @@ _ActAt = prism con pat
               let
                 l = zip cs cs' & each . both %~ view cdChan
                 m = l2m l
-                r = Ren (\_ x -> Map.lookup x m ?| x) ø ø
+                r = Ren (\_ _ x -> pure $ Map.lookup x m ?| x) ø ø
               in
-              rename r proc0
+              renameI r proc0
             _ -> p0
         _ -> p0
       where
@@ -195,8 +196,11 @@ procActs f = \case
     Dot <$> procActs f proc0 <*> procActs f proc1
 
 -- Only a traversal if we don't put back actions about these channels
-procActsChans :: Set Channel -> Traversal' Proc Act
-procActsChans cs = procActs . filtered (\act -> not (Set.null (fcAct act `Set.intersection` cs)))
+-- NOTE: not used
+procActsChans :: Print Act => Set Channel -> Traversal' Proc Act
+procActsChans cs = procActs . filtered (not . Set.null . chanSetOf)
+  where
+    chanSetOf act = fcActSetCheck act `Set.intersection` cs
 
 {-
 skippableAct :: Channel -> Act -> Bool
@@ -223,39 +227,45 @@ skippableActs :: Channel -> [Act] -> Bool
 skippableActs c acts = null acts || all (skippableAct c) acts
 -}
 
-fetchActAct :: (Set Channel -> Bool) -> Lens Act Proc (Maybe Act) Proc
+fetchActAct :: Print Act => (Set Channel -> Bool) -> Lens Act Proc (Maybe Act) Proc
 fetchActAct pred f act
-  | pred (fcAct act) = f (Just act)
-  | otherwise        = (act `dotP`) <$> f Nothing
+  | pred (fcActSetCheck act) = f (Just act)
+  | otherwise                  = (act `dotP`) <$> f Nothing
 
-fetchActPref :: (Set Channel -> Bool) -> Lens [Act] Proc (Maybe Act) Proc
+fetchActPref :: Print Act => (Set Channel -> Bool) -> Lens [Act] Proc (Maybe Act) Proc
 fetchActPref pred f = \case
   [] -> f Nothing
   (act:acts)
-    | pred (fcAct act) -> (Prll acts `dotP`) <$> f (Just act)
-    | otherwise        -> (act  `dotP`)      <$> fetchActPref pred f acts
+    | pred (fcActSetCheck act) -> (Prll acts `dotP`) <$> f (Just act)
+    | otherwise                -> (act  `dotP`)      <$> fetchActPref pred f acts
 
-fetchActProcs :: (Set Channel -> Bool) -> Lens Procs Procs (Maybe Act) Proc
+fcProcSetCheck :: Print Proc => Proc -> Set Channel
+fcProcSetCheck = setOf freeChans
+
+fcActSetCheck :: Print Act => Act -> Set Channel
+fcActSetCheck = setOf freeChans
+
+fetchActProcs :: (Print Act, Print Proc) => (Set Channel -> Bool) -> Lens Procs Procs (Maybe Act) Proc
 fetchActProcs pred = _Prll . go
   where
     go f = \case
       [] -> pure <$> f Nothing
       proc0:procs
-        | pred (fcProc proc0) -> (:procs) <$> fetchActProc' pred f proc0
-        | otherwise           -> (proc0:) <$> go                 f procs
+        | pred (fcProcSetCheck proc0) -> (:procs) <$> fetchActProc' pred f proc0
+        | otherwise                   -> (proc0:) <$> go                 f procs
 
-fetchActProc :: (Set Channel -> Bool) -> Lens' Proc Proc
+fetchActProc :: (Print Act, Print Proc) => (Set Channel -> Bool) -> Lens' Proc Proc
 fetchActProc pred f proc = fetchActProc' pred (f . toProc) proc
 
-fetchActProc' :: (Set Channel -> Bool) -> Lens Proc Proc (Maybe Act) Proc
+fetchActProc' :: (Print Act, Print Proc) => (Set Channel -> Bool) -> Lens Proc Proc (Maybe Act) Proc
 fetchActProc' pred f = \case
   Act act -> fetchActAct pred f act
   Procs procs -> toProc <$> fetchActProcs pred f procs
   NewSlice cs t x proc0 ->
     NewSlice cs t x <$> fetchActProc' pred f proc0
   proc0 `Dot` proc1
-    | pred (fcProc proc0) -> (`dotP` proc1) <$> fetchActProc' pred f proc0
-    | otherwise           -> (proc0 `dotP`) <$> fetchActProc' pred f proc1
+    | pred (fcProcSetCheck proc0) -> (`dotP` proc1) <$> fetchActProc' pred f proc0
+    | otherwise                   -> (proc0 `dotP`) <$> fetchActProc' pred f proc1
 
 {-
 replProcs :: (Show i, Integral i) => i -> Name -> Endom Procs

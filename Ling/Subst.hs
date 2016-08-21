@@ -3,11 +3,11 @@
 
 module Ling.Subst where
 
-import           Ling.Free
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Proc
 import           Ling.Reduce
+import           Ling.Rename (boundVars)
 import           Ling.Scoped
 import           Ling.Session
 
@@ -104,7 +104,7 @@ instance Subst Proc where
       subst f proc0 `Dot` subst f1 proc1
       where
         defs0 = proc0 ^. procActs . actDefs
-        f1 = hide (to bvProc . folded) proc0 f <> subst f defs0
+        f1 = hide boundVars proc0 f <> subst f defs0
     Procs procs -> Procs $ subst f procs
     NewSlice cs t x p -> NewSlice cs (subst f t) x (subst (hide id x f) p)
 
@@ -118,4 +118,4 @@ instance Subst RSession where
   subst f (Repl s t) = Repl (subst f s) (subst f t)
 
 instance Subst RFactor where
-  subst f (RFactor t) = RFactor (subst f t)
+  subst = over _RFactor . subst

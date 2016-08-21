@@ -1,75 +1,63 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE Rank2Types       #-}
+{-# LANGUAGE TemplateHaskell  #-}
 
 module Ling.Free where
 
-import qualified Data.Set     as Set
 import           Ling.Norm
 import           Ling.Prelude
+import qualified Data.Set as Set
 
-type FreeChans a = a -> Set Channel
+data BoundFree n
+  = Bound { _nName :: n }
+  | Free  { _nName :: n }
+  deriving (Eq,Ord,Show,Read)
 
-type BoundChans a = FreeChans a
+makePrisms ''BoundFree
+makeLenses ''BoundFree
 
-type FreeVars a = FreeChans a
+type Names n a = Fold a (BoundFree n)
+type Vars    a = Names Name    a
+type Chans   a = Names Channel a
 
-type BoundVars a = FreeChans a
+pattChans :: Fold CPatt Name
+pattChans f = \case
+  ArrayP k ps -> ArrayP k <$> (each . pattChans) f ps
+  ChanP cd    -> ChanP    <$> cdChan f cd
 
-bvVarDec :: BoundChans VarDec
-bvVarDec = l2s . pure . _argName
+fcAct :: Fold Act Channel
+fcAct = actChans . _Free
 
-bcChanDecs :: BoundChans [ChanDec]
-bcChanDecs = setOf (each . cdChan)
+bcAct :: Fold Act Channel
+bcAct = actChans . _Bound
 
-fcPat :: FreeChans CPatt
-fcPat = \case
-  ArrayP _ ps -> fcPats ps
-  ChanP cd    -> bcChanDecs [cd]
+actChans :: Chans Act
+actChans f = \case
+  Split c pat     -> Split <$> re _Free f c <*> (pattChans . re _Bound) f pat
+  Send c os t     -> (\c' -> Send c' os t) <$> re _Free f c
+  Recv c vd       -> (`Recv` vd)           <$> re _Free f c
+  Ax s cs         -> Ax s                  <$> (each . re _Free) f cs
+  At t p          -> At t                  <$> (pattChans . re _Free) f p
+  Nu ann newpatt  -> Nu ann                <$> newPattChans f newpatt
+  a@LetA{}        -> pure a
 
-bcPat :: BoundChans CPatt
-bcPat = \case
-  ArrayP _ pats -> bcPats pats
-  ChanP cd      -> bcChanDecs [cd]
+newPattChans :: Chans NewPatt
+newPattChans f = \case
+  NewChans k cs -> NewChans  k    <$> (each . cdChan . re _Bound) f cs
+  NewChan c mt  -> (`NewChan` mt) <$> re _Bound f c
 
-fcPats :: FreeChans [CPatt]
-fcPats = mconcat . map fcPat
+bvDefs :: Fold Defs Name
+bvDefs = to (\defs -> keysSet (defs ^. defsMap)) . folded
 
-bcPats :: BoundChans [CPatt]
-bcPats = mconcat . map bcPat
-
-fcAct :: FreeChans Act
-fcAct = \case
-  Nu{}            -> ø
-  Split c _       -> l2s [c]
-  Send c _ _      -> l2s [c]
-  Recv c _        -> l2s [c]
-  Ax _ cs         -> l2s cs
-  At _ p          -> fcPat p
-  LetA{}          -> ø
-
-bcNewPatt :: BoundChans NewPatt
-bcNewPatt = \case
-  NewChans _ cs -> bcChanDecs cs
-  NewChan c _   -> l2s [c]
-
-bcAct :: BoundChans Act
-bcAct = \case
-  Nu _ newpatt -> bcNewPatt newpatt
-  Split _ pat  -> bcPat pat
-  Send{}       -> ø
-  Recv{}       -> ø
-  Ax{}         -> ø
-  At{}         -> ø
-  LetA{}       -> ø
-
-bvAct :: BoundVars Act
-bvAct = \case
-  Nu{}           -> ø
-  Split{}        -> ø
-  Send{}         -> ø
-  Recv _ x       -> bvVarDec x
-  Ax{}           -> ø
-  At{}           -> ø
-  LetA defs      -> keysSet (defs ^. defsMap)
+bvAct :: Fold Act Name
+bvAct f = \case
+  Recv os x      -> Recv os <$> argName f x
+  LetA defs      -> LetA <$> bvDefs f defs
+  a@Nu{}         -> pure a
+  a@Split{}      -> pure a
+  a@Send{}       -> pure a
+  a@Ax{}         -> pure a
+  a@At{}         -> pure a
 
 {-
 fvAct :: FreeVars Act
@@ -82,42 +70,43 @@ fvAct = \case
   Ax s _          -> fvSession s
   At tm _         -> fvTerm tm
 -}
+
 -- The actions are in parallel. Also they are supposed be disjoint.
-bvPref :: BoundVars Pref
-bcPref :: BoundChans Pref
-fcPref :: FreeChans Pref
-bvPref = mconcat . map bvAct . view unPrll
+--bvPref :: Fold Pref Name
+--bvPref    = _Prll . each . bvAct
+--prefChans :: BoundChans Pref
+--prefChans = _Prll . each . prefChan
+--fcPref :: FreeChans Pref
+--fcPref = _Prll . each . fcAct
 
-bcPref = mconcat . map bcAct . view unPrll
+bcProc :: Fold Proc Channel
+bcProc f = \case
+  Act act      -> Act <$> bcAct f act
+  Procs procs  -> Procs <$> bcProcs f procs
+  p@NewSlice{} -> pure p
+  Dot{}        -> error "bcProc: Dot"
 
-fcPref = mconcat . map fcAct . view unPrll
+bcProcs :: Fold Procs Channel
+bcProcs = _Prll . each . bcProc
 
-bcProc :: BoundChans Proc
-bcProc = \case
-  Act act     -> bcAct act
-  Procs procs -> bcProcs procs
-  NewSlice{}  -> ø
-  Dot{}       -> error "bcProc: Dot"
+bvProc :: Fold Proc Name
+bvProc f = \case
+  Act act           -> Act <$> bvAct f act
+  Procs procs       -> Procs <$> bvProcs f procs
+  p@NewSlice{}      -> pure p
+  proc0 `Dot` proc1 -> Dot <$> bvProc f proc0 <*> bvProc f proc1
 
-bcProcs :: BoundChans Procs
-bcProcs = mconcat . map bcProc . view unPrll
+bvProcs :: Fold Procs Name
+bvProcs = _Prll . each . bvProc
 
-bvProc :: BoundVars Proc
-bvProc = \case
-  Act act           -> bvAct act
-  Procs procs       -> bvProcs procs
-  NewSlice{}        -> ø
-  proc0 `Dot` proc1 -> bvProc proc0 <> bvProc proc1
+fcProc :: Fold Proc Channel
+fcProc = to fcProcSet . folded
 
-bvProcs :: BoundVars Procs
-bvProcs = mconcat . map bvProc . view unPrll
-
-fcProc :: FreeChans Proc
-fcProc = \case
-  Act act           -> fcAct act
-  proc0 `Dot` proc1 -> fcProc proc0 <> (fcProc proc1 `Set.difference` bcProc proc0)
-  NewSlice cs _ _ p -> l2s cs <> fcProc p
-  Procs procs       -> fcProcs procs
-
-fcProcs :: FreeChans Procs
-fcProcs = mconcat . map fcProc . view unPrll
+fcProcSet :: Proc -> Set Channel
+fcProcSet = \case
+  Act act           -> setOf fcAct act
+  proc0 `Dot` proc1 -> fcProcSet proc0 <>
+                       (fcProcSet proc1 `Set.difference` setOf bcProc proc0)
+  NewSlice cs _ _ p -> setOf each cs <> fcProcSet p
+  Procs procs       -> setOf (_Prll . each . fcProc) procs
+-- -}

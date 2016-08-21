@@ -26,6 +26,7 @@ library
   build-depends:
       base >=4.7 && <4.9
     , array
+    , bifunctors
     , containers
     , SHA
     , lens

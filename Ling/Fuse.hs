@@ -2,11 +2,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Ling.Fuse where
 
-import           Ling.Free
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Proc
 import           Ling.Print
+import           Ling.Rename
 import           Ling.Session
 
 type Allocation = Term
@@ -121,7 +121,7 @@ fuse2Chans nu cd0 cd1 p0 =
     Nothing -> p0 -- error "fuse2Chans: mact0 is Nothing"
     Just actA ->
       let
-        (cdA, cdB) = if actA ^. to fcAct . hasKey c0 then (cd0, cd1) else (cd1, cd0)
+        (cdA, cdB) = if setOf freeChans actA ^. hasKey c0 then (cd0, cd1) else (cd1, cd0)
         predB :: Set Channel -> Bool
         predB fc = fc ^. hasKey (cdB ^. cdChan)
         mactB = p0 {- was p1 -} ^? {-scoped .-} fetchActProc predB . _Act

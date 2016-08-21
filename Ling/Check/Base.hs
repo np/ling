@@ -11,11 +11,11 @@ module Ling.Check.Base where
 
 import           Ling.Equiv
 import           Ling.ErrM
-import           Ling.Free
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Print
 import           Ling.Reduce
+import           Ling.Rename
 import           Ling.Scoped
 import           Ling.Session
 import           Ling.Subst   (Subst, substScoped)
@@ -107,17 +107,20 @@ checkNoDups msg (x:xs)
   | x `elem` xs = tcError $ pretty x ++ " appears twice " ++ msg
   | otherwise   = checkNoDups msg xs
 
-checkDisjointness :: (MonadError TCErr m, Ord a) => String -> [Set a] -> m ()
-checkDisjointness k ss =
-  assert (Set.null rs) ["These " ++ k ++ " should not be used in different parallel parts"]
+checkDisjointness :: (MonadError TCErr m, Print a, Ord a)
+                  => String -> Fold s a -> [s] -> m ()
+checkDisjointness k f s =
+  assert (Set.null rs) ["These " ++ k ++ " should not be used in different parallel parts:"
+                       ,pretty (s2l rs)]
   where
+    ss = setOf f <$> s
     rs = redundant ss
 
 checkPrefWellFormness :: MonadError TCErr m => Pref -> m ()
 checkPrefWellFormness (Prll pref) = do
-  checkDisjointness "free channels"  $ fcAct <$> pref
-  checkDisjointness "bound channels" $ bcAct <$> pref
-  checkDisjointness "bound names"    $ bvAct <$> pref
+  checkDisjointness "free channels"  freeChans  pref
+  checkDisjointness "bound channels" boundChans pref
+  checkDisjointness "bound names"    boundVars  pref
 
 -- IsSession could be a type synonym of kind Constraint
 class (Eq s, Subst s, Print s, Equiv s, Dual s) => IsSession s
