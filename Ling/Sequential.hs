@@ -21,9 +21,7 @@ import Ling.Print
 import Ling.Session
 import Ling.Proc
 import Ling.Norm
-import Ling.Scoped (Scoped(Scoped))
-import Ling.Defs (pushDefsR)
-import Ling.Reduce (reduceTerm)
+import Ling.Defs (reduceSimple)
 
 data Status = Full | Empty deriving (Eq,Read,Show)
 
@@ -97,7 +95,7 @@ sessionStatus defs dflt l = \case
   Array _ ss -> sessionsStatus defs dflt l ss
   IO rw _ s  -> (l, dflt rw) : sessionStatus defs dflt (Next l) s
   TermS p t ->
-    case reduceTerm' defs t of
+    case reduceSimple defs t of
       TSession s -> sessionStatus defs dflt l (sessionOp p s)
       t'         -> trace ("[WARNING] Skipping abstract session " ++ pretty t')
                     [(l, Empty)]
@@ -119,21 +117,6 @@ statusAt c env
 -- TODO generalize by looking deeper at what is ready now
 splitReady :: Env -> Pref -> (Pref, Pref)
 splitReady env = bimap Prll Prll . partition (isReady env) . _unPrll
-
-reduceProc :: Defs -> Endom Proc
-reduceProc defs = \case
-  Act act -> Act act & _ActAt . _1 %~ reduceTerm' defs
-  proc0 `Dot` proc1 -> reduceProc defs proc0 `dotP` reduceProc defs proc1 -- TODO add the LetA defs from proc0
-  Procs procs -> procs ^. each . to (reduceProc defs)
-  NewSlice cs t x p -> NewSlice cs t x (reduceProc defs p)
-
-{-
-reduceAct :: Defs -> Act -> Proc
-reduceAct defs =
-  \case
-    At t p -> _ActAt # (reduceTerm' defs t) p
-    act -> Act act
--}
 
 isReady :: Env -> Act -> Bool
 isReady env = \case
@@ -233,7 +216,7 @@ transProcs env p0s waiting k =
         _   -> transErr "All the processes are stuck" waiting
 
     p0':ps ->
-      let p0 = reduceProc (env ^. edefs) p0' in
+      let p0 = reduceSimple (env ^. edefs) p0' in
       case p0 of
         NewSlice cs t x p ->
           transProc env p $ \env' p' ->
@@ -278,16 +261,13 @@ initEnv gdefs cs =
 
 transTermProc :: Defs -> Endom Term
 transTermProc gdefs tm0
-  | Proc cs proc0 <- reduceTerm' gdefs tm0
+  | Proc cs proc0 <- reduceSimple gdefs tm0
   = transProc (initEnv gdefs cs) proc0 (const $ Proc cs)
   | otherwise
   = tm0
 
 transProgram :: Endom Program
 transProgram = transProgramTerms transTermProc
-
-reduceTerm' :: Defs -> Endom Term
-reduceTerm' defs = pushDefsR . reduceTerm . Scoped defs ø
 -- -}
 -- -}
 -- -}

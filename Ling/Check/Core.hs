@@ -276,7 +276,7 @@ checkAct act proto =
 
 unTProto :: Term -> TC Sessions
 unTProto t0 =
-  case pushDefsR (reduceTerm (pure t0)) of
+  case pushDefsR (reduce (pure t0)) of
     TProto ss  -> return ss
     Case u brs -> mkCaseSessions (==) u <$> branches unTProto brs
   {-
@@ -397,7 +397,7 @@ inferDef f es = do
 checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC Typ
 checkApp _ _ ty0 []     = return $ unScopedTerm ty0
 checkApp f n ty0 (e:es) =
-  let ty1 = reduceTerm ty0 ^. reduced in
+  let ty1 = reduce ty0 ^. reduced in
   case ty1 ^. scoped of
     TFun (Arg x mty) s -> do
       debug . unlines $

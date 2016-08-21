@@ -634,15 +634,15 @@ group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)
 
 group_nested_seq_SInt_SDouble_SBool_SString =
   proc (c : {[: [: ?Int, ?Double :], [: ?Bool, ?String :] :], [: !Int, !Double, !Bool, !String :]})
+  let A#6dc76b793cdad3d2195de5e6220592234d69f22ca5f2ad8eb70d79a53e5d7570 : Session = (~ A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab).
   let A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
   let B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 : Session = (!Double).
-  let C#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 : Session = (!Bool).
-  let D#79406b16ee627465d9f4142e730328a3f1f40acd3f8f9dd26307425f736021c3 : Session = (!String).
-  split c {i, o}.
-  let A#6dc76b793cdad3d2195de5e6220592234d69f22ca5f2ad8eb70d79a53e5d7570 : Session = (~ A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab).
   let B#bc576496bb1e424c9823afaef2d05868d4f2346e3fcf32fb6ddd488ea6688a4b : Session = (~ B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052).
   let C#583d0022770ae6c7fbb83c95c9899338e1bea28eda4412a78670f85ff9a63a43 : Session = (~ C#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993).
+  let C#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 : Session = (!Bool).
+  let D#79406b16ee627465d9f4142e730328a3f1f40acd3f8f9dd26307425f736021c3 : Session = (!String).
   let D#b806476d543c251fff8701d6501fe20b21f49f660111a4f3e1b4cfcbe84f9260 : Session = (~ D#79406b16ee627465d9f4142e730328a3f1f40acd3f8f9dd26307425f736021c3).
+  split c {i, o}.
   split o [: na, nb, nc, nd :].
   split i [: ab, cd :].
   split ab [: a, b :].

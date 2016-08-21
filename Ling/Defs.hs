@@ -44,6 +44,9 @@ unScopedTerm (Scoped _ defs t) = mkLet defs t
 pushDefsR :: PushDefs a => Reduced a -> a
 pushDefsR = pushDefs . view reduced
 
+reduceSimple :: (HasReduce a b, PushDefs b) => Defs -> a -> b
+reduceSimple defs = pushDefsR . reduce . Scoped defs ø
+
 class PushDefs a where
   pushDefs :: Scoped a -> a
 

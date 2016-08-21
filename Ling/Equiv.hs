@@ -61,7 +61,7 @@ equivAt :: Equiv a => Getter s a -> IsEquiv s
 equivAt f env x y = equiv env (x^.f) (y^.f)
 
 reduceEquiv :: (Print a, Print reduced) =>
-               (Scoped a -> Reduced reduced) -> IsEquiv reduced -> IsEquiv a
+               Reduce a reduced -> IsEquiv reduced -> IsEquiv a
 reduceEquiv red eqv env a0 a1 = eqv env' (a0'^.scoped) (a1'^.scoped)
   where
     red' l = view reduced . red . Scoped (env^.egdefs) (env^.l)
@@ -132,7 +132,7 @@ instance Equiv Name where
       es = env ^. eqnms
 
 instance Equiv Term where
-  equiv env t0 t1 = equivDef env t0 t1 || reduceEquiv reduceTerm equivRedTerm env t0 t1
+  equiv env t0 t1 = equivDef env t0 t1 || reduceEquiv reduce equivRedTerm env t0 t1
 
 -- The session annotation is ignored
 chanDecArg :: ChanDec -> Arg RFactor
@@ -194,7 +194,7 @@ instance Equiv RSession where
   equiv env (s0 `Repl` r0) (s1 `Repl` r1) = equiv env (s0, r0) (s1, r1)
 
 instance Equiv Sessions where
-  equiv env = reduceEquiv flatSessions (equivAt _Sessions) env
+  equiv = reduceEquiv reduce (equivAt _Sessions)
 
 instance Equiv RFactor where
   equiv env (RFactor t0) (RFactor t1) = equiv env t0 t1
