@@ -96,15 +96,6 @@ com_new =
   ( @ p (c)
   | @ q (d))
 
-com_new_SInt =
-  proc ()
-  let S#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 : Session = (!Int).
-  let p#27ce0f7c1887b62251852d010fa6ca15c2f63bf68d4ff4771a9f51cef19c0ee5 : < S#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 > = (proc (c'#p : !Int)
-  c'#p <- 42).
-  let q#d69d06073ffa4e2864211de1c3d26c6d641a946aded5a935efea4684de2350a3 : < ~ S#80fa935161b22d3598a655a548c6f8b4420eb8d5936ff0a4ee39a5ea7a40ee33 > = (proc (d#q : ?Int)
-  let x#q : Int <- d#q).
-  let x#q : Int = 42
-
 com_new_mk_ten2 =
   let mk_tensor2 = \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
   split c [c0, c1].
