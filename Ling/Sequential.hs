@@ -134,7 +134,6 @@ isReady env = \case
   Split{}    -> True
   Nu{}       -> True
   Ax{}       -> True
-  LetA{}     -> True
   -- `At` is considered non-ready. Therefor we cannot put
   -- a process like (@p0() | @p1()) in sequence.
   At{}       -> False
@@ -222,7 +221,6 @@ transAct sact =
     Recv c a     -> actEnv c $ Def (a ^. argName) []
     Ax{}         -> id
     At{}         -> id
-    LetA defs    -> edefs <>~ defs
 
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
 transProcs env p0s waiting k =
@@ -256,6 +254,11 @@ transProcs env p0s waiting k =
 
             _ ->
               transProcs env ps (p0 : waiting) k
+
+        LetP defs0 proc0 ->
+          let defs0' = pushDefs $ env ^. scope $> defs0 in
+          transProc (env & eldefs <>~ defs0') proc0 $ \env' proc0' ->
+            k env' (defs0 `dotP` proc0')
 
         proc0 `Dot` proc1 ->
           transProc env proc0 $ \env' proc0' ->

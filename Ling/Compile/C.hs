@@ -257,6 +257,8 @@ transProc env = \case
     | Just pref <- proc0 ^? _Pref -> transPref env pref proc1
     | otherwise                   -> transProc env proc0 ++ transProc env proc1
   Act act -> transAct env act ^. _2
+  LetP defs proc0 ->
+    transProc (env & edefs <>~ defs) proc0
   Procs (Prll procs) ->
     case procs of
       [] -> []
@@ -344,8 +346,6 @@ transAct env act =
                 _ -> transErr "transAct/At/Non single proc" act
             _ -> transErr "transAct/At/Non Proc" act
         _ -> transErr "transAct/At/Non ChanP" act
-    LetA defs ->
-      (env & edefs <>~ defs, [])
 
 -- The actions in this prefix are in parallel and thus can be reordered
 transPref :: Env -> Pref -> Proc -> [C.Stm]

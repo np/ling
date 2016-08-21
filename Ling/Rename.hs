@@ -195,8 +195,6 @@ instance Rename Act where
     Nu ann newpatt  -> Nu    <$> rename f ann <*> rename f newpatt
     Ax s cs         -> Ax    <$> rename f s   <*> (each . from _FC . rename) f cs
     At t cs         -> At    <$> rename f t   <*> renameAtCPatt f cs
-    LetA defs       -> pure $ LetA defs --  <$> rename f defs
-    -- LetA defs       -> LetA <$> rename f defs
 
 instance Rename Proc where
   rename f = \case
@@ -207,6 +205,8 @@ instance Rename Proc where
           <*> rename (markBoundChans proc0 . markBoundVars proc0 $ f) proc1
     Procs procs ->
       Procs <$> rename f procs
+    LetP defs proc0 ->
+      LetP <$> rename f defs <*> rename (markBoundVars defs f) proc0
     NewSlice cs t x proc0 ->
       NewSlice <$> (each . from _FC . rename) f cs <*> rename f t
                <*> from _BV (rename f) x <*> rename (markBoundVars (BV x) f) proc0

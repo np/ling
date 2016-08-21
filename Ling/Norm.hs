@@ -48,6 +48,7 @@ infixr 4 `Dot`
 -- See `Ling.WellFormed` for the conditions on Proc
 data Proc
   = Act { _procAct :: !Act }
+  | LetP { _letPDefs :: !Defs, _letPProc :: Proc }
   | Procs { _procProcs :: !(Prll Proc) }
   | Dot { _procDotL, _procDotR :: Proc }
   | NewSlice ![Channel] !RFactor !Name Proc
@@ -89,7 +90,6 @@ data Act
              , _axChans :: ![Channel] }
   | At       { _actTerm :: !Term
              , _actPatt :: !CPatt }
-  | LetA     { _actDefs :: !Defs }
   deriving (Eq,Ord,Show,Read)
 
 type DataTypeName = Name
@@ -278,7 +278,6 @@ multName = Name "_*_"
 actVarDecs :: Act -> [VarDec]
 actVarDecs = \case
   Recv _ a       -> [a]
-  LetA{}         -> []
   Nu{}           -> []
   Split{}        -> []
   Send{}         -> []
@@ -299,7 +298,6 @@ actLabel = \case
   Recv{}  -> "recv"
   Ax{}    -> "fwd"
   At{}    -> "@"
-  LetA{}  -> "let"
 
 isSendRecv :: Act -> Bool
 isSendRecv = \case
@@ -309,7 +307,6 @@ isSendRecv = \case
   Nu{}       -> False
   Ax{}       -> False
   At{}       -> False
-  LetA{}     -> False
 
 allSndRcv :: Session -> Bool
 allSndRcv = \case

@@ -73,7 +73,10 @@ instance Monoid Proto where
   mappend = combineProto TenK
 
 instance PushDefs Proto where
-  pushDefs = mkLet_ (chans . each . subTerms)
+  pushDefs = mkLet__
+
+instance SubTerms Proto where
+  subTerms = chans . each . subTerms
 
 dotProto :: Op2 Proto
 dotProto = combineProto SeqK

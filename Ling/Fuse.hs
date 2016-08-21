@@ -7,7 +7,6 @@ import           Ling.Prelude hiding (subst1)
 import           Ling.Proc
 import           Ling.Print
 import           Ling.Rename
-import           Ling.Session
 
 type Allocation = Term
 
@@ -71,6 +70,7 @@ fuseProc = \case
   Act act -> fuseDot (Act act) ø
 
   -- go recurse...
+  LetP defs proc0 -> LetP defs $ fuseProc proc0
   Procs procs -> Procs $ over each fuseProc procs
   NewSlice cs t x proc0 -> NewSlice cs t x $ fuseProc proc0
 
@@ -111,7 +111,6 @@ fuse2Acts nu c0 act0 c1 act1 =
     (Send{}, _)     -> error "fuse2Acts/Send: IMPOSSIBLE `send` should match `recv`"
     (Recv{}, _)     -> error "fuse2Acts/Recv: IMPOSSIBLE `recv` should match `send`"
     (Nu{}, _)       -> error "fuse2Acts/Nu: IMPOSSIBLE `new` does not consume channels"
-    (LetA{}, _)     -> error "fuse2Acts/LetA: IMPOSSIBLE `let` does not consume channels"
     (Ax{}, _)       -> error "fuse2Acts/Ax: should be expanded before"
     (At{}, _)       -> error "fuse2Acts/At: should be expanded before"
 

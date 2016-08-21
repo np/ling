@@ -235,11 +235,6 @@ instance Equiv Act where
     (Split c0 pat0, Split c1 pat1)         -> c0 == c1 && equiv env pat0 pat1
     (Ax _s0 cs0, Ax _s1 cs1)               -> cs0 == cs1
 
-    -- Equivalence of LetA is trivial since extensionally nothing is left
-    -- of LetA after its expansion.
-    (LetA{}, _)       -> True
-    (_,      LetA {}) -> True
-
     (Recv{} , _) -> False
     (Send{} , _) -> False
     (At{} , _) -> False
@@ -271,6 +266,12 @@ instance Equiv Proc where
       in
       equiv env (pr0, Telescope vd0 (Scoped ø (pr0 ^. prefDefs) pp0))
                 (pr1, Telescope vd1 (Scoped ø (pr1 ^. prefDefs) pp1))
+  equiv env (LetP defs0 p0) (LetP defs1 p1) =
+    equiv env (Scoped ø defs0 p0) (Scoped ø defs1 p1)
+  equiv env (LetP defs0 p0) p1 =
+    equiv env (Scoped ø defs0 p0) (pure p1)
+  equiv env p0 (LetP defs1 p1) =
+    equiv env (pure p0) (Scoped ø defs1 p1)
   equiv _ Act{} _ = False
   equiv _ Procs{} _ = False
   equiv _ Dot{} _ = False

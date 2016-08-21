@@ -38,7 +38,7 @@ substName f x = f ^? at x . _Just . annotated ?| Def x []
 instance Subst Term where
   subst f = \case
     Def x es   -> app (substName f x) (subst f es)
-    Let defs t -> subst (subst f defs <> f) t
+    Let defs t -> subst (f <> subst f defs) t
     Lam arg t  -> Lam (subst f arg) (subst (hide argName arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hide argName arg f) t)
     TSig arg t -> TSig (subst f arg) (subst (hide argName arg f) t)
@@ -85,7 +85,6 @@ instance Subst Act where
     Send c os e  -> Send c (subst f os) (subst f e)
     Recv c arg   -> Recv c (subst f arg)
     Nu ann npatt -> Nu (subst f ann) (subst f npatt)
-    LetA{}       -> LetA ø
     Ax s cs      -> Ax (subst f s) cs
     At t cs      -> At (subst f t) (subst f cs)
 
@@ -106,6 +105,7 @@ instance Subst Proc where
         defs0 = proc0 ^. procActs . actDefs
         f1 = hide boundVars proc0 f <> subst f defs0
     Procs procs -> Procs $ subst f procs
+    LetP defs p -> subst (f <> subst f defs) p
     NewSlice cs t x p -> NewSlice cs (subst f t) x (subst (hide id x f) p)
 
 instance Subst Session where

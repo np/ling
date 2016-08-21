@@ -68,14 +68,15 @@ instance Dottable act => Dottable (Order act) where
   Order []         `dotP` proc = proc
   Order (act:acts) `dotP` proc = act `dotP` Order acts `dotP` proc
 
-instance Dottable Defs where
-  defs `dotP` proc
-    | defs == ø = proc
-    | otherwise = Act (LetA defs) `dotQ` proc
-
 instance Dottable Act where
   act `dotP` proc = Act act `dotQ` proc
   toProc = Act
+
+instance Dottable Defs where
+  defs0 `dotP` proc0
+    | defs0 == ø = proc0
+    | LetP defs1 proc1 <- proc0 = LetP (defs0 <> defs1) proc1
+    | otherwise = LetP defs0 proc0
 
 instance Dottable Proc where
   proc0 `dotP` proc1
@@ -84,6 +85,7 @@ instance Dottable Proc where
       case proc0 of
         Act act -> act `dotP` proc1
         proc00 `Dot` proc01 -> proc00 `dotP` proc01 `dotP` proc1
+        LetP defs proc00 -> defs `dotP` proc00 `dotP` proc1
         NewSlice{} -> proc0 `Dot` proc1
         Procs procs0 -> procs0 `dotP` proc1
   toProc = id
@@ -95,6 +97,7 @@ _Pref =  prism' toProc go
     go = \case
       Act act            -> Just (Prll [act])
       Procs (Prll procs) -> post =<< mconcat <$> procs ^? below _Pref
+      LetP{}             -> Nothing
       Dot{}              -> Nothing
       NewSlice{}         -> Nothing
     post pref@(Prll acts) =
@@ -131,6 +134,7 @@ _PrefDotProc = prism' (uncurry dotP) go
       Act act -> Just (Prll [act], ø)
       proc0 `Dot` proc1 -> proc0 ^? _Pref . to (\pref -> (pref, proc1))
       Procs{} -> Nothing
+      LetP{} -> Nothing
       NewSlice{} -> Nothing
 
 unParP :: CPatt -> Maybe [ChanDec]
@@ -200,6 +204,7 @@ procActs f = \case
     NewSlice cs t x <$> procActs f proc0
   proc0 `Dot` proc1 ->
     Dot <$> procActs f proc0 <*> procActs f proc1
+  LetP defs proc0 -> LetP defs <$> procActs f proc0
 
 -- Only a traversal if we don't put back actions about these channels
 -- NOTE: not used
@@ -269,6 +274,8 @@ fetchActProc' pred f = \case
   Procs procs -> toProc <$> fetchActProcs pred f procs
   NewSlice cs t x proc0 ->
     NewSlice cs t x <$> fetchActProc' pred f proc0
+  LetP defs proc0 ->
+    LetP defs <$> fetchActProc' pred f proc0
   proc0 `Dot` proc1
     | pred (fcProcSetCheck proc0) -> (`dotP` proc1) <$> fetchActProc' pred f proc0
     | otherwise                   -> (proc0 `dotP`) <$> fetchActProc' pred f proc1

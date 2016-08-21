@@ -39,7 +39,6 @@ actChans f = \case
   Ax s cs         -> Ax s                  <$> (each . re _Free) f cs
   At t p          -> At t                  <$> (pattChans . re _Free) f p
   Nu ann newpatt  -> Nu ann                <$> newPattChans f newpatt
-  a@LetA{}        -> pure a
 
 newPattChans :: Chans NewPatt
 newPattChans f = \case
@@ -52,7 +51,6 @@ bvDefs = to (\defs -> keysSet (defs ^. defsMap)) . folded
 bvAct :: Fold Act Name
 bvAct f = \case
   Recv os x      -> Recv os <$> argName f x
-  LetA defs      -> LetA <$> bvDefs f defs
   a@Nu{}         -> pure a
   a@Split{}      -> pure a
   a@Send{}       -> pure a
@@ -85,6 +83,7 @@ bcProc f = \case
   Procs procs  -> Procs <$> bcProcs f procs
   p@NewSlice{} -> pure p
   Dot{}        -> error "bcProc: Dot"
+  LetP defs p  -> LetP defs <$> bcProc f p
 
 bcProcs :: Fold Procs Channel
 bcProcs = _Prll . each . bcProc
@@ -95,6 +94,7 @@ bvProc f = \case
   Procs procs       -> Procs <$> bvProcs f procs
   p@NewSlice{}      -> pure p
   proc0 `Dot` proc1 -> Dot <$> bvProc f proc0 <*> bvProc f proc1
+  LetP defs p       -> LetP defs <$> bvProc f p
 
 bvProcs :: Fold Procs Name
 bvProcs = _Prll . each . bvProc
@@ -109,4 +109,5 @@ fcProcSet = \case
                        (fcProcSet proc1 `Set.difference` setOf bcProc proc0)
   NewSlice cs _ _ p -> setOf each cs <> fcProcSet p
   Procs procs       -> setOf (_Prll . each . fcProc) procs
+  LetP _ p          -> fcProcSet p
 -- -}
