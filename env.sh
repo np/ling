@@ -5,6 +5,9 @@ MODE=docker
 buildling() {
   stack "${STACK_FLAGS[@]}" build --fast --pedantic "$@"
 }
+ling() {
+  stack "${STACK_FLAGS[@]}" exec ling -- "$@"
+}
 checkling() {
   stack "${STACK_FLAGS[@]}" exec ./check.sh
 }
@@ -122,10 +125,10 @@ DIST=`pwd`/dist
 case "$MODE" in
   (docker)
     cmdcheck() {
-      stack "${STACK_FLAGS[@]}" exec tools/cmdcheck "$@"
+      stack "${STACK_FLAGS[@]}" exec tools/cmdcheck -- "$@"
     }
     cmdrecord() {
-      stack "${STACK_FLAGS[@]}" exec tools/cmdrecord "$@"
+      stack "${STACK_FLAGS[@]}" exec tools/cmdrecord -- "$@"
     }
     rm -rf "$DIST"/shims
     STACK_FLAGS=(--docker);;
