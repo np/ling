@@ -30,7 +30,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-. "$(which cmdcheck)"
+bin=$(dirname "$0")
+if [ -e "$bin"/cmdcheck ]; then
+  . "$bin"/cmdcheck
+else
+  . "$(which cmdcheck)"
+fi
 me=$(basename "$0")
 
 assert_non_dirs(){
