@@ -1137,7 +1137,7 @@ matmult_4 =
     @ (row Double m#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 a' (ij / n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)) (u).
     new/alloc [: v : [: !Double ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :], v' :].
     @ (col Double n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 b' (ij % n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)) (v).
-    let nn = n.
+    let nn = n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9.
     @ (dotproduct nn){u', v', c_i_j}
 
 merger =

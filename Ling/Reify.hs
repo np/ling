@@ -90,6 +90,7 @@ instance Norm Proc where
     N.Act act -> reifyAct act
     proc0 `N.Dot` proc1 -> reify proc0 `pDot` reify proc1
     N.Procs (Prll procs) -> pPrll $ reify procs
+    N.LetP defs proc0 -> reifyDefsP defs (reify proc0)
     N.NewSlice cs t x p ->
       NewSlice ((justChannel #) <$> cs) (t ^. N.rterm . reified) x (reify p)
   norm = \case
@@ -174,7 +175,7 @@ normAct = \case
     NewSend  c os t   -> toProc $ N.Send c (normOS os) (norm t)
     NewRecv x os c    -> toProc $ N.Recv c             (norm (VD x os))
     At       t pa     -> toProc $ N.At   (norm t) (norm pa)
-    LetA     x os t   -> toProc $ N.LetA (N.aDef (norm x) (norm os) (norm t))
+    LetA     x os t   -> toProc $ N.aDef (norm x) (norm os) (norm t)
     LetRecv _x _os _t -> error "`let ... <= ...` is not supported yet (Issue #16)"
 
 normOS :: OptSession -> Maybe N.Session
@@ -200,8 +201,8 @@ reifyProc = reify
 reifyLetA :: Arg N.AnnTerm -> Act
 reifyLetA (Arg x (Ann os tm)) = LetA (reify x) (reify os) (reify tm)
 
-reifyDefsA :: N.Defs -> Proc
-reifyDefsA defs = pDots $ defs ^.. each . to reifyLetA . to PAct
+reifyDefsP :: N.Defs -> Endom Proc
+reifyDefsP defs proc0 = pDots $ defs ^.. each . to reifyLetA . to PAct ++ [proc0]
 
 newRecv :: Name -> VarDec -> Act
 newRecv c (VD x os) = NewRecv x os c
@@ -214,7 +215,6 @@ reifyAct = \case
   N.Recv     c a      -> PAct $ newRecv c                       (reify a)
   N.Ax       s cs     -> PAct $ Ax (reify s) ((justChannel #) <$> cs)
   N.At       t ps     -> PAct $ At (reify t) (reify ps)
-  N.LetA defs         -> reifyDefsA defs
 
 app :: [N.Term] -> N.Term
 app = \case

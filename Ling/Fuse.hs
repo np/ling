@@ -79,7 +79,6 @@ fuseDot defs = \case
       _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty newpatt
                              , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
   proc0@NewSlice{} -> (fuseProc defs proc0 `dotP`) . fuseProc defs
-  Act (LetA defs') -> (defs' `dotP`) . fuseProc (defs <> defs')
   proc0 -> (proc0 `dotP`) . fuseProc defs
 
 fuseProc :: Defs -> Endom Proc
@@ -89,6 +88,7 @@ fuseProc defs = \case
   Act act -> fuseDot defs (Act act) ø
 
   -- go recurse...
+  LetP defs0 proc0 -> defs0 `dotP` fuseProc (defs <> defs0) proc0
   Procs procs -> Procs $ procs & each %~ fuseProc defs
   NewSlice cs t x proc0 -> NewSlice cs t x $ fuseProc defs proc0
 
@@ -130,7 +130,6 @@ fuse2Acts nu c0 act0 c1 act1 =
     (Send{}, _)     -> error "fuse2Acts/Send: IMPOSSIBLE `send` should match `recv`"
     (Recv{}, _)     -> error "fuse2Acts/Recv: IMPOSSIBLE `recv` should match `send`"
     (Nu{}, _)       -> error "fuse2Acts/Nu: IMPOSSIBLE `new` does not consume channels"
-    (LetA{}, _)     -> error "fuse2Acts/LetA: IMPOSSIBLE `let` does not consume channels"
     (Ax{}, _)       -> error "fuse2Acts/Ax: should be expanded before"
     (At{}, _)       -> error "fuse2Acts/At: should be expanded before"
 

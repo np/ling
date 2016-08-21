@@ -140,7 +140,6 @@ isReady env = \case
   Split{}    -> True
   Nu{}       -> True
   Ax{}       -> True
-  LetA{}     -> True
   -- `At` is considered non-ready. Therefor we cannot put
   -- a process like (@p0() | @p1()) in sequence.
   At{}       -> False
@@ -224,20 +223,19 @@ transAct sact =
     Recv c a     -> stepEnv c $ mkVar (a ^. argName)
     Ax{}         -> id
     At{}         -> id
-    LetA defs    -> edefs <>~ defs
 
 transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
 transProc env proc0 = transProcs env [proc0] []
 
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
-transProcs env p0s waiting k
-  | env ^. gas <= 0 = k env (Procs (Prll (p0s ++ waiting)))
+transProcs env0 p0s waiting k0
+  | env0 ^. gas <= 0 = k0 env0 (Procs (Prll (p0s ++ waiting)))
   | otherwise =
   case p0s of
     [] ->
       case waiting of
-        []     -> k env ø
-        [p]    -> transProcs env [p] [] k
+        []     -> k0 env0 ø
+        [p]    -> transProcs env0 [p] [] k0
         _   -> transErr "All the processes are stuck" waiting
 
     p0':ps ->
@@ -245,46 +243,53 @@ transProcs env p0s waiting k
       -- the question becomes: should we add the resulting defs into edefs?
       -- Or should the gdefs go to edefs and the ldefs be put back into the
       -- resulting proc using dotP?
-      let p0 = reduceP (env ^. scope $> p0')
-          transProcsProgress env0 proc0 procs =
-            transProcs env0 (ps ++ reverse waiting ++ procs) [] $ \env' procs' ->
-              k env' (proc0 `dotP` procs')
+      let rp0 = reduce (env0 ^. scope $> p0') ^. reduced
+          env1 = env0 & edefs <>~ rp0 ^. ldefs
+          k1 env2 p2 = k0 env2 (rp0 ^. ldefs `dotP` p2)
+          p0 = rp0 ^. scoped
+          transProcsProgress env proc0 procs =
+            transProcs env (ps ++ reverse waiting ++ procs) [] $ \env2 procs' ->
+              k1 env2 (proc0 `dotP` procs')
       in
       case p0 of
         NewSlice cs t x p ->
-          transProc env p $ \env' p' ->
-            transProcsProgress env' (NewSlice cs t x p') []
+          transProc env1 p $ \env2 p' ->
+            transProcsProgress env2 (NewSlice cs t x p') []
 
         Procs (Prll ps0) ->
-          transProcs env (ps0 ++ ps) waiting k
+          transProcs env1 (ps0 ++ ps) waiting k1
 
         -- This is a short-cut case this means that it should work the same without it.
-        Act act | isReady env act ->
-          transProcsProgress (transAct (env ^. scope $> act) env) (Act act) []
+        Act act | isReady env1 act ->
+          transProcsProgress (transAct (env1 ^. scope $> act) env1) (Act act) []
 
         -- Short-cut case, same as above.
-        Act act `Dot` proc1 | isReady env act ->
-          transProcsProgress (transAct (env ^. scope $> act) env) (Act act) [proc1]
+        Act act `Dot` proc1 | isReady env1 act ->
+          transProcsProgress (transAct (env1 ^. scope $> act) env1) (Act act) [proc1]
 
         _ | Just (pref, p1) <- p0 ^? _PrefDotProc ->
             case () of
             _ | pref == ø -> transErr "transProcs: pref == ø IMPOSSIBLE" p0
-            _ | (readyPis@(Prll(_:_)),restPis) <- splitReady env pref ->
-              transPref env readyPis $ \env' proc' ->
-                transProcsProgress env' proc' [restPis `dotP` p1]
+            _ | (readyPis@(Prll(_:_)),restPis) <- splitReady env1 pref ->
+              transPref env1 readyPis $ \env2 proc' ->
+                transProcsProgress env2 proc' [restPis `dotP` p1]
 
             _ | null ps ->
               trace ("[WARNING] Sequencing a non-ready prefix " ++ pretty pref) $
-              transPref env pref $ \env' proc' ->
-                transProcsProgress env' proc' [p1]
+              transPref env1 pref $ \env2 proc' ->
+                transProcsProgress env2 proc' [p1]
 
             _ ->
-              transProcs env ps (p0 : waiting) k
+              transProcs env1 ps (p0 : waiting) k1
+
+        LetP defs0 proc0 ->
+          transProc (env1 & edefs <>~ defs0) proc0 $ \env2 proc0' ->
+            k1 env2 (defs0 `dotP` proc0')
 
         proc0 `Dot` proc1 ->
-          transProc env proc0 $ \env' proc0' ->
-            transProc env' proc1 $ \env'' proc1' ->
-              k env'' (proc0' `dotP` proc1')
+          transProc env1 proc0 $ \env2 proc0' ->
+            transProc env2 proc1 $ \env3 proc1' ->
+              k1 env3 (proc0' `dotP` proc1')
 
         _ -> error "IMPOSSIBLE: transProcs"
 

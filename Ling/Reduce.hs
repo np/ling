@@ -194,13 +194,17 @@ instance HasReduce Sessions Sessions where
   reduce = Reduced . fmap Sessions . sequenceA . flatRSessions
 
 -- This is not really about some sort of Weak Head Normal Form.
--- What matters is to reduce the At constructor:
---   @(proc(Γ) P){Γ} -> P
+-- What matters is:
+-- * To reduce the At constructor:
+--     @(proc(Γ) P){Γ} -> P
+-- * Push LetP
 instance HasReduce Proc Proc where
   reduce sp =
     case sp ^. scoped of
       Act act -> reduce_ (_ActAt . _1) (sp $> Act act)
       proc0 `Dot` proc1 -> (dotP :: Op2 Proc) <$> reduce (sp $> proc0) <*> reduce (sp $> proc1)
+      LetP defs proc0 ->
+        reduce (sp *> Scoped defs ø () $> proc0) & reduced . scoped %~ LetP defs
       NewSlice cs r n p
         | strong    -> NewSlice cs <$> reduce (sp $> r) <*> pure n <*> reduce (sp $> p)
         | otherwise -> Reduced sp

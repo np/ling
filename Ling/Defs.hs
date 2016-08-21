@@ -100,13 +100,11 @@ instance PushDefs Session where
 instance PushDefs Proc where
   pushDefs sp0 =
     case sp0 ^. scoped of
-      Act act -> Act (pushDefs (sp0 $> act))
-      Procs procs -> Procs (pushDefs (sp0 $> procs))
-      NewSlice cs t x proc0 -> NewSlice cs (mkLet__ (sp0 $> t)) x (pushDefs (sp0 $> proc0))
-      proc0 `Dot` proc1 ->
-        case proc0 of
-          Act (LetA defs) -> Act (LetA (sp0 ^. ldefs <> defs)) `Dot` proc1
-          _ -> (sp0 ^. ldefs) `dotP` proc0 `Dot` proc1
+      Act act -> Act . pushDefs $ sp0 $> act
+      Procs procs -> Procs . pushDefs $ sp0 $> procs
+      NewSlice cs t x proc0 -> NewSlice cs (mkLet__ (sp0 $> t)) x . pushDefs $ sp0 $> proc0
+      Dot{} -> sp0 ^. ldefs `dotP` sp0 ^. scoped
+      LetP defs p -> pushDefs $ sp0 *> Scoped ø defs p
 
 instance PushDefs Act where
   pushDefs sa =
@@ -115,7 +113,6 @@ instance PushDefs Act where
       Send c os e     -> uncurry (Send c) $ mkLet_ (subTerms `beside` id) (sa $> (os, e))
       Recv c arg      -> Recv c $ mkLet_ varDecTerms (sa $> arg)
       Nu anns newpatt -> Nu (mkLet_ list (sa $> anns)) (mkLet__ (sa $> newpatt))
-      LetA{}          -> error "`let` is not supported in parallel actions (pushDefs)"
       Ax s cs         -> _Ax # mkLet_ (subTerms `beside` ignored) (sa $> (s, cs))
       At t pat        -> _At # mkLet_ (id `beside` subTerms) (sa $> (t, pat))
 

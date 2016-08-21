@@ -48,18 +48,14 @@ checkProc proc0 = do
       ifor_ (proto^.chans) (checkSlice (`notElem` cs))
       return $ replProtoWhen (`elem` cs) r proto
 
+    LetP defs proc1 ->
+       mkLet__ . Scoped ø defs <$> checkDefs defs (checkProc proc1)
+
     _ | Just (pref@(Prll acts), proc1) <- proc0 ^? _PrefDotProc -> do
       checkPrefWellFormness pref
-      let defs = acts ^. each . actDefs
-      pushDefs . Scoped ø defs <$>
-        (checkPref pref =<<
-            checkDefs defs
-              (checkVarDecs (acts >>= actVarDecs) (checkProc proc1)))
+      checkPref pref =<< checkVarDecs (actVarDecs =<< acts) (checkProc proc1)
 
-    proc1 `Dot` proc2 -> do
-      proto1 <- checkProc proc1
-      proto2 <- checkProc proc2
-      return $ proto1 `dotProto` proto2
+    proc1 `Dot` proc2 -> dotProto <$> checkProc proc1 <*> checkProc proc2
 
     _ -> error $ "checkProc: IMPOSSIBLE " ++ show proc0
 
@@ -267,8 +263,6 @@ checkAct act proto =
     Ax s cs -> do
       proto' <- checkAx s cs
       return $ proto' `dotProto` proto
-    LetA{} ->
-      return proto
     At e p -> do
       ss <- unTProto =<< inferTerm e
       proto' <- checkCPatt (wrapSessions ss) p
