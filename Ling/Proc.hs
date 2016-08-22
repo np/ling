@@ -123,13 +123,14 @@ instance Dottable proc => Dottable (Prll proc) where
       Prll [act] `pdotP` proc = act `dotP` proc
       Prll acts  `pdotP` proc = Procs (Prll (Act <$> acts)) `dotQ` proc
 
+-- This prism matches only non-empty prefixes.
 _PrefDotProc :: Prism' Proc (Pref, Proc)
 _PrefDotProc = prism' (uncurry dotP) go
   where
     go = \case
       Act act -> Just (Prll [act], ø)
-      procs@Procs{} -> Just (ø, procs)
       proc0 `Dot` proc1 -> proc0 ^? _Pref . to (\pref -> (pref, proc1))
+      Procs{} -> Nothing
       NewSlice{} -> Nothing
 
 unParP :: CPatt -> Maybe [ChanDec]
