@@ -44,11 +44,14 @@ unScopedTerm (Scoped _ defs t) = mkLet defs t
 pushDefsR :: PushDefs a => Reduced a -> a
 pushDefsR = pushDefs . view reduced
 
-reduceSimple :: (HasReduce a b, PushDefs b) => Defs -> a -> b
-reduceSimple defs = pushDefsR . reduce . Scoped defs ø
+reduceP :: (HasReduce a b, PushDefs b) => Scoped a -> b
+reduceP = pushDefsR . reduce
 
 class PushDefs a where
   pushDefs :: Scoped a -> a
+
+instance PushDefs a => PushDefs (Maybe a) where
+  pushDefs = pushDefs__ _Just
 
 instance PushDefs a => PushDefs [a] where
   pushDefs = pushDefs__ list
@@ -109,3 +112,14 @@ instance PushDefs Act where
       LetA{}          -> error "`let` is not supported in parallel actions (pushDefs)"
       Ax s cs         -> _Ax # mkLet_ (subTerms `beside` ignored) (sa $> (s, cs))
       At t pat        -> _At # mkLet_ (id `beside` subTerms) (sa $> (t, pat))
+
+instance (PushDefs a, PushDefs b) => PushDefs (Ann a b) where
+  pushDefs sxy =
+    case sxy ^. scoped of
+      Ann x y -> Ann (pushDefs (sxy $> x)) (pushDefs (sxy $> y))
+
+instance PushDefs a => PushDefs (Arg a) where
+  pushDefs = pushDefs__ argBody
+
+instance PushDefs Defs where
+  pushDefs = pushDefs__ each

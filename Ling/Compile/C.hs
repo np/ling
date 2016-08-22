@@ -39,7 +39,7 @@ module Ling.Compile.C where
 import           Prelude         hiding (log)
 
 import qualified Data.Map        as Map
-import           Ling.Defs       (reduceSimple)
+import           Ling.Defs       (reduceP)
 import           Ling.Fwd        (fwdProc')
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
@@ -47,6 +47,7 @@ import           Ling.Print
 import           Ling.Proc       (_Pref, _ArrayCs)
 --import           Ling.Rename     (hDec)
 import           Ling.Session
+import           Ling.Scoped     (Scoped(Scoped))
 -- import           Ling.Subst      (unScoped)
 import qualified MiniC.Abs       as C
 import qualified MiniC.Print     as C
@@ -125,6 +126,9 @@ data Env =
   deriving (Show)
 
 $(makeLenses ''Env)
+
+scope :: Getter Env (Scoped ())
+scope = to $ \env -> Scoped (env ^. edefs) ø ()
 
 basicTypes :: Map Name C.Typ
 basicTypes = l2m [ (Name n, t) | (n,t) <-
@@ -222,7 +226,7 @@ transLiteral l = case l of
 
 transTerm :: Env -> Term -> C.Exp
 transTerm env t0 =
-  let t1 = reduceSimple (env ^. edefs) t0 in case t1 of
+  let t1 = reduceP (env ^. scope $> t0) in case t1 of
   Def f es0
    | env ^. types . contains f -> dummyTyp
    | otherwise ->
@@ -325,13 +329,13 @@ transAct env act =
         y     = transName x
         cinit = C.SoInit (transLVal (env!c))
     Ax s cs ->
-      case fwdProc' (reduceSimple $ env ^. edefs) s cs of
+      case fwdProc' (reduceP . (env ^. scope $>)) s cs of
         Act (Ax{}) -> transErr "transAct/Ax" act
         proc0 -> (rmChans cs env, transProc env proc0)
     At t p ->
       case p of
         ChanP (ChanDec c _ _) ->
-          case reduceSimple (env ^. edefs) t of
+          case reduceP (env ^. scope $> t) of
             Proc cs proc0 ->
               case cs of
                 [ChanDec c' _ _] ->
@@ -414,13 +418,13 @@ unsupportedTyp ty = trace ("[WARNING] Unsupported type " ++ pretty ty) tVoidPtr
 
 transTyp :: Env -> Typ -> ATyp
 transTyp env ty0 =
-  let ty1 = reduceSimple (env ^. edefs) ty0 in case ty1 of
+  let ty1 = reduceP (env ^. scope $> ty0) in case ty1 of
   Def x es
     | null es, Just t <- Map.lookup x basicTypes -> (t, [])
     | otherwise ->
     case (unName # x, es) of
       ("Vec", [a,e])
-        | env ^. farr, Just i <- reduceSimple (env ^. edefs) e ^? _Lit . _LInteger ->
+        | env ^. farr, Just i <- reduceP (env ^. scope $> e) ^? _Lit . _LInteger ->
            -- Here we could use transTerm if we could still fallback on a
            -- pointer type.
             tArr (transTyp env a) (C.ELit (C.LInteger i))
@@ -453,7 +457,7 @@ transSession env x = case x of
     | otherwise     -> transErr "Cannot compile a dependent session (yet): " x
   Array _ ss -> tupQ (transSessions env ss)
   TermS p t ->
-    case reduceSimple (env ^. edefs) t of
+    case reduceP (env ^. scope $> t) of
       TSession s -> transSession env (sessionOp p s)
       ty         -> unsupportedTyp ty & _1 %~ C.QTyp C.NoQual
 
@@ -499,18 +503,18 @@ transMkProc env0 cs proc0 = (fst <$> news, transProc env proc0)
 
 transSig :: Env -> Name -> Maybe Typ -> Maybe Term -> [C.Def]
 transSig env0 f _ty0 (Just t) =
-  case reduceSimple (env0 ^. edefs) t of
+  case reduceP (env0 ^. scope $> t) of
     Proc cs proc0 ->
       [uncurry (C.DDef (C.Dec voidQ (transName f) []))
                (transMkProc env0 cs proc0)]
     _ -> trace ("[WARNING] Skipping compilation of unsupported definition " ++ pretty f) []
 -- Of course this does not properly handle dependent types
-transSig env0 f (Just ty0) Nothing = go [] (reduceSimple (env0 ^. edefs) ty0)
+transSig env0 f (Just ty0) Nothing = go [] (reduceP (env0 ^. scope $> ty0))
   where
     go args = \case
       TFun (Arg n ms) t ->
         go (dDec (transMaybeCTyp env0 C.QConst ms) (transName n) : args)
-           (reduceSimple (addEVar n (transName n) env0 ^. edefs) t)
+           (reduceP (addEVar n (transName n) env0 ^. scope $> t))
       t1 ->
         [dSig (dDec (transCTyp env0 C.NoQual t1) (transName f)) (reverse args)]
 transSig _ _ Nothing Nothing = error "IMPOSSIBLE transSig no sig nor def"

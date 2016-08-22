@@ -21,7 +21,8 @@ import Ling.Print
 import Ling.Session
 import Ling.Proc
 import Ling.Norm
-import Ling.Defs (reduceSimple)
+import Ling.Scoped (Scoped(Scoped), scoped, ldefs)
+import Ling.Defs (pushDefs, reduceP, mkLet)
 
 data Status = Full | Empty deriving (Eq,Read,Show)
 
@@ -41,6 +42,12 @@ data Location
 
 data Env = Env { _chans   :: Map Channel (Location, RSession)
                , _edefs   :: Defs
+               -- ^ This stores only definitions which are put back into the
+               -- output.
+               -- Top level definitions and process level definitions are
+               -- added here, while term level definitions are pushed around
+               -- using reduction.
+               -- Thus all definitions part of edefs are global definitions for Scoped.
                , _locs    :: Map Location ()
                , _writers :: Map Location Channel }
                -- writers ^. at l == Just c
@@ -49,6 +56,9 @@ data Env = Env { _chans   :: Map Channel (Location, RSession)
   deriving (Show)
 
 $(makeLenses ''Env)
+
+scope :: Getter Env (Scoped ())
+scope = to $ \env -> Scoped (env ^. edefs) ø ()
 
 transErr :: Print a => String -> a -> b
 transErr msg v = error $ msg ++ "\n" ++ pretty v
@@ -84,26 +94,27 @@ actEnv c tm env =
       & writers . at l %~ mnot c
   where l = fst (env!c)
 
-sessionsStatus :: Defs -> (RW -> Status) -> Location -> Sessions -> [(Location,Status)]
-sessionsStatus defs dflt l ss =
+sessionsStatus :: (RW -> Status) -> Location -> Scoped Sessions -> [(Location,Status)]
+sessionsStatus dflt l sss =
   [ ls
-  | (i,s) <- zip [0..] (unsafeFlatSessions ss)
-  , ls <- sessionStatus defs dflt (Proj l i) s ]
+  | (i,s) <- zip [0..] (unsafeFlatSessions (sss ^. scoped))
+  , ls <- sessionStatus dflt (Proj l i) (sss $> s) ]
 
-sessionStatus :: Defs -> (RW -> Status) -> Location -> Session -> [(Location,Status)]
-sessionStatus defs dflt l = \case
-  Array _ ss -> sessionsStatus defs dflt l ss
-  IO rw _ s  -> (l, dflt rw) : sessionStatus defs dflt (Next l) s
-  TermS p t ->
-    case reduceSimple defs t of
-      TSession s -> sessionStatus defs dflt l (sessionOp p s)
-      t'         -> trace ("[WARNING] Skipping abstract session " ++ pretty t')
-                    [(l, Empty)]
+sessionStatus :: (RW -> Status) -> Location -> Scoped Session -> [(Location,Status)]
+sessionStatus dflt l ss =
+  case ss ^. scoped of
+    Array _ sessions -> sessionsStatus dflt l (ss $> sessions)
+    IO rw _ s  -> (l, dflt rw) : sessionStatus dflt (Next l) (ss $> s)
+    TermS p t ->
+      case reduceP (ss $> t) of
+        TSession s -> sessionStatus dflt l (ss $> sessionOp p s)
+        t'         -> trace ("[WARNING] Skipping abstract session " ++ pretty t')
+                      [(l, Empty)]
 
-rsessionStatus :: Defs -> (RW -> Status) -> Location -> RSession -> [(Location,Status)]
-rsessionStatus defs dflt l sr@(s `Repl` r)
-  | litR1 `is` r = sessionStatus  defs dflt l s
-  | otherwise    = sessionsStatus defs dflt l (Sessions [sr])
+rsessionStatus :: (RW -> Status) -> Location -> Scoped RSession -> [(Location,Status)]
+rsessionStatus dflt l ssr@(Scoped _ _ sr@(s `Repl` r))
+  | litR1 `is` r = sessionStatus  dflt l (ssr $> s)
+  | otherwise    = sessionsStatus dflt l (ssr $> Sessions [sr])
 
 statusAt :: Channel -> Env -> Maybe Status
 statusAt c env
@@ -130,12 +141,14 @@ isReady env = \case
   Send c _ _ -> statusAt c env == Just Empty
   Recv c _   -> statusAt c env == Just Full
 
+-- TODO: Scoped CPatt ?
 transSplitPatt :: Channel -> CPatt -> Endom Env
 transSplitPatt c pat env =
   case pat ^? _ArrayCs of
     Just (_, cs) -> transSplit c cs env
     Nothing -> error "Sequential.transSplitPatt: unsupported pattern"
 
+-- TODO: Scoped [ChanDec]
 transSplit :: Channel -> [ChanDec] -> Endom Env
 transSplit c dOSs env =
   rmChan c $
@@ -153,18 +166,21 @@ transPref :: Env -> Pref -> [Proc] -> (Env -> Proc -> r) -> r
 transPref env (Prll pref0) procs k =
   case pref0 of
     []       -> transProcs env procs [] k
-    act:pref -> transPref (transAct (env ^. edefs) act env) (Prll pref) procs $ \env' proc' ->
-                  k env' ((act {-& _Nu %~ transNu
-                               & _Split . _1 .~ SeqK-}) `dotP` proc')
+    act:pref -> transPref (transAct sact env) (Prll pref) procs $ \env' proc' ->
+                  k env' (act {-& _Nu %~ transNu
+                               & _Split . _1 .~ SeqK-} `dotP` proc')
+      where
+        sact = env ^. scope $> act
 
-addChanDecs :: Defs -> [Arg Session] -> Endom Env
-addChanDecs _    [] = id
-addChanDecs defs cds@(Arg c0 c0S : _) =
-  addLocs  (sessionStatus defs (const Empty) l c0S) .
-  addChans [(c,(l,oneS cS)) | Arg c cS <- cds]
 
-  where
-    l = Root c0
+addChanDecs :: Scoped [Arg Session] -> Endom Env
+addChanDecs scds =
+  case scds ^. scoped of
+    [] -> id
+    cds@(Arg c0 c0S : _) ->
+      let l = Root c0 in
+      addLocs  (sessionStatus (const Empty) l (scds $> c0S)) .
+      addChans [(c,(l,oneS (pushDefs (scds $> cS)))) | Arg c cS <- cds]
 
 {-
 -- This could be part of the Dual class, a special Seq operation could also
@@ -183,28 +199,30 @@ transNu (anns, k, cds)
   | otherwise = (anns, k, cds)
 -}
 
-transNew :: Defs -> NewPatt -> Endom Env
-transNew defs = \case
-  NewChans _ [] ->
-    id
-  NewChans _ cds0 ->
-    addChanDecs defs
-           $ [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
-           & each . argBody . _Just %~ unRepl
-           & unsafePartsOf (each . argBody) %~ extractDuals
-  NewChan _ Nothing -> error "transNew: TODO"
-  NewChan c (Just ty) ->
-    addChanDecs defs [Arg c (sendS ty (endS # ()))]
+transNew :: Scoped NewPatt -> Endom Env
+transNew spat =
+  case spat ^. scoped of
+    NewChans _ [] ->
+      id
+    NewChans _ cds0 ->
+      addChanDecs . (spat $>)
+            $ [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
+            & each . argBody . _Just %~ unRepl
+            & unsafePartsOf (each . argBody) %~ extractDuals
+    NewChan _ Nothing -> error "transNew: TODO"
+    NewChan c (Just ty) ->
+      addChanDecs $ spat $> [Arg c (sendS ty (endS # ()))]
 
-transAct :: Defs -> Act -> Endom Env
-transAct defs = \case
-  Nu _ newpatt -> transNew defs newpatt
-  Split c pat  -> transSplitPatt c pat
-  Send c _ t   -> actEnv c t
-  Recv c a     -> actEnv c (Def (a ^. argName) [])
-  Ax{}         -> id
-  At{}         -> id
-  LetA ldefs   -> edefs <>~ ldefs
+transAct :: Scoped Act -> Endom Env
+transAct sact =
+  case sact ^. scoped of
+    Nu _ newpatt -> transNew $ sact $> newpatt
+    Split c pat  -> transSplitPatt c pat
+    Send c _ t   -> actEnv c $ mkLet (sact ^. ldefs) t
+    Recv c a     -> actEnv c $ Def (a ^. argName) []
+    Ax{}         -> id
+    At{}         -> id
+    LetA defs    -> edefs <>~ defs
 
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
 transProcs env p0s waiting k =
@@ -216,7 +234,7 @@ transProcs env p0s waiting k =
         _   -> transErr "All the processes are stuck" waiting
 
     p0':ps ->
-      let p0 = reduceSimple (env ^. edefs) p0' in
+      let p0 = reduceP (env ^. scope $> p0') in
       case p0 of
         NewSlice cs t x p ->
           transProc env p $ \env' p' ->
@@ -252,7 +270,7 @@ initEnv gdefs cs =
   emptyEnv
     & edefs .~ gdefs
     & addLocs  [ ls | ChanDec c _ (Just s) <- cs
-               , ls <- rsessionStatus gdefs decSt (Root c) s ]
+               , ls <- rsessionStatus decSt (Root c) (Scoped gdefs ø s) ]
     & addChans [ (c, (Root c, s)) | ChanDec c _ (Just s) <- cs ]
   where
     decSt Write = Empty
@@ -261,7 +279,7 @@ initEnv gdefs cs =
 
 transTermProc :: Defs -> Endom Term
 transTermProc gdefs tm0
-  | Proc cs proc0 <- reduceSimple gdefs tm0
+  | Proc cs proc0 <- reduceP $ Scoped gdefs ø tm0
   = transProc (initEnv gdefs cs) proc0 (const $ Proc cs)
   | otherwise
   = tm0
