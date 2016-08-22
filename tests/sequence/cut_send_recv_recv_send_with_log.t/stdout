@@ -1,5 +1,5 @@
 
-{- Sequential Expanded program -}
+{- Sequential program -}
 
 cut_send_recv_recv_send_with_log =
   proc (logc : !String.!String, logd : !String.!String)

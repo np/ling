@@ -1,5 +1,5 @@
 
-{- Sequential Expanded program -}
+{- Sequential program -}
 
 assert
   'a'
@@ -16,11 +16,13 @@ ap =
 
 ap_SInt_SBool =
   proc (c : {[!Int, ?Bool],{?Int, !Bool}})
+  let S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let T#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 : Session = (!Bool).
   split c {f, xo}.
   split xo {x, o}.
   split f [fi, fo].
-  fwd (!Int)(fi, x).
-  fwd (!Bool)(o, fo)
+  fwd S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab (fi, x).
+  fwd T#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 (o, fo)
 
 assert
   `false
@@ -96,17 +98,22 @@ com_new =
 
 com_new_SInt =
   proc ()
-  new [c : !Int, d : ?Int].
+  let S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let p#c64b2be27571ee19e42d9e6cf066ba4a15dabcc2dc82919c38a5876bcbdf2beb : < S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab > = (proc (c'#p : !Int)
+  c'#p <- 42).
+  let q#f6e3be1f1ed011d77038271400142c92b552176dfcb6a1c7a6b88f77fb42f7c6 : < ~ S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab > = (proc (d#q : ?Int)
+  let x#q : Int <- d#q).
+  new [c : S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab, d : ~ S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab].
   c <- 42.
   let x#q : Int <- d
 
 com_new_mk_ten2 =
-  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
-  new [c : S, d : ~ S].
-  @ (proc (c : [S, ~ S])
+  let mk_tensor2 = \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
   split c [c0, c1].
-  ( @ p (c0)
-  | @ q (c1))) [c, d]
+  ( @ p0 (c0)
+  | @ p1 (c1))in \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
+  new [c : S, d : ~ S].
+  @ (mk_tensor2 S (~ S)p q)[c, d]
 
 conv_fun =
   \ (A : Type)-> \ (A' : Type)-> \ (B : Type)-> \ (S : Session)-> \ (dom : A' -> A)-> \ (cod : B -> < S >)-> \ (f : A -> B)-> proc (c : {?A', S})
@@ -127,14 +134,17 @@ curry =
 
 curry_SInt_SBool_SDouble =
   proc (c : {[[!Int, !Bool],?Double],{?Int, {?Bool, !Double}}})
+  let S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let T#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 : Session = (!Bool).
+  let U#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 : Session = (!Double).
   split c {f, xyo}.
   split xyo {x, yo}.
   split yo {y, o}.
   split f [fxy, fo].
   split fxy [fx, fy].
-  fwd (!Int)(fx, x).
-  fwd (!Bool)(fy, y).
-  fwd (!Double)(o, fo)
+  fwd S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab (fx, x).
+  fwd T#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 (fy, y).
+  fwd U#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 (o, fo)
 
 cutEmptyParTensor =
   proc ()
@@ -280,7 +290,8 @@ double_21 =
 
 double_21_fused =
   proc (b : !Int)
-  b <- 42
+  let x : Int = 21.
+  b <- (x + x)
 
 double_21_fused_and_reduced =
   proc (b : !Int)
@@ -290,7 +301,7 @@ another_dual =
   \ (S : Session)-> ~ S
 
 dual_dual =
-  \ (S : Session)-> \ (p : < S >)-> proc (c : S)
+  \ (S : Session)-> \ (p : < S >)-> proc (c : ~ another_dual S)
   @ p (c)
 
 send_42 =
@@ -335,17 +346,27 @@ feed_fwd_send_then_recv =
 
 feed_fwd_send_then_recv_Int_String_42_showInt =
   proc ()
-  new [a : {!Int.?String, ?Int.!String},b : [?Int.!String, !Int.?String]].
-  split a {c#0#p : !Int.?String, c#1#p : ?Int.!String}.
-  split b [c, d].
-  d <- 42.
+  let I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad : Type = Int.
+  let O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449 : Type = String.
+  let f#b2a9ac5d0016d5d9fd1f6b3a5a6e6e23b267e0d594d2cbc24980e407aa7ba77a : (x#f : I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad)-> O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449 = showInt.
+  let i#1b38768212e0ec952e7048820f4309b9fa2609b6388a3e7bc2f44e126fec1bad : I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad = 42.
+  let p#ed04e7d813ad8964cb786921b61f44db3ecdbc9b8cb8a3a620665eb01859a981 : < {!I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.?O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449, ?I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.!O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449}> = (proc (c#p)
+  split c#p {c#0#p : !Int.?String, c#1#p : ?Int.!String}.
   let x#c#1#p : Int <- c#1#p.
   c#0#p <- x#c#1#p.
-  let x : Int <- c.
-  c <- (showInt x).
+  let x#c#0#p : String <- c#0#p.
+  c#1#p <- x#c#0#p).
+  new [a : {!I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.?O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449, ?I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.!O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449},b : [?I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.!O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449, !I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad.?O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449]].
+  split a {c#0#p : !Int.?String, c#1#p : ?Int.!String}.
+  split b [c, d].
+  d <- i#1b38768212e0ec952e7048820f4309b9fa2609b6388a3e7bc2f44e126fec1bad.
+  let x#c#1#p : Int <- c#1#p.
+  c#0#p <- x#c#1#p.
+  let x : I#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad <- c.
+  c <- (f#b2a9ac5d0016d5d9fd1f6b3a5a6e6e23b267e0d594d2cbc24980e407aa7ba77a x).
   let x#c#0#p : String <- c#0#p.
   c#1#p <- x#c#0#p.
-  let o : String <- d
+  let o : O#200a813b13e6caa5de1bd1382f21da1bb8be2a2727765a214477bb8618e26449 <- d
 
 feed_recv =
   \ (p : < ?Int >)-> \ (i : Int)-> proc ()
@@ -609,26 +630,27 @@ split_nested_seq_core =
 group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]}> =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]})
   split c {i, o}.
-  split o [: na, nb, nc, nd :].
-  split i [: ab, cd :].
-  split ab [: a, b :].
-  split cd [: c, d :].
-  fwd (~ A)(a, na).
-  fwd (~ B)(b, nb).
-  fwd (~ C)(c, nc).
-  fwd (~ D)(d, nd)
+  @ (split_nested_seq_core (~ A)(~ B)(~ C)(~ D)) {o, i}
 
 group_nested_seq_SInt_SDouble_SBool_SString =
   proc (c : {[: [: ?Int, ?Double :], [: ?Bool, ?String :] :], [: !Int, !Double, !Bool, !String :]})
+  let A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 : Session = (!Double).
+  let C#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993 : Session = (!Bool).
+  let D#79406b16ee627465d9f4142e730328a3f1f40acd3f8f9dd26307425f736021c3 : Session = (!String).
   split c {i, o}.
+  let A#6dc76b793cdad3d2195de5e6220592234d69f22ca5f2ad8eb70d79a53e5d7570 : Session = (~ A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab).
+  let B#bc576496bb1e424c9823afaef2d05868d4f2346e3fcf32fb6ddd488ea6688a4b : Session = (~ B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052).
+  let C#583d0022770ae6c7fbb83c95c9899338e1bea28eda4412a78670f85ff9a63a43 : Session = (~ C#a86d43f7fc0c06727ebba1e8ed94c375969a7c37c19ea1b8498db68c8194e993).
+  let D#b806476d543c251fff8701d6501fe20b21f49f660111a4f3e1b4cfcbe84f9260 : Session = (~ D#79406b16ee627465d9f4142e730328a3f1f40acd3f8f9dd26307425f736021c3).
   split o [: na, nb, nc, nd :].
   split i [: ab, cd :].
   split ab [: a, b :].
   split cd [: c, d :].
-  fwd (?Int)(a, na).
-  fwd (?Double)(b, nb).
-  fwd (?Bool)(c, nc).
-  fwd (?String)(d, nd)
+  fwd A#6dc76b793cdad3d2195de5e6220592234d69f22ca5f2ad8eb70d79a53e5d7570 (a, na).
+  fwd B#bc576496bb1e424c9823afaef2d05868d4f2346e3fcf32fb6ddd488ea6688a4b (b, nb).
+  fwd C#583d0022770ae6c7fbb83c95c9899338e1bea28eda4412a78670f85ff9a63a43 (c, nc).
+  fwd D#b806476d543c251fff8701d6501fe20b21f49f660111a4f3e1b4cfcbe84f9260 (d, nd)
 
 id : (A : Type)-> (x : A)-> A
 
@@ -649,7 +671,7 @@ one : Int =
   1
 
 suc : (x : Int)-> Int =
-  _+_ 1
+  _+_ one
 
 doubleInt : (x : Int)-> Int =
   \ (x : Int)-> x + x
@@ -664,44 +686,42 @@ rot : (x : ABC)-> ABC =
   }
 
 rot2 : (x : ABC)-> ABC =
-  \ (x : ABC)-> case case x of {
-    `a -> `b ,
-    `b -> `c ,
-    `c -> `a
-  } of {
-    `a -> `b ,
-    `b -> `c ,
-    `c -> `a
-  }
+  \ (x : ABC)-> rot (rot x)
 
 let42ann =
-  84
+  let x : Int = 42 in x + x
 
 let42 =
-  84
+  let x = 42 in x + x
 
 let_example =
   proc (c : ?Int.!Int)
-  let x : Int <- c.
-  c <- (x + x)
+  let T = Int.
+  let f = _+_.
+  let x : T <- c.
+  let y = (f x x).
+  c <- y
 
 letrecv_ann =
   proc (c : ?Int.!Int)
   let x : Int <- c.
-  c <- (x + x)
+  let y : Int = (x + x).
+  c <- y
 
 letrecv =
   proc (c : ?Int.!Int)
   let x : Int <- c.
-  c <- (x + x)
+  let y = (x + x).
+  c <- y
 
 letsession =
   proc (c)
-  split c {c#0 : {{{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}},{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}}}, {{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}},{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}}}},c#1 : [[[[[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]], [[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]]],[[[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]], [[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]]]], [[[[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]], [[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]]],[[[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]], [[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]],[[[!Int, !Int],[!Int, !Int]], [[!Int, !Int],[!Int, !Int]]]]]]]}.
-  fwd {{{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}},{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}}}, {{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}},{{{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}, {{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}},{{{?Int, ?Int},{?Int, ?Int}}, {{?Int, ?Int},{?Int, ?Int}}}}}}}(c#0, c#1)
+  let f = (\ (S0 : Session)-> let S1 = {S0, S0}in let S2 = {S1, S1}in let S3 = {S2, S2}in let S4 = {S3, S3}in let S5 = {S4, S4}in let S6 = {S5, S5}in let S7 = {S6, S6}in S7).
+  split c {c#0 : f (?Int),c#1 : ~ f (?Int)}.
+  fwd (f (?Int)) (c#0, c#1)
 
 lettype : (P : (A : Type)-> (B : Type)-> Type)-> (p : (A : Type)-> P A A)-> (A : Type)-> P (P (P (P A A)(P A A)) (P (P A A)(P A A)))(P (P (P A A)(P A A)) (P (P A A)(P A A)))=
-  \ (P : (A : Type)-> (B : Type)-> Type)-> \ (p : (A : Type)-> P A A)-> \ (A : Type)-> p (P (P (P A A)(P A A)) (P (P A A)(P A A)))
+  \ (P : (A : Type)-> (B : Type)-> Type)-> \ (p : (A : Type)-> P A A)-> \ (A : Type)-> let B = P A A in let C = P B B in let D = P C C in p D
 
 assert
   1
@@ -715,10 +735,10 @@ showDiv =
   \ (m : Double)-> \ (n : Double)-> (showDouble m)++S " / " ++S (showDouble n)++S " = " ++S showDouble (m /D n)
 
 my42 : String =
-  "2 * 21 = 42"
+  showMult 2 21
 
 my3_14 : String =
-  "6.28 / 2.0 = 3.14"
+  showDiv 6.28 2.0
 
 myNewline : Char =
   '\n'
@@ -882,14 +902,14 @@ my_dual =
   \ (S : Session)-> ~ S
 
 test_my_dual =
-  proc (c : ?Int)
+  proc (c : my_dual (!Int))
   let x : Int <- c
 
 my_loli =
   \ (S : Session)-> \ (T : Session)-> {~ S, T}
 
 test_my_loli =
-  \ (A : Type)-> proc (c : {?A, !A})
+  \ (A : Type)-> proc (c : my_loli (!A)(!A))
   split c {i, o}.
   let x : A <- i.
   o <- x
@@ -1246,19 +1266,7 @@ plug_compose' =
   | @ q {b', c})
 
 plug_compose_par_par : (A : Session)-> (B : Session)-> (C : Session)-> (p : < {A, B}>)-> (q : < {~ B, C}>)-> < {A, C}> =
-  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < {A, B}>)-> \ (q : < {~ B, C}>)-> proc (ab : {A, C})
-  split ab {a, b}.
-  new [b : B, b' : ~ B].
-  ( new [ab : {A, B},nanb].
-    ( @ p (ab)
-    | split nanb [na, nb].
-      ( fwd A (a, na)
-      | fwd B (b, nb)))
-  | new [ab : {~ C, C},nanb].
-    ( @ q (ab)
-    | split nanb [na, nb].
-      ( fwd (~ C)(b', na)
-      | fwd C (b, nb))))
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < {A, B}>)-> \ (q : < {~ B, C}>)-> bump_par' A C (plug_compose' A B C (flat_par' A B p)(flat_par' (~ B)C q))
 
 plug_send_recv =
   \ (p : < !Int, ?Int >)-> proc (c : !Int, d : ?Int)
@@ -1380,10 +1388,12 @@ replicate_proc =
 
 replicate_proc_Int_10 =
   proc (c : {?Int, [!Int ^ 10]})
+  let A#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad : Type = Int.
+  let n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd : Int = 10.
   split c {i, os}.
-  split os [o ^ 10].
-  slice (o)10 as _
-    let x#i : Int <- i.
+  split os [o ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd].
+  slice (o)n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd as _
+    let x#i : A#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad <- i.
     o <- x#i
 
 replicate_proc_alt =
@@ -1399,13 +1409,15 @@ replicate_proc_alt =
 
 replicate_proc_alt_Int_10 =
   proc (c : {?Int, [!Int ^ 10]})
+  let A#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad : Type = Int.
+  let n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd : Int = 10.
   split c {i, os}.
-  let x : Int <- i.
-  split os [o ^ 10].
-  slice (o)10 as _
-    new [j : ?Int, k].
+  let x : A#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad <- i.
+  split os [o ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd].
+  slice (o)n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd as _
+    new [j : ?A#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad, k].
     k <- x.
-    let x#j : Int <- j.
+    let x#j : A#ca3fc5196d9b797778fb979c6558bf9ba7a6dc2f36b52acd933e88c349ec6dad <- j.
     o <- x#j
 
 replicate_ten =
@@ -1418,7 +1430,7 @@ Int1 =
   Int
 
 send_1 =
-  proc (c : !Int)
+  proc (c : !Int1)
   c <- 1
 
 seq0_explicit =
@@ -1563,11 +1575,13 @@ ten_loli_par =
 
 ten_loli_par_sInt_sDouble =
   proc (c : {{?Int, ?Double},{!Int, !Double}})
+  let A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 : Session = (!Double).
   split c {i, o}.
   split i {na, nb}.
   split o {a, b}.
-  fwd (!Int)(a, na).
-  fwd (!Double)(b, nb)
+  fwd A#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab (a, na).
+  fwd B#647b91db90432f112e2783338deb85bd179da9eff372aa0411870d920d974052 (b, nb)
 
 ten_loli_par_sequential =
   \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})
@@ -1658,7 +1672,7 @@ test4 =
   r <- (x0 + x1 + x2)
 
 type_annotation =
-  42
+  (21 + 21 : Int)
 
 ZeroCh : Type =
   (A : Type)-> A
@@ -1679,13 +1693,13 @@ oneTwo : Two =
   \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
 
 notTwo : (b : Two)-> Two =
-  \ (b : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
+  \ (b : Two)-> \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
 
 andTwo : (b0 : Two)-> (b1 : Two)-> Two =
-  \ (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> b0 ((A : Type)-> (x : A)-> (y : A)-> A)(\ (A : Type)-> \ (x : A)-> \ (y : A)-> x)b1
+  \ (b0 : Two)-> \ (b1 : Two)-> b0 Two zeroTwo b1
 
 orTwo : (b0 : Two)-> (b1 : Two)-> Two =
-  \ (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> b0 ((A : Type)-> (x : A)-> (y : A)-> A)b1 (\ (A : Type)-> \ (x : A)-> \ (y : A)-> y)
+  \ (b0 : Two)-> \ (b1 : Two)-> b0 Two b1 oneTwo
 
 Nat : Type =
   (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
@@ -1694,16 +1708,16 @@ zeroNat : Nat =
   \ (A : Type)-> \ (z : A)-> \ (s : (n : A)-> A)-> z
 
 sucNat : (n : Nat)-> Nat =
-  \ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s)
+  \ (n : Nat)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s)
 
 addNat : (m : Nat)-> (n : Nat)-> Nat =
-  \ (m : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> m ((A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)n (\ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s))
+  \ (m : Nat)-> \ (n : Nat)-> m Nat n sucNat
 
 Bin : Type =
   (A : Type)-> (leaf : A)-> (fork : (left : A)-> (right : A)-> A)-> A
 
 Nats : Type =
-  (A : Type)-> (nil : A)-> (cons : (head : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (tail : A)-> A)-> A
+  (A : Type)-> (nil : A)-> (cons : (head : Nat)-> (tail : A)-> A)-> A
 
 List : (X : Type)-> Type =
   \ (X : Type)-> (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A
@@ -1712,10 +1726,10 @@ nilList : (X : Type)-> List X =
   \ (X : Type)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head : X)-> (tail : A)-> A)-> nil
 
 consList : (X : Type)-> (head : X)-> (tail : List X)-> List X =
-  \ (X : Type)-> \ (head : X)-> \ (tail : (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : X)-> (tail' : A)-> A)-> cons head (tail A nil cons)
+  \ (X : Type)-> \ (head : X)-> \ (tail : List X)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : X)-> (tail' : A)-> A)-> cons head (tail A nil cons)
 
 mapList : (X : Type)-> (Y : Type)-> (f : (x : X)-> Y)-> (xs : List X)-> List Y =
-  \ (X : Type)-> \ (Y : Type)-> \ (f : (x : X)-> Y)-> \ (xs : (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : Y)-> (tail' : A)-> A)-> xs A nil (\ (head : X)-> \ (tail : A)-> cons (f head)tail)
+  \ (X : Type)-> \ (Y : Type)-> \ (f : (x : X)-> Y)-> \ (xs : List X)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : Y)-> (tail' : A)-> A)-> xs A nil (\ (head : X)-> \ (tail : A)-> cons (f head)tail)
 
 Id : (A : Type)-> (x : A)-> (y : A)-> Type
 
@@ -1732,16 +1746,16 @@ tr-refl : (A : Type)-> (x : A)-> (P : (y : A)-> Type)-> (Px : P x)-> Id (P x)(tr
   \ (A : Type)-> \ (x : A)-> \ (P : (y : A)-> Type)-> \ (Px : P x)-> J-refl A x (\ (z : A)-> \ (q : Id A x z)-> P z)Px
 
 coe : (A : Type)-> (B : Type)-> (p : Id Type A B)-> (x : A)-> B =
-  \ (A : Type)-> \ (B : Type)-> \ (p : Id Type A B)-> \ (x : A)-> J Type A (\ (z : Type)-> \ (q : Id Type A z)-> z)x B p
+  \ (A : Type)-> \ (B : Type)-> \ (p : Id Type A B)-> \ (x : A)-> tr Type A (\ (X : Type)-> X)x B p
 
 coe-refl : (A : Type)-> (x : A)-> Id A (coe A A (refl Type A)x)x =
-  \ (A : Type)-> \ (x : A)-> J-refl Type A (\ (z : Type)-> \ (q : Id Type A z)-> z)x
+  \ (A : Type)-> \ (x : A)-> tr-refl Type A (\ (X : Type)-> X)x
 
 sym : (A : Type)-> (x : A)-> (y : A)-> (p : Id A x y)-> Id A y x =
-  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (p : Id A x y)-> J A x (\ (z : A)-> \ (q : Id A x z)-> Id A z x)(refl A x)y p
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (p : Id A x y)-> tr A x (\ (z : A)-> Id A z x)(refl A x)y p
 
 trans : (A : Type)-> (x : A)-> (y : A)-> (z : A)-> (p : Id A x y)-> (q : Id A y z)-> Id A x z =
-  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (z : A)-> \ (p : Id A x y)-> \ (q : Id A y z)-> J A z (\ (z : A)-> \ (q : Id A z z)-> Id A x z)q z q
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> \ (z : A)-> \ (p : Id A x y)-> \ (q : Id A y z)-> tr A y (Id A x)p z q
 
 uncurry =
   \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> proc (c : {[S, [T, ~ U]], {{~ S, ~ T},U}})
