@@ -100,7 +100,11 @@ parse_env_option(){
 }
 
 record_verbose(){
-  record >TESTRECIPE <"$stdin"
+  if (( stdin )); then
+    record >TESTRECIPE
+  else
+    record >TESTRECIPE </dev/null
+  fi
   info Exit code: "$exit_code"
   info Standard output:
   nest2_info "$stdout_file"
@@ -115,7 +119,7 @@ record_verbose(){
 }
 
 record_action(){
-  stdin=/dev/stdin
+  stdin=1
   local eed_opts=( )
   local all_env_vars=( )
   for var in $(env | cut -d= -f1); do
@@ -144,7 +148,7 @@ record_action(){
       --)         shift; break;;
       --batch)    shift; batch_mode=1;;
       -f|--force) shift; eed_opts=(-f);;
-      --no-stdin) shift; stdin=/dev/null; stdin_file=/dev/null;;
+      --no-stdin) shift; stdin=0; stdin_file=/dev/null;;
       --env)      shift; parse_env_option "$1"; shift;;
       --source)   shift; sources=("${sources[@]}" "$1"); shift;;
       --product)  shift; products=("${products[@]}" "$1"); shift;;
@@ -159,7 +163,7 @@ record_action(){
   ensure_empty_dir "${eed_opts[@]}" "$dir"
   copy_products . "$dir"
   copy_sources  . "$dir"
-  [ "$stdin" = /dev/null ] || info Reading from stdin...
+  (( stdin )) || info Reading from stdin...
   within_dir "$dir" record_verbose
 }
 
