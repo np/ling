@@ -123,3 +123,8 @@ instance PushDefs a => PushDefs (Arg a) where
 
 instance PushDefs Defs where
   pushDefs = pushDefs__ each
+
+instance PushDefs ChanDec where
+  pushDefs scd =
+    case scd ^. scoped of
+      ChanDec c r ms -> ChanDec c (mkLet__ (scd $> r)) (mkLet__ (scd $> ms))

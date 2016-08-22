@@ -22,10 +22,10 @@ new_fuse1_ten_recv =
 
 new_fuse2_ten_recv =
   proc ()
-  let x : Int = 42.
   new/fuse 0 [co, di].
-  let y : Int = (x + x).
-  new/fuse 0 [do, ci]
+  let x : Int = 42.
+  new/fuse 0 [do, ci].
+  let y : Int = (x + x)
 
 new_fuse3_ten_recv =
   proc ()

@@ -7,6 +7,9 @@ import           Ling.Prelude hiding (subst1)
 import           Ling.Proc
 import           Ling.Print
 import           Ling.Rename
+import           Ling.Reduce
+import           Ling.Scoped
+import           Ling.Defs
 import           Ling.Session
 
 type Allocation = Term
@@ -19,6 +22,13 @@ data AllocAnn
   | FuseAnn Int
 --  | Alloc
 --  | Auto
+
+data Fused =
+  Fused { _fusedActs :: !(Order Act)
+        , _fusedDefs :: !Defs }
+
+instance Dottable Fused where
+  Fused acts defs `dotP` proc1 = acts `dotP` defs `dotP` proc1
 
 defaultFusion, autoFusion :: AllocAnn -- [Allocation] -> Maybe [Allocation]
 defaultFusion = FusedAnn
@@ -54,33 +64,36 @@ doFuse anns =
 
 type NU = [ChanDec] -> Act
 
-fuseDot :: Op2 Proc
-fuseDot = \case
+fuseDot :: Defs -> Op2 Proc
+fuseDot defs = \case
   Act (Nu anns newpatt) | Just anns' <- doFuse anns ->
     case newpatt of
-      NewChans k [c, d] -> fuseProc . fuseChanDecs (Nu anns' . NewChans k) [(c, d)]
+      NewChans k cs
+        | [c, d] <- reduceChanDec defs <$> cs
+        -> fuseProc defs . fuseChanDecs (Nu anns' . NewChans k) [(c, d)]
       _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty newpatt
                              , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
-  proc0@NewSlice{} -> (fuseProc proc0 `dotP`) . fuseProc
-  proc0 -> (proc0 `dotP`) . fuseProc
+  proc0@NewSlice{} -> (fuseProc defs proc0 `dotP`) . fuseProc defs
+  proc0 -> (proc0 `dotP`) . fuseProc defs
 
-fuseProc :: Endom Proc
-fuseProc = \case
-  proc0 `Dot` proc1 -> fuseDot proc0 proc1
+fuseProc :: Defs -> Endom Proc
+fuseProc defs = \case
+  proc0 `Dot` proc1 -> fuseDot defs proc0 proc1
 
-  Act act -> fuseDot (Act act) ø
+  Act act -> fuseDot defs (Act act) ø
 
   -- go recurse...
-  Procs procs -> Procs $ over each fuseProc procs
-  NewSlice cs t x proc0 -> NewSlice cs t x $ fuseProc proc0
+  Procs procs -> Procs $ procs & each %~ fuseProc defs
+  NewSlice cs t x proc0 -> NewSlice cs t x $ fuseProc defs proc0
 
 fuseChanDecs :: NU -> [(ChanDec,ChanDec)] -> Endom Proc
 fuseChanDecs _  []           = id
 fuseChanDecs nu ((c0,c1):cs) = fuse2Chans nu c0 c1 . fuseChanDecs nu cs
 
-fuseSendRecv :: NU -> ChanDec -> Term -> ChanDec -> VarDec -> Order Act
-fuseSendRecv nu c0 e c1 (Arg x mty) =
-  Order [LetA (aDef x mty e), nu ([c0,c1] & each . cdSession . _Just . rsession %~ sessionStep (Def x []))]
+fuseSendRecv :: NU -> ChanDec -> Term -> ChanDec -> VarDec -> Fused
+fuseSendRecv nu c0 e c1 (Arg x mty) = Fused (Order [nu cs]) (aDef x mty e)
+  where
+    cs = [c0,c1] & each . cdSession . _Just . rsession %~ sessionStep {-TODO defs-} (Def x [])
 
 two :: ([a] -> b) -> a -> a -> b
 two f x y = f [x, y]
@@ -92,12 +105,12 @@ new[c0 : A, d0 : ~A]
 new[c1 : B, d1 : ~B]
 -}
 
-type Fuse2 a = NU -> ChanDec -> a -> ChanDec -> a -> Order Act
+type Fuse2 a = NU -> ChanDec -> a -> ChanDec -> a -> Fused
 
 fuse2Pats :: Fuse2 CPatt
 fuse2Pats nu _c0 pat0 _c1 pat1
   | Just (_, cs0) <- pat0 ^? _ArrayCs
-  , Just (_, cs1) <- pat1 ^? _ArrayCs = Order $ zipWith (two nu) cs0 cs1
+  , Just (_, cs1) <- pat1 ^? _ArrayCs = Fused (Order $ zipWith (two nu) cs0 cs1) ø
   | otherwise                         = error "Fuse.fuse2Pats unsupported split"
 
 fuse2Acts :: Fuse2 Act
@@ -143,17 +156,21 @@ fuse2Chans nu cd0 cd1 p0 =
     -- p1    = p0 &  {-scoped .-} fetchActProc predA .~ ø
 
 fuseProgram :: Endom Program
-fuseProgram = prgDecs . each . _Sig . _3 . _Just . _Proc . _2 %~ fuseProc
+-- fuseProgram = prgDecs . each . _Sig . _3 . _Just . _Proc . _2 %~ fuseProc
+fuseProgram = transProgramTerms (over (_Proc . _2) . fuseProc)
 {-
 fuse2Chans c0 c1 p0 =
   p0 & partsOf (scoped . procActsChans (l2s [c0,c1])) %~ f
 
   where f [] = []
         f (act0 : acts)
-          | c0 `member` fcAct act0 = g act0 acts c0
+          | c0 `member` freeChans act0 = g act0 acts c0
           | otherwise              = g act0 acts c1
         g act0 acts cA =
-          let (acts0,act1:acts1) = span (member cA . fcAct) acts
+          let (acts0,act1:acts1) = span (member cA . freeChans) acts
               (act0',act1')      = fuse2Acts (act0, act1)
           in act0' : acts0 ++ act1' : acts1
 -}
+
+reduceChanDec :: Defs -> Endom ChanDec
+reduceChanDec defs = pushDefsR . reduce_ (cdSession . _Just . rsession . tSession) . Scoped ø defs
