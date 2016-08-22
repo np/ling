@@ -336,8 +336,8 @@ feed_fwd_send_then_recv =
 feed_fwd_send_then_recv_Int_String_42_showInt =
   proc ()
   new [a : {!Int.?String, ?Int.!String},b : [?Int.!String, !Int.?String]].
-  split b [c, d].
   split a {c#0#p : !Int.?String, c#1#p : ?Int.!String}.
+  split b [c, d].
   d <- 42.
   let x#c#1#p : Int <- c#1#p.
   c#0#p <- x#c#1#p.

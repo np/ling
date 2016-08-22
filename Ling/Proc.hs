@@ -68,6 +68,11 @@ instance Dottable act => Dottable (Order act) where
   Order []         `dotP` proc = proc
   Order (act:acts) `dotP` proc = act `dotP` Order acts `dotP` proc
 
+instance Dottable Defs where
+  defs `dotP` proc
+    | defs == ø = proc
+    | otherwise = Act (LetA defs) `dotQ` proc
+
 instance Dottable Act where
   act `dotP` proc = Act act `dotQ` proc
   toProc = Act

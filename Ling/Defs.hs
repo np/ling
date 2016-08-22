@@ -4,6 +4,7 @@ module Ling.Defs where
 
 import Ling.Norm
 import Ling.Prelude
+import Ling.Proc
 import Ling.Reduce
 import Ling.Scoped
 import Ling.Session.Core
@@ -93,7 +94,7 @@ instance PushDefs Proc where
       proc0 `Dot` proc1 ->
         case proc0 of
           Act (LetA defs) -> Act (LetA (sp0 ^. ldefs <> defs)) `Dot` proc1
-          _ -> Act (LetA (sp0 ^. ldefs)) `Dot` proc0 `Dot` proc1
+          _ -> (sp0 ^. ldefs) `dotP` proc0 `Dot` proc1
 
 instance PushDefs Act where
   pushDefs sa =
