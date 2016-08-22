@@ -15,13 +15,13 @@ type Allocation = Term
 -- isoPrism p pafb = p pafb
 
 data AllocAnn
-  = Fused
-  | Fuse Int
+  = FusedAnn
+  | FuseAnn Int
 --  | Alloc
 --  | Auto
 
 defaultFusion, autoFusion :: AllocAnn -- [Allocation] -> Maybe [Allocation]
-defaultFusion = Fused
+defaultFusion = FusedAnn
 autoFusion = defaultFusion
 
 makePrisms ''AllocAnn
@@ -33,23 +33,23 @@ instance Monoid AllocAnn where
 _AllocAnn :: Prism' Allocation AllocAnn
 _AllocAnn = prism' con pat where
   con = \case
-    Fused   -> Def (Name "fused") []
-    Fuse i  -> Def (Name "fuse" ) [litTerm . integral # i]
+    FusedAnn  -> Def (Name "fused") []
+    FuseAnn i -> Def (Name "fuse" ) [litTerm . integral # i]
     -- Alloc   -> Def (Name "alloc") []
     -- Auto    -> Def (Name "auto" ) []
   pat = \case
-    Def (Name "fused") []  -> Just Fused
-    Def (Name "fuse" ) [i] -> i ^? litTerm . integral . re _Fuse
-    Def (Name "alloc") []  -> Just (Fuse 0) -- TEMPORARY, `alloc` is defined as `fuse 0`
+    Def (Name "fused") []  -> Just FusedAnn
+    Def (Name "fuse" ) [i] -> i ^? litTerm . integral . re _FuseAnn
+    Def (Name "alloc") []  -> Just (FuseAnn 0) -- TEMPORARY, `alloc` is defined as `fuse 0`
     Def (Name "auto" ) []  -> Just autoFusion
     _                      -> Nothing
 
 doFuse :: [Allocation] -> Maybe [Allocation]
 doFuse anns =
   case anns ^. each . _AllocAnn of
-    Fused  -> Just anns
-    Fuse i
-      | i > 0     -> Just $ anns & each . _AllocAnn . _Fuse %~ pred
+    FusedAnn  -> Just anns
+    FuseAnn i
+      | i > 0     -> Just $ anns & each . _AllocAnn . _FuseAnn %~ pred
       | otherwise -> Nothing
 
 type NU = [ChanDec] -> Act
