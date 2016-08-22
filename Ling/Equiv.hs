@@ -197,7 +197,7 @@ instance Equiv Sessions where
   equiv = reduceEquiv reduce (equivAt _Sessions)
 
 instance Equiv RFactor where
-  equiv env (RFactor t0) (RFactor t1) = equiv env t0 t1
+  equiv = equivAt _RFactor
 
 instance Equiv Session where
   equiv = equivAt tSession
