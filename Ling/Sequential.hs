@@ -90,8 +90,8 @@ statusStep Full  = Empty
 statusStep Empty = Full
 -}
 
-actEnv :: Channel -> Term -> Endom Env
-actEnv c tm env =
+stepEnv :: Channel -> Term -> Endom Env
+stepEnv c tm env =
   env & chans   . at c . mapped %~ bimap Next (rsession %~ sessionStep tm)
       & locs    . at l %~ mnot ()
       & writers . at l %~ mnot c
@@ -161,19 +161,14 @@ transSplit c dOSs env =
         sessions = session ^? to unRepl . _Array . _2 {-. to unsafeFlatSessions-} ?| error "transSplit: expected to split an array"
         ds = dOSs ^.. each . cdChan
 
-transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
-transProc env proc0 = transProcs env [proc0] []
-
 -- All these prefixes can be reordered as they are in parallel
-transPref :: Env -> Pref -> [Proc] -> (Env -> Proc -> r) -> r
-transPref env (Prll pref0) procs k =
+transPref :: Env -> Pref -> (Env -> Proc -> r) -> r
+transPref env (Prll pref0) k =
   case pref0 of
-    []       -> transProcs (env & gas -~ 1) procs [] k
-    act:pref -> transPref (transAct sact env) (Prll pref) procs $ \env' proc' ->
-                  k env' (act {-& _Nu %~ transNu
-                               & _Split . _1 .~ SeqK-} `dotP` proc')
-      where
-        sact = env ^. scope $> act
+    []       -> k (env & gas -~ 1) ø
+    act:pref ->
+      transPref (transAct (env ^. scope $> act) env) (Prll pref) $ \env' proc' ->
+        k env' (act `dotP` proc')
 
 
 addChanDecs :: Scoped [Arg Session] -> Endom Env
@@ -221,11 +216,14 @@ transAct sact =
   case sact ^. scoped of
     Nu _ newpatt -> transNew $ sact $> newpatt
     Split c pat  -> transSplitPatt c pat
-    Send c _ t   -> actEnv c $ mkLet (sact ^. ldefs) t
-    Recv c a     -> actEnv c $ Def (a ^. argName) []
+    Send c _ t   -> stepEnv c $ mkLet (sact ^. ldefs) t
+    Recv c a     -> stepEnv c $ Def (a ^. argName) []
     Ax{}         -> id
     At{}         -> id
     LetA defs    -> edefs <>~ defs
+
+transProc :: Env -> Proc -> (Env -> Proc -> r) -> r
+transProc env proc0 = transProcs env [proc0] []
 
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
 transProcs env p0s waiting k
@@ -239,25 +237,38 @@ transProcs env p0s waiting k
         _   -> transErr "All the processes are stuck" waiting
 
     p0':ps ->
-      let p0 = reduceP (env ^. scope $> p0') in
+      let p0 = reduceP (env ^. scope $> p0')
+          transProcsProgress env0 proc0 procs =
+            transProcs env0 (ps ++ reverse waiting ++ procs) [] $ \env' procs' ->
+              k env' (proc0 `dotP` procs')
+      in
       case p0 of
         NewSlice cs t x p ->
           transProc env p $ \env' p' ->
-            transProcs env' (ps ++ reverse waiting) [] $ \env'' ps' ->
-              k env'' (NewSlice cs t x p' `dotP` ps')
+            transProcsProgress env' (NewSlice cs t x p') []
 
         Procs (Prll ps0) ->
           transProcs env (ps0 ++ ps) waiting k
+
+        -- This is a short-cut case this means that it should work the same without it.
+        Act act | isReady env act ->
+          transProcsProgress (transAct (env ^. scope $> act) env) (Act act) []
+
+        -- Short-cut case, same as above.
+        Act act `Dot` proc1 | isReady env act ->
+          transProcsProgress (transAct (env ^. scope $> act) env) (Act act) [proc1]
 
         _ | Just (pref, p1) <- p0 ^? _PrefDotProc ->
             case () of
             _ | pref == ø -> transErr "transProcs: pref == ø IMPOSSIBLE" p0
             _ | (readyPis@(Prll(_:_)),restPis) <- splitReady env pref ->
-              transPref env readyPis (ps ++ reverse waiting ++ [restPis `dotP` p1]) k
+              transPref env readyPis $ \env' proc' ->
+                transProcsProgress env' proc' [restPis `dotP` p1]
 
             _ | null ps ->
               trace ("[WARNING] Sequencing a non-ready prefix " ++ pretty pref) $
-              transPref env pref (p1 : reverse waiting) k
+              transPref env pref $ \env' proc' ->
+                transProcsProgress env' proc' [p1]
 
             _ ->
               transProcs env ps (p0 : waiting) k
@@ -267,8 +278,7 @@ transProcs env p0s waiting k
             transProc env' proc1 $ \env'' proc1' ->
               k env'' (proc0' `dotP` proc1')
 
-        _ ->
-          transProcs env ps (p0 : waiting) k
+        _ -> error "IMPOSSIBLE: transProcs"
 
 initEnv :: Int -> Defs -> [ChanDec] -> Env
 initEnv maxgas gdefs cs =
