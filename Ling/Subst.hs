@@ -1,6 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE Rank2Types #-}
 
+{-
+This module implements hereditary substitution.
+Thus functions gets properly evaluated but NO
+other reduction rules are implemented (prim ops,
+@(proc...)..., case...)
+-}
 module Ling.Subst where
 
 import           Ling.Norm
