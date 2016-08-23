@@ -133,11 +133,40 @@ _PrefDotProc = prism' (uncurry dotP) go
       Procs{} -> Nothing
       NewSlice{} -> Nothing
 
-unParP :: CPatt -> Maybe [ChanDec]
-unParP = \case
-  ChanP cd -> Just [cd]
-  ArrayP ParK patts -> patts ^? below _ChanP
-  ArrayP _ _ -> Nothing
+cPattAsArrayChanDecs :: CPatt -> Maybe (TraverseKind, [ChanDec])
+cPattAsArrayChanDecs = \case
+  ChanP cd -> Just (ParK, [cd])
+  ArrayP k patts -> patts ^? below _ChanP . to ((,) k)
+
+{- Not used yet...
+matchCPatt :: CPatt -> CPatt -> Maybe [(ChanDec,ChanDec)]
+matchCPatt p0 p1 =
+  case (p0, p1) of
+    (ArrayP k0 ps0, ArrayP k1 ps1)
+       | k0 == k1  -> matchCPatts ps0 ps1
+       | otherwise -> Nothing
+    (ChanP cd0, ChanP cd1) -> Just [(cd0, cd1)]
+    _ -> Nothing
+-}
+
+-- This is incomplete as some valid processes can be missed.
+-- TODO generate a `cut` when this short-cut does not work.
+matchProcSplit :: TraverseKind -> ChanDec -> Proc -> Maybe ([ChanDec], Proc)
+matchProcSplit k cd = \case
+  Act (Split c pat) `Dot` proc0
+    | c == cd ^. cdChan
+    , Just (k', cds) <- cPattAsArrayChanDecs pat
+    , k == k'
+    -> Just (cds, proc0)
+  Act act ->
+    matchProcSplit k cd (Act act `Dot` ø)
+  _ -> Nothing
+
+matchChanDecs :: TraverseKind -> EndoM Maybe ([ChanDec], Proc)
+matchChanDecs ParK = Just
+matchChanDecs k    = \case
+  ([cd],proc) -> matchProcSplit k cd proc
+  _           -> Nothing
 
 -- Prism valid up to the reduction rules
 _ActAt :: Prism' Proc (Term, CPatt)
@@ -145,15 +174,16 @@ _ActAt = prism con pat
   where
     con (t, p) =
       case t of
-        Proc cs proc0 ->
-          case unParP p of
-            Just cs' | length cs == length cs' ->
+        Proc cs0 proc0 ->
+          case cPattAsArrayChanDecs p of
+            Just (k, cs') | Just (cs1, proc1) <- matchChanDecs k (cs0, proc0)
+                          , length cs1 == length cs' ->
               let
-                l = zip cs cs' & each . both %~ view cdChan
+                l = zip cs1 cs' & each . both %~ view cdChan
                 m = l2m l
                 r = Ren (\_ _ x -> pure $ Map.lookup x m ?| x) ø ø
               in
-              renameI r proc0
+              renameI r proc1
             _ -> p0
         _ -> p0
       where

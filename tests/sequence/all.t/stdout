@@ -115,6 +115,22 @@ com_new_mk_ten2 =
   new [c : S, d : ~ S].
   @ (mk_tensor2 S (~ S)p q)[c, d]
 
+com_new_mk_ten2_SInt =
+  proc ()
+  let S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab : Session = (!Int).
+  let mk_tensor2 = (\ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
+  split c [c0, c1].
+  ( @ p0 (c0)
+  | @ p1 (c1))).
+  let p#c64b2be27571ee19e42d9e6cf066ba4a15dabcc2dc82919c38a5876bcbdf2beb : < S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab > = (proc (c'#p : !Int)
+  c'#p <- 42).
+  let q#f6e3be1f1ed011d77038271400142c92b552176dfcb6a1c7a6b88f77fb42f7c6 : < ~ S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab > = (proc (d#q : ?Int)
+  let x#q : Int <- d#q).
+  let S1#f5f4d0b836205879a2dc301f2d17203d5e5f060b9ac4b3ec58b021dc107ad3ff : Session = (~ S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab).
+  new [c : S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab, d : ~ S#c2c2616c4a1831ce6f2f0c7e528a2f537fc3224253763b0fbdf7f41a8c8863ab].
+  c <- 42.
+  let x#q : Int <- d
+
 conv_fun =
   \ (A : Type)-> \ (A' : Type)-> \ (B : Type)-> \ (S : Session)-> \ (dom : A' -> A)-> \ (cod : B -> < S >)-> \ (f : A -> B)-> proc (c : {?A', S})
   split c {i, o}.

@@ -143,10 +143,8 @@ com_new_SInt =
 com_new_mk_ten2 =
   \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
   new [c : S, d : ~ S].
-  @ (proc (c : [S, ~ S])
-  split c [c0, c1].
-  ( @ p (c0)
-  | @ q (c1))) [c, d]
+  ( @ p (c)
+  | @ q (d))
 
 com_with_log =
   \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> \ (s : < ~ Log S >)-> proc ()
@@ -1867,10 +1865,8 @@ seq_par_back_v2 =
 seq_pat =
   proc (c : [: ?Int, !Int :])
   split c [: d, e :].
-  @ (proc (f)
-  split f [: g, h :].
-  let x#g : Int <- g.
-  h <- x#g)[: d, e :]
+  let x#g : Int <- d.
+  e <- x#g
 
 seq_seq =
   proc (a : [: [: !Int, !Int :], !Int :])
