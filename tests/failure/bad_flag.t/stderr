@@ -18,4 +18,5 @@ option ::=
   | --no-prims      # Do not include the primitive definitions
   | --no-norm       # Disable the normalizer
   | --no-check      # Disable type checking
+  | --seq-gas       # Set the maximum number of steps for --seq
 

@@ -49,10 +49,13 @@ data Env = Env { _chans   :: Map Channel (Location, RSession)
                -- using reduction.
                -- Thus all definitions part of edefs are global definitions for Scoped.
                , _locs    :: Map Location ()
-               , _writers :: Map Location Channel }
+               , _writers :: Map Location Channel
                -- writers ^. at l == Just c
                -- means that the process owning c was the
                -- last one to write at location l.
+               , _gas     :: Int
+               -- ^ Do not spend more than `gas` steps.
+               }
   deriving (Show)
 
 $(makeLenses ''Env)
@@ -64,7 +67,7 @@ transErr :: Print a => String -> a -> b
 transErr msg v = error $ msg ++ "\n" ++ pretty v
 
 emptyEnv :: Env
-emptyEnv = Env ø ø ø ø
+emptyEnv = Env ø ø ø ø maxBound
 
 addChans :: [(Channel, (Location, RSession))] -> Endom Env
 addChans xys = chans %~ Map.union (l2m xys)
@@ -165,7 +168,7 @@ transProc env proc0 = transProcs env [proc0] []
 transPref :: Env -> Pref -> [Proc] -> (Env -> Proc -> r) -> r
 transPref env (Prll pref0) procs k =
   case pref0 of
-    []       -> transProcs env procs [] k
+    []       -> transProcs (env & gas -~ 1) procs [] k
     act:pref -> transPref (transAct sact env) (Prll pref) procs $ \env' proc' ->
                   k env' (act {-& _Nu %~ transNu
                                & _Split . _1 .~ SeqK-} `dotP` proc')
@@ -225,7 +228,9 @@ transAct sact =
     LetA defs    -> edefs <>~ defs
 
 transProcs :: Env -> [Proc] -> [Proc] -> (Env -> Proc -> r) -> r
-transProcs env p0s waiting k =
+transProcs env p0s waiting k
+  | env ^. gas <= 0 = k env (Procs (Prll (p0s ++ waiting)))
+  | otherwise =
   case p0s of
     [] ->
       case waiting of
@@ -265,10 +270,11 @@ transProcs env p0s waiting k =
         _ ->
           transProcs env ps (p0 : waiting) k
 
-initEnv :: Defs -> [ChanDec] -> Env
-initEnv gdefs cs =
+initEnv :: Int -> Defs -> [ChanDec] -> Env
+initEnv maxgas gdefs cs =
   emptyEnv
     & edefs .~ gdefs
+    & gas .~ maxgas
     & addLocs  [ ls | ChanDec c _ (Just s) <- cs
                , ls <- rsessionStatus decSt (Root c) (Scoped gdefs ø s) ]
     & addChans [ (c, (Root c, s)) | ChanDec c _ (Just s) <- cs ]
@@ -277,15 +283,15 @@ initEnv gdefs cs =
     decSt Read  = Full
 
 
-transTermProc :: Defs -> Endom Term
-transTermProc gdefs tm0
+transTermProc :: Int -> Defs -> Endom Term
+transTermProc maxgas gdefs tm0
   | Proc cs proc0 <- reduceP $ Scoped gdefs ø tm0
-  = transProc (initEnv gdefs cs) proc0 (const $ Proc cs)
+  = transProc (initEnv maxgas gdefs cs) proc0 (const $ Proc cs)
   | otherwise
   = tm0
 
-transProgram :: Endom Program
-transProgram = transProgramTerms transTermProc
+transProgram :: Int -> Endom Program
+transProgram = transProgramTerms . transTermProc
 -- -}
 -- -}
 -- -}

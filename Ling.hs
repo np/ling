@@ -6,6 +6,8 @@ module Ling where
 
 import           Control.Monad.Writer (tell, execWriter)
 
+import           Data.Char (isDigit)
+
 import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
 import           System.IO          (hPutStrLn, stderr)
@@ -43,6 +45,7 @@ data Opts =
          , _noSequential,  _showTokens, _showAST, _showPretty, _noNorm
          , _doRefresh, _doFuse, _compile, _compilePrims, _noPrims   :: Bool
          , _checkOpts :: TCOpts
+         , _seqGas :: Int
          }
 
 $(makeLenses ''Opts)
@@ -52,7 +55,7 @@ check = noCheck . iso not not
 
 defaultOpts :: Opts
 defaultOpts = Opts False False False False False False False False False False
-                   False False False False defaultTCOpts
+                   False False False False defaultTCOpts maxBound
 
 debugCheck :: Setter' Opts Bool
 debugCheck = mergeSetters check (checkOpts.debugChecker)
@@ -215,7 +218,7 @@ transP opts prg = do
     nprg = norm prg
     rprg | opts ^. doRefresh = N.transProgramDecs (const hDec) nprg
          | otherwise         = nprg
-    sprg | opts ^. doSeq     = Sequential.transProgram rprg
+    sprg | opts ^. doSeq     = Sequential.transProgram (opts ^. seqGas) rprg
          | otherwise         = rprg
     fprg | opts ^. doFuse    = fuseProgram sprg
          | otherwise         = sprg
@@ -241,6 +244,7 @@ flagSpec =
   , ("no-prims"     , add noPrims                 , "Do not include the primitive definitions")
   , ("no-norm"      , add noNorm                  , "Disable the normalizer")
   , ("no-check"     , add noCheck                 , "Disable type checking")
+  , ("seq-gas"      , error "seq-gas"             , "Set the maximum number of steps for --seq")
   ] where add opt opts = opts & opt .~ True
 
 usage :: String -> IO a
@@ -254,6 +258,12 @@ mainArgs :: Opts -> [String] -> IO ()
 mainArgs opts = \case
   [] -> getContents >>= run opts pProgram >>= transP opts
   ("--help":_) -> usage ""
+  ("--seq-gas":args) ->
+    case args of
+      [] -> usage "Missing argument for --seq-gas"
+      s:args'
+         | all isDigit s -> mainArgs (opts & seqGas .~ read s) args'
+         | otherwise     -> usage "Unexpected value for --seq-gas"
   ('-':'-':arg@(_:_)):args ->
     case lookup arg flagSpec of
       Just (opt, _) -> mainArgs (opt opts) args
