@@ -179,6 +179,7 @@ addChanDecs scds =
       let l = Root c0 in
       addLocs  (sessionStatus (const Empty) l (scds $> c0S)) .
       addChans [(c,(l,oneS (pushDefs (scds $> cS)))) | Arg c cS <- cds]
+      -- TODO check pushDefs
 
 {-
 -- This could be part of the Dual class, a special Seq operation could also
