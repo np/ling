@@ -214,6 +214,9 @@ transP opts prg = do
       _                   -> putStrLn $ "\n{- " ++ unwords tops ++ " program -}\n\n" ++ pretty eprg
   when (opts ^. compile) $
     putStrLn $ "\n/* C program */\n\n" ++ C.printTree cprg
+  unless (opts ^. showPretty || opts ^. showAST || opts ^. compile) $
+    -- if we don't print any term we should at least force the result
+    length (show eprg) `seq` return ()
 
   where
     tops = transOpts opts
