@@ -12,6 +12,8 @@ import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
 import           System.IO          (hPutStrLn, stderr)
 
+import           Text.Show.Pretty   (ppShow)
+
 -- import           IPPrint.Colored
 
 import qualified MiniC.Print        as C
@@ -33,9 +35,6 @@ import           Ling.Subst         (subst)
 import           Ling.Reify
 import           Ling.Rename        (hDec)
 import qualified Ling.Sequential    as Sequential
-
-cpprint :: Show a => a -> IO ()
-cpprint = print
 
 type ParseFun a = [Token] -> Err a
 
@@ -170,7 +169,7 @@ run :: (Print a, Show a) => Opts -> ParseFun a -> String -> IO a
 run opts p s = do
   when (opts ^. showTokens) $ do
     putStrLn "Tokens:"
-    for_ ts cpprint
+    for_ ts $ putStrLn . ppShow
   case p ts of
     Bad e -> failIO $ "Parse Failed: " ++ e
     Ok tree -> return tree
@@ -200,8 +199,7 @@ transOpts opts = execWriter $ do
 transP :: Opts -> Program -> IO ()
 transP opts prg = do
   when (opts ^. showAST) $ do
-    putStrLn "\n[Abstract Syntax]\n\n"
-    cpprint prg
+    putStrLn $ "\n[Abstract Syntax]\n\n" ++ ppShow prg
   when (opts ^. check) $ do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not (opts ^. noPrims)) $ nprg
     putStrLn "Checking successful!"

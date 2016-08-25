@@ -31,6 +31,7 @@ library
     , SHA
     , lens
     , mtl >=2.2.1
+    , pretty-show
     , template-haskell
   exposed-modules:
       Ling
@@ -98,6 +99,7 @@ executable ling
     , SHA
     , lens
     , mtl >=2.2.1
+    , pretty-show
     , template-haskell
     , ling
   default-language: Haskell2010
@@ -114,6 +116,7 @@ executable ling-fmt
     , SHA
     , lens
     , mtl >=2.2.1
+    , pretty-show
     , template-haskell
     , ling
   other-modules:

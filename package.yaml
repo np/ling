@@ -18,6 +18,7 @@ dependencies:
 - SHA
 - lens
 - mtl >=2.2.1
+- pretty-show
 - template-haskell
 
 # - ghci-pretty <= ..
