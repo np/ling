@@ -7,6 +7,7 @@ option ::=
   | --pretty        # Display the program (can be combined with transformations)
   | --compile       # Display the compiled program (C language)
   | --expand        # Rewrite the program with the definitions expanded
+  | --reduce        # Reduce the program (weak form)
   | --fuse          # Display the fused program
   | --seq           # Display the sequential program
   | --refresh       # Enable the internal renaming using fresh names

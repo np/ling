@@ -19,6 +19,7 @@ import           Ling.Check.Base    (TCOpts, debugChecker, defaultTCOpts, runTC,
                                      strictPar)
 import           Ling.Check.Program (checkProgram)
 import qualified Ling.Compile.C     as Compile
+import           Ling.Defs          (reduceP)
 import           Ling.ErrM
 import           Ling.Layout        (resolveLayout)
 import           Ling.Lex           (Token)
@@ -27,6 +28,7 @@ import           Ling.Par
 import           Ling.Prelude
 import           Ling.Print
 import           Ling.Fuse          (fuseProgram)
+import           Ling.Scoped        (Scoped(Scoped))
 import           Ling.Subst         (subst)
 import           Ling.Reify
 import           Ling.Rename        (hDec)
@@ -36,7 +38,7 @@ type ParseFun a = [Token] -> Err a
 
 data Opts =
        Opts
-         { _noCheck, _showExpand, _doExpand, _doSeq
+         { _noCheck, _showExpand, _doExpand, _doReduce, _doSeq
          , _noSequential,  _showTokens, _showAST, _showPretty, _noNorm
          , _doRefresh, _doFuse, _compile, _compilePrims, _noPrims   :: Bool
          , _checkOpts :: TCOpts
@@ -50,7 +52,7 @@ check = noCheck . iso not not
 
 defaultOpts :: Opts
 defaultOpts = Opts False False False False False False False False False False
-                   False False False False defaultTCOpts maxBound
+                   False False False False False defaultTCOpts maxBound
 
 debugCheck :: Setter' Opts Bool
 debugCheck = mergeSetters check (checkOpts.debugChecker)
@@ -190,25 +192,31 @@ transOpts opts = execWriter $ do
   when (opts ^. doRefresh) $ tell ["Fresh"]
   when (opts ^. doSeq)     $ tell ["Sequential"]
   when (opts ^. doFuse)    $ tell ["Fused"]
+  when (opts ^. doReduce)  $ tell ["Reduced"]
   when (opts ^. doExpand)  $ tell ["Expanded"]
 
 transP :: Opts -> Program -> IO ()
 transP opts prg = do
-  when (opts ^. showAST) $ do
-    putStrLn $ "\n[Abstract Syntax]\n\n" ++ ppShow prg
+  when (tops /= [] && opts ^. noNorm) $
+    usage "--no-norm cannot be combined with --fresh, --expand, --reduce, --seq, or --fuse"
+  when (opts ^. showAST) $
+    case tops of
+      [] | opts ^. noNorm -> putStrLn $ "\n{- Abstract Syntax -}\n\n" ++ ppShow prg
+         | otherwise      -> putStrLn $ "\n{- Abstract Syntax of Normalized program -}\n\n" ++ ppShow nprg
+      _                   -> putStrLn $ "\n{- Abstract Syntax of " ++ unwords tops ++ " program -}\n\n" ++ ppShow eprg
   when (opts ^. check) $ do
     runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not (opts ^. noPrims)) $ nprg
     putStrLn "Checking successful!"
   when (opts ^. showPretty) $
-    case transOpts opts of
+    case tops of
       [] | opts ^. noNorm -> putStrLn $ "\n{- Pretty-printed program -}\n\n" ++ pretty prg
          | otherwise      -> putStrLn $ "\n{- Normalized program -}\n\n" ++ pretty nprg
-      ts | opts ^. noNorm -> usage "--no-norm cannot be combined with --fresh, --expand, --seq, or --fuse"
-         | otherwise      -> putStrLn $ "\n{- " ++ unwords ts ++ " program -}\n\n" ++ pretty eprg
+      _                   -> putStrLn $ "\n{- " ++ unwords tops ++ " program -}\n\n" ++ pretty eprg
   when (opts ^. compile) $
     putStrLn $ "\n/* C program */\n\n" ++ C.printTree cprg
 
   where
+    tops = transOpts opts
     nprg = norm prg
     rprg | opts ^. doRefresh = N.transProgramDecs (const hDec) nprg
          | otherwise         = nprg
@@ -216,8 +224,10 @@ transP opts prg = do
          | otherwise         = rprg
     fprg | opts ^. doFuse    = fuseProgram sprg
          | otherwise         = sprg
-    eprg | opts ^. doExpand  = N.transProgramTerms subst fprg
+    wprg | opts ^. doReduce  = N.transProgramTerms (\defs -> reduceP . Scoped defs ø) fprg
          | otherwise         = fprg
+    eprg | opts ^. doExpand  = N.transProgramTerms subst wprg
+         | otherwise         = wprg
     cprg = Compile.transProgram $ addPrims (opts ^. compilePrims) eprg
 
 flagSpec :: [(String, (Endom Opts, String))]
@@ -227,6 +237,7 @@ flagSpec =
   , ("pretty"       , add showPretty              , "Display the program (can be combined with transformations)")
   , ("compile"      , add compile                 , "Display the compiled program (C language)")
   , ("expand"       , add doExpand                , "Rewrite the program with the definitions expanded")
+  , ("reduce"       , add doReduce                , "Reduce the program (weak form)")
   , ("fuse"         , add doFuse                  , "Display the fused program")
   , ("seq"          , add doSeq                   , "Display the sequential program")
   , ("refresh"      , add doRefresh               , "Enable the internal renaming using fresh names")
