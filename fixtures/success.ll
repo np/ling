@@ -1,4 +1,3 @@
-assert 'a' = 'a' : Char
 ap =
   \(S T : Session)->
   proc(c : (S -o T) -o S -o T)
@@ -9,6 +8,10 @@ ap =
   | fwd(T)(o,fo))
 
 ap_SInt_SBool = ap (!Int) (!Bool)
+assert
+    `true
+  = `true : let B = Bool in
+            case `left of { `left -> B, `right -> Int }
 assert `false = `false : Bool
 
 assert (\(x:Bool) -> x) = (\(y:Bool) -> y) : ((b:Bool) -> Bool)
@@ -99,8 +102,14 @@ com_new =
 com_new_SInt =
   com_new
     (!Int)
-    (proc(c' : !Int) send c' 42)
-    (proc(d : ?Int) recv d (x : Int))
+    (proc(c' : !Int) c' <- 42)
+    (proc(d : ?Int) let x : Int <- d)
+
+com_new_SInt_RBool =
+  com_new
+    (!Int.?Bool)
+    (proc(c' : !Int.?Bool) c' <- 42. let b : Bool <- c')
+    (proc(d : ?Int.!Bool) let x : Int <- d. d <- `true)
 com_new_mk_ten2 =
   let
     mk_tensor2 =
@@ -344,6 +353,56 @@ feed_send_then_recv =
 flexible_telescope
   :  (A B : Type)(x y : A)(z t : B)-> Int
   = \(A B : Type)(x y : A)(z t : B)-> 42
+fwd_diff1 =
+  \ (n: Int)->
+  proc(a: [: ?Int ^(1 + n) :], b: [: !Int ^ n :])
+    split a [: a0, ai ^ n :].
+    split b [: bi ^ n :].
+    new (tmp: Int).
+    fwd(!Int)(tmp,a0).
+    slice (ai,bi) n as _
+      (let x: Int <- ai.
+       let y: Int <- tmp.
+       bi <- (x - y).
+       tmp <- x)
+
+recInt
+  : (A: (n: Int)-> Type)
+    (e: String)
+    (z: A 0)
+-- TODO using `n` instead of `n1` creates a name capture in fwd_diff.
+    (s: (n1: Int)(a: A n1)-> A (1 + n1))
+    (n: Int)->
+    A n
+
+fwd_diff
+  :   (m n: Int)-> < [: ?Int ^(m + n) :], [: !Int ^ n :] >
+  = \ (m0 n: Int)->
+  recInt (\(m: Int)-> < [: ?Int ^(m + n) :], [: !Int ^ n :] >)
+    "m < 0"
+    (proc(a: [: ?Int ^ n :], d: [: !Int ^ n :])
+       fwd([: ?Int ^ n :])(a,d))
+    (\ (m1: Int)(p : < [: ?Int ^(m1 + n) :], [: !Int ^ n :] >)->
+       proc(a: [: ?Int ^(1 + (m1 + n)) :], d: [: !Int ^ n :])
+         new [: b: [:!Int^(m1 + n):], c :]
+         @(fwd_diff1 (m1 + n))(a,b).
+         @p(c,d)) m0
+
+fwd_diff1_10 = fwd_diff1 10
+
+tabulate_seq =
+  \ (A: Type)
+    (f: (i: Int)-> A)
+    (n: Int)->
+  proc(a: [: !A^n :])
+    split a [: a_i^n :].
+    slice (a_i) n as i
+      a_i <- (f i)
+
+main = proc(c)
+  new [: a: [:!Int^10:], b :]
+  @(tabulate_seq Int (\(x: Int)-> 10 - x) 10)(a).
+  @(fwd_diff 3 7)(b,c)
 fun1_to_proc_ord =
   \(I O : Type)
    (f : (x : I) -> O)->
@@ -498,6 +557,20 @@ let_example =
    recv c (x : T).
    let y = (f x x).
    send c y
+let_in_proc_for_session = proc(c : ?Int)
+  let A = Int. let x : A <- c
+let_let =
+  let x = 1 in
+  let y = x in
+  y
+let_order =
+  let x = 1 in
+  let y = 2 in
+  x + y
+let_order_proc = proc(c : !Int)
+  let x = 1.
+  let y = 2.
+  c <- (x + y)
 letrecv_ann = proc(c : ?Int.!Int)
   recv c (x : Int).
   let y : Int = (x + x).
@@ -545,6 +618,19 @@ my42 : String = showMult 2 21
 my3_14 : String = showDiv 6.28 2.0
 
 myNewline : Char = '\n'
+mkfwd =
+  \(A : Session)->
+   proc(a : A, na : ~A)
+    fwd A (a,na)
+
+loli_id :  (A : Session)-> < A -o A >
+        = \(A : Session)->
+  proc(naa : {~A, A})
+    split naa {na,a}.
+    @(mkfwd (~A))(na,a)
+
+loli_id_SInt =
+  loli_id (!Int)
 zipWith =
   \(A B C : Type)
    (f : (a : A)(b : B)-> C)
@@ -628,7 +714,9 @@ matmult = \(m n p : Int)->
     @(row Double m n a' (ij / n))(u).
     new/alloc [: v : [: !Double^n :], v' :].
     @(col Double n p b' (ij % n))(v).
-    @(dotproduct n){u',v',c_i_j}
+    -- Working around a bug name-binding bug...
+    let nn = n.
+    @(dotproduct nn){u',v',c_i_j}
 
 matmult_4 = matmult 4 4 4
 -- Should be renamed merge_ParSort_seq_recv
@@ -958,6 +1046,35 @@ assert (A : Type)(a0 : A)(B : (a : A)-> Type)-> < ?     B a0  >
      = (A : Type)(a0 : A)(B : (a : A)-> Type)-> < ?(b : B a0) >
      : Type
 some_type : Type = Int , some_value : some_type = 42
+Oplus' = \(SL SR : Session)-> !(b : LR). (case b of { `left -> SL, `right -> SR })
+
+leftOplus =
+  \(SL SR : Session)(p : < SL >)->
+    proc(c)
+    c : Oplus' SL SR <- `left.
+    @p(c)
+
+rightOplus =
+  \(SL SR : Session)(p : < SR >)->
+    proc(c)
+    c : Oplus' SL SR <- `right.
+    @p(c)
+
+oplus' =
+  \(SL SR : Session)
+   (b : LR)
+   (p : < case b of { `left -> SL, `right -> SR } >)->
+    proc(c)
+    c : Oplus' SL SR <- b.
+    @p(c)
+
+assert leftOplus
+     = \(SL SR : Session)-> oplus' SL SR `left
+     : (SL SR : Session)(p : < SL >)-> < Oplus' SL SR >
+
+assert rightOplus
+     = \(SL SR : Session)-> oplus' SL SR `right
+     : (SL SR : Session)(p : < SR >)-> < Oplus' SL SR >
 par0 = proc(c : {}) c{}
 par1 = proc(c : {!Int}) c{d} send d 42
 par2 = proc(c : {!Int,?Int}) c{d,e} recv e (x : Int) send d x
@@ -1167,6 +1284,13 @@ plug_send_recv =
 _ = 1
 _ = 2
 _ = "Hello!"
+test_receiver =
+  \(A : Type)
+   (S : A -> Session)
+   (p : (x : A)-> < S x >)->
+  proc(c)
+    let x : A <- c.
+    @(p x)(c)
 assert 16 % 33 =  16
 assert 30 + 2  =  32
 assert 86 - 22 =  64
@@ -1242,6 +1366,14 @@ rotate_seq =
       fwd(?A)(iH, oL)).
    send oH xL
 
+test_sender =
+  \(A : Type)
+   (S : A -> Session)
+   (t : A)
+   (p : < S t >)->
+    proc(c)
+      c : !(x : A). S x <- t.
+      @p(c)
 seq0_explicit =
   proc(c : [: :])
   c[: :]
@@ -1307,6 +1439,39 @@ split_nested_seq :
     fwd B (b,nb).
     fwd C (c,nc).
     fwd D (d,nd)
+sqr_dbl = proc(i: ?Int, o: !Int)
+  let x : Int <- i.
+  new (c: Int).
+  c <- (x * x).
+  let y : Int <- c.
+  o <- (y + y)
+
+sqrs_body_session = !Int. ?Int. !Int. ?Int. !Int. ?Int
+
+sqrs_body = \(x: Int)-> proc(c: sqrs_body_session, o: !Int)
+  c <- (x * x).
+  let x2: Int <- c.
+  c <- (x2 * x2).
+  let x4: Int <- c.
+  c <- (x4 * x4).
+  let x8: Int <- c.
+  o <- (x8 * x8)
+
+sqrs_main = proc(i: ?Int, o: !Int)
+  let x: Int <- i.
+  new (c: Int).
+  @(sqrs_body x)(c,o)
+sqrs = proc(i: ?Int, o: !Int)
+  let x : Int <- i.
+  new (c: Int).
+  c <- (x * x).
+  let x2 : Int <- c.
+  c <- (x2 * x2).
+  let x4 : Int <- c.
+  c <- (x4 * x4).
+  let x8 : Int <- c.
+  o <- (x8 * x8)
+
 sum_int = proc(a : {?Int ^ 10}, r : !Int)
   new/alloc [itmp : !Int.?Int, tmp]
   ( send itmp 0
@@ -1446,6 +1611,7 @@ test_pat =
   @test_pat_term[a, [: b, c :], {d, e}]
 type_annotation =
   ((21 + 21) : Int)
+assert (`true : Bool) = `true : Bool
 ZeroCh : Type
        = (A : Type)-> A
 
@@ -1552,12 +1718,12 @@ uncurry =
   ( fwd(S)(fx,x)
   | fwd(T)(fy,y)
   | fwd(U)(o,fo))
-With  = \(SL SR : Session)-> ?(b : LR). (case b of { `left -> SL, `right -> SR })
-with =
+test_With  = \(SL SR : Session)-> ?(b : LR). (case b of { `left -> SL, `right -> SR })
+test_with =
   \(SL SR : Session)
    (pL : < SL >)(pR : < SR >)->
-  proc(c : With SL SR)
-    recv c (x : LR).
+  proc(c : test_With SL SR)
+    let x : LR <- c.
     @(case x of { `left -> pL, `right -> pR })(c)
 zap =
   \(S T : Session)(n : Int)->

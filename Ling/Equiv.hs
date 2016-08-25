@@ -18,6 +18,9 @@ data EqEnv = EqEnv
 
 makeLenses ''EqEnv
 
+scope :: Getting Defs EqEnv Defs -> a -> Getter EqEnv (Scoped a)
+scope l x = to $ \env -> Scoped (env^.egdefs) (env^.l) x
+
 eqEnv :: MonadReader s m => Lens' s Defs -> m EqEnv
 eqEnv l = views l (EqEnv [] ø ø)
 
@@ -64,7 +67,7 @@ reduceEquiv :: (Print a, Print reduced) =>
                Reduce a reduced -> IsEquiv reduced -> IsEquiv a
 reduceEquiv red eqv env a0 a1 = eqv env' (a0'^.scoped) (a1'^.scoped)
   where
-    red' l = view reduced . red . Scoped (env^.egdefs) (env^.l)
+    red' l = view reduced . red . (env ^.) . scope l
     a0'    = red' edefs0 a0
     a1'    = red' edefs1 a1
     env'  = env & edefs0 <>~ a0' ^. ldefs
@@ -110,10 +113,6 @@ instance Equiv a => Equiv (Maybe a) where
   equiv env (Just x0) (Just x1) = equiv env x0 x1
   equiv _   _         _         = False
 
-equivDef :: IsEquiv Term
-equivDef env (Def x0 es0) (Def x1 es1) = equiv env (x0, es0) (x1, es1)
-equivDef _   _            _            = False
-
 nameIndex :: Name -> [Name] -> Either Int Name
 nameIndex x = maybe (Right x) Left . elemIndex x
 
@@ -132,7 +131,16 @@ instance Equiv Name where
       es = env ^. eqnms
 
 instance Equiv Term where
-  equiv env t0 t1 = equivDef env t0 t1 || reduceEquiv reduce equivRedTerm env t0 t1
+  equiv env t0 t1 =
+    case (t0, t1) of
+      (Def _k0 d0 es0, Def _k1 d1 es1)
+        {-
+        -- Undefined names could be primitive functions so this might miss these.
+        | Undefined <- k0, Undefined <- k1, d0 == d1 -> equiv env es0 es1
+        | Defined   <- k0, Defined   <- k1, equiv env (d0, es0) (d1, es1) -> True
+        -}
+        | equiv env (d0, es0) (d1, es1) -> True
+      _ -> reduceEquiv reduce equivRedTerm env t0 t1
 
 -- The session annotation is ignored
 chanDecArg :: ChanDec -> Arg RFactor
@@ -141,7 +149,7 @@ chanDecArg (ChanDec c r _) = Arg c r
 equivRedTerm :: IsEquiv Term
 equivRedTerm env s0 s1 =
     case (s0,s1) of
-      (Def x0 es0,   Def x1 es1)   -> equiv env (x0, es0) (x1, es1)
+      (Def _ d0 es0, Def _ d1 es1) -> equiv env (d0, es0) (d1, es1)
       (Lit l0,       Lit l1)       -> l0 == l1
       (Con c0,       Con c1)       -> c0 == c1
       (Case u0 brs0, Case u1 brs1) -> equiv env (u0,brs0) (u1,brs1)

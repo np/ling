@@ -67,9 +67,11 @@ scopedName (Scoped g l x) =
   [l, g] ^? each . at x . _Just . annotated . to (Scoped g l)
 
 subst1 :: Rename s => (Name, Ann (Maybe Typ) Term) -> s -> Scoped s
-subst1 (x, Ann mty tm) s =
+subst1 (x, Ann mty tm) s
+  | x == anonName = pure s
+  | otherwise =
   case tm of
-    Def y [] | isInternalName y ->
+    Def _ y [] | isInternalName y ->
       pure $ rename1I (x, y) s
     _ ->
       let (hx, hmty, htm) = hDef x mty tm in

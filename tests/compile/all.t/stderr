@@ -44,8 +44,15 @@
 [WARNING] Skipping compilation of unsupported definition if
 [WARNING] Skipping compilation of unsupported definition If
 [WARNING] Skipping compilation of unsupported definition case_con
+[WARNING] Skipping compilation of unsupported definition dbl
+[WARNING] Skipping compilation of unsupported definition case_proto2
+[WARNING] Skipping compilation of unsupported definition My_Int
+[WARNING] Skipping compilation of unsupported definition case_proto
 [WARNING] Skipping compilation of unsupported definition com_new
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
 [WARNING] Skipping compilation of unsupported definition com_new_mk_ten2
+[WARNING] Skipping compilation of unsupported definition com_with_log
 [WARNING] Skipping compilation of unsupported definition conv_fun
 [WARNING] Skipping compilation of unsupported definition curry
 [WARNING] Unsupported type Bool
@@ -65,6 +72,13 @@
 [WARNING] Skipping compilation of unsupported definition fun1_to_proc_ord
 [WARNING] Skipping compilation of unsupported definition fun1_to_proc_par2
 [WARNING] Skipping compilation of unsupported definition fun1_to_proc_seq
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Skipping compilation of unsupported definition fwd_parN_tenN
 [WARNING] Skipping compilation of unsupported definition split_nested_seq_core
 [WARNING] Skipping compilation of unsupported definition group_nested_seq
 [WARNING] Unsupported type Bool
@@ -80,22 +94,28 @@
 [WARNING] Skipping compilation of unsupported definition rot2
 [WARNING] Skipping compilation of unsupported definition let42ann
 [WARNING] Skipping compilation of unsupported definition let42
+[WARNING] Skipping compilation of unsupported definition let_let
+[WARNING] Skipping compilation of unsupported definition let_order
 [WARNING] Skipping compilation of unsupported definition lettype
 [WARNING] Skipping compilation of unsupported definition showMult
 [WARNING] Skipping compilation of unsupported definition showDiv
 [WARNING] Skipping compilation of unsupported definition my42
 [WARNING] Skipping compilation of unsupported definition my3_14
 [WARNING] Skipping compilation of unsupported definition myNewline
+[WARNING] Skipping compilation of unsupported definition mkfwd
+[WARNING] Skipping compilation of unsupported definition loli_id
 [WARNING] Skipping compilation of unsupported definition merger
 [WARNING] Skipping compilation of unsupported definition merger_loli_Sort
 [WARNING] Skipping compilation of unsupported definition merger_nstSort_prll
 [WARNING] Skipping compilation of unsupported definition merger_nstSort_prll_v2
 [WARNING] Skipping compilation of unsupported definition merger_ParSort_full_prll
+[WARNING] Skipping compilation of unsupported definition merger_seq_inferred
 [WARNING] Skipping compilation of unsupported definition merger_seq
 [WARNING] Skipping compilation of unsupported definition merger_seq_Sort
 [WARNING] Skipping compilation of unsupported definition merger_seqential_ten2_loli_Sort
 [WARNING] Skipping compilation of unsupported definition merger_ten2_loli_Sort
 [WARNING] Skipping compilation of unsupported definition mk_new_ann
+[WARNING] Skipping compilation of unsupported definition mk_new_seq
 [WARNING] Skipping compilation of unsupported definition mk_par2_LR
 [WARNING] Skipping compilation of unsupported definition mk_par2_prll
 [WARNING] Skipping compilation of unsupported definition mk_par2_RL
@@ -105,12 +125,21 @@
 [WARNING] Skipping compilation of unsupported definition my_dual
 [WARNING] Skipping compilation of unsupported definition my_loli
 [WARNING] Skipping compilation of unsupported definition test_my_loli
+[WARNING] Skipping compilation of unsupported definition new_ann_ten_recv
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
 [WARNING] Skipping compilation of unsupported definition non_dependent_function_type
 [WARNING] Skipping compilation of unsupported definition some_type
 [WARNING] Skipping compilation of unsupported definition some_value
+[WARNING] Skipping compilation of unsupported definition Oplus'
+[WARNING] Skipping compilation of unsupported definition leftOplus
+[WARNING] Skipping compilation of unsupported definition rightOplus
+[WARNING] Skipping compilation of unsupported definition oplus'
 [WARNING] Skipping compilation of unsupported definition par_comm
 [WARNING] Skipping compilation of unsupported definition par_loli_ten_send
 [WARNING] Skipping compilation of unsupported definition par_loli_ten_send_v2
+[WARNING] Skipping compilation of unsupported definition seqi
+[WARNING] Skipping compilation of unsupported definition par_seqi_ten_send
 [WARNING] Skipping compilation of unsupported definition plug_compose
 [WARNING] Skipping compilation of unsupported definition flat_par'
 [WARNING] Skipping compilation of unsupported definition bump_par'
@@ -120,13 +149,25 @@
 [WARNING] Skipping compilation of unsupported definition _
 [WARNING] Skipping compilation of unsupported definition _
 [WARNING] Skipping compilation of unsupported definition _
+[WARNING] Skipping compilation of unsupported definition test_receiver
 [WARNING] Skipping compilation of unsupported definition replicate
 [WARNING] Skipping compilation of unsupported definition replicate_proc
 [WARNING] Skipping compilation of unsupported definition replicate_proc_alt
+[WARNING] Skipping compilation of unsupported definition rotate_seq
 [WARNING] Skipping compilation of unsupported definition Int1
+[WARNING] Skipping compilation of unsupported definition test_sender
 [WARNING] Skipping compilation of unsupported definition seq_assoc_core
 [WARNING] Skipping compilation of unsupported definition sorter
 [WARNING] Skipping compilation of unsupported definition split_nested_seq
+[WARNING] Sequencing a non-ready prefix (let y : Int <- c)
+[WARNING] Skipping compilation of unsupported definition sqrs_body_session
+[WARNING] Skipping compilation of unsupported definition sqrs_body
+[WARNING] Sequencing a non-ready prefix (let x2 : Int <- c)
+[WARNING] Sequencing a non-ready prefix (let x4 : Int <- c)
+[WARNING] Sequencing a non-ready prefix (let x8 : Int <- c)
+[WARNING] Sequencing a non-ready prefix (let x2 : Int <- c)
+[WARNING] Sequencing a non-ready prefix (let x4 : Int <- c)
+[WARNING] Sequencing a non-ready prefix (let x8 : Int <- c)
 [WARNING] Skipping compilation of unsupported definition switch
 [WARNING] Skipping compilation of unsupported definition ten_loli_par
 [WARNING] Skipping compilation of unsupported definition ten_loli_par_sequential
@@ -171,4 +212,6 @@
 [WARNING] Skipping compilation of unsupported definition sym
 [WARNING] Skipping compilation of unsupported definition trans
 [WARNING] Skipping compilation of unsupported definition uncurry
+[WARNING] Skipping compilation of unsupported definition test_With
+[WARNING] Skipping compilation of unsupported definition test_with
 [WARNING] Skipping compilation of unsupported definition zap

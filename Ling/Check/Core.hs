@@ -74,7 +74,7 @@ sendRecvSession = \case
         s1 <- pushDefsR . reduce_ tSession <$> tcScope s0
         case s1 of
           IO Write (Arg x typ) s2 ->
-            checkSig typ (Just e) $>
+            checkAnnTerm (Ann typ e) $>
               (c, \s -> checkEqSessions c (pure s) (subst1 (x, Ann typ e) s2) $> s0)
           _ ->
             tcError . unlines $
@@ -309,25 +309,15 @@ checkCPattR (s `Repl` r) pat
   | litR1 `is` r = checkCPatt s pat
   | otherwise    = tcError "Unexpected pattern for replicated session"
 
--- Note that this is up to you to make the definitions in scope of the
--- result if necessary.
-checkDefs :: Defs -> Endom (TC a)
-checkDefs = composeMapOf each checkDef
-  where
-    checkDef (Arg x (Ann mty tm)) = checkVarDef x mty (Just tm)
-
 inferBranch :: (name, Term) -> TC (name, Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
-
-inferAnnTerm :: Ann (Maybe Typ) Term -> TC Typ
-inferAnnTerm (Ann mty tm) = checkSig mty (Just tm)
 
 inferTerm :: Term -> TC Typ
 inferTerm e0 = debug ("Inferring type of " ++ pretty e0) >> case e0 of
   Let defs t   -> mkLet defs <$> checkDefs defs (inferTerm t)
   Lit l        -> pure $ literalType l
   TTyp         -> pure TTyp -- type-in-type
-  Def x es     -> inferDef x es
+  Def k d es   -> inferDef k d es
   Lam arg t    -> TFun arg <$> checkVarDec arg (inferTerm t)
   Con n        -> conType n
   Case t brs   -> join $ caseType t <$> inferTerm t <*> list inferBranch brs
@@ -369,13 +359,12 @@ checkMaybeTerm :: Typ -> Maybe Term -> TC ()
 checkMaybeTerm _   Nothing   = return ()
 checkMaybeTerm typ (Just tm) = checkTerm typ tm
 
-checkSig :: Maybe Typ -> Maybe Term -> TC Typ
-checkSig (Just typ) mtm       = checkTyp typ >> checkMaybeTerm typ mtm $> typ
-checkSig Nothing    (Just tm) = inferTerm tm
-checkSig Nothing    Nothing   = tcError "Cannot infer or check, please add a type signature"
+checkAnnTerm :: AnnTerm -> TC Typ
+checkAnnTerm (Ann Nothing    tm) = inferTerm tm
+checkAnnTerm (Ann (Just typ) tm) = checkTyp typ >> checkTerm typ tm $> typ
 
-inferDef :: Name -> [Term] -> TC Typ
-inferDef f es = do
+inferDef :: DefKind -> Name -> [Term] -> TC Typ
+inferDef _ f es = do
   mtyp <- view $ evars . at f
   case mtyp of
     Just typ -> errorScope f $ tcScope typ >>= \styp -> checkApp f 0 styp es
@@ -431,7 +420,7 @@ checkSession s0 = case s0 of
   Array _ ss  -> for_ (ss ^. _Sessions) checkRSession
 
 -- The arguments are assumed to be already checked,
--- otherwise use `checkVarDef`.
+-- otherwise use `checkDef` or `checkVarDec`.
 scopeVarDef :: Name -> Typ -> Maybe Term -> Endom TCEnv
 scopeVarDef x typ mtm
   | x == anonName = id
@@ -439,14 +428,29 @@ scopeVarDef x typ mtm
       (evars . at x ?~ typ)
     . (edefs . at x .~ (Ann (Just typ) <$> mtm))
 
-checkVarDef :: Name -> Maybe Typ -> Maybe Term -> Endom (TC a)
-checkVarDef x mtyp mtm kont = do
+checkArg :: Arg (Ann (TC Typ) (Maybe Term)) -> Endom (TC a)
+checkArg (Arg x (Ann tc mtm)) kont = do
   checkNotIn evars "name" x
-  typ <- errorScope x $ checkSig mtyp mtm
-  local (scopeVarDef x typ mtm) kont
+  ty <- errorScope x tc
+  local (scopeVarDef x ty mtm) kont
+
+checkDef :: Arg AnnTerm -> Endom (TC a)
+checkDef (Arg x ann@(Ann _ tm)) = checkArg (Arg x (Ann tc (Just tm))) where
+  tc = case ann of
+        Ann (Just ty) (Def Undefined x' [])
+          | x == x' -> checkTyp ty $> ty
+        _           -> checkAnnTerm ann
+
+-- Note that this is up to you to make the definitions in scope of the
+-- result if necessary.
+checkDefs :: Defs -> Endom (TC a)
+checkDefs = composeMapOf each checkDef
 
 checkVarDec :: VarDec -> Endom (TC a)
-checkVarDec (Arg x mtyp) = checkVarDef x mtyp Nothing
+checkVarDec (Arg x mty) = checkArg (Arg x (Ann tc Nothing)) where
+  tc = case mty of
+        Nothing -> tcError "Missing type signature"
+        Just ty -> checkTyp ty $> ty
 
 -- Check a "telescope", where bindings scope over the following ones
 checkVarDecs :: [VarDec] -> Endom (TC a)

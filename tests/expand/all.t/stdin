@@ -102,8 +102,14 @@ com_new =
 com_new_SInt =
   com_new
     (!Int)
-    (proc(c' : !Int) send c' 42)
-    (proc(d : ?Int) recv d (x : Int))
+    (proc(c' : !Int) c' <- 42)
+    (proc(d : ?Int) let x : Int <- d)
+
+com_new_SInt_RBool =
+  com_new
+    (!Int.?Bool)
+    (proc(c' : !Int.?Bool) c' <- 42. let b : Bool <- c')
+    (proc(d : ?Int.!Bool) let x : Int <- d. d <- `true)
 com_new_mk_ten2 =
   let
     mk_tensor2 =
@@ -122,11 +128,9 @@ com_new_mk_ten2 =
   new [c : S, d : ~S].
   @(mk_tensor2 S (~S) p q)[c,d]
 
-{-
 com_new_mk_ten2_SInt =
   com_new_mk_ten2 (!Int) (proc(c' : !Int) send c' 42)
                          (proc(d : ?Int) recv d (x : Int))
--}
 -- See https://github.com/np/ling/issues/4
 com_with_log =
  \(S : Session)
@@ -553,6 +557,20 @@ let_example =
    recv c (x : T).
    let y = (f x x).
    send c y
+let_in_proc_for_session = proc(c : ?Int)
+  let A = Int. let x : A <- c
+let_let =
+  let x = 1 in
+  let y = x in
+  y
+let_order =
+  let x = 1 in
+  let y = 2 in
+  x + y
+let_order_proc = proc(c : !Int)
+  let x = 1.
+  let y = 2.
+  c <- (x + y)
 letrecv_ann = proc(c : ?Int.!Int)
   recv c (x : Int).
   let y : Int = (x + x).
@@ -600,6 +618,19 @@ my42 : String = showMult 2 21
 my3_14 : String = showDiv 6.28 2.0
 
 myNewline : Char = '\n'
+mkfwd =
+  \(A : Session)->
+   proc(a : A, na : ~A)
+    fwd A (a,na)
+
+loli_id :  (A : Session)-> < A -o A >
+        = \(A : Session)->
+  proc(naa : {~A, A})
+    split naa {na,a}.
+    @(mkfwd (~A))(na,a)
+
+loli_id_SInt =
+  loli_id (!Int)
 zipWith =
   \(A B C : Type)
    (f : (a : A)(b : B)-> C)

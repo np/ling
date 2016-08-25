@@ -16,7 +16,7 @@ mkLet defs0 = \case
   Con n               -> Con n
   TTyp                -> TTyp
   t0 | nullDefs defs0 -> t0
-  Def d []            -> defs0 ^? at d . _Just . annotated ?| Def d []
+  Def Defined d [] | Just t1 <- defs0 ^? at d . _Just . annotated . to (mkLet defs0) -> t1
   Let defs1 t1        -> mkLet (defs0 <> defs1) t1
   t0@Def{}            -> Let defs0 t0
   t0@Lam{}            -> Let defs0 t0
@@ -71,7 +71,7 @@ instance PushDefs Term where
       Lit l        -> Lit l
       TTyp         -> TTyp
       Con n        -> Con n
-      Def{}        -> unScopedTerm st0 -- this might leave a let
+      Def k d es   -> warn k d es (Def k d (pushDefs (st0 $> es)))
       Case t brs   -> _Case # mkLet_ (id `beside` branches) (st0 $> (t, brs))
       Proc cs p    -> Proc (mkLet__ (st0 $> cs)) (st0 ^. ldefs `dotP` p)
       Lam  arg t   -> _Lam  # mkLet_ absTerms (st0 $> (arg, t))
@@ -79,6 +79,12 @@ instance PushDefs Term where
       TSig arg t   -> _TSig # mkLet_ absTerms (st0 $> (arg, t))
       TProto ss    -> TProto $ mkLet__ (st0 $> ss)
       TSession s   -> pushDefs (st0 $> s) ^. tSession
+    where
+      warn Defined d []
+        | Just e <- allDefs st0 ^? at d . _Just . annotated
+        , e /= Def Undefined d []
+        = trace $ "[WARNING] PushDefs Term: pushDefs should be called on reduced terms but " ++ show d ++ " has a definition"
+      warn _ _ _ = id
 
 instance PushDefs RSession where
   pushDefs = mkLet__

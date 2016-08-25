@@ -48,7 +48,7 @@ import           Ling.Proc       (_Pref, _ArrayCs)
 --import           Ling.Rename     (hDec)
 import           Ling.Session
 import           Ling.Scoped     (Scoped(Scoped))
--- import           Ling.Subst      (unScoped)
+import           Ling.Subst      (reduceS)
 import qualified MiniC.Abs       as C
 import qualified MiniC.Print     as C
 
@@ -226,15 +226,15 @@ transLiteral l = case l of
 
 transTerm :: Env -> Term -> C.Exp
 transTerm env t0 =
-  let t1 = reduceP (env ^. scope $> t0) in case t1 of
-  Def f es0
+  let t1 = reduceS (env ^. scope $> t0) in case t1 of
+  Def _ f es0
    | env ^. types . contains f -> dummyTyp
    | otherwise ->
      case transTerm env <$> es0 of
        []                             -> C.EVar (transEVar env f)
        [e0,e1] | Just d <- transOp f  -> d e0 e1
        es                             -> C.EApp (C.EVar (transName f)) es
-  Let{}          -> error "IMPOSSIBLE: Let after reduce"
+  Let{}          -> error $ "IMPOSSIBLE: Let after reduce (" ++ ppShow t1 ++ ")"
   Lit l          -> C.ELit (transLiteral l)
   Lam{}          -> transErr "transTerm/Lam" t1
   Con n          -> C.EVar (transCon n)
@@ -418,29 +418,29 @@ unsupportedTyp ty = trace ("[WARNING] Unsupported type " ++ pretty ty) tVoidPtr
 
 transTyp :: Env -> Typ -> ATyp
 transTyp env ty0 =
-  let ty1 = reduceP (env ^. scope $> ty0) in case ty1 of
-  Def x es
+  let ty1 = reduceS (env ^. scope $> ty0) in case ty1 of
+  Def _ x es
     | null es, Just t <- Map.lookup x basicTypes -> (t, [])
     | otherwise ->
     case (unName # x, es) of
       ("Vec", [a,e])
-        | env ^. farr, Just i <- reduceP (env ^. scope $> e) ^? _Lit . _LInteger ->
+        | env ^. farr, Just i <- reduceS (env ^. scope $> e) ^? _Lit . _LInteger ->
            -- Here we could use transTerm if we could still fallback on a
            -- pointer type.
             tArr (transTyp env a) (C.ELit (C.LInteger i))
         | otherwise -> tPtr (transTyp env a)
-      _ -> unsupportedTyp ty0
-  Let{}      -> error "IMPOSSIBLE: Let after reduce"
+      _ -> unsupportedTyp ty1
+  Let{}      -> error $ "IMPOSSIBLE: Let after reduce (" ++ ppShow ty1 ++ ")"
   TTyp{}     -> tInt -- <- types are erased to 0
-  Case{}     -> unsupportedTyp ty0
-  TProto{}   -> unsupportedTyp ty0
-  TFun{}     -> unsupportedTyp ty0
-  TSig{}     -> unsupportedTyp ty0
-  TSession{} -> unsupportedTyp ty0
-  Lam{}      -> transErr "transTyp: Not a type: Lam" ty0
-  Lit{}      -> transErr "transTyp: Not a type: Lit" ty0
-  Con{}      -> transErr "transTyp: Not a type: Con" ty0
-  Proc{}     -> transErr "transTyp: Not a type: Proc" ty0
+  Case{}     -> unsupportedTyp ty1
+  TProto{}   -> unsupportedTyp ty1
+  TFun{}     -> unsupportedTyp ty1
+  TSig{}     -> unsupportedTyp ty1
+  TSession{} -> unsupportedTyp ty1
+  Lam{}      -> transErr "transTyp: Not a type: Lam" ty1
+  Lit{}      -> transErr "transTyp: Not a type: Lit" ty1
+  Con{}      -> transErr "transTyp: Not a type: Con" ty1
+  Proc{}     -> transErr "transTyp: Not a type: Proc" ty1
 
 transCTyp :: Env -> C.Qual -> Typ -> AQTyp
 transCTyp env qual = (_1 %~ C.QTyp qual) . transTyp env
@@ -501,27 +501,29 @@ transMkProc env0 cs proc0 = (fst <$> news, transProc env proc0)
     news = transChanDec env0 <$> cs
     env  = addChans (snd <$> news) env0
 
-transSig :: Env -> Name -> Maybe Typ -> Maybe Term -> [C.Def]
-transSig env0 f _ty0 (Just t) =
-  case reduceP (env0 ^. scope $> t) of
-    Proc cs proc0 ->
-      [uncurry (C.DDef (C.Dec voidQ (transName f) []))
-               (transMkProc env0 cs proc0)]
-    _ -> trace ("[WARNING] Skipping compilation of unsupported definition " ++ pretty f) []
 -- Of course this does not properly handle dependent types
-transSig env0 f (Just ty0) Nothing = go [] (reduceP (env0 ^. scope $> ty0))
-  where
-    go args = \case
-      TFun (Arg n ms) t ->
-        go (dDec (transMaybeCTyp env0 C.QConst ms) (transName n) : args)
-           (reduceP (addEVar n (transName n) env0 ^. scope $> t))
-      t1 ->
-        [dSig (dDec (transCTyp env0 C.NoQual t1) (transName f)) (reverse args)]
-transSig _ _ Nothing Nothing = error "IMPOSSIBLE transSig no sig nor def"
+transSig :: Env -> Name -> Maybe Typ -> Term -> [C.Def]
+transSig env0 f mty0 tm
+  | Def Undefined f' [] <- tm, f == f' =
+    case mty0 of
+      Nothing -> error "IMPOSSIBLE transSig missing type signature"
+      Just ty0 ->
+        let
+          go args = \case
+            TFun (Arg n ms) t ->
+              go (dDec (transMaybeCTyp env0 C.QConst ms) (transName n) : args)
+                 (reduceP (addEVar n (transName n) env0 ^. scope $> t))
+            t1 ->
+              [dSig (dDec (transCTyp env0 C.NoQual t1) (transName f)) (reverse args)]
+        in go [] (reduceP (env0 ^. scope $> ty0))
+  | otherwise =
+    case reduceP (env0 ^. scope $> tm) of
+      Proc cs proc0 -> [uncurry (C.DDef (C.Dec voidQ (transName f) [])) (transMkProc env0 cs proc0)]
+      _ -> trace ("[WARNING] Skipping compilation of unsupported definition " ++ pretty f) []
 
 transDec :: Env -> Dec -> (Env, [C.Def])
 transDec env dec = case {-hDec-} dec of
-  Sig d ty tm -> (env & edefs . at d .~ (Ann ty <$> tm), transSig env d ty tm)
+  Sig d ty tm -> (env & edefs . at d ?~ Ann ty tm, transSig env d ty tm)
   Dat _d _cs ->
     (env, []) -- TODO typedef ? => [C.TEnum (C.EEnm . transCon <$> cs)]
   Assert _a ->

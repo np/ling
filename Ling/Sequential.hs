@@ -221,7 +221,7 @@ transAct sact =
     Nu _ newpatt -> transNew $ sact $> newpatt
     Split c pat  -> transSplitPatt c pat
     Send c _ t   -> stepEnv c $ mkLet (sact ^. ldefs) t
-    Recv c a     -> stepEnv c $ Def (a ^. argName) []
+    Recv c a     -> stepEnv c $ mkVar (a ^. argName)
     Ax{}         -> id
     At{}         -> id
     LetA defs    -> edefs <>~ defs

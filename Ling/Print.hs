@@ -254,3 +254,7 @@ instance Print N.ChanDec where
 instance Print N.NewPatt where
   prt     i cd = prt i (reify cd :: NewPatt)
   prtList i cds = prtList i (map reify cds :: [NewPatt])
+
+instance Print N.DefKind where
+  prt     i = prt i . CN . Name . show
+  prtList i = prtList i . map (CN . Name . show)

@@ -131,7 +131,16 @@ instance Rename BC where rename f = _BC %%~ \n -> let g = markBoundChansOf id n 
 
 instance Rename Term where
   rename f = \case
-    Def x es   -> Def <$> from _FV (rename f) x <*> rename f es
+    Def k d es ->
+      case k of
+        Defined   -> Def Defined     <$> from _FV (rename f) d <*> rename f es
+        Undefined -> Def Undefined d <$> rename f es
+                  -- ^ The internal name of undefined is never renamed.
+                  -- It could be renamed but should at least have a different
+                  -- kind. In particular is neither free nor bound.
+                  -- Moreover global names as in `Sig` are not renamed either
+                  -- so this is consistent.
+
     Let defs t -> Let <$> rename f defs <*> rename (markBoundVars defs f) t
     Lam arg t  -> Lam  <$> rename f arg <*> rename (markBoundVars arg f) t
     TFun arg t -> TFun <$> rename f arg <*> rename (markBoundVars arg f) t
@@ -143,7 +152,6 @@ instance Rename Term where
     Proc cs p  -> Proc <$> rename f cs <*> rename (markBoundChans cs f) p
     TProto rs  -> TProto <$> rename f rs
     TSession s -> TSession <$> rename f s
-
 instance Rename Defs where
   rename = each . rename
 

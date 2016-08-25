@@ -1,0 +1,9 @@
+
+{- Sequential Fused program -}
+
+com_new_SType_SA =
+  proc ()
+  let B : Type = Int.
+  new/fuse 0 [c : !(let A#fd238e8addcff110f0c184715749fc977a390bd48197658f4ae48e6ec694a6e5 : Type = B in B),d : ?(let A#fd238e8addcff110f0c184715749fc977a390bd48197658f4ae48e6ec694a6e5 : Type = B in B)].
+  c <- 42.
+  let x : B <- d

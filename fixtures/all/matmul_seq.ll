@@ -81,6 +81,8 @@ matmult = \(m n p : Int)->
     @(row Double m n a' (ij / n))(u).
     new/alloc [: v : [: !Double^n :], v' :].
     @(col Double n p b' (ij % n))(v).
-    @(dotproduct n){u',v',c_i_j}
+    -- Working around a bug name-binding bug...
+    let nn = n.
+    @(dotproduct nn){u',v',c_i_j}
 
 matmult_4 = matmult 4 4 4

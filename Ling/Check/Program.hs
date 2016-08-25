@@ -15,8 +15,8 @@ checkDecs :: [Dec] -> TC TCEnv
 checkDecs = foldr checkDec ask
 
 checkDec :: Dec -> Endom (TC a)
-checkDec (Sig d typ mt)   kont = checkVarDef d typ mt kont
-checkDec (Dat d cs)       kont = do
+checkDec (Sig d typ t) kont = checkDef (Arg d (Ann typ t)) kont
+checkDec (Dat d cs)    kont = do
   errorScope d $ do
     checkNoDups ("in the definition of " ++ pretty d) cs
     checkNotIn evars "name" d
@@ -28,7 +28,7 @@ checkDec (Assert a) kont = checkAsr a >> kont
 
 checkAsr :: Assertion -> TC ()
 checkAsr (Equal t1 t2 mty) = do
-  ty <- checkSig mty (Just t1)
+  ty <- checkAnnTerm $ Ann mty t1
   checkTerm ty t2
 
   checkEquivalence "Terms are not equivalent."

@@ -28,15 +28,16 @@ substApp f e0 (e:es) =
     Lam (Arg x mty) t1 ->
       substApp f (substScoped (subst1 (x, Ann mty (subst f e)) t1)) es
 
-    Def d es0          -> substDef f d (es0 ++ e : es)
-    _                  -> error "Ling.Subst.app: IMPOSSIBLE"
+    Def k d es0        -> substDef f k d (es0 ++ e : es)
+    _                  -> error "Ling.Subst.substApp: IMPOSSIBLE"
 
-substDef :: Defs -> Name -> [Term] -> Term
-substDef f d es
-  | Just e <- f ^? at d . _Just . annotated = substApp f e es
+substDef :: Defs -> DefKind -> Name -> [Term] -> Term
+substDef f k d es
+  | Defined <- k
+  , Just e <- f ^? at d . _Just . annotated = substApp f e es
   | Just ls <- es' ^? below _Lit
   , Just  l <- reducePrim (unName # d) ls = Lit l
-  | otherwise                             = Def d (subst f es)
+  | otherwise                             = Def k d (subst f es)
 
   where
     es' = subst f es
@@ -53,7 +54,7 @@ reduceS = substScoped . view reduced . reduce
 
 instance Subst Term where
   subst f = \case
-    Def d es   -> substDef f d es
+    Def k d es -> substDef f k d es
     Let defs t -> subst (subst f defs <> f) t
     Lam arg t  -> Lam (subst f arg) (subst (hide argName arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hide argName arg f) t)

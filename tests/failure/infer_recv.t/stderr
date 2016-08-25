@@ -1,4 +1,4 @@
 While checking `infer_recv`
   While checking `x`
-    Cannot infer or check, please add a type signature
+    Missing type signature
 

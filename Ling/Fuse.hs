@@ -3,7 +3,7 @@
 module Ling.Fuse where
 
 import           Ling.Norm
-import           Ling.Prelude hiding (subst1)
+import           Ling.Prelude
 import           Ling.Proc
 import           Ling.Print
 import           Ling.Rename
@@ -44,16 +44,16 @@ instance Monoid AllocAnn where
 _AllocAnn :: Prism' Allocation AllocAnn
 _AllocAnn = prism' con pat where
   con = \case
-    FusedAnn  -> Def (Name "fused") []
-    FuseAnn i -> Def (Name "fuse" ) [litTerm . integral # i]
-    -- Alloc   -> Def (Name "alloc") []
-    -- Auto    -> Def (Name "auto" ) []
+    FusedAnn  -> mkPrimOp (Name "fused") []
+    FuseAnn i -> mkPrimOp (Name "fuse" ) [litTerm . integral # i]
+    -- Alloc   -> mkPrimOp (Name "alloc") []
+    -- Auto    -> mkPrimOp (Name "auto" ) []
   pat = \case
-    Def (Name "fused") []  -> Just FusedAnn
-    Def (Name "fuse" ) [i] -> i ^? litTerm . integral . re _FuseAnn
-    Def (Name "alloc") []  -> Just (FuseAnn 0) -- TEMPORARY, `alloc` is defined as `fuse 0`
-    Def (Name "auto" ) []  -> Just autoFusion
-    _                      -> Nothing
+    Def _ (Name "fused") []  -> Just FusedAnn
+    Def _ (Name "fuse" ) [i] -> i ^? litTerm . integral . re _FuseAnn
+    Def _ (Name "alloc") []  -> Just (FuseAnn 0) -- TEMPORARY, `alloc` is defined as `fuse 0`
+    Def _ (Name "auto" ) []  -> Just autoFusion
+    _                        -> Nothing
 
 doFuse :: [Allocation] -> Maybe [Allocation]
 doFuse anns =
@@ -94,7 +94,7 @@ fuseChanDecs nu ((c0,c1):cs) = fuse2Chans nu c0 c1 . fuseChanDecs nu cs
 fuseSendRecv :: NU -> ChanDec -> Term -> ChanDec -> VarDec -> Fused
 fuseSendRecv nu c0 e c1 (Arg x mty) = Fused (aDef x mty e) (Order [nu cs])
   where
-    cs = [c0,c1] & each . cdSession . _Just . rsession %~ sessionStep {-TODO defs-} (Def x [])
+    cs = [c0,c1] & each . cdSession . _Just . rsession %~ sessionStep {-TODO defs-} (mkVar x)
 
 two :: ([a] -> b) -> a -> a -> b
 two f x y = f [x, y]

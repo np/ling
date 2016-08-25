@@ -73,6 +73,6 @@ instance SubTerms Assertion where
 
 instance SubTerms Dec where
   subTerms f = \case
-    Sig d mty t -> Sig d <$> _Just f mty <*> _Just f t
+    Sig d mty t -> Sig d <$> _Just f mty <*> f t
     d@Dat{}     -> pure d
     Assert a    -> Assert <$> subTerms f a

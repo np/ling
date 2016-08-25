@@ -1,12 +1,6 @@
 
 {- Normalized program -}
 
-assert
-  'a'
-  =
-  'a'
-  : Char
-
 ap =
   \ (S : Session)-> \ (T : Session)-> proc (c : {[S, ~ T],{~ S, T}})
   split c {f, xo}.
@@ -17,6 +11,15 @@ ap =
 
 ap_SInt_SBool =
   ap (!Int)(!Bool)
+
+assert
+  `true
+  =
+  `true
+  : let B = Bool in case `left of {
+    `left -> B ,
+    `right -> Int
+  }
 
 assert
   `false
@@ -136,6 +139,13 @@ com_new_SInt =
   com_new (!Int)(proc (c' : !Int)
   c' <- 42)(proc (d : ?Int)
   let x : Int <- d)
+
+com_new_SInt_RBool =
+  com_new (!Int.?Bool)(proc (c' : !Int.?Bool)
+  c' <- 42.
+  let b : Bool <- c')(proc (d : ?Int.!Bool)
+  let x : Int <- d.
+  d <- `true)
 
 com_new_mk_ten2 =
   let mk_tensor2 = \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
@@ -392,6 +402,47 @@ feed_send_then_recv =
 
 flexible_telescope : (A : Type)-> (B : Type)-> (x : A)-> (y : A)-> (z : B)-> (t : B)-> Int =
   \ (A : Type)-> \ (B : Type)-> \ (x : A)-> \ (y : A)-> \ (z : B)-> \ (t : B)-> 42
+
+fwd_diff1 =
+  \ (n : Int)-> proc (a : [: ?Int ^ (1 + n):], b : [: !Int ^ n :])
+  split a [: a0, ai ^ n :].
+  split b [: bi ^ n :].
+  new (tmp : Int).
+  let x#a0 : Int <- a0.
+  tmp <- x#a0.
+  slice (ai, bi)n as _
+    let x : Int <- ai.
+    let y : Int <- tmp.
+    bi <- (x - y).
+    tmp <- x
+
+recInt : (A : (n : Int)-> Type)-> (e : String)-> (z : A 0)-> (s : (n1 : Int)-> (a : A n1)-> A (1 + n1)) -> (n : Int)-> A n
+
+fwd_diff : (m : Int)-> (n : Int)-> < [: ?Int ^ (m + n):], [: !Int ^ n :] > =
+  \ (m0 : Int)-> \ (n : Int)-> recInt (\ (m : Int)-> < [: ?Int ^ (m + n):], [: !Int ^ n :] >)"m < 0" (proc (a : [: ?Int ^ n :], d : [: !Int ^ n :])
+  split a [: a#0 ^ n : ?Int ^ n :].
+  split d [: d#0 ^ n : !Int ^ n :].
+  slice (a#0, d#0)n as _
+    let x#a#0 : Int <- a#0.
+    d#0 <- x#a#0 ) (\ (m1 : Int)-> \ (p : < [: ?Int ^ (m1 + n):], [: !Int ^ n :] >)-> proc (a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :])
+  new [: b : [: !Int ^ (m1 + n):], c :].
+  @ (fwd_diff1 (m1 + n)) {a, b}.
+  @ p {c, d}) m0
+
+fwd_diff1_10 =
+  fwd_diff1 10
+
+tabulate_seq =
+  \ (A : Type)-> \ (f : (i : Int)-> A)-> \ (n : Int)-> proc (a : [: !A ^ n :])
+  split a [: a_i ^ n :].
+  slice (a_i)n as i
+    a_i <- (f i)
+
+main =
+  proc (c)
+  new [: a : [: !Int ^ 10 :], b :].
+  @ (tabulate_seq Int (\ (x : Int)-> 10 - x)10)(a).
+  @ (fwd_diff 3 7){b, c}
 
 fun1_to_proc_ord =
   \ (I : Type)-> \ (O : Type)-> \ (f : (x : I)-> O)-> proc (c : [: ?I, !O :])
@@ -703,6 +754,23 @@ let_example =
   let y = (f x x).
   c <- y
 
+let_in_proc_for_session =
+  proc (c : ?Int)
+  let A = Int.
+  let x : A <- c
+
+let_let =
+  let x = 1 in let y = x in y
+
+let_order =
+  let x = 1 in let y = 2 in x + y
+
+let_order_proc =
+  proc (c : !Int)
+  let x = 1.
+  let y = 2.
+  c <- (x + y)
+
 letrecv_ann =
   proc (c : ?Int.!Int)
   let x : Int <- c.
@@ -743,6 +811,18 @@ my3_14 : String =
 
 myNewline : Char =
   '\n'
+
+mkfwd =
+  \ (A : Session)-> proc (a : A, na : ~ A)
+  fwd A (a, na)
+
+loli_id : (A : Session)-> < {~ A, A}> =
+  \ (A : Session)-> proc (naa : {~ A, A})
+  split naa {na, a}.
+  @ (mkfwd (~ A)) {na, a}
+
+loli_id_SInt =
+  loli_id (!Int)
 
 zipWith =
   \ (A : Type)-> \ (B : Type)-> \ (C : Type)-> \ (f : (a : A)-> (b : B)-> C)-> \ (n : Int)-> proc (cas : [: ?A ^ n :], cbs : [: ?B ^ n :], ccs : [: !C ^ n :])
@@ -805,7 +885,8 @@ matmult =
     @ (row Double m n a' (ij / n)) (u).
     new/alloc [: v : [: !Double ^ n :], v' :].
     @ (col Double n p b' (ij % n)) (v).
-    @ (dotproduct n){u', v', c_i_j}
+    let nn = n.
+    @ (dotproduct nn){u', v', c_i_j}
 
 matmult_4 =
   matmult 4 4 4
@@ -1111,6 +1192,42 @@ some_type : Type =
 some_value : some_type =
   42
 
+Oplus' =
+  \ (SL : Session)-> \ (SR : Session)-> !(b : LR).case b of {
+    `left -> SL ,
+    `right -> SR
+  }
+
+leftOplus =
+  \ (SL : Session)-> \ (SR : Session)-> \ (p : < SL >)-> proc (c)
+  c : Oplus' SL SR <- `left.
+  @ p (c)
+
+rightOplus =
+  \ (SL : Session)-> \ (SR : Session)-> \ (p : < SR >)-> proc (c)
+  c : Oplus' SL SR <- `right.
+  @ p (c)
+
+oplus' =
+  \ (SL : Session)-> \ (SR : Session)-> \ (b : LR)-> \ (p : < case b of {
+    `left -> SL ,
+    `right -> SR
+  } >)-> proc (c)
+  c : Oplus' SL SR <- b.
+  @ p (c)
+
+assert
+  leftOplus
+  =
+  \ (SL : Session)-> \ (SR : Session)-> oplus' SL SR `left
+  : (SL : Session)-> (SR : Session)-> (p : < SL >)-> < Oplus' SL SR >
+
+assert
+  rightOplus
+  =
+  \ (SL : Session)-> \ (SR : Session)-> oplus' SL SR `right
+  : (SL : Session)-> (SR : Session)-> (p : < SR >)-> < Oplus' SL SR >
+
 par0 =
   proc (c : {})
   split c {}
@@ -1391,6 +1508,11 @@ _ =
 _ =
   "Hello!"
 
+test_receiver =
+  \ (A : Type)-> \ (S : A -> Session)-> \ (p : (x : A)-> < S x >)-> proc (c)
+  let x : A <- c.
+  @ (p x)(c)
+
 assert
   16 % 33
   =
@@ -1546,6 +1668,11 @@ rotate_seq =
     oL <- x#iH ).
   oH <- xL
 
+test_sender =
+  \ (A : Type)-> \ (S : A -> Session)-> \ (t : A)-> \ (p : < S t >)-> proc (c)
+  c : !(x : A).S x <- t.
+  @ p (c)
+
 seq0_explicit =
   proc (c : [: :])
   split c [: :]
@@ -1662,6 +1789,45 @@ split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)
   fwd B (b, nb).
   fwd C (c, nc).
   fwd D (d, nd)
+
+sqr_dbl =
+  proc (i : ?Int, o : !Int)
+  let x : Int <- i.
+  new (c : Int).
+  c <- (x * x).
+  let y : Int <- c.
+  o <- (y + y)
+
+sqrs_body_session =
+  !Int.?Int.!Int.?Int.!Int.?Int
+
+sqrs_body =
+  \ (x : Int)-> proc (c : sqrs_body_session, o : !Int)
+  c <- (x * x).
+  let x2 : Int <- c.
+  c <- (x2 * x2).
+  let x4 : Int <- c.
+  c <- (x4 * x4).
+  let x8 : Int <- c.
+  o <- (x8 * x8)
+
+sqrs_main =
+  proc (i : ?Int, o : !Int)
+  let x : Int <- i.
+  new (c : Int).
+  @ (sqrs_body x){c, o}
+
+sqrs =
+  proc (i : ?Int, o : !Int)
+  let x : Int <- i.
+  new (c : Int).
+  c <- (x * x).
+  let x2 : Int <- c.
+  c <- (x2 * x2).
+  let x4 : Int <- c.
+  c <- (x4 * x4).
+  let x8 : Int <- c.
+  o <- (x8 * x8)
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
@@ -1830,6 +1996,12 @@ test_pat =
 type_annotation =
   (21 + 21 : Int)
 
+assert
+  (`true : Bool)
+  =
+  `true
+  : Bool
+
 ZeroCh : Type =
   (A : Type)-> A
 
@@ -1924,14 +2096,14 @@ uncurry =
   | fwd T (fy, y)
   | fwd U (o, fo))
 
-With =
+test_With =
   \ (SL : Session)-> \ (SR : Session)-> ?(b : LR).case b of {
     `left -> SL ,
     `right -> SR
   }
 
-with =
-  \ (SL : Session)-> \ (SR : Session)-> \ (pL : < SL >)-> \ (pR : < SR >)-> proc (c : With SL SR)
+test_with =
+  \ (SL : Session)-> \ (SR : Session)-> \ (pL : < SL >)-> \ (pR : < SR >)-> proc (c : test_With SL SR)
   let x : LR <- c.
   @ (case x of {
     `left -> pL ,

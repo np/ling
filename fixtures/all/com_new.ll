@@ -10,5 +10,11 @@ com_new =
 com_new_SInt =
   com_new
     (!Int)
-    (proc(c' : !Int) send c' 42)
-    (proc(d : ?Int) recv d (x : Int))
+    (proc(c' : !Int) c' <- 42)
+    (proc(d : ?Int) let x : Int <- d)
+
+com_new_SInt_RBool =
+  com_new
+    (!Int.?Bool)
+    (proc(c' : !Int.?Bool) c' <- 42. let b : Bool <- c')
+    (proc(d : ?Int.!Bool) let x : Int <- d. d <- `true)

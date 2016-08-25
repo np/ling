@@ -226,7 +226,7 @@ normRawApp :: [ATerm] -> N.Term
 normRawApp [e] = norm e
 normRawApp (e0:Op d:es)
   | (unOpName # d) `elem` ["-", "+", "*", "/", "%", "-D", "+D", "*D", "/D", "++S"] =
-      N.Def (norm (infixed # d)) [norm e0, normRawApp es]
+      N.Def N.Defined (norm (infixed # d)) [norm e0, normRawApp es]
 normRawApp (Var (Name "Fwd"):es)
   | [e0, e1] <- es
   , Just n <- e0 ^? normalized . N.litTerm . integral =
@@ -236,7 +236,7 @@ normRawApp (Var (Name "Fwd"):es)
 normRawApp (Var (Name "Log"):es)
   | [e] <- es = log (norm (AS e)) ^. N.tSession
   | otherwise = error "invalid usage of Log"
-normRawApp (Var x:es) = N.Def (norm x) (norm es)
+normRawApp (Var x:es) = N.Def N.Defined (norm x) (norm es)
 normRawApp [] = error "normRawApp: IMPOSSIBLE"
 normRawApp _ = error "normRawApp: unexpected application"
 
@@ -254,7 +254,7 @@ reifyArray N.TenK = Ten
 instance Norm ATerm where
   type Normalized ATerm = N.Term
   reify = \case
-    N.Def x []                -> Var (reify x)
+    N.Def _ x []              -> Var (reify x)
     N.Lit l                   -> Lit l
     N.Con n                   -> Con (reify n)
     N.TTyp                    -> TTyp
@@ -262,7 +262,7 @@ instance Norm ATerm where
     N.TSession (N.Array k ss) -> reifyArray k (reify (ss ^. N._Sessions))
     e                         -> paren (reify e)
   norm = \case
-    Var x      -> N.Def (norm x) []
+    Var x      -> N.mkVar (norm x)
     Op x       -> error $ "Unexpected operator-part: " ++ show x
     Lit l      -> N.Lit l
     Con n      -> N.Con (norm n)
@@ -322,7 +322,7 @@ reifyDefs = composeMapOf each $ \case
 instance Norm Term where
   type Normalized Term = N.Term
   reify = \case
-    N.Def x es   -> reifyDef (reify x) es
+    N.Def _ d es -> reifyDef (reify d) es
     N.Let d t    -> reifyDefs d (reify t)
     N.Lit l      -> RawApp (Lit l) []
     N.Con n      -> RawApp (Con (reify n)) []
@@ -363,11 +363,11 @@ reifyTerm = reify
 
 instance Norm AllocTerm where
   type Normalized AllocTerm = N.Term
-  reify (N.Lit lit)  = ALit lit
-  reify (N.Def d []) = AVar (reify d)
-  reify t            = AParen (reify t) NoSig
+  reify (N.Lit lit)    = ALit lit
+  reify (N.Def _ d []) = AVar (reify d)
+  reify t              = AParen (reify t) NoSig
   norm (ALit lit)    = N.Lit lit
-  norm (AVar d)      = N.Def (norm d) []
+  norm (AVar d)      = N.mkVar (norm d)
   norm (AParen t os) = N.optSig (norm t) (norm os)
 
 instance Norm NewPatt where
@@ -386,13 +386,13 @@ instance Norm NewAlloc where
   reify (os, kcds) =
     case os of
       [] -> New (reify kcds)
-      [N.Def (Name d) ts] -> NewNAnn (OpName ("new/" ++ d)) (reify ts) (reify kcds)
+      [N.Def _ (Name d) ts] -> NewNAnn (OpName ("new/" ++ d)) (reify ts) (reify kcds)
       [t] -> NewSAnn (reify t) NoSig (reify kcds)
       _ -> error "reify/NewAlloc: IMPOSSIBLE"
   norm (New newpatt) = ([], norm newpatt)
   norm (NewSAnn t os newpatt) = ([N.optSig (norm t) (norm os)], norm newpatt)
   norm (NewNAnn (OpName newd) ts newpatt)
-    | Just d <- newd ^? prefixed "new/" = ([N.Def (Name d) (norm ts)], norm newpatt)
+    | Just d <- newd ^? prefixed "new/" = ([N.Def N.Defined (Name d) (norm ts)], norm newpatt)
     | otherwise                         = error "norm/NewAlloc: IMPOSSIBLE"
 
 instance Norm ChanDec where
@@ -430,20 +430,23 @@ instance Norm OptSig where
   norm NoSig             = Nothing
   norm (SoSig t)         = Just (norm t)
 
+undefSig :: Name -> N.Term -> N.Dec
+undefSig d ty = N.Sig d (Just ty) (N.Def N.Undefined d [])
+
 instance Norm Dec where
   type Normalized Dec   = N.Dec
 
   norm = \case
-    DSig d ty    -> N.Sig (norm d) (Just $ norm ty) Nothing
-    DDef d ty tm -> N.Sig (norm d) (norm ty) (Just $ norm tm)
+    DSig d ty    -> undefSig (norm d) (norm ty)
+    DDef d ty tm -> N.Sig (norm d) (norm ty) (norm tm)
     DDat d cs    -> N.Dat (norm d) (norm cs)
     DAsr a       -> N.Assert (norm a)
   reify = \case
-    N.Sig _ Nothing   Nothing -> error "IMPOSSIBLE Norm Dec/reify: no def nor sig"
-    N.Sig d (Just ty) Nothing -> DSig (reify d) (reify ty)
-    N.Sig d ty (Just tm)      -> DDef (reify d) (reify ty) (reify tm)
-    N.Dat d cs                -> DDat (reify d) (reify cs)
-    N.Assert a                -> DAsr (reify a)
+    s@(N.Sig d mty tm)
+      | Just ty <- mty, s == undefSig d ty -> DSig (reify d) (reify ty)
+      | otherwise                          -> DDef (reify d) (reify mty) (reify tm)
+    N.Dat d cs -> DDat (reify d) (reify cs)
+    N.Assert a -> DAsr (reify a)
 
 instance Norm Assertion where
   type Normalized Assertion = N.Assertion

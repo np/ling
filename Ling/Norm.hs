@@ -34,7 +34,7 @@ data Program = Program { _prgDecs :: ![Dec] }
   deriving (Eq,Ord,Show,Read)
 
 data Dec
-  = Sig { _decName :: !Name, _decType :: !(Maybe Typ), _decTerm :: !(Maybe Term) }
+  = Sig { _decName :: !Name, _decType :: !(Maybe Typ), _decTerm :: !Term }
   | Dat { _decName :: !Name, _decConstructors :: ![Name] }
   | Assert { _decAssertion :: !Assertion }
   deriving (Eq,Ord,Show,Read)
@@ -96,9 +96,14 @@ type DataTypeName = Name
 type ConName = Name
 type Branch = (ConName,Term)
 
+data DefKind
+  = Undefined
+  | Defined
+  deriving (Eq,Ord,Show,Read)
+
 type Typ = Term
 data Term
-  = Def { _tmVar :: !Name, _tmArgs :: ![Term] }
+  = Def { _tmDefKind :: !DefKind, _tmVar :: !Name, _tmArgs :: ![Term] }
   | Let { _tmDefs :: !Defs, _tmTerm :: Term }
   | Lit { _tmLit :: !Literal }
   | Lam { _tmVarD :: !VarDec
@@ -194,7 +199,9 @@ makePrisms ''Term
 makePrisms ''TraverseKind
 
 aDef :: Name -> Maybe Typ -> Term -> Defs
-aDef x mty tm = _Wrapped . _Wrapped # [(x, Ann mty tm)]
+aDef x mty tm
+  | x == anonName = error $ "aDef: unexpected anon name `_` at type (" ++ ppShow mty ++ ") and definition (" ++ ppShow tm ++ ")"
+  | otherwise     = _Wrapped . _Wrapped # [(x, Ann mty tm)]
 
 instance Monoid Defs where
   mempty = Defs ø
@@ -234,6 +241,19 @@ instance Monoid Proc where
   mconcat [p] = p
   mconcat ps  = Procs (Prll ps)
 
+mkVar :: Name -> Term
+mkVar n = Def Defined{-Var-} n []
+
+-- Type constructors
+mkTyCon :: Name -> [Term] -> Term
+mkTyCon = Def Undefined
+
+mkTyCon0 :: Name -> Term
+mkTyCon0 n = mkTyCon n []
+
+mkPrimOp :: Name -> [Term] -> Term
+mkPrimOp = Def Undefined
+
 -- Arbitrary type annotations can be seen as the use of the
 -- following definition (the identity function)
 -- _:_ :  (A : Type)(x : A)-> A
@@ -244,28 +264,28 @@ instance Monoid Proc where
 optSig :: Term -> Maybe Typ -> Term
 optSig t = \case
   Nothing -> t
-  Just a  -> Def (Name "_:_") [a,t]
+  Just a  -> Def Defined (Name "_:_") [a,t]
 
 vecTyp :: Typ -> Term -> Typ
-vecTyp t e = Def (Name "Vec") [t,e]
+vecTyp t e = mkTyCon (Name "Vec") [t,e]
 
 intTyp :: Typ
-intTyp = Def (Name "Int") []
+intTyp = mkTyCon0 (Name "Int")
 
 doubleTyp :: Typ
-doubleTyp = Def (Name "Double") []
+doubleTyp = mkTyCon0 (Name "Double")
 
 stringTyp :: Typ
-stringTyp = Def (Name "String") []
+stringTyp = mkTyCon0 (Name "String")
 
 charTyp :: Typ
-charTyp = Def (Name "Char") []
+charTyp = mkTyCon0 (Name "Char")
 
 sessionTyp :: Typ
-sessionTyp = Def (Name "Session") []
+sessionTyp = mkTyCon0 (Name "Session")
 
 allocationTyp :: Typ
-allocationTyp = Def (Name "Allocation") []
+allocationTyp = mkTyCon0 (Name "Allocation")
 
 addName :: Name
 addName = Name "_+_"
@@ -373,23 +393,23 @@ int0, int1 :: Term
 int0 = Lit (LInteger 0)
 int1 = Lit (LInteger 1)
 
-matchDef2 :: Name -> Term -> Either Term (Term, Term)
-matchDef2 n = \case
-  (Def d [x, y]) | d == n -> Right (x, y)
-  r                       -> Left r
+matchUndef2 :: Name -> Term -> Either Term (Term, Term)
+matchUndef2 n = \case
+  (Def Undefined d [x, y]) | d == n -> Right (x, y)
+  r                                 -> Left r
 
 addTerm :: Prism' Term (Term, Term)
-addTerm = prism mk $ matchDef2 addName
+addTerm = prism mk $ matchUndef2 addName
   where
     mk (x, y)
       | x == int0              = y
       | y == int0              = x
       | Lit (LInteger i) <- x
       , Lit (LInteger j) <- y  = Lit (LInteger $ i + j)
-      | otherwise              = Def addName [x,y]
+      | otherwise              = mkPrimOp addName [x,y]
 
 multTerm :: Prism' Term (Term, Term)
-multTerm = prism mk $ matchDef2 multName
+multTerm = prism mk $ matchUndef2 multName
   where
     mk (x, y)
       | x == int0 || y == int0 = int0
@@ -397,7 +417,7 @@ multTerm = prism mk $ matchDef2 multName
       | y == int1              = x
       | Lit (LInteger i) <- x
       , Lit (LInteger j) <- y  = Lit (LInteger $ i * j)
-      | otherwise              = Def multName [x,y]
+      | otherwise              = mkPrimOp multName [x,y]
 
 litTerm :: Prism' Term Integer
 litTerm = prism (Lit . LInteger) $
@@ -423,9 +443,9 @@ instance Monoid RFactor where
   mappend x y = multR # (x, y)
 
 addDec :: Dec -> Endom Defs
-addDec (Sig d mty mtm) = at d .~ (Ann mty <$> mtm)
-addDec Dat{}           = id
-addDec Assert{}        = id
+addDec (Sig d mty tm) = at d ?~ Ann mty tm
+addDec Dat{}          = id
+addDec Assert{}       = id
 
 transProgramDecs :: (Defs -> Endom Dec) -> Endom Program
 transProgramDecs transDec (Program decs) = Program (mapAccumL go ø decs ^. _2)

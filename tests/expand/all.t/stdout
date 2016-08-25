@@ -140,11 +140,25 @@ com_new_SInt =
   ( c <- 42
   | let x#q : Int <- d )
 
+com_new_SInt_RBool =
+  proc ()
+  new [c : !Int.?Bool, d : ?Int.!Bool].
+  ( c <- 42.
+    let b#p : Bool <- c
+  | let x#q : Int <- d.
+    d <- `true )
+
 com_new_mk_ten2 =
   \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
   new [c : S, d : ~ S].
   ( @ p (c)
   | @ q (d))
+
+com_new_mk_ten2_SInt =
+  proc ()
+  new [c : !Int, d : ?Int].
+  ( c <- 42
+  | let x#q : Int <- d )
 
 com_with_log =
   \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> \ (s : < ~ Log S >)-> proc ()
@@ -820,6 +834,20 @@ let_example =
   let x : Int <- c.
   c <- (x + x)
 
+let_in_proc_for_session =
+  proc (c : ?Int)
+  let x : Int <- c
+
+let_let =
+  1
+
+let_order =
+  3
+
+let_order_proc =
+  proc (c : !Int)
+  c <- 3
+
 letrecv_ann =
   proc (c : ?Int.!Int)
   let x : Int <- c.
@@ -858,6 +886,20 @@ my3_14 : String =
 
 myNewline : Char =
   '\n'
+
+mkfwd =
+  \ (A : Session)-> proc (a : A, na : ~ A)
+  fwd A (a, na)
+
+loli_id : (A : Session)-> < {~ A, A}> =
+  \ (A : Session)-> proc (naa : {~ A, A})
+  split naa {na, a}.
+  fwd (~ A)(na, a)
+
+loli_id_SInt =
+  proc (naa : {?Int, !Int})
+  split naa {na, a}.
+  fwd (?Int)(na, a)
 
 zipWith =
   \ (A : Type)-> \ (B : Type)-> \ (C : Type)-> \ (f : (a : A)-> (b : B)-> C)-> \ (n : Int)-> proc (cas : [: ?A ^ n :], cbs : [: ?B ^ n :], ccs : [: !C ^ n :])

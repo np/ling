@@ -12,7 +12,7 @@ module Ling.Check.Base where
 import           Ling.Equiv
 import           Ling.ErrM
 import           Ling.Norm
-import           Ling.Prelude hiding (subst1)
+import           Ling.Prelude
 import           Ling.Print
 import           Ling.Reduce
 import           Ling.Rename
@@ -255,8 +255,9 @@ tcScope a = (\x -> Scoped x ø a) <$> view edefs
 caseType :: MonadTC m => Term -> Typ -> [(Name, Typ)] -> m Typ
 caseType t ty brs = do
   sty <- reduce <$> tcScope ty
+  let err = tcError $ "Case on a non data type: " ++ pretty (substScoped (sty ^. reduced))
   case sty ^. reduced . scoped of
-    Def d [] -> do
+    Def _{-Undefined ?-} d [] -> do
       def <- view $ ddefs . at d
       case def of
         Just cs -> do
@@ -266,14 +267,11 @@ caseType t ty brs = do
 
           env <- tcEqEnv
           return $ mkCaseBy (equiv env) t brs
-        _ -> tcError $ "Case on a non data type: " ++ pretty d
-    _ -> tcError $ "Case on a non data type: " ++ pretty ty
-
-def0 :: Name -> Term
-def0 x = Def x []
+        _ -> err
+    _ -> err
 
 conType :: MonadTC m => Name -> m Typ
-conType = fmap def0 . conTypeName
+conType = fmap mkTyCon0 . conTypeName
 
 
 

@@ -41,13 +41,14 @@ reduceApp st0 = \case
   []     -> rt1
   (u:us) ->
     case st1 ^. scoped of
-      Lam (Arg x mty) t2 -> reduceApp (st1 *> subst1 (x, Ann mty u) t2) us
-      Def x es           -> reduceDef (st1 $> x) (es ++ u : us)
-      _                  -> error "Ling.Reduce.reduceApp: IMPOSSIBLE"
+      Lam (Arg x mty) t2 -> reduceApp (st0 *> st1 *> subst1 (x, Ann mty u) t2) us
+      Def k d es -> reduceDef (st0 *> st1 $> (k, d, es ++ u : us))
+      _ -> error "Ling.Reduce.reduceApp: IMPOSSIBLE"
 
   where
     rt1 = reduce st0
     st1 = rt1 ^. reduced
+    -- st1 might have less (or even no) defs than st0.
 
 reduceCase :: Scoped Term -> [Branch] -> Reduced Term
 reduceCase st0 brs =
@@ -79,14 +80,20 @@ reducePrim "showChar"   [LChar    x]             = Just $ LString  (show x)
 reducePrim "showString" [LString  x]             = Just $ LString  (show x)
 reducePrim _            _                        = Nothing
 
-reduceDef :: Scoped Name -> [Term] -> Reduced Term
-reduceDef sd es
-  | Just st <- scopedName sd              = reduceApp st es
-  | Just ls <- es ^? below _Lit
-  , Just  l <- reducePrim (unName # d) ls = Reduced . pure $ Lit l
-  | otherwise                             = Reduced $ sd $> Def d es
-
-  where d = sd ^. scoped
+reduceDef :: Scoped (DefKind, Name, [Term]) -> Reduced Term
+reduceDef sdef =
+  -- traceReduce "reduceDef" sdef $
+  case sdef ^. scoped of
+    (k, d, es) ->
+      case k of
+        Defined
+          | Just st <- scopedName (sdef $> d) -> reduceApp st es
+        Undefined
+          | Just ls <- es' ^? reduced . scoped . below _Lit
+          , Just  l <- reducePrim (unName # d) ls -> pure $ Lit l
+        _ -> Def k d <$> es'
+      where
+        es' = reduce (sdef $> es)
 
 instance HasReduce a b => HasReduce (Maybe a) (Maybe b) where reduce = reduceEach
 instance HasReduce a b => HasReduce [a] [b]             where reduce = reduceEach
@@ -125,7 +132,7 @@ instance HasReduce Term Term where
   reduce st0 =
     case t0 of
       Let defs t  -> reduce (st0 *> Scoped ø defs () $> t)
-      Def d es    -> reduceDef  (st0 $> d) es
+      Def k d es  -> reduceDef (st0 $> (k, d, es))
       Case t brs  -> reduceCase (st0 $> t) brs
       Lit{}       -> pure t0
       TTyp        -> pure t0

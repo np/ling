@@ -62,7 +62,7 @@ cmdrnorm(){
   cmdr --pretty --no-check -- norm "$@"
 }
 alias cmdrseqall='cmdrecord tests/sequence/all.t --env empty -- ling --pretty --no-check --seq < fixtures/sequence/*.ll'
-alias cmdrfuseall='cmdrecord tests/fusion/all.t --env empty -- ling --pretty --no-check --seq --fuse < fixtures/sequence/*.ll'
+alias cmdrfuseall='cmdrecord tests/fusion/all.t --env empty -- ling --pretty --no-check --seq --fuse < fixtures/fusion/*.ll'
 alias cmdrcompileall='cmdrecord tests/compile/all.t  --env empty -- ling --no-check --seq --compile-prims --compile < fixtures/compile/*.ll'
 alias cmdrfmtall='cmdrecord tests/fmt/all.t  --env empty -- ling-fmt < fixtures/all/*.ll'
 alias cmdrprettyall='cmdrecord tests/pretty/all.t  --env empty -- ling --pretty --no-check --no-norm < fixtures/all/*.ll'
