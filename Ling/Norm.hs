@@ -436,4 +436,4 @@ transProgramDecs transDec (Program decs) = Program (mapAccumL go ø decs ^. _2)
 
 transProgramTerms :: (Defs -> Endom Term) -> Endom Program
 transProgramTerms transTerm =
-  transProgramDecs $ over (_Sig . _3 . _Just) . transTerm
+  transProgramDecs $ over (decTerm . _Just) . transTerm
