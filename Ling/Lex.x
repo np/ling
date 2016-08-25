@@ -29,7 +29,7 @@ $u = [\0-\255]          -- universal: any character
 
 $white+ ;
 @rsyms { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
-[\_]($l | [\- \+ \* \/ \%]| $d)* ($l | [\- \+ \* \/ \%]) ($l | [\- \+ \* \/ \% \']| $d)* [\_]| [\_]| $l ($l | [\_ \- \']| $d)* { tok (\p s -> PT p (eitherResIdent (T_Name . share) s)) }
+[\_]($l | [\- \+ \* \/ \%]| $d)* ($l | [\- \+ \* \/ \%]) ($l | [\- \+ \* \/ \% \']| $d)* [\_]| [\_]| $l ($l | [\_ \- \']| $d)* | [\_][\:][\_] { tok (\p s -> PT p (eitherResIdent (T_Name . share) s)) }
 ($l | [\- \+ \* \/ \%]| $d)* [\- \+ \* \/ \%]($l | [\- \+ \* \/ \% \_ \']| $d)* { tok (\p s -> PT p (eitherResIdent (T_OpName . share) s)) }
 
 $l $i*   { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }

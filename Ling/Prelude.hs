@@ -93,6 +93,9 @@ makeLenses ''Arg
 
 instance Functor Arg where fmap = over argBody
 
+instance Each (Arg a) (Arg b) a b where
+  each = argBody
+
 instance t ~ Arg a' => Rewrapped (Arg a) t
 instance Wrapped (Arg a) where
   type Unwrapped (Arg a) = (Name, a)

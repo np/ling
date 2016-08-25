@@ -1,7 +1,8 @@
 While checking `wrong_type_annotation`
-  Types are not equivalent.
-  Expected:
-    Int
-  Inferred:
-    Type
+  While checking `_:_`
+    Types are not equivalent.
+    Expected:
+      Int
+    Inferred:
+      Type
 

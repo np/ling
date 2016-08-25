@@ -375,10 +375,6 @@ checkSig Nothing    (Just tm) = inferTerm tm
 checkSig Nothing    Nothing   = tcError "Cannot infer or check, please add a type signature"
 
 inferDef :: Name -> [Term] -> TC Typ
-inferDef (Name "_:_") [ty,tm] = do
-  checkTyp ty
-  checkTerm ty tm
-  return ty
 inferDef f es = do
   mtyp <- view $ evars . at f
   case mtyp of

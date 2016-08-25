@@ -2099,7 +2099,7 @@ test_pat =
   @ test_pat_term [a, [: b, c :], {d, e}]
 
 type_annotation =
-  21 + 21
+  42
 
 assert
   `true

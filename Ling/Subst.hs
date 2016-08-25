@@ -34,7 +34,6 @@ substApp f e0 (e:es) =
 substDef :: Defs -> Name -> [Term] -> Term
 substDef f d es
   | Just e <- f ^? at d . _Just . annotated = substApp f e es
-  | "_:_" <- unName # d, [_,e] <- es      = subst f e
   | Just ls <- es' ^? below _Lit
   , Just  l <- reducePrim (unName # d) ls = Lit l
   | otherwise                             = Def d (subst f es)

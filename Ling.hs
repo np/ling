@@ -64,6 +64,8 @@ layoutLexer = resolveLayout True . myLexer
 
 prims :: String
 prims = [q|
+_:_ :  (A : Type)(x : A)-> A
+    = \(A : Type)(x : A)-> x
 data Empty =
 data Unit = `unit
 data Bool = `false | `true

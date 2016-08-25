@@ -13,6 +13,7 @@ token Name ( ["_"] (letter | ["-+*/%"] | digit)*
            | ["_"]
            | letter
              (letter | ["_-'"] | digit)*
+           | ["_"][":"]["_"]
            );
 
 token OpName
