@@ -73,7 +73,7 @@ instance PushDefs Term where
       Con n        -> Con n
       Def{}        -> unScopedTerm st0 -- this might leave a let
       Case t brs   -> _Case # mkLet_ (id `beside` branches) (st0 $> (t, brs))
-      Proc cs p    -> Proc (mkLet__ (st0 $> cs)) (pushDefs (st0 $> p))
+      Proc cs p    -> Proc (mkLet__ (st0 $> cs)) (st0 ^. ldefs `dotP` p)
       Lam  arg t   -> _Lam  # mkLet_ absTerms (st0 $> (arg, t))
       TFun arg t   -> _TFun # mkLet_ absTerms (st0 $> (arg, t))
       TSig arg t   -> _TSig # mkLet_ absTerms (st0 $> (arg, t))
