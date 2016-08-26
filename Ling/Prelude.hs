@@ -41,6 +41,7 @@ import           Language.Haskell.TH       (litP, stringE, stringL)
 import           Language.Haskell.TH.Quote
 import           Ling.Abs
 import           Numeric.Lens              as X
+import           Text.Show.Pretty          as X (ppShow)
 
 type Endom a = a -> a
 

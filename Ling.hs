@@ -12,10 +12,6 @@ import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
 import           System.IO          (hPutStrLn, stderr)
 
-import           Text.Show.Pretty   (ppShow)
-
--- import           IPPrint.Colored
-
 import qualified MiniC.Print        as C
 
 import           Ling.Abs
