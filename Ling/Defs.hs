@@ -128,3 +128,6 @@ instance PushDefs ChanDec where
   pushDefs scd =
     case scd ^. scoped of
       ChanDec c r ms -> ChanDec c (mkLet__ (scd $> r)) (mkLet__ (scd $> ms))
+
+instance PushDefs RFactor where
+  pushDefs = pushDefs__ _RFactor
