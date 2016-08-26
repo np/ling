@@ -18,7 +18,7 @@ import           Ling.Session.Core
 -- At the same time lenses provide with a workaround, so what's
 -- worse?
 newtype Reduced a = Reduced { _reduced :: Scoped a }
-  deriving (Eq, Monoid)
+  deriving (Eq, Show, Monoid)
 
 makePrisms ''Reduced
 makeLenses ''Reduced

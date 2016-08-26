@@ -20,7 +20,7 @@ import           Ling.Rename
 import           Ling.Session.Core
 
 data Scoped a = Scoped { _gdefs, _ldefs :: Defs, _scoped :: a }
-  deriving Eq
+  deriving (Eq, Show)
 
 makeLenses ''Scoped
 
