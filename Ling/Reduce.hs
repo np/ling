@@ -36,10 +36,19 @@ class HasReduce a b where
 
 type HasReduce' a = HasReduce a a
 
+traceReduce :: (Print a, Print b, Show a, Show b)
+            => String -> Scoped a -> Reduced b -> Reduced b
+traceReduce _ _ = id
+--traceReduce msg x y = trace (msg ++ ":\n" ++ pretty (x ^. scoped)) (y `seq` trace ("---> " ++ pretty (y ^. reduced . scoped)) y)
+--traceReduce msg x y = trace (msg ++ ":\n" ++ ppShow (x ^. scoped)) (y `seq` trace ("---> " ++ ppShow (y ^. reduced . scoped)) y)
+--traceReduce msg x y = trace (msg ++ ":\n" ++ ppShow (x & gdefs .~ ø)) (y `seq` trace ("---> " ++ ppShow (y & reduced . gdefs .~ ø)) y)
+--traceReduce msg x y = trace (msg ++ ":\n" ++ ppShow x) (y `seq` trace ("---> " ++ ppShow y) y)
+
 reduceApp :: Scoped Term -> [Term] -> Reduced Term
 reduceApp st0 = \case
   []     -> rt1
   (u:us) ->
+    traceReduce "reduceApp" st1 $
     case st1 ^. scoped of
       Lam (Arg x mty) t2 -> reduceApp (st0 *> st1 *> subst1 (x, Ann mty u) t2) us
       Def k d es -> reduceDef (st0 *> st1 $> (k, d, es ++ u : us))
@@ -52,6 +61,7 @@ reduceApp st0 = \case
 
 reduceCase :: Scoped Term -> [Branch] -> Reduced Term
 reduceCase st0 brs =
+  traceReduce "reduceCase" st0 $
   case st1 ^. reduced . scoped of
     Con{} -> reduce (st0 *> scase)
     _ | strong    -> Reduced scase
@@ -130,6 +140,7 @@ instance HasReduce ChanDec ChanDec where
 
 instance HasReduce Term Term where
   reduce st0 =
+    -- traceReduce "reduceTerm" st0 $
     case t0 of
       Let defs t  -> reduce (st0 *> Scoped ø defs () $> t)
       Def k d es  -> reduceDef (st0 $> (k, d, es))
