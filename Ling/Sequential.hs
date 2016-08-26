@@ -21,6 +21,7 @@ import Ling.Print
 import Ling.Session
 import Ling.Proc
 import Ling.Norm
+import Ling.Reduce (reduce, reduced)
 import Ling.Scoped (Scoped(Scoped), scoped, ldefs)
 import Ling.Defs (pushDefs, reduceP, mkLet)
 
@@ -109,8 +110,9 @@ sessionStatus dflt l ss =
     Array _ sessions -> sessionsStatus dflt l (ss $> sessions)
     IO rw _ s  -> (l, dflt rw) : sessionStatus dflt (Next l) (ss $> s)
     TermS p t ->
-      case reduceP (ss $> t) of
-        TSession s -> sessionStatus dflt l (ss $> sessionOp p s)
+      let st' = reduce (ss $> t) ^. reduced in
+      case st' ^. scoped of
+        TSession s -> sessionStatus dflt l (st' $> sessionOp p s)
         t'         -> trace ("[WARNING] Skipping abstract session " ++ pretty t')
                       [(l, Empty)]
 
@@ -179,7 +181,7 @@ addChanDecs scds =
       let l = Root c0 in
       addLocs  (sessionStatus (const Empty) l (scds $> c0S)) .
       addChans [(c,(l,oneS (pushDefs (scds $> cS)))) | Arg c cS <- cds]
-      -- TODO check pushDefs
+      -- TODO check pushDefs, or should it be mkLet to be lazier
 
 {-
 -- This could be part of the Dual class, a special Seq operation could also
@@ -238,6 +240,10 @@ transProcs env p0s waiting k
         _   -> transErr "All the processes are stuck" waiting
 
     p0':ps ->
+      -- Here one might prefer to avoid the pushDefs of reduceP,
+      -- the question becomes: should we add the resulting defs into edefs?
+      -- Or should the gdefs go to edefs and the ldefs be put back into the
+      -- resulting proc using dotP?
       let p0 = reduceP (env ^. scope $> p0')
           transProcsProgress env0 proc0 procs =
             transProcs env0 (ps ++ reverse waiting ++ procs) [] $ \env' procs' ->
