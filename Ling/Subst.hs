@@ -7,7 +7,7 @@ Thus functions gets properly evaluated but NO
 other reduction rules are implemented (prim ops,
 @(proc...)..., case...)
 -}
-module Ling.Subst where
+module Ling.Subst (Subst(subst), substScoped) where
 
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
