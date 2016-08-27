@@ -36,7 +36,7 @@ assert
   : (b : Bool)-> Bool
 
 assert
-  not `true
+  `false
   =
   `false
   : Bool
@@ -53,7 +53,7 @@ assert
 
 assert
   proc (r : !Bool)
-  r <- (not `true)
+  r <- `false
   =
   proc (r : !Bool)
   r <- `false
@@ -881,7 +881,7 @@ zip_multD =
 
 foldl =
   \ (A : Type)-> \ (B : Type)-> \ (f : (acc : B)-> (a : A)-> B)-> \ (init : B)-> \ (n : Int)-> proc (ca : [: ?A ^ n :], cr : !B)
-  new/alloc [itmp : !B.?B, tmp].
+  new/fuse 0 [itmp : !B.?B, tmp].
   ( itmp <- init.
     let x#itmp : B <- itmp.
     cr <- x#itmp
@@ -893,7 +893,7 @@ foldl =
 
 sumD : (n : Int)-> < [: ?Double ^ n :], !Double > =
   \ (n : Int)-> proc (ca : [: ?Double ^ n :], cr : !Double)
-  new/alloc [itmp : !Double.?Double, tmp].
+  new/fuse 0 [itmp : !Double.?Double, tmp].
   ( itmp <- 0.0.
     let x#itmp : Double <- itmp.
     cr <- x#itmp
@@ -905,7 +905,7 @@ sumD : (n : Int)-> < [: ?Double ^ n :], !Double > =
 
 dotproduct =
   \ (n : Int)-> proc (as' : [: ?Double ^ n :], bs : [: ?Double ^ n :], o : !Double)
-  new/alloc [: cs : [: !Double ^ n :], ds :].
+  new/fuse 0 [: cs : [: !Double ^ n :], ds :].
   split as' [: ca ^ n :].
   split bs [: cb ^ n :].
   split cs [: cc ^ n :].
@@ -913,7 +913,7 @@ dotproduct =
     let a : Double <- ca.
     let b : Double <- cb.
     cc <- (a *D b)).
-  new/alloc [itmp : !Double.?Double, tmp].
+  new/fuse 0 [itmp : !Double.?Double, tmp].
   ( itmp <- 0.0.
     let x#itmp : Double <- itmp.
     o <- x#itmp
@@ -925,7 +925,7 @@ dotproduct =
 
 dotproduct_4 =
   proc (as' : [: ?Double ^ 4 :], bs : [: ?Double ^ 4 :], o : !Double)
-  new/alloc [: cs : [: !Double ^ 4 :], ds :].
+  new/fuse 0 [: cs : [: !Double ^ 4 :], ds :].
   split as' [: ca ^ 4 :].
   split bs [: cb ^ 4 :].
   split cs [: cc ^ 4 :].
@@ -933,7 +933,7 @@ dotproduct_4 =
     let a : Double <- ca.
     let b : Double <- cb.
     cc <- (a *D b)).
-  new/alloc [itmp : !Double.?Double, tmp].
+  new/fuse 0 [itmp : !Double.?Double, tmp].
   ( itmp <- 0.0.
     let x#itmp : Double <- itmp.
     o <- x#itmp
@@ -963,15 +963,15 @@ matmult =
   let b' : Vec Double (n * p)<- b.
   split c [: c_i_j ^ (m * p):].
   slice (c_i_j)(m * p)as ij
-    new/alloc [: u : [: !Double ^ n :], u' :].
+    new/fuse 0 [: u : [: !Double ^ n :], u' :].
     split u [: v_i ^ n :].
     (slice (v_i)n as j
       v_i <- (ix Double (m * n)a' (((ij / n)* n)+ j)) ).
-    new/alloc [: v : [: !Double ^ n :], v' :].
+    new/fuse 0 [: v : [: !Double ^ n :], v' :].
     split v [: v_j ^ p :].
     (slice (v_j)p as i
       v_j <- (ix Double (p * p)b' ((i * p)+ ij % n)) ).
-    new/alloc [: cs : [: !Double ^ n :], ds :].
+    new/fuse 0 [: cs : [: !Double ^ n :], ds :].
     split u' [: ca ^ n :].
     split v' [: cb ^ n :].
     split cs [: cc ^ n :].
@@ -979,7 +979,7 @@ matmult =
       let a : Double <- ca.
       let b : Double <- cb.
       cc <- (a *D b)).
-    new/alloc [itmp : !Double.?Double, tmp].
+    new/fuse 0 [itmp : !Double.?Double, tmp].
     ( itmp <- 0.0.
       let x#itmp : Double <- itmp.
       c_i_j <- x#itmp
@@ -995,15 +995,15 @@ matmult_4 =
   let b' : Vec Double 16 <- b.
   split c [: c_i_j ^ 16 :].
   slice (c_i_j)16 as ij
-    new/alloc [: u : [: !Double ^ 4 :], u' :].
+    new/fuse 0 [: u : [: !Double ^ 4 :], u' :].
     split u [: v_i ^ 4 :].
     (slice (v_i)4 as j
       v_i <- (ix Double 16 a' (((ij / 4)* 4)+ j)) ).
-    new/alloc [: v : [: !Double ^ 4 :], v' :].
+    new/fuse 0 [: v : [: !Double ^ 4 :], v' :].
     split v [: v_j ^ 4 :].
     (slice (v_j)4 as i
       v_j <- (ix Double 16 b' ((i * 4)+ ij % 4)) ).
-    new/alloc [: cs : [: !Double ^ 4 :], ds :].
+    new/fuse 0 [: cs : [: !Double ^ 4 :], ds :].
     split u' [: ca ^ 4 :].
     split v' [: cb ^ 4 :].
     split cs [: cc ^ 4 :].
@@ -1011,7 +1011,7 @@ matmult_4 =
       let a : Double <- ca.
       let b : Double <- cb.
       cc <- (a *D b)).
-    new/alloc [itmp : !Double.?Double, tmp].
+    new/fuse 0 [itmp : !Double.?Double, tmp].
     ( itmp <- 0.0.
       let x#itmp : Double <- itmp.
       c_i_j <- x#itmp
@@ -1033,7 +1033,7 @@ merger =
     co <- (merge m n v0 v1))
 
 merger_loli_Sort =
-  \ (m : Int)-> \ (n : Int)-> proc (c : {[~ DotSort Int m, ~ DotSort Int n],DotSort Int (m + n)})
+  \ (m : Int)-> \ (n : Int)-> proc (c : {[~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)], EndoIO (Vec Int (m + n))})
   split c {c01, d}.
   split c01 [c0, c1].
   let vi : Vec Int (m + n)<- d.
@@ -1044,7 +1044,7 @@ merger_loli_Sort =
   d <- (merge m n v0 v1)
 
 merger_nstSort_prll =
-  \ (m : Int)-> \ (n : Int)-> proc (c0 : ~ DotSort Int m, c1 : ~ DotSort Int n, c : DotSort Int (m + n))
+  \ (m : Int)-> \ (n : Int)-> proc (c0 : ~ EndoIO (Vec Int m),c1 : ~ EndoIO (Vec Int n),c : EndoIO (Vec Int (m + n)))
   let vi : Vec Int (m + n)<- c.
   ( c0 <- (take Int m n vi)
   | c1 <- (drop Int m n vi)).
@@ -1053,7 +1053,7 @@ merger_nstSort_prll =
   c <- (merge m n v0 v1)
 
 merger_nstSort_prll_v2 =
-  \ (m : Int)-> \ (n : Int)-> proc (c : [~ DotSort Int m, ~ DotSort Int n],d : DotSort Int (m + n))
+  \ (m : Int)-> \ (n : Int)-> proc (c : [~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)], d : EndoIO (Vec Int (m + n)))
   split c [c0, c1].
   let vi : Vec Int (m + n)<- d.
   ( c0 <- (take Int m n vi)
@@ -1063,7 +1063,7 @@ merger_nstSort_prll_v2 =
   d <- (merge m n v0 v1)
 
 merger_ParSort_full_prll =
-  \ (m : Int)-> \ (n : Int)-> proc (c0 : ~ ParSort Int m, c1 : ~ ParSort Int n, c : ParSort Int (m + n))
+  \ (m : Int)-> \ (n : Int)-> proc (c0 : ~ EndoLoli (!Vec Int m),c1 : ~ EndoLoli (!Vec Int n),c : EndoLoli (!Vec Int (m + n)))
   split c0 [c0i, c0o].
   split c1 [c1i, c1o].
   split c {ci, co}.
@@ -1093,7 +1093,7 @@ merger_seq =
   co <- (merge m n v0 v1)
 
 merger_seq_Sort =
-  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ DotSort Int m, ~ DotSort Int n},DotSort Int (m + n)})
+  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)}, EndoIO (Vec Int (m + n))})
   split c {d, io}.
   split d {d0, d1}.
   let vi : Vec Int (m + n)<- io.
@@ -1104,7 +1104,7 @@ merger_seq_Sort =
   io <- (merge m n v0 v1)
 
 merger_seqential_ten2_loli_Sort =
-  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ DotSort Int m, ~ DotSort Int n},DotSort Int (m + n)})
+  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)}, EndoIO (Vec Int (m + n))})
   split c {c01, d}.
   split c01 {c0, c1}.
   let vi : Vec Int (m + n)<- d.
@@ -1115,7 +1115,7 @@ merger_seqential_ten2_loli_Sort =
   d <- (merge m n v0 v1)
 
 merger_ten2_loli_Sort =
-  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ DotSort Int m, ~ DotSort Int n},DotSort Int (m + n)})
+  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)}, EndoIO (Vec Int (m + n))})
   split c {c01, d}.
   split c01 {c0, c1}.
   let vi : Vec Int (m + n)<- d.
@@ -1201,7 +1201,7 @@ test_my_loli =
 
 new_alloc =
   proc (c : !Int)
-  new/alloc [d : !Int, e].
+  new/fuse 0 [d : !Int, e].
   ( d <- 1
   | let x#e : Int <- e.
     c <- x#e )
@@ -2025,7 +2025,7 @@ sqrs =
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new/alloc [itmp : !Int.?Int, tmp].
+  new/fuse 0 [itmp : !Int.?Int, tmp].
   ( itmp <- 0.
     let x#itmp : Int <- itmp.
     r <- x#itmp

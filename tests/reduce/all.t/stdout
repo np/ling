@@ -44,7 +44,7 @@ assert
   : (b : Bool)-> Bool
 
 assert
-  not `true
+  `false
   =
   `false
   : Bool

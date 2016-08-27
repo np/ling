@@ -308,8 +308,8 @@ transTermProc maxgas gdefs tm0
   | otherwise
   = tm0
 
-transProgram :: Int -> Endom Program
-transProgram = transProgramTerms . transTermProc
+transProgram :: Int -> Defs -> Endom Program
+transProgram maxgas pdefs = transProgramTerms $ transTermProc maxgas . (pdefs <>)
 -- -}
 -- -}
 -- -}

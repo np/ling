@@ -16,7 +16,7 @@ import qualified MiniC.Print        as C
 
 import           Ling.Abs
 import           Ling.Check.Base    ( TCEnv, TCOpts, debugChecker, defaultTCOpts, runTCOpts
-                                    , runTCEnv, strictPar, errorScope, tcOpts)
+                                    , runTCEnv, strictPar, edefs, errorScope, tcOpts)
 import           Ling.Check.Program (checkProgram)
 import qualified Ling.Compile.C     as Compile
 import           Ling.Defs          (reduceP)
@@ -226,17 +226,18 @@ transP' opts tcenv prg = do
     length (show eprg) `seq` return ()
 
   where
+    pdefs = tcenv ^. edefs
     tops = transOpts opts
     nprg = norm prg
     rprg | opts ^. doRefresh = transProgramDecs (const hDec) nprg
          | otherwise         = nprg
-    sprg | opts ^. doSeq     = Sequential.transProgram (opts ^. seqGas) rprg
+    sprg | opts ^. doSeq     = Sequential.transProgram (opts ^. seqGas) pdefs rprg
          | otherwise         = rprg
-    fprg | opts ^. doFuse    = fuseProgram sprg
+    fprg | opts ^. doFuse    = fuseProgram pdefs sprg
          | otherwise         = sprg
-    wprg | opts ^. doReduce  = transProgramTerms (\defs -> reduceP . Scoped defs ø) fprg
+    wprg | opts ^. doReduce  = transProgramTerms (\defs -> reduceP . Scoped (pdefs <> defs) ø) fprg
          | otherwise         = fprg
-    eprg | opts ^. doExpand  = transProgramTerms subst wprg
+    eprg | opts ^. doExpand  = transProgramTerms (subst . (pdefs <>)) wprg
          | otherwise         = wprg
     cprg = Compile.transProgram $ addPrims (opts ^. compilePrims) eprg
 

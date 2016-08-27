@@ -156,9 +156,9 @@ fuse2Chans nu cd0 cd1 p0 =
     mact0 = p0 ^? {-scoped .-} fetchActProc predA . _Act
     -- p1    = p0 &  {-scoped .-} fetchActProc predA .~ ø
 
-fuseProgram :: Endom Program
+fuseProgram :: Defs -> Endom Program
 -- fuseProgram = prgDecs . each . _Sig . _3 . _Just . _Proc . _2 %~ fuseProc
-fuseProgram = transProgramTerms (over (_Proc . _2) . fuseProc)
+fuseProgram pdefs = transProgramTerms (over (_Proc . _2) . fuseProc . (pdefs <>))
 {-
 fuse2Chans c0 c1 p0 =
   p0 & partsOf (scoped . procActsChans (l2s [c0,c1])) %~ f
