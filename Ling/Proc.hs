@@ -173,6 +173,7 @@ _ActAt :: Prism' Proc (Term, CPatt)
 _ActAt = prism con pat
   where
     con (t, p) =
+      -- (\proc0 -> trace ("_ActAt (" ++ ppShow t ++ ", " ++ ppShow p ++ ") = " ++ ppShow proc0) proc0) $
       case t of
         Proc cs0 proc0 ->
           case cPattAsArrayChanDecs p of
