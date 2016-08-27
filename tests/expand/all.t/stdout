@@ -138,7 +138,7 @@ com_new_SInt =
   proc ()
   new [c : !Int, d : ?Int].
   ( c <- 42
-  | let x : Int <- d )
+  | let x#q : Int <- d )
 
 com_new_mk_ten2 =
   \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
@@ -354,11 +354,11 @@ feed_fwd_send_then_recv =
 feed_fwd_send_then_recv_Int_String_42_showInt =
   proc ()
   new [a : {!Int.?String, ?Int.!String},b : [?Int.!String, !Int.?String]].
-  ( split a {c#0 : !Int.?String, c#1 : ?Int.!String}.
-    let x#c#1 : Int <- c#1.
-    c#0 <- x#c#1.
-    let x#c#0 : String <- c#0.
-    c#1 <- x#c#0
+  ( split a {c#0#p : !Int.?String, c#1#p : ?Int.!String}.
+    let x#c#1#p : Int <- c#1#p.
+    c#0#p <- x#c#1#p.
+    let x#c#0#p : String <- c#0#p.
+    c#1#p <- x#c#0#p
   | split b [c, d].
     ( let x : Int <- c.
       c <- (showInt x)
@@ -1033,7 +1033,7 @@ merger =
     co <- (merge m n v0 v1))
 
 merger_loli_Sort =
-  \ (m : Int)-> \ (n : Int)-> proc (c : {[~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)], EndoIO (Vec Int (m + n))})
+  \ (m : Int)-> \ (n : Int)-> proc (c : {[!Vec Int m.?Vec Int m, !Vec Int n.?Vec Int n],?Vec Int (m + n).!Vec Int (m + n)})
   split c {c01, d}.
   split c01 [c0, c1].
   let vi : Vec Int (m + n)<- d.
@@ -1044,7 +1044,7 @@ merger_loli_Sort =
   d <- (merge m n v0 v1)
 
 merger_nstSort_prll =
-  \ (m : Int)-> \ (n : Int)-> proc (c0 : ~ EndoIO (Vec Int m),c1 : ~ EndoIO (Vec Int n),c : EndoIO (Vec Int (m + n)))
+  \ (m : Int)-> \ (n : Int)-> proc (c0 : !Vec Int m.?Vec Int m, c1 : !Vec Int n.?Vec Int n, c : ?Vec Int (m + n).!Vec Int (m + n))
   let vi : Vec Int (m + n)<- c.
   ( c0 <- (take Int m n vi)
   | c1 <- (drop Int m n vi)).
@@ -1053,7 +1053,7 @@ merger_nstSort_prll =
   c <- (merge m n v0 v1)
 
 merger_nstSort_prll_v2 =
-  \ (m : Int)-> \ (n : Int)-> proc (c : [~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)], d : EndoIO (Vec Int (m + n)))
+  \ (m : Int)-> \ (n : Int)-> proc (c : [!Vec Int m.?Vec Int m, !Vec Int n.?Vec Int n],d : ?Vec Int (m + n).!Vec Int (m + n))
   split c [c0, c1].
   let vi : Vec Int (m + n)<- d.
   ( c0 <- (take Int m n vi)
@@ -1063,7 +1063,7 @@ merger_nstSort_prll_v2 =
   d <- (merge m n v0 v1)
 
 merger_ParSort_full_prll =
-  \ (m : Int)-> \ (n : Int)-> proc (c0 : ~ EndoLoli (!Vec Int m),c1 : ~ EndoLoli (!Vec Int n),c : EndoLoli (!Vec Int (m + n)))
+  \ (m : Int)-> \ (n : Int)-> proc (c0 : [!Vec Int m, ?Vec Int m],c1 : [!Vec Int n, ?Vec Int n],c : {?Vec Int (m + n),!Vec Int (m + n)})
   split c0 [c0i, c0o].
   split c1 [c1i, c1o].
   split c {ci, co}.
@@ -1093,7 +1093,7 @@ merger_seq =
   co <- (merge m n v0 v1)
 
 merger_seq_Sort =
-  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)}, EndoIO (Vec Int (m + n))})
+  \ (m : Int)-> \ (n : Int)-> proc (c : {{!Vec Int m.?Vec Int m, !Vec Int n.?Vec Int n},?Vec Int (m + n).!Vec Int (m + n)})
   split c {d, io}.
   split d {d0, d1}.
   let vi : Vec Int (m + n)<- io.
@@ -1104,7 +1104,7 @@ merger_seq_Sort =
   io <- (merge m n v0 v1)
 
 merger_seqential_ten2_loli_Sort =
-  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)}, EndoIO (Vec Int (m + n))})
+  \ (m : Int)-> \ (n : Int)-> proc (c : {{!Vec Int m.?Vec Int m, !Vec Int n.?Vec Int n},?Vec Int (m + n).!Vec Int (m + n)})
   split c {c01, d}.
   split c01 {c0, c1}.
   let vi : Vec Int (m + n)<- d.
@@ -1115,7 +1115,7 @@ merger_seqential_ten2_loli_Sort =
   d <- (merge m n v0 v1)
 
 merger_ten2_loli_Sort =
-  \ (m : Int)-> \ (n : Int)-> proc (c : {{~ EndoIO (Vec Int m),~ EndoIO (Vec Int n)}, EndoIO (Vec Int (m + n))})
+  \ (m : Int)-> \ (n : Int)-> proc (c : {{!Vec Int m.?Vec Int m, !Vec Int n.?Vec Int n},?Vec Int (m + n).!Vec Int (m + n)})
   split c {c01, d}.
   split c01 {c0, c1}.
   let vi : Vec Int (m + n)<- d.
@@ -1364,7 +1364,7 @@ assert
   @ p (c)
   =
   \ (SL : Session)-> \ (SR : Session)-> \ (p : < SL >)-> proc (c)
-  c : !(b : LR).case b of {
+  c : !(b#22e2f863eed8f60e4b063335b421ec180fd2c0bc1e0df5b5d49df575ee8b2a05 : LR).case b#22e2f863eed8f60e4b063335b421ec180fd2c0bc1e0df5b5d49df575ee8b2a05 of {
     `left -> SL ,
     `right -> SR
   } <- `left.
@@ -1383,7 +1383,7 @@ assert
   @ p (c)
   =
   \ (SL : Session)-> \ (SR : Session)-> \ (p : < SR >)-> proc (c)
-  c : !(b : LR).case b of {
+  c : !(b#1b9d59315d374d6fdf83ea4fbe64aa4764aa563422ca2a800456c8869f9636eb : LR).case b#1b9d59315d374d6fdf83ea4fbe64aa4764aa563422ca2a800456c8869f9636eb of {
     `left -> SL ,
     `right -> SR
   } <- `right.
@@ -1660,17 +1660,17 @@ plug_compose' =
 plug_compose_par_par : (A : Session)-> (B : Session)-> (C : Session)-> (p : < {A, B}>)-> (q : < {~ B, C}>)-> < {A, C}> =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < {A, B}>)-> \ (q : < {~ B, C}>)-> proc (ab : {A, C})
   split ab {a, b}.
-  new [b : B, b' : ~ B].
-  ( new [ab : {A, B},nanb].
-    ( @ p (ab)
-    | split nanb [na, nb].
-      ( fwd A (a, na)
-      | fwd B (b, nb)))
-  | new [ab : {~ C, C},nanb].
-    ( @ q (ab)
-    | split nanb [na, nb].
-      ( fwd (~ C)(b', na)
-      | fwd C (b, nb))))
+  new [b#p : B, b'#p : ~ B].
+  ( new [ab#p#p : {A, B},nanb#p#p].
+    ( @ p (ab#p#p)
+    | split nanb#p#p [na#p#p, nb#p#p].
+      ( fwd A (a, na#p#p)
+      | fwd B (b#p, nb#p#p)))
+  | new [ab#q#p : {~ C, C},nanb#q#p].
+    ( @ q (ab#q#p)
+    | split nanb#q#p [na#q#p, nb#q#p].
+      ( fwd (~ C)(b'#p, na#q#p)
+      | fwd C (b, nb#q#p))))
 
 plug_send_recv =
   \ (p : < !Int, ?Int >)-> proc (c : !Int, d : ?Int)

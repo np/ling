@@ -2,17 +2,18 @@
 {-# LANGUAGE Rank2Types #-}
 
 {-
-This module implements hereditary substitution.
-Thus functions gets properly evaluated but NO
-other reduction rules are implemented (prim ops,
-@(proc...)..., case...)
+This module implements hereditary substitution and also the following
+reduction rules:
+* prim ops
+* case
+* @(proc...)
 -}
 module Ling.Subst (Subst(subst), substScoped) where
 
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Proc
-import           Ling.Reduce
+import           Ling.Reduce (reducePrim)
 import           Ling.Rename (boundVars)
 import           Ling.Scoped
 import           Ling.Session
@@ -20,30 +21,35 @@ import           Ling.Session
 class Subst a where
   subst :: Defs -> Endom a
 
-app :: Term -> [Term] -> Term
-app t0 []     = t0
-app t0 (u:us) =
-  case t0 of
+substApp :: Defs -> Term -> [Term] -> Term
+substApp f e0 []     = subst f e0
+substApp f e0 (e:es) =
+  case e0 of
     Lam (Arg x mty) t1 ->
-      app (subst (aDef x mty u) t1) us
-      -- app (substScoped (subst1 (x, Ann mty u) t1)) us
+      substApp f (substScoped (subst1 (x, Ann mty (subst f e)) t1)) es
 
-    -- Since `pure x` is not providing any scope all what `reduceDef` can
-    -- do is to reduce the primitives.
-    Def x es           -> reduceDef (pure x) (es ++ u : us) ^. reduced . scoped
+    Def d es0          -> substDef f d (es0 ++ e : es)
     _                  -> error "Ling.Subst.app: IMPOSSIBLE"
+
+substDef :: Defs -> Name -> [Term] -> Term
+substDef f d es
+  | Just e <- f ^? at d . _Just . annotated = substApp f e es
+  | "_:_" <- unName # d, [_,e] <- es      = subst f e
+  | Just ls <- es' ^? below _Lit
+  , Just  l <- reducePrim (unName # d) ls = Lit l
+  | otherwise                             = Def d (subst f es)
+
+  where
+    es' = subst f es
 
 substScoped :: Subst a => Scoped a -> a
 substScoped s = subst (allDefs s) (s ^. scoped)
-
-substName :: Defs -> Name -> Term
-substName f x = f ^? at x . _Just . annotated ?| Def x []
 
 -- TODO binder: make an instance for Abs and use it for Lam,TFun,TSig
 
 instance Subst Term where
   subst f = \case
-    Def x es   -> app (substName f x) (subst f es)
+    Def d es   -> substDef f d es
     Let defs t -> subst (subst f defs <> f) t
     Lam arg t  -> Lam (subst f arg) (subst (hide argName arg f) t)
     TFun arg t -> TFun (subst f arg) (subst (hide argName arg f) t)
