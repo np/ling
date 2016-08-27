@@ -15,6 +15,7 @@ data EqEnv = EqEnv
   , _edefs1
   , _egdefs :: Defs
   }
+  deriving Show
 
 makeLenses ''EqEnv
 
@@ -59,6 +60,12 @@ type IsEquiv a = EqEnv -> Rel a
 
 class Equiv a where
   equiv :: IsEquiv a
+
+traceEquiv :: (Print a, Show a, {-Print r,-} Show r)
+            => String -> EqEnv -> a -> a -> Endom r
+traceEquiv _ _ _ _ = id
+--traceEquiv msg env x y = trace (msg ++ ":\n" ++ pretty (env, x, y))
+--traceEquiv msg env x y r = trace (msg ++ ":\n" ++ ppShow (env, x, y, r)) r
 
 equivAt :: Equiv a => Getter s a -> IsEquiv s
 equivAt f env x y = equiv env (x^.f) (y^.f)
@@ -132,6 +139,7 @@ instance Equiv Name where
 
 instance Equiv Term where
   equiv env t0 t1 =
+    traceEquiv "Equiv Term" env t0 t1 $
     case (t0, t1) of
       (Def _k0 d0 es0, Def _k1 d1 es1)
         {-
