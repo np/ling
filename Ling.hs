@@ -15,8 +15,8 @@ import           System.IO          (hPutStrLn, stderr)
 import qualified MiniC.Print        as C
 
 import           Ling.Abs
-import           Ling.Check.Base    (TCOpts, debugChecker, defaultTCOpts, runTC,
-                                     strictPar)
+import           Ling.Check.Base    ( TCEnv, TCOpts, debugChecker, defaultTCOpts, runTCOpts
+                                    , runTCEnv, strictPar, errorScope, tcOpts)
 import           Ling.Check.Program (checkProgram)
 import qualified Ling.Compile.C     as Compile
 import           Ling.Defs          (reduceP)
@@ -197,6 +197,11 @@ transOpts opts = execWriter $ do
 
 transP :: Opts -> Program -> IO ()
 transP opts prg = do
+  tcenv <- runErr . runTCOpts defaultTCOpts . errorScope "prims" . checkProgram $ addPrims (not (opts ^. noPrims)) ø
+  transP' opts (tcenv & tcOpts .~ opts ^. checkOpts) prg
+
+transP' :: Opts -> TCEnv -> Program -> IO ()
+transP' opts tcenv prg = do
   when (tops /= [] && opts ^. noNorm) $
     usage "--no-norm cannot be combined with --fresh, --expand, --reduce, --seq, or --fuse"
   when (opts ^. showAST) $
@@ -205,7 +210,7 @@ transP opts prg = do
          | otherwise      -> putStrLn $ "\n{- Abstract Syntax of Normalized program -}\n\n" ++ ppShow nprg
       _                   -> putStrLn $ "\n{- Abstract Syntax of " ++ unwords tops ++ " program -}\n\n" ++ ppShow eprg
   when (opts ^. check) $ do
-    runErr . runTC (opts ^. checkOpts) . checkProgram . addPrims (not (opts ^. noPrims)) $ nprg
+    void . runErr . runTCEnv tcenv $ checkProgram nprg
     putStrLn "Checking successful!"
   when (opts ^. showPretty) $
     case tops of

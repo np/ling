@@ -292,9 +292,11 @@ instance Monoid a => Monoid (TC a) where
   mempty = pure mempty
   mappend = liftM2 mappend
 
-runTC :: TCOpts -> TC a -> Err a
-runTC opts tc = either Bad Ok
-              . runExcept
-              . runReaderT (unTC tc)
-              $ emptyTCEnv & tcOpts .~ opts
+runTCEnv :: TCEnv -> TC a -> Err a
+runTCEnv env tc = either Bad Ok
+                . runExcept
+                $ runReaderT (unTC tc) env
+
+runTCOpts :: TCOpts -> TC a -> Err a
+runTCOpts opts = runTCEnv $ emptyTCEnv & tcOpts .~ opts
 -- -}

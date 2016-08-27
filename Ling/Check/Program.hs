@@ -8,11 +8,11 @@ import           Ling.Prelude
 
 import           Data.Map        (union)
 
-checkProgram :: Program -> TC ()
+checkProgram :: Program -> TC TCEnv
 checkProgram (Program decs) = checkDecs decs
 
-checkDecs :: [Dec] -> TC ()
-checkDecs = foldr checkDec (return ())
+checkDecs :: [Dec] -> TC TCEnv
+checkDecs = foldr checkDec ask
 
 checkDec :: Dec -> Endom (TC a)
 checkDec (Sig d typ mt)   kont = checkVarDef d typ mt kont
