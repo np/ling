@@ -24,12 +24,14 @@ import           Ling.ErrM
 import           Ling.Layout        (resolveLayout)
 import           Ling.Lex           (Token)
 import qualified Ling.Norm          as N
+import           Ling.Norm          (transProgramDecs)
 import           Ling.Par
 import           Ling.Prelude
 import           Ling.Print
 import           Ling.Fuse          (fuseProgram)
 import           Ling.Scoped        (Scoped(Scoped))
 import           Ling.Subst         (subst)
+import           Ling.SubTerms      (transProgramTerms)
 import           Ling.Reify
 import           Ling.Rename        (hDec)
 import qualified Ling.Sequential    as Sequential
@@ -226,15 +228,15 @@ transP' opts tcenv prg = do
   where
     tops = transOpts opts
     nprg = norm prg
-    rprg | opts ^. doRefresh = N.transProgramDecs (const hDec) nprg
+    rprg | opts ^. doRefresh = transProgramDecs (const hDec) nprg
          | otherwise         = nprg
     sprg | opts ^. doSeq     = Sequential.transProgram (opts ^. seqGas) rprg
          | otherwise         = rprg
     fprg | opts ^. doFuse    = fuseProgram sprg
          | otherwise         = sprg
-    wprg | opts ^. doReduce  = N.transProgramTerms (\defs -> reduceP . Scoped defs ø) fprg
+    wprg | opts ^. doReduce  = transProgramTerms (\defs -> reduceP . Scoped defs ø) fprg
          | otherwise         = fprg
-    eprg | opts ^. doExpand  = N.transProgramTerms subst wprg
+    eprg | opts ^. doExpand  = transProgramTerms subst wprg
          | otherwise         = wprg
     cprg = Compile.transProgram $ addPrims (opts ^. compilePrims) eprg
 

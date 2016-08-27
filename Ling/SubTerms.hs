@@ -1,6 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE Rank2Types #-}
-module Ling.SubTerms where
+module Ling.SubTerms
+  ( SubTerms(subTerms)
+  , transProgramTerms
+  , argTerms
+  , varDecTerms
+  , absTerms )
+  where
 
 import Ling.Norm
 import Ling.Prelude
@@ -8,6 +14,9 @@ import Ling.Session.Core
 
 class SubTerms a where
   subTerms :: Traversal' a Term
+
+transProgramTerms :: (Defs -> Endom Term) -> Endom Program
+transProgramTerms = transProgramDecs . (over subTerms .)
 
 instance SubTerms a => SubTerms (Maybe a) where
   subTerms = _Just . subTerms
@@ -57,3 +66,13 @@ instance SubTerms CPatt where
   subTerms f = \case
     ChanP cd      -> ChanP <$> subTerms f cd
     ArrayP k pats -> ArrayP k <$> subTerms f pats
+
+instance SubTerms Assertion where
+  subTerms f = \case
+    Equal lhs rhs mty -> Equal <$> f lhs <*> f rhs <*> _Just f mty
+
+instance SubTerms Dec where
+  subTerms f = \case
+    Sig d mty t -> Sig d <$> _Just f mty <*> _Just f t
+    d@Dat{}     -> pure d
+    Assert a    -> Assert <$> subTerms f a

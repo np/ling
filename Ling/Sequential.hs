@@ -23,6 +23,7 @@ import Ling.Proc
 import Ling.Norm
 import Ling.Reduce (reduce, reduced)
 import Ling.Scoped (Scoped(Scoped), scoped, ldefs)
+import Ling.SubTerms (transProgramTerms)
 import Ling.Defs (pushDefs, reduceP, mkLet)
 
 data Status = Full | Empty deriving (Eq,Read,Show)

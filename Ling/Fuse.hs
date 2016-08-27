@@ -9,6 +9,7 @@ import           Ling.Print
 import           Ling.Rename
 import           Ling.Reduce
 import           Ling.Scoped
+import           Ling.SubTerms
 import           Ling.Defs
 import           Ling.Session
 

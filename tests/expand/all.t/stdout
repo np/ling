@@ -21,10 +21,7 @@ assert
   `true
   =
   `true
-  : let B = Bool in case `left of {
-    `left -> B ,
-    `right -> Int
-  }
+  : Bool
 
 assert
   `false
@@ -91,10 +88,7 @@ If : (b : Bool)-> (A : Type)-> (B : Type)-> (t : A)-> (e : B)-> case b of {
     `true -> t
   }
 
-case_con : case `true of {
-    `false -> Bool ,
-    `true -> Int
-  } =
+case_con : Int =
   1
 
 case_fun_server =
@@ -327,7 +321,7 @@ my_zero =
   0
 
 assert
-  (S : Session)-> (T : Session)-> < S ^ 5, T ^ (0 + my_zero)>
+  (S : Session)-> (T : Session)-> < S ^ 5, T ^ 0 >
   =
   (S : Session)-> (T : Session)-> < S ^ 2, T ^ 0, S, S, S >
   : Type
@@ -780,7 +774,7 @@ idproc =
 assert
   42
   =
-  let x = 42 in x
+  42
 
 
 i42 : Int =
@@ -847,7 +841,7 @@ lettype : (P : (A : Type)-> (B : Type)-> Type)-> (p : (A : Type)-> P A A)-> (A :
 assert
   1
   =
-  let f = \ (x : Int)-> x in f (f 1)
+  1
   : Int
 
 showMult =
@@ -1325,7 +1319,7 @@ assert
 some_type : Type =
   Int
 
-some_value : some_type =
+some_value : Int =
   42
 
 Oplus' =
@@ -1362,16 +1356,42 @@ oplus' =
   @ p (c)
 
 assert
-  leftOplus
+  \ (SL : Session)-> \ (SR : Session)-> \ (p : < SL >)-> proc (c)
+  c : !(b : LR).case b of {
+    `left -> SL ,
+    `right -> SR
+  } <- `left.
+  @ p (c)
   =
-  \ (SL : Session)-> \ (SR : Session)-> oplus' SL SR `left
-  : (SL : Session)-> (SR : Session)-> (p : < SL >)-> < Oplus' SL SR >
+  \ (SL : Session)-> \ (SR : Session)-> \ (p : < SL >)-> proc (c)
+  c : !(b : LR).case b of {
+    `left -> SL ,
+    `right -> SR
+  } <- `left.
+  @ p (c)
+  : (SL : Session)-> (SR : Session)-> (p : < SL >)-> < !(b : LR).case b of {
+    `left -> SL ,
+    `right -> SR
+  } >
 
 assert
-  rightOplus
+  \ (SL : Session)-> \ (SR : Session)-> \ (p : < SR >)-> proc (c)
+  c : !(b : LR).case b of {
+    `left -> SL ,
+    `right -> SR
+  } <- `right.
+  @ p (c)
   =
-  \ (SL : Session)-> \ (SR : Session)-> oplus' SL SR `right
-  : (SL : Session)-> (SR : Session)-> (p : < SR >)-> < Oplus' SL SR >
+  \ (SL : Session)-> \ (SR : Session)-> \ (p : < SR >)-> proc (c)
+  c : !(b : LR).case b of {
+    `left -> SL ,
+    `right -> SR
+  } <- `right.
+  @ p (c)
+  : (SL : Session)-> (SR : Session)-> (p : < SR >)-> < !(b : LR).case b of {
+    `left -> SL ,
+    `right -> SR
+  } >
 
 par0 =
   proc (c : {})
@@ -1671,103 +1691,103 @@ test_receiver =
   @ (p x)(c)
 
 assert
-  16 % 33
+  16
   =
   16
 
 
 assert
-  30 + 2
+  32
   =
   32
 
 
 assert
-  86 - 22
+  64
   =
   64
 
 
 assert
-  4 * 32
+  128
   =
   128
 
 
 assert
-  512 / 2
+  256
   =
   256
 
 
 assert
-  pow 2 9
+  512
   =
   512
 
 
 assert
-  3.03 +D 0.11000000000000032
+  3.14
   =
   3.14
 
 
 assert
-  3.28 -D 0.13999999999999968
+  3.14
   =
   3.14
 
 
 assert
-  6.28 *D 0.5
+  3.14
   =
   3.14
 
 
 assert
-  1.57 /D 0.5
+  3.14
   =
   3.14
 
 
 assert
-  powD 0.1 1.0e-3
+  0.9977000638225533
   =
   0.9977000638225533
 
 
 assert
-  Int2Double 42
+  42.0
   =
   42.0
 
 
 assert
-  showInt 42
+  "42"
   =
   "42"
 
 
 assert
-  showDouble 3.14
+  "3.14"
   =
   "3.14"
 
 
 assert
-  showChar 'a'
+  "'a'"
   =
   "'a'"
 
 
 assert
-  showString "Hello \"World\"!"
+  "\"Hello \\\"World\\\"!\""
   =
   "\"Hello \\\"World\\\"!\""
 
 
 assert
-  "Hello " ++S "World!"
+  "Hello World!"
   =
   "Hello World!"
 
@@ -2191,7 +2211,7 @@ type_annotation =
   42
 
 assert
-  (`true : Bool)
+  `true
   =
   `true
   : Bool
@@ -2202,37 +2222,37 @@ ZeroCh : Type =
 One : Type =
   (A : Type)-> (x : A)-> A
 
-zeroOne : One =
+zeroOne : (A : Type)-> (x : A)-> A =
   \ (A : Type)-> \ (x : A)-> x
 
 Two : Type =
   (A : Type)-> (x : A)-> (y : A)-> A
 
-zeroTwo : Two =
+zeroTwo : (A : Type)-> (x : A)-> (y : A)-> A =
   \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
 
-oneTwo : Two =
+oneTwo : (A : Type)-> (x : A)-> (y : A)-> A =
   \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
 
-notTwo : (b : Two)-> Two =
+notTwo : (b : (A : Type)-> (x : A)-> (y : A)-> A)-> (A : Type)-> (x : A)-> (y : A)-> A =
   \ (b : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
 
-andTwo : (b0 : Two)-> (b1 : Two)-> Two =
+andTwo : (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> (A : Type)-> (x : A)-> (y : A)-> A =
   \ (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> b0 ((A : Type)-> (x : A)-> (y : A)-> A)(\ (A : Type)-> \ (x : A)-> \ (y : A)-> x)b1
 
-orTwo : (b0 : Two)-> (b1 : Two)-> Two =
+orTwo : (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> (A : Type)-> (x : A)-> (y : A)-> A =
   \ (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> b0 ((A : Type)-> (x : A)-> (y : A)-> A)b1 (\ (A : Type)-> \ (x : A)-> \ (y : A)-> y)
 
 Nat : Type =
   (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
 
-zeroNat : Nat =
+zeroNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
   \ (A : Type)-> \ (z : A)-> \ (s : (n : A)-> A)-> z
 
-sucNat : (n : Nat)-> Nat =
+sucNat : (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
   \ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s)
 
-addNat : (m : Nat)-> (n : Nat)-> Nat =
+addNat : (m : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
   \ (m : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> m ((A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)n (\ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s))
 
 Bin : Type =
@@ -2244,13 +2264,13 @@ Nats : Type =
 List : (X : Type)-> Type =
   \ (X : Type)-> (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A
 
-nilList : (X : Type)-> List X =
+nilList : (X : Type)-> (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A =
   \ (X : Type)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head : X)-> (tail : A)-> A)-> nil
 
-consList : (X : Type)-> (head : X)-> (tail : List X)-> List X =
+consList : (X : Type)-> (head : X)-> (tail : (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A)-> (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A =
   \ (X : Type)-> \ (head : X)-> \ (tail : (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : X)-> (tail' : A)-> A)-> cons head (tail A nil cons)
 
-mapList : (X : Type)-> (Y : Type)-> (f : (x : X)-> Y)-> (xs : List X)-> List Y =
+mapList : (X : Type)-> (Y : Type)-> (f : (x : X)-> Y)-> (xs : (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A)-> (A : Type)-> (nil : A)-> (cons : (head : Y)-> (tail : A)-> A)-> A =
   \ (X : Type)-> \ (Y : Type)-> \ (f : (x : X)-> Y)-> \ (xs : (A : Type)-> (nil : A)-> (cons : (head : X)-> (tail : A)-> A)-> A)-> \ (A : Type)-> \ (nil : A)-> \ (cons : (head' : Y)-> (tail' : A)-> A)-> xs A nil (\ (head : X)-> \ (tail : A)-> cons (f head)tail)
 
 Id : (A : Type)-> (x : A)-> (y : A)-> Type
@@ -2264,13 +2284,13 @@ J-refl : (A : Type)-> (x : A)-> (P : (y : A)-> (p : Id A x y)-> Type)-> (Px : P 
 tr : (A : Type)-> (x : A)-> (P : (y : A)-> Type)-> (Px : P x)-> (y : A)-> (p : Id A x y)-> P y =
   \ (A : Type)-> \ (x : A)-> \ (P : (y : A)-> Type)-> \ (Px : P x)-> \ (y : A)-> \ (p : Id A x y)-> J A x (\ (z : A)-> \ (q : Id A x z)-> P z)Px y p
 
-tr-refl : (A : Type)-> (x : A)-> (P : (y : A)-> Type)-> (Px : P x)-> Id (P x)(tr A x P Px x (refl A x)) Px =
+tr-refl : (A : Type)-> (x : A)-> (P : (y : A)-> Type)-> (Px : P x)-> Id (P x)(J A x (\ (z : A)-> \ (q : Id A x z)-> P z)Px x (refl A x)) Px =
   \ (A : Type)-> \ (x : A)-> \ (P : (y : A)-> Type)-> \ (Px : P x)-> J-refl A x (\ (z : A)-> \ (q : Id A x z)-> P z)Px
 
 coe : (A : Type)-> (B : Type)-> (p : Id Type A B)-> (x : A)-> B =
   \ (A : Type)-> \ (B : Type)-> \ (p : Id Type A B)-> \ (x : A)-> J Type A (\ (z : Type)-> \ (q : Id Type A z)-> z)x B p
 
-coe-refl : (A : Type)-> (x : A)-> Id A (coe A A (refl Type A)x)x =
+coe-refl : (A : Type)-> (x : A)-> Id A (J Type A (\ (z : Type)-> \ (q : Id Type A z)-> z)x A (refl Type A)) x =
   \ (A : Type)-> \ (x : A)-> J-refl Type A (\ (z : Type)-> \ (q : Id Type A z)-> z)x
 
 sym : (A : Type)-> (x : A)-> (y : A)-> (p : Id A x y)-> Id A y x =
