@@ -69,6 +69,7 @@ alias cmdrprettyall='cmdrecord tests/pretty/all.t  --env empty -- ling --pretty 
 alias cmdrnormall='cmdrecord tests/norm/all.t  --env empty -- ling --pretty --no-check < fixtures/success/*.ll'
 alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty -- ling --strict-par --check  < fixtures/strict-par-success/*.ll'
 alias cmdrexpandall='cmdrecord tests/expand/all.t  --env empty -- ling --pretty --no-check --expand < fixtures/success/*.ll'
+alias cmdrreduceall='cmdrecord tests/reduce/all.t  --env empty -- ling --pretty --no-check --reduce < fixtures/success/*.ll'
 
 # error() @ https://gist.github.com/3736727 {{{
 error(){
