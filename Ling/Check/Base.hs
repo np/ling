@@ -122,10 +122,7 @@ checkPrefWellFormness (Prll pref) = do
   checkDisjointness "bound channels" boundChans pref
   checkDisjointness "bound names"    boundVars  pref
 
--- IsSession could be a type synonym of kind Constraint
-class (Eq s, Subst s, Print s, Equiv s, Dual s) => IsSession s
-instance IsSession Session
-instance IsSession RSession
+type IsSession a = (HasEquiv a, Dual a)
 
 checkEqSessions :: (IsSession s, MonadTC m, Print channel)
                 => channel -> Scoped s -> Scoped s -> m ()
@@ -141,14 +138,14 @@ checkOneR r = assert (r == ø) ["Unexpected replication:", pretty r]
 -- Prop: isSource . log = const True
 -- A source is only made of sends but can be combined with any form of
 -- array: Seq, Par, Ten.
-isSource :: (MonadTC m, Print a, Subst a, Eq a, Equiv a, Dual a) => a -> m Bool
+isSource :: (MonadTC m, IsSession a) => a -> m Bool
 isSource x = view _1 <$> isEquiv (pure (sessionOp (constRWOp Write) s)) (pure s)
   where s = sessionOp (constArrOp SeqK) x
 
-isSink :: (MonadTC m, Print a, Subst a, Eq a, Equiv a, Dual a) => a -> m Bool
+isSink :: (MonadTC m, IsSession a) => a -> m Bool
 isSink = isSource . dual
 
-validAx :: (MonadTC m, Print a, Subst a, Eq a, Equiv a, Dual a) => a -> [channel] -> m Bool
+validAx :: (MonadTC m, IsSession a) => a -> [channel] -> m Bool
 -- Forwarding anything between no channels is always possible
 validAx _ []          = pure True
 -- At least two for the general case
@@ -183,9 +180,9 @@ checkSlice cond c (s `Repl` r) = when (cond c) $ do
 {-----------}
 
 type MonadTC m = (MonadReader TCEnv m, MonadError TCErr m)
+type HasEquiv a = (Print a, Eq a, Equiv a, Subst a)
 
-isEquiv :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
-        => Scoped a -> Scoped a -> m (Bool, a, a)
+isEquiv :: (HasEquiv a, MonadTC m) => Scoped a -> Scoped a -> m (Bool, a, a)
 isEquiv t0 t1 = do
   env <- tcEqEnv
   whenDebug $
@@ -200,8 +197,7 @@ isEquiv t0 t1 = do
     ut0 = substScoped t0
     ut1 = substScoped t1
 
-checkEquivalence :: (Print a, Eq a, Equiv a, Subst a, MonadTC m)
-                 => String -> String -> Scoped a -> String -> Scoped a -> m ()
+checkEquivalence :: (HasEquiv a, MonadTC m) => String -> String -> Scoped a -> String -> Scoped a -> m ()
 checkEquivalence msg expected t0 inferred t1 = do
   (b, ut0, ut1) <- isEquiv t0 t1
   assertDiff msg (\_ _ -> b) expected ut0 inferred ut1
