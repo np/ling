@@ -165,9 +165,9 @@ equivRedTerm env s0 s1 =
         (Array{}, _) -> False
         (TermS{}, _) -> False
 
-      (Let defs0 t0, Let defs1 t1) -> equiv env (Scoped ø defs0 t0) (Scoped ø defs1 t1)
-      (Let defs0 t0, _)            -> equiv env (Scoped ø defs0 t0) (pure s1)
-      (_,            Let defs1 t1) -> equiv env (pure s0)           (Scoped ø defs1 t1)
+      (Let defs0 t0, Let defs1 t1) -> warn $ equiv env (Scoped ø defs0 t0) (Scoped ø defs1 t1)
+      (Let defs0 t0, _)            -> warn $ equiv env (Scoped ø defs0 t0) (pure s1)
+      (_,            Let defs1 t1) -> warn $ equiv env (pure s0)           (Scoped ø defs1 t1)
 
       (Def{},        _) -> False
       (Lit{},        _) -> False
@@ -180,6 +180,8 @@ equivRedTerm env s0 s1 =
       (Proc{},       _) -> False
       (TProto{},     _) -> False
       (TSession{},   _) -> False
+    where
+      warn = trace "[WARNING] equivRedTerm should compare normal forms and `let` is not in normal form."
 
 instance Equiv RW where
   equiv _ = (==)
