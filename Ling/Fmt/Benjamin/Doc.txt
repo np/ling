@@ -139,7 +139,7 @@ All other symbols are terminals.
   |  |  **|**  | //OptSplit// ``[`` //[ChanDec]// ``]`` 
   |  |  **|**  | //OptSplit// ``[:`` //[ChanDec]// ``:]`` 
   |  |  **|**  | ``send`` //Name// //ATerm// 
-  |  |  **|**  | //Name// ``<-`` //ATerm// 
+  |  |  **|**  | //Name// //OptSession// ``<-`` //ATerm// 
   |  |  **|**  | ``recv`` //Name// //VarDec// 
   |  |  **|**  | ``let`` //Name// //OptSig// ``<-`` //Name// 
   |  |  **|**  | ``let`` //Name// //OptSig// ``<=`` //ATerm// 

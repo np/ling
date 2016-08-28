@@ -206,7 +206,7 @@ Act : NewAlloc { Ling.Fmt.Benjamin.Abs.Nu $1 }
     | OptSplit '[' ListChanDec ']' { Ling.Fmt.Benjamin.Abs.TenSplit $1 $3 }
     | OptSplit '[:' ListChanDec ':]' { Ling.Fmt.Benjamin.Abs.SeqSplit $1 $3 }
     | 'send' Name ATerm { Ling.Fmt.Benjamin.Abs.Send $2 $3 }
-    | Name '<-' ATerm { Ling.Fmt.Benjamin.Abs.NewSend $1 $3 }
+    | Name OptSession '<-' ATerm { Ling.Fmt.Benjamin.Abs.NewSend $1 $2 $4 }
     | 'recv' Name VarDec { Ling.Fmt.Benjamin.Abs.Recv $2 $3 }
     | 'let' Name OptSig '<-' Name { Ling.Fmt.Benjamin.Abs.NewRecv $2 $3 $5 }
     | 'let' Name OptSig '<=' ATerm { Ling.Fmt.Benjamin.Abs.LetRecv $2 $3 $5 }

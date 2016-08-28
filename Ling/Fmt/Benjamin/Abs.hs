@@ -85,7 +85,7 @@ data Act
     | TenSplit OptSplit [ChanDec]
     | SeqSplit OptSplit [ChanDec]
     | Send Name ATerm
-    | NewSend Name ATerm
+    | NewSend Name OptSession ATerm
     | Recv Name VarDec
     | NewRecv Name OptSig Name
     | LetRecv Name OptSig ATerm

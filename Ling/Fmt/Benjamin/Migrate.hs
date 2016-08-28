@@ -102,7 +102,7 @@ transAct = \case
   SeqSplit optsplit chandecs -> transOptSplit L.SeqPatt optsplit chandecs
   Send name aterm -> L.Send (transName name) (transATerm aterm)
   Recv name vardec -> L.Recv (transName name) (transVarDec vardec)
-  NewSend name aterm -> L.NewSend (transName name) L.NoSession (transATerm aterm)
+  NewSend name optsession aterm -> L.NewSend (transName name) (transOptSession optsession) (transATerm aterm)
   NewRecv name optsig chan -> L.NewRecv (transName name) (transOptSig optsig) (transName chan)
   Ax session chandecs -> L.Ax (transASession session) (transChanDec <$> chandecs)
   SplitAx integer session name -> L.SplitAx integer (transASession session) (transName name)

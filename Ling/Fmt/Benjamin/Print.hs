@@ -188,7 +188,7 @@ instance Print Act where
     TenSplit optsplit chandecs -> prPrec i 0 (concatD [prt 0 optsplit, doc (showString "["), prt 0 chandecs, doc (showString "]")])
     SeqSplit optsplit chandecs -> prPrec i 0 (concatD [prt 0 optsplit, doc (showString "[:"), prt 0 chandecs, doc (showString ":]")])
     Send name aterm -> prPrec i 0 (concatD [doc (showString "send"), prt 0 name, prt 0 aterm])
-    NewSend name aterm -> prPrec i 0 (concatD [prt 0 name, doc (showString "<-"), prt 0 aterm])
+    NewSend name optsession aterm -> prPrec i 0 (concatD [prt 0 name, prt 0 optsession, doc (showString "<-"), prt 0 aterm])
     Recv name vardec -> prPrec i 0 (concatD [doc (showString "recv"), prt 0 name, prt 0 vardec])
     NewRecv name1 optsig name2 -> prPrec i 0 (concatD [doc (showString "let"), prt 0 name1, prt 0 optsig, doc (showString "<-"), prt 0 name2])
     LetRecv name optsig aterm -> prPrec i 0 (concatD [doc (showString "let"), prt 0 name, prt 0 optsig, doc (showString "<="), prt 0 aterm])
