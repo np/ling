@@ -23,12 +23,13 @@ data AllocAnn
 --  | Alloc
 --  | Auto
 
+-- TODO swap order of arguments
 data Fused =
   Fused { _fusedActs :: !(Order Act)
         , _fusedDefs :: !Defs }
 
 instance Dottable Fused where
-  Fused acts defs `dotP` proc1 = acts `dotP` defs `dotP` proc1
+  Fused acts defs `dotP` proc1 = defs `dotP` acts `dotP` proc1
 
 defaultFusion, autoFusion :: AllocAnn -- [Allocation] -> Maybe [Allocation]
 defaultFusion = FusedAnn
