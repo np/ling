@@ -7,7 +7,6 @@ import           Ling.Prelude hiding (subst1)
 import           Ling.Proc
 import           Ling.Print
 import           Ling.Rename
-import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.SubTerms
 import           Ling.Defs
@@ -70,7 +69,7 @@ fuseDot defs = \case
   Act (Nu anns newpatt) | Just anns' <- doFuse anns ->
     case newpatt of
       NewChans k cs
-        | [c, d] <- reduceChanDec defs <$> cs
+        | [c, d] <- reduceP . Scoped defs ø <$> cs
         -> fuseProc defs . fuseChanDecs (Nu anns' . NewChans k) [(c, d)]
       _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty newpatt
                              , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
@@ -172,6 +171,3 @@ fuse2Chans c0 c1 p0 =
               (act0',act1')      = fuse2Acts (act0, act1)
           in act0' : acts0 ++ act1' : acts1
 -}
-
-reduceChanDec :: Defs -> Endom ChanDec
-reduceChanDec defs = pushDefsR . reduce_ (cdSession . _Just . rsession . tSession) . Scoped ø defs
