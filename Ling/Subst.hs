@@ -8,12 +8,12 @@ reduction rules:
 * case
 * @(proc...)
 -}
-module Ling.Subst (Subst(subst), substScoped) where
+module Ling.Subst (Subst(subst), substScoped, reduceS) where
 
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Proc
-import           Ling.Reduce (reducePrim)
+import           Ling.Reduce (reducePrim, HasReduce(reduce), reduced)
 import           Ling.Rename (boundVars)
 import           Ling.Scoped
 import           Ling.Session
@@ -44,6 +44,11 @@ substDef f d es
 
 substScoped :: Subst a => Scoped a -> a
 substScoped s = subst (allDefs s) (s ^. scoped)
+
+-- Reduce the argument and substitute away the left-over
+-- definitions using `subst`.
+reduceS :: (HasReduce a b, Subst b) => Scoped a -> b
+reduceS = substScoped . view reduced . reduce
 
 -- TODO binder: make an instance for Abs and use it for Lam,TFun,TSig
 
