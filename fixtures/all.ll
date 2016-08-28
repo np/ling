@@ -1,4 +1,3 @@
-assert 'a' = 'a' : Char
 ap =
   \(S T : Session)->
   proc(c : (S -o T) -o S -o T)
@@ -9,6 +8,10 @@ ap =
   | fwd(T)(o,fo))
 
 ap_SInt_SBool = ap (!Int) (!Bool)
+assert
+    `true
+  = `true : let B = Bool in
+            case `left of { `left -> B, `right -> Int }
 assert `false = `false : Bool
 
 assert (\(x:Bool) -> x) = (\(y:Bool) -> y) : ((b:Bool) -> Bool)
@@ -122,8 +125,14 @@ com_new =
 com_new_SInt =
   com_new
     (!Int)
-    (proc(c' : !Int) send c' 42)
-    (proc(d : ?Int) recv d (x : Int))
+    (proc(c' : !Int) c' <- 42)
+    (proc(d : ?Int) let x : Int <- d)
+
+com_new_SInt_RBool =
+  com_new
+    (!Int.?Bool)
+    (proc(c' : !Int.?Bool) c' <- 42. let b : Bool <- c')
+    (proc(d : ?Int.!Bool) let x : Int <- d. d <- `true)
 com_new_mk_ten2 =
   let
     mk_tensor2 =
@@ -145,6 +154,19 @@ com_new_mk_ten2 =
 com_new_mk_ten2_SInt =
   com_new_mk_ten2 (!Int) (proc(c' : !Int) send c' 42)
                          (proc(d : ?Int) recv d (x : Int))
+com_new_SInt_RBool2 = proc ()
+  new/fuse 1 [c : !Int.?Bool, d : ?Int.!Bool].
+  ( c <- 42.
+    let b : Bool <- c
+  | let x : Int <- d.
+    d <- `true)
+com_new_SType_SA =
+  proc ()
+  new/fuse 1 [c : !(A : Type).!A, d : ?(A : Type).?A].
+  ( c : !(A : Type).!A <- Int.
+    c <- 42
+  | let B : Type <- d.
+    let x : B <- d)
 -- See https://github.com/np/ling/issues/4
 com_with_log =
  \(S : Session)
@@ -351,6 +373,7 @@ send_42 = proc(c : !Int)
 
 embed_send_42 = proc(c : !Int)
   @send_42(c)
+assert 1 + 3 = 2 + 2 : Int
 my_zero = 0
 assert ((S T : Session)-> < S ^ 5, T ^(0 + my_zero) >)
      = ((S T : Session)-> < S ^ 2, T ^ 0, S, S ^ 1, S >)
@@ -421,6 +444,56 @@ feed_send_then_recv =
 flexible_telescope
   :  (A B : Type)(x y : A)(z t : B)-> Int
   = \(A B : Type)(x y : A)(z t : B)-> 42
+fwd_diff1 =
+  \ (n: Int)->
+  proc(a: [: ?Int ^(1 + n) :], b: [: !Int ^ n :])
+    split a [: a0, ai ^ n :].
+    split b [: bi ^ n :].
+    new (tmp: Int).
+    fwd(!Int)(tmp,a0).
+    slice (ai,bi) n as _
+      (let x: Int <- ai.
+       let y: Int <- tmp.
+       bi <- (x - y).
+       tmp <- x)
+
+recInt
+  : (A: (n: Int)-> Type)
+    (e: String)
+    (z: A 0)
+-- TODO using `n` instead of `n1` creates a name capture in fwd_diff.
+    (s: (n1: Int)(a: A n1)-> A (1 + n1))
+    (n: Int)->
+    A n
+
+fwd_diff
+  :   (m n: Int)-> < [: ?Int ^(m + n) :], [: !Int ^ n :] >
+  = \ (m0 n: Int)->
+  recInt (\(m: Int)-> < [: ?Int ^(m + n) :], [: !Int ^ n :] >)
+    "m < 0"
+    (proc(a: [: ?Int ^ n :], d: [: !Int ^ n :])
+       fwd([: ?Int ^ n :])(a,d))
+    (\ (m1: Int)(p : < [: ?Int ^(m1 + n) :], [: !Int ^ n :] >)->
+       proc(a: [: ?Int ^(1 + (m1 + n)) :], d: [: !Int ^ n :])
+         new [: b: [:!Int^(m1 + n):], c :]
+         @(fwd_diff1 (m1 + n))(a,b).
+         @p(c,d)) m0
+
+fwd_diff1_10 = fwd_diff1 10
+
+tabulate_seq =
+  \ (A: Type)
+    (f: (i: Int)-> A)
+    (n: Int)->
+  proc(a: [: !A^n :])
+    split a [: a_i^n :].
+    slice (a_i) n as i
+      a_i <- (f i)
+
+main = proc(c)
+  new [: a: [:!Int^10:], b :]
+  @(tabulate_seq Int (\(x: Int)-> 10 - x) 10)(a).
+  @(fwd_diff 3 7)(b,c)
 fun1_to_proc_ord =
   \(I O : Type)
    (f : (x : I) -> O)->
@@ -547,6 +620,9 @@ id : (A : Type)(x : A) -> A
 idproc = proc(c : ?Int, d : !Int)
   recv c (y : Int)
   send d (id Int y)
+idType = \(idTypeA : Type)-> idTypeA
+idTypeA : Type
+idTypeX : idType idTypeA
 assert 42 = let x = 42 in x
 infer_plus = \ x y -> x + y
 infer_recv = proc(c)
@@ -579,6 +655,20 @@ let_example =
    recv c (x : T).
    let y = (f x x).
    send c y
+let_in_proc_for_session = proc(c : ?Int)
+  let A = Int. let x : A <- c
+let_let =
+  let x = 1 in
+  let y = x in
+  y
+let_order =
+  let x = 1 in
+  let y = 2 in
+  x + y
+let_order_proc = proc(c : !Int)
+  let x = 1.
+  let y = 2.
+  c <- (x + y)
 letrecv_ann = proc(c : ?Int.!Int)
   recv c (x : Int).
   let y : Int = (x + x).
@@ -657,6 +747,19 @@ sym : (A : Type)(x : A)(y : A)(p : Id A x y)-> Id A y x
 trans : (A : Type)(x' : A)(y' : A)(z' : A)(p : Id A x' y')(q : Id A y' z')-> Id A x' z'
       = \(A : Type)(x' : A)(y' : A)(z' : A)(p : Id A x' y')(q : Id A y' z')->
         tr A y' (Id A x') p z' q
+mkfwd =
+  \(A : Session)->
+   proc(a : A, na : ~A)
+    fwd A (a,na)
+
+loli_id :  (A : Session)-> < A -o A >
+        = \(A : Session)->
+  proc(naa : {~A, A})
+    split naa {na,a}.
+    @(mkfwd (~A))(na,a)
+
+loli_id_SInt =
+  loli_id (!Int)
 zipWith =
   \(A B C : Type)
    (f : (a : A)(b : B)-> C)
@@ -740,7 +843,9 @@ matmult = \(m n p : Int)->
     @(row Double m n a' (ij / n))(u).
     new/alloc [: v : [: !Double^n :], v' :].
     @(col Double n p b' (ij % n))(v).
-    @(dotproduct n){u',v',c_i_j}
+    -- Working around a bug name-binding bug...
+    let nn = n.
+    @(dotproduct nn){u',v',c_i_j}
 
 matmult_4 = matmult 4 4 4
 -- Should be renamed merge_ParSort_seq_recv
@@ -927,6 +1032,12 @@ mk_par2_RL =
     c{c0,c1}
     @p1(c1).
     @p0(c0)
+mkrecv = \(A : Type)-> proc(a : ?A) let x : A <- a
+
+mkrecvInt = mkrecv Int
+mksend = \(A : Type)(x : A)-> proc(a : !A) a <- x
+
+mksendInt42 = mksend Int 42
 mk_seq2 =
   \ (S0 S1 : Session)
     (p0 : < S0 >)
@@ -987,6 +1098,16 @@ new_alloc = proc(c : !Int)
   new/alloc [d : !Int, e]
   ( send d 1
   | fwd(!Int)(c,e))
+new_ann_let_fuse_0 =
+  let ann = fuse 0 in
+  proc()
+    new/ann [c:[],d]
+    fwd [] (c,d)
+new_ann_let_fuse_1 =
+  let ann = fuse 1 in
+  proc()
+    new/ann [c:[],d]
+    fwd [] (c,d)
 new_fuse1_recv_send_send_recv = proc()
   new/fuse 1 [d : ?Int.!Int, c : !Int.?Int]
   ( send c 1
@@ -994,63 +1115,6 @@ new_fuse1_recv_send_send_recv = proc()
   | recv d (y : Int)
     send d 2
   )
-new_ann_ten_recv = \(ann : Allocation)->
-  proc()
-    new/ann [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-{- Soon...
-new_fuse_ten_recv = \(depth : Int)-> new_ann_ten_recv (fuse depth)
-new_fuse1_ten_recv = new_fuse_ten_recv 1
-new_fuse2_ten_recv = new_fuse_ten_recv 2
-new_fuse3_ten_recv = new_fuse_ten_recv 3
-new_fused_ten_recv = new_ann_ten_recv fused
--}
-
-new_fuse1_ten_recv =
-  proc()
-    new/fuse 1 [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-new_fuse2_ten_recv =
-  proc()
-    new/fuse 2 [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-new_fuse3_ten_recv =
-  proc()
-    new/fuse 3 [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-new_fused_ten_recv =
-  proc()
-    new/fused [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
 new_seq_par_par =
   proc()
   new [: cd: {!Int,!Bool}, ef: {?Int,?Bool} :].
@@ -1060,6 +1124,36 @@ new_seq_par_par =
   d <- `true.
   let b : Bool <- f.
   let i : Int  <- e
+new_ten2 =
+  \(A B : Session)
+   (pA  : < A >)
+   (pB  : < B >)
+   (pC  : < {~A,~B} >)
+   (ann : Allocation)->
+  proc()
+    new/ann [ab : [A,B], nab : {~A,~B}].
+    ( split ab as [a,b].
+      ( @(pA)(a)
+      | @(pB)(b))
+    | @(pC)(nab))
+
+new_ten2_Int_dbl =
+  new_ten2 (!Int) (?Int) (proc(c) c <- 42) (proc(d) let b : Int <- d)
+           (proc(nab)
+              split nab as {na,nb}.
+              let x : Int <- na.
+              nb <- (x + x))
+
+new_fuse_ten2_Int_dbl  = \(depth : Int)-> new_ten2_Int_dbl (fuse depth)
+new_fuse0_ten2_Int_dbl = new_fuse_ten2_Int_dbl 0
+new_fuse1_ten2_Int_dbl = new_fuse_ten2_Int_dbl 1
+new_fuse2_ten2_Int_dbl = new_fuse_ten2_Int_dbl 2
+new_fuse3_ten2_Int_dbl = new_fuse_ten2_Int_dbl 3
+new_fused_ten2_Int_dbl = new_ten2_Int_dbl fused
+
+new_ten2_Int_fwd = new_ten2 (!Int) (?Int)
+  (proc(c) c <- 42) (proc(d) let b : Int <- d)
+  (proc(nab) fwd 2 (?Int) nab) (fuse 2)
 -- Requires a mix
 no_dead_lock_new_new = proc()
   new [c : ?Int, d].
@@ -1095,6 +1189,35 @@ assert ((S : Session)(m n : Int)-> < S ^(m + n) >)
      = ((S : Session)(m n : Int)-> < S ^(n + m) >)
      : Type
 not_sink_fwd1_snd = proc(c : Fwd 1 (!Int)) c{d} fwd (!Int) (d)
+Oplus' = \(SL SR : Session)-> !(b : LR). (case b of { `left -> SL, `right -> SR })
+
+leftOplus =
+  \(SL SR : Session)(p : < SL >)->
+    proc(c)
+    c : Oplus' SL SR <- `left.
+    @p(c)
+
+rightOplus =
+  \(SL SR : Session)(p : < SR >)->
+    proc(c)
+    c : Oplus' SL SR <- `right.
+    @p(c)
+
+oplus' =
+  \(SL SR : Session)
+   (b : LR)
+   (p : < case b of { `left -> SL, `right -> SR } >)->
+    proc(c)
+    c : Oplus' SL SR <- b.
+    @p(c)
+
+assert leftOplus
+     = \(SL SR : Session)-> oplus' SL SR `left
+     : (SL SR : Session)(p : < SL >)-> < Oplus' SL SR >
+
+assert rightOplus
+     = \(SL SR : Session)-> oplus' SL SR `right
+     : (SL SR : Session)(p : < SR >)-> < Oplus' SL SR >
 over_application : Int = _+_ 1 2 3
 par0 = proc(c : {}) c{}
 par1 = proc(c : {!Int}) c{d} send d 42
@@ -1310,6 +1433,13 @@ plug_send_recv =
 _ = 1
 _ = 2
 _ = "Hello!"
+test_receiver =
+  \(A : Type)
+   (S : A -> Session)
+   (p : (x : A)-> < S x >)->
+  proc(c)
+    let x : A <- c.
+    @(p x)(c)
 data T1 = `c1 | `c2
 data T2 = `c3 | `c1
 data T1 = `c1
@@ -1397,6 +1527,14 @@ rotate_seq =
 Int1 = Int
 send_1 = proc(c : !Int1)
   send c 1
+test_sender =
+  \(A : Type)
+   (S : A -> Session)
+   (t : A)
+   (p : < S t >)->
+    proc(c)
+      c : !(x : A). S x <- t.
+      @p(c)
 seq0_explicit =
   proc(c : [: :])
   c[: :]
@@ -1462,6 +1600,39 @@ split_nested_seq :
     fwd B (b,nb).
     fwd C (c,nc).
     fwd D (d,nd)
+sqr_dbl = proc(i: ?Int, o: !Int)
+  let x : Int <- i.
+  new (c: Int).
+  c <- (x * x).
+  let y : Int <- c.
+  o <- (y + y)
+
+sqrs_body_session = !Int. ?Int. !Int. ?Int. !Int. ?Int
+
+sqrs_body = \(x: Int)-> proc(c: sqrs_body_session, o: !Int)
+  c <- (x * x).
+  let x2: Int <- c.
+  c <- (x2 * x2).
+  let x4: Int <- c.
+  c <- (x4 * x4).
+  let x8: Int <- c.
+  o <- (x8 * x8)
+
+sqrs_main = proc(i: ?Int, o: !Int)
+  let x: Int <- i.
+  new (c: Int).
+  @(sqrs_body x)(c,o)
+sqrs = proc(i: ?Int, o: !Int)
+  let x : Int <- i.
+  new (c: Int).
+  c <- (x * x).
+  let x2 : Int <- c.
+  c <- (x2 * x2).
+  let x4 : Int <- c.
+  c <- (x4 * x4).
+  let x8 : Int <- c.
+  o <- (x8 * x8)
+
 sum_int = proc(a : {?Int ^ 10}, r : !Int)
   new/alloc [itmp : !Int.?Int, tmp]
   ( send itmp 0
@@ -1607,6 +1778,7 @@ test_pat =
   @test_pat_term[a, [: b, c :], {d, e}]
 type_annotation =
   ((21 + 21) : Int)
+assert (`true : Bool) = `true : Bool
 ZeroCh : Type
        = (A : Type)-> A
 
@@ -1723,13 +1895,16 @@ unscoped_recv_at = proc(c : ?Int, d : !Int)
   send d x
 unscoped_recv_slice = proc(c) (slice (c) 1 as _ (recv c (x : Int))). send c x
 unused_chan = proc(c) c{i : !Int}
-With  = \(SL SR : Session)-> ?(b : LR). (case b of { `left -> SL, `right -> SR })
-with =
+test_With  = \(SL SR : Session)-> ?(b : LR). (case b of { `left -> SL, `right -> SR })
+test_with =
   \(SL SR : Session)
    (pL : < SL >)(pR : < SR >)->
-  proc(c : With SL SR)
-    recv c (x : LR).
+  proc(c : test_With SL SR)
+    let x : LR <- c.
     @(case x of { `left -> pL, `right -> pR })(c)
+wrong_abs_cnt_new = \(S : Session)-> proc(d: S)
+  new (c: Int).
+  fwd(S)(d,c)
 -- while wrong_case_con reduces to 1 which is well-typed a part of it is not
 wrong_case_con = case `true of { `true -> 1, `false -> 1 + `true }
 wrong_char_literal : Double = '\n'
@@ -1949,6 +2124,11 @@ wrong_order_split_nested_seq :
     fwd(C)(c,nc).
     fwd(B)(b,nb).
     fwd(D)(d,nd)
+wrong_par_array_cnt_new = proc()
+  new (c: Int).
+  split c {d,e}.
+  e <- 2.
+  d <- 1
 wrong_par_comm_sequential =
  \(A B : Session)->
  proc(c : {A,B} -o {B,A})
@@ -1978,6 +2158,9 @@ wrong_plug_send_recv =
   \(p : < !Int, ?Int >)->
   proc(c : !Int, d : ?Int)
     @p(d,c)
+wrong_read_cnt_new = proc()
+  new (c: Int).
+  let x : Int <- c
 assert "Hello" ++S "World!" = "Hello World!"
 assert 3.03 +D 0.11 = 3.14
 wrong_repeat_par = proc(c : {!Int})
@@ -1985,6 +2168,11 @@ wrong_repeat_par = proc(c : {!Int})
   c{d}
   send d 1
 
+wrong_seq_array_cnt_new = proc()
+  new (c: Int).
+  split c [:d,e:].
+  d <- 1.
+  e <- 2
 wrong_seq_pat = proc(c : [:?Int,!Int:])
   c[:d,e:]
   @(proc (f) fwd 2 (!Int) f){d,e}
@@ -2018,6 +2206,11 @@ wrong_ten2_send_par1_send = proc(c : [!Int, {!Int}])
   c[d,e]
   e{f}
   send d 1. send f 2
+wrong_ten_array_cnt_new = proc()
+  new (c: Int).
+  split c [d,e].
+  ( d <- 1
+  | e <- 2)
 wrong_ten_pat = proc(c : [?Int,!Int])
   c[d,e]
   @(proc (f) fwd 2 (?Int) f)[d,e]
@@ -2038,6 +2231,10 @@ wrong_test_pat =
   @test_pat_term2[a, [: c, b :], {d, e}]
 wrong_type_annotation = (Int : Int)
 wrong : Int = Type
+wrong_write_cnt_new = proc()
+  new (c: Int).
+  c <- 1.
+  c <- 2
 zap =
   \(S T : Session)(n : Int)->
   proc(c : [S -o T ^ n] -o [S ^ n] -o [T ^ n])

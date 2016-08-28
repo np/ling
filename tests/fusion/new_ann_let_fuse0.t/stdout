@@ -1,0 +1,9 @@
+
+{- Sequential Fused program -}
+
+new_ann_let_fuse_0 =
+  proc ()
+  let ann = (fuse 0).
+  new/ann [c : [], d].
+  split c [].
+  split d {}

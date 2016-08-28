@@ -323,6 +323,12 @@ dual_dual =
   \ (S : Session)-> \ (p : < S >)-> proc (c : ~ another_dual S)
   @ p (c)
 
+assert
+  1 + 3
+  =
+  2 + 2
+  : Int
+
 my_zero =
   0
 
@@ -712,6 +718,13 @@ idproc =
   let y : Int <- c.
   d <- (id Int y)
 
+idType =
+  \ (idTypeA : Type)-> idTypeA
+
+idTypeA : Type
+
+idTypeX : idType idTypeA
+
 assert
   42
   =
@@ -1025,6 +1038,20 @@ mk_par2_RL =
   @ p1 (c1).
   @ p0 (c0)
 
+mkrecv =
+  \ (A : Type)-> proc (a : ?A)
+  let x : A <- a
+
+mkrecvInt =
+  mkrecv Int
+
+mksend =
+  \ (A : Type)-> \ (x : A)-> proc (a : !A)
+  a <- x
+
+mksendInt42 =
+  mksend Int 42
+
 mk_seq2 =
   \ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [: S0, S1 :])
   split c [: c0, c1 :].
@@ -1084,56 +1111,6 @@ new_fuse1_recv_send_send_recv =
   | let y : Int <- d.
     d <- 2 )
 
-new_ann_ten_recv =
-  \ (ann : Allocation)-> proc ()
-  new/ann [c : [!Int, ?Int],d : {?Int, !Int}].
-  ( split c [co, ci].
-    ( co <- 42
-    | let y : Int <- ci )
-  | split d {di, do}.
-    let x : Int <- di.
-    do <- (x + x))
-
-new_fuse1_ten_recv =
-  proc ()
-  new/fuse 1 [c : [!Int, ?Int],d : {?Int, !Int}].
-  ( split c [co, ci].
-    ( co <- 42
-    | let y : Int <- ci )
-  | split d {di, do}.
-    let x : Int <- di.
-    do <- (x + x))
-
-new_fuse2_ten_recv =
-  proc ()
-  new/fuse 2 [c : [!Int, ?Int],d : {?Int, !Int}].
-  ( split c [co, ci].
-    ( co <- 42
-    | let y : Int <- ci )
-  | split d {di, do}.
-    let x : Int <- di.
-    do <- (x + x))
-
-new_fuse3_ten_recv =
-  proc ()
-  new/fuse 3 [c : [!Int, ?Int],d : {?Int, !Int}].
-  ( split c [co, ci].
-    ( co <- 42
-    | let y : Int <- ci )
-  | split d {di, do}.
-    let x : Int <- di.
-    do <- (x + x))
-
-new_fused_ten_recv =
-  proc ()
-  new/fused [c : [!Int, ?Int],d : {?Int, !Int}].
-  ( split c [co, ci].
-    ( co <- 42
-    | let y : Int <- ci )
-  | split d {di, do}.
-    let x : Int <- di.
-    do <- (x + x))
-
 new_seq_par_par =
   proc ()
   new [: cd : {!Int, !Bool},ef : {?Int, ?Bool}:].
@@ -1143,6 +1120,48 @@ new_seq_par_par =
   d <- `true.
   let b : Bool <- f.
   let i : Int <- e
+
+new_ten2 =
+  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < {~ A, ~ B}>)-> \ (ann : Allocation)-> proc ()
+  new/ann [ab : [A, B],nab : {~ A, ~ B}].
+  ( split ab [a, b].
+    ( @ pA (a)
+    | @ pB (b))
+  | @ pC (nab))
+
+new_ten2_Int_dbl =
+  new_ten2 (!Int)(?Int)(proc (c)
+  c <- 42)(proc (d)
+  let b : Int <- d)(proc (nab)
+  split nab {na, nb}.
+  let x : Int <- na.
+  nb <- (x + x))
+
+new_fuse_ten2_Int_dbl =
+  \ (depth : Int)-> new_ten2_Int_dbl (fuse depth)
+
+new_fuse0_ten2_Int_dbl =
+  new_fuse_ten2_Int_dbl 0
+
+new_fuse1_ten2_Int_dbl =
+  new_fuse_ten2_Int_dbl 1
+
+new_fuse2_ten2_Int_dbl =
+  new_fuse_ten2_Int_dbl 2
+
+new_fuse3_ten2_Int_dbl =
+  new_fuse_ten2_Int_dbl 3
+
+new_fused_ten2_Int_dbl =
+  new_ten2_Int_dbl fused
+
+new_ten2_Int_fwd =
+  new_ten2 (!Int)(?Int)(proc (c)
+  c <- 42)(proc (d)
+  let b : Int <- d)(proc (nab)
+  split nab {nab#0 : ?Int, nab#1 : !Int}.
+  let x#nab#0 : Int <- nab#0.
+  nab#1 <- x#nab#0)(fuse 2)
 
 no_dead_lock_new_new =
   proc ()

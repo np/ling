@@ -1,4 +1,3 @@
-assert 'a' = 'a' : Char
 ap =
   \(S T : Session)->
   proc(c : (S -o T) -o S -o T)
@@ -103,8 +102,14 @@ com_new =
 com_new_SInt =
   com_new
     (!Int)
-    (proc(c' : !Int) send c' 42)
-    (proc(d : ?Int) recv d (x : Int))
+    (proc(c' : !Int) c' <- 42)
+    (proc(d : ?Int) let x : Int <- d)
+
+com_new_SInt_RBool =
+  com_new
+    (!Int.?Bool)
+    (proc(c' : !Int.?Bool) c' <- 42. let b : Bool <- c')
+    (proc(d : ?Int.!Bool) let x : Int <- d. d <- `true)
 com_new_mk_ten2 =
   let
     mk_tensor2 =
@@ -278,6 +283,7 @@ dual_dual =
    (p : < S >)->
    proc(c : ~another_dual S)
    @p(c)
+assert 1 + 3 = 2 + 2 : Int
 my_zero = 0
 assert ((S T : Session)-> < S ^ 5, T ^(0 + my_zero) >)
      = ((S T : Session)-> < S ^ 2, T ^ 0, S, S ^ 1, S >)
@@ -524,6 +530,9 @@ id : (A : Type)(x : A) -> A
 idproc = proc(c : ?Int, d : !Int)
   recv c (y : Int)
   send d (id Int y)
+idType = \(idTypeA : Type)-> idTypeA
+idTypeA : Type
+idTypeX : idType idTypeA
 assert 42 = let x = 42 in x
 i42 : Int = 42
 one : Int = 1
@@ -554,6 +563,18 @@ let_example =
    send c y
 let_in_proc_for_session = proc(c : ?Int)
   let A = Int. let x : A <- c
+let_let =
+  let x = 1 in
+  let y = x in
+  y
+let_order =
+  let x = 1 in
+  let y = 2 in
+  x + y
+let_order_proc = proc(c : !Int)
+  let x = 1.
+  let y = 2.
+  c <- (x + y)
 letrecv_ann = proc(c : ?Int.!Int)
   recv c (x : Int).
   let y : Int = (x + x).
@@ -601,6 +622,19 @@ my42 : String = showMult 2 21
 my3_14 : String = showDiv 6.28 2.0
 
 myNewline : Char = '\n'
+mkfwd =
+  \(A : Session)->
+   proc(a : A, na : ~A)
+    fwd A (a,na)
+
+loli_id :  (A : Session)-> < A -o A >
+        = \(A : Session)->
+  proc(naa : {~A, A})
+    split naa {na,a}.
+    @(mkfwd (~A))(na,a)
+
+loli_id_SInt =
+  loli_id (!Int)
 zipWith =
   \(A B C : Type)
    (f : (a : A)(b : B)-> C)
@@ -684,7 +718,9 @@ matmult = \(m n p : Int)->
     @(row Double m n a' (ij / n))(u).
     new/alloc [: v : [: !Double^n :], v' :].
     @(col Double n p b' (ij % n))(v).
-    @(dotproduct n){u',v',c_i_j}
+    -- Working around a bug name-binding bug...
+    let nn = n.
+    @(dotproduct nn){u',v',c_i_j}
 
 matmult_4 = matmult 4 4 4
 -- Should be renamed merge_ParSort_seq_recv
@@ -850,6 +886,12 @@ mk_par2_RL =
     c{c0,c1}
     @p1(c1).
     @p0(c0)
+mkrecv = \(A : Type)-> proc(a : ?A) let x : A <- a
+
+mkrecvInt = mkrecv Int
+mksend = \(A : Type)(x : A)-> proc(a : !A) a <- x
+
+mksendInt42 = mksend Int 42
 mk_seq2 =
   \ (S0 S1 : Session)
     (p0 : < S0 >)
@@ -917,63 +959,6 @@ new_fuse1_recv_send_send_recv = proc()
   | recv d (y : Int)
     send d 2
   )
-new_ann_ten_recv = \(ann : Allocation)->
-  proc()
-    new/ann [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-{- Soon...
-new_fuse_ten_recv = \(depth : Int)-> new_ann_ten_recv (fuse depth)
-new_fuse1_ten_recv = new_fuse_ten_recv 1
-new_fuse2_ten_recv = new_fuse_ten_recv 2
-new_fuse3_ten_recv = new_fuse_ten_recv 3
-new_fused_ten_recv = new_ann_ten_recv fused
--}
-
-new_fuse1_ten_recv =
-  proc()
-    new/fuse 1 [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-new_fuse2_ten_recv =
-  proc()
-    new/fuse 2 [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-new_fuse3_ten_recv =
-  proc()
-    new/fuse 3 [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-new_fused_ten_recv =
-  proc()
-    new/fused [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
 new_seq_par_par =
   proc()
   new [: cd: {!Int,!Bool}, ef: {?Int,?Bool} :].
@@ -983,6 +968,36 @@ new_seq_par_par =
   d <- `true.
   let b : Bool <- f.
   let i : Int  <- e
+new_ten2 =
+  \(A B : Session)
+   (pA  : < A >)
+   (pB  : < B >)
+   (pC  : < {~A,~B} >)
+   (ann : Allocation)->
+  proc()
+    new/ann [ab : [A,B], nab : {~A,~B}].
+    ( split ab as [a,b].
+      ( @(pA)(a)
+      | @(pB)(b))
+    | @(pC)(nab))
+
+new_ten2_Int_dbl =
+  new_ten2 (!Int) (?Int) (proc(c) c <- 42) (proc(d) let b : Int <- d)
+           (proc(nab)
+              split nab as {na,nb}.
+              let x : Int <- na.
+              nb <- (x + x))
+
+new_fuse_ten2_Int_dbl  = \(depth : Int)-> new_ten2_Int_dbl (fuse depth)
+new_fuse0_ten2_Int_dbl = new_fuse_ten2_Int_dbl 0
+new_fuse1_ten2_Int_dbl = new_fuse_ten2_Int_dbl 1
+new_fuse2_ten2_Int_dbl = new_fuse_ten2_Int_dbl 2
+new_fuse3_ten2_Int_dbl = new_fuse_ten2_Int_dbl 3
+new_fused_ten2_Int_dbl = new_ten2_Int_dbl fused
+
+new_ten2_Int_fwd = new_ten2 (!Int) (?Int)
+  (proc(c) c <- 42) (proc(d) let b : Int <- d)
+  (proc(nab) fwd 2 (?Int) nab) (fuse 2)
 -- Requires a mix
 no_dead_lock_new_new = proc()
   new [c : ?Int, d].

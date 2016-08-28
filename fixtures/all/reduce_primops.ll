@@ -1,3 +1,4 @@
+{-
 assert 16 % 33 =  16
 assert 30 + 2  =  32
 assert 86 - 22 =  64
@@ -16,5 +17,8 @@ assert showInt 42 = "42"
 assert showDouble 3.14 = "3.14"
 assert showChar 'a' = "'a'"
 assert showString "Hello \"World\"!" = "\"Hello \\\"World\\\"!\""
-
 assert "Hello " ++S "World!" = "Hello World!"
+-}
+assert let hello = "Hello " in
+       let world = "Let!" in
+       hello ++S world = "Hello Let!"

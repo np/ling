@@ -826,63 +826,6 @@ new_fuse1_recv_send_send_recv = proc()
   | recv d (y : Int)
     send d 2
   )
-new_ann_ten_recv = \(ann : Allocation)->
-  proc()
-    new/ann [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-{- Soon...
-new_fuse_ten_recv = \(depth : Int)-> new_ann_ten_recv (fuse depth)
-new_fuse1_ten_recv = new_fuse_ten_recv 1
-new_fuse2_ten_recv = new_fuse_ten_recv 2
-new_fuse3_ten_recv = new_fuse_ten_recv 3
-new_fused_ten_recv = new_ann_ten_recv fused
--}
-
-new_fuse1_ten_recv =
-  proc()
-    new/fuse 1 [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-new_fuse2_ten_recv =
-  proc()
-    new/fuse 2 [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-new_fuse3_ten_recv =
-  proc()
-    new/fuse 3 [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
-
-new_fused_ten_recv =
-  proc()
-    new/fused [c : [!Int, ?Int], d : {?Int, !Int}]
-    ( c[co,ci]
-      ( send co 42
-      | recv ci (y : Int))
-    | d{di,do}
-      recv di (x : Int).
-      send do (x + x))
 new_seq_par_par =
   proc()
   new [: cd: {!Int,!Bool}, ef: {?Int,?Bool} :].
@@ -892,6 +835,36 @@ new_seq_par_par =
   d <- `true.
   let b : Bool <- f.
   let i : Int  <- e
+new_ten2 =
+  \(A B : Session)
+   (pA  : < A >)
+   (pB  : < B >)
+   (pC  : < {~A,~B} >)
+   (ann : Allocation)->
+  proc()
+    new/ann [ab : [A,B], nab : {~A,~B}].
+    ( split ab as [a,b].
+      ( @(pA)(a)
+      | @(pB)(b))
+    | @(pC)(nab))
+
+new_ten2_Int_dbl =
+  new_ten2 (!Int) (?Int) (proc(c) c <- 42) (proc(d) let b : Int <- d)
+           (proc(nab)
+              split nab as {na,nb}.
+              let x : Int <- na.
+              nb <- (x + x))
+
+new_fuse_ten2_Int_dbl  = \(depth : Int)-> new_ten2_Int_dbl (fuse depth)
+new_fuse0_ten2_Int_dbl = new_fuse_ten2_Int_dbl 0
+new_fuse1_ten2_Int_dbl = new_fuse_ten2_Int_dbl 1
+new_fuse2_ten2_Int_dbl = new_fuse_ten2_Int_dbl 2
+new_fuse3_ten2_Int_dbl = new_fuse_ten2_Int_dbl 3
+new_fused_ten2_Int_dbl = new_ten2_Int_dbl fused
+
+new_ten2_Int_fwd = new_ten2 (!Int) (?Int)
+  (proc(c) c <- 42) (proc(d) let b : Int <- d)
+  (proc(nab) fwd 2 (?Int) nab) (fuse 2)
 -- Requires a mix
 no_dead_lock_new_new = proc()
   new [c : ?Int, d].

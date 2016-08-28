@@ -129,14 +129,15 @@ link(){
 }
 # }}}
 
-DIST=`pwd`/dist
+TOP=`pwd`
+DIST="$TOP"/dist
 case "$MODE" in
   (docker)
     cmdcheck() {
-      envexec tools/cmdcheck -- "$@"
+      envexec "$TOP"/tools/cmdcheck -- "$@"
     }
     cmdrecord() {
-      envexec tools/cmdrecord -- "$@"
+      envexec "$TOP"/tools/cmdrecord -- "$@"
     }
     rm -rf "$DIST"/shims
     STACK_FLAGS=(--docker);;

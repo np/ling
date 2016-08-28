@@ -1,13 +1,13 @@
 #!/bin/bash
 
-testname=new_fuse1_ten_recv.t
+testname=new_ten2.t
 command=ling
-args=( --check new_fuse1_ten_recv.ll )
+args=( --check new_ten2.ll )
 exit_code=0
 stdin_file=/dev/null
 stdout_file=stdout
 stderr_file=/dev/null
-sources=( new_fuse1_ten_recv.ll )
+sources=( new_ten2.ll )
 products=( )
 
 # Environment variables:

@@ -12,7 +12,25 @@ zipWith =
       let b : B <- cb.
       cc <- (f a b)
 
+{-
+zipWith =
+  \(A B C : Type)
+   (f : (a : A)(b : B)-> C)
+   (n : Int)->
+  proc([: ca : ?A ^ n :], [: cb : ?B ^ n :], [: cc : !C ^ n :])
+    slice (ca,cb,cc) n as _
+      cc <- (f (<- ca) (<- cb))
+-}
+
 zip_multD = zipWith Double Double Double _*D_
+
+{-
+zip_multI = zipWith Int Int Int _*_
+
+_==D_ : (x y : Double)-> Bool
+
+zip_multI = zipWith Double Double Bool _==D_
+-}
 
 foldl =
   \(A B : Type)
@@ -23,7 +41,7 @@ foldl =
   new/alloc [itmp : !B. ?B, tmp]
   ( itmp <- init.
     fwd(?B)(itmp, cr)
-  | ca[: ai^n :]
+  | split ca[: ai^n :]
     slice (ai) n as _
       ( let a : A <- ai
       | let b : B <- tmp).

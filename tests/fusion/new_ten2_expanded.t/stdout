@@ -1,0 +1,67 @@
+
+{- Sequential Fused Expanded program -}
+
+new_ten2 =
+  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < {~ A, ~ B}>)-> \ (ann : Allocation)-> proc ()
+  new/ann [ab : [A, B],nab : {~ A, ~ B}].
+  ( split ab [a, b].
+    ( @ pA (a)
+    | @ pB (b))
+  | @ pC (nab))
+
+new_ten2_Int_dbl =
+  \ (ann : Allocation)-> proc ()
+  new/ann [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  ( split ab [a, b].
+    ( a <- 42
+    | let b#pB : Int <- b )
+  | split nab {na#pC, nb#pC}.
+    let x#pC : Int <- na#pC.
+    nb#pC <- (x#pC + x#pC))
+
+new_fuse_ten2_Int_dbl =
+  \ (depth : Int)-> proc ()
+  new/fuse depth [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  ( split ab [a, b].
+    ( a <- 42
+    | let b#pB : Int <- b )
+  | split nab {na#pC, nb#pC}.
+    let x#pC : Int <- na#pC.
+    nb#pC <- (x#pC + x#pC))
+
+new_fuse0_ten2_Int_dbl =
+  proc ()
+  new/fuse 0 [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  split ab [a, b].
+  split nab {na#pC, nb#pC}.
+  a <- 42.
+  let x#pC : Int <- na#pC.
+  nb#pC <- (x#pC + x#pC).
+  let b#pB : Int <- b
+
+new_fuse1_ten2_Int_dbl =
+  proc ()
+  new/fuse 0 [a, na#pC].
+  new/fuse 0 [b, nb#pC].
+  a <- 42.
+  let x#pC : Int <- na#pC.
+  nb#pC <- (x#pC + x#pC).
+  let b#pB : Int <- b
+
+new_fuse2_ten2_Int_dbl =
+  proc ()
+  new/fuse 0 [a, na#pC].
+  new/fuse 0 [nb#pC, b]
+
+new_fuse3_ten2_Int_dbl =
+  proc ()
+  ( )
+
+new_fused_ten2_Int_dbl =
+  proc ()
+  ( )
+
+new_ten2_Int_fwd =
+  proc ()
+  new/fuse 0 [a, nab#0#pC : [: :]].
+  new/fuse 0 [nab#1#pC : [: :], b]
