@@ -23,13 +23,13 @@ data AllocAnn
 --  | Alloc
 --  | Auto
 
--- TODO swap order of arguments
 data Fused =
-  Fused { _fusedActs :: !(Order Act)
-        , _fusedDefs :: !Defs }
+  Fused { _fusedDefs :: !Defs
+        , _fusedActs :: !(Order Act)
+        }
 
 instance Dottable Fused where
-  Fused acts defs `dotP` proc1 = defs `dotP` acts `dotP` proc1
+  Fused defs acts `dotP` proc1 = defs `dotP` acts `dotP` proc1
 
 defaultFusion, autoFusion :: AllocAnn -- [Allocation] -> Maybe [Allocation]
 defaultFusion = FusedAnn
@@ -92,7 +92,7 @@ fuseChanDecs _  []           = id
 fuseChanDecs nu ((c0,c1):cs) = fuse2Chans nu c0 c1 . fuseChanDecs nu cs
 
 fuseSendRecv :: NU -> ChanDec -> Term -> ChanDec -> VarDec -> Fused
-fuseSendRecv nu c0 e c1 (Arg x mty) = Fused (Order [nu cs]) (aDef x mty e)
+fuseSendRecv nu c0 e c1 (Arg x mty) = Fused (aDef x mty e) (Order [nu cs])
   where
     cs = [c0,c1] & each . cdSession . _Just . rsession %~ sessionStep {-TODO defs-} (Def x [])
 
@@ -111,7 +111,7 @@ type Fuse2 a = NU -> ChanDec -> a -> ChanDec -> a -> Fused
 fuse2Pats :: Fuse2 CPatt
 fuse2Pats nu _c0 pat0 _c1 pat1
   | Just (_, cs0) <- pat0 ^? _ArrayCs
-  , Just (_, cs1) <- pat1 ^? _ArrayCs = Fused (Order $ zipWith (two nu) cs0 cs1) ø
+  , Just (_, cs1) <- pat1 ^? _ArrayCs = Fused ø (Order $ zipWith (two nu) cs0 cs1)
   | otherwise                         = error "Fuse.fuse2Pats unsupported split"
 
 fuse2Acts :: Fuse2 Act
