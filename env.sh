@@ -11,6 +11,9 @@ envexec(){
 ling() {
   envexec ling -- "$@"
 }
+'ling-fmt'() {
+  envexec ling-fmt -- "$@"
+}
 checkling() {
   envexec ./check.sh
 }
