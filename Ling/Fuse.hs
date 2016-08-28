@@ -39,7 +39,9 @@ makePrisms ''AllocAnn
 
 instance Monoid AllocAnn where
   mempty = defaultFusion
-  x `mappend` _ = x
+  FusedAnn `mappend` x = x
+--x `mappend` FusedAnn = x
+  x `mappend` _        = x
 
 _AllocAnn :: Prism' Allocation AllocAnn
 _AllocAnn = prism' con pat where
@@ -53,7 +55,7 @@ _AllocAnn = prism' con pat where
     Def _ (Name "fuse" ) [i] -> i ^? litTerm . integral . re _FuseAnn
     Def _ (Name "alloc") []  -> Just (FuseAnn 0) -- TEMPORARY, `alloc` is defined as `fuse 0`
     Def _ (Name "auto" ) []  -> Just autoFusion
-    _                        -> Nothing
+    t                        -> trace ("[WARNING]: Unexpected allocation annotation: " ++ ppShow t) Nothing
 
 doFuse :: [Allocation] -> Maybe [Allocation]
 doFuse anns =
@@ -67,14 +69,17 @@ type NU = [ChanDec] -> Act
 
 fuseDot :: Defs -> Op2 Proc
 fuseDot defs = \case
-  Act (Nu anns newpatt) | Just anns' <- doFuse anns ->
+  Act (Nu anns0 newpatt)
+    | anns1 <- reduceP $ Scoped defs ø anns0
+    , Just anns2 <- doFuse anns1 ->
     case newpatt of
       NewChans k cs
         | [c, d] <- reduceP . Scoped defs ø <$> cs
-        -> fuseProc defs . fuseChanDecs (Nu anns' . NewChans k) [(c, d)]
+        -> fuseProc defs . fuseChanDecs (Nu anns2 . NewChans k) [(c, d)]
       _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty newpatt
                              , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
   proc0@NewSlice{} -> (fuseProc defs proc0 `dotP`) . fuseProc defs
+  Act (LetA defs') -> (defs' `dotP`) . fuseProc (defs <> defs')
   proc0 -> (proc0 `dotP`) . fuseProc defs
 
 fuseProc :: Defs -> Endom Proc
