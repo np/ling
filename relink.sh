@@ -2,6 +2,9 @@
 
 . ./env.sh
 
+cat fixtures/all/*.ll > fixtures/all.ll
+cat fixtures/success/*.ll > fixtures/success.ll
+
 for d in fixtures/*/; do
   if [ "$d" != fixtures/all/ ]; then
     for f in "$d"*.ll; do
@@ -23,3 +26,5 @@ done
 link fixtures/all.ll tests/fmt/all.t/stdin
 link fixtures/all.ll tests/pretty/all.t/stdin
 link fixtures/success.ll tests/norm/all.t/stdin
+link fixtures/success.ll tests/expand/all.t/stdin
+link fixtures/success.ll tests/reduce/all.t/stdin

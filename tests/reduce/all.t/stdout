@@ -1,6 +1,12 @@
 
 {- Reduced program -}
 
+assert
+  'a'
+  =
+  'a'
+  : Char
+
 ap =
   \ (S : Session)-> \ (T : Session)-> proc (c : {[S, ~ T],{~ S, T}})
   split c {f, xo}.
@@ -18,6 +24,15 @@ ap_SInt_SBool =
   split f [fi, fo].
   ( fwd S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a (fi, x)
   | fwd T#e884e9a9974068331e1e0bd466dcc0bd9bfccf1dc0ef31a855ecae48dca3e6f7 (o, fo))
+
+app_lambda =
+  42
+
+app_lambda_2 =
+  63
+
+app_lambda_let =
+  42
 
 assert
   `true
@@ -1886,6 +1901,12 @@ assert
   "Hello World!"
 
 
+assert
+  "Hello Let!"
+  =
+  "Hello Let!"
+
+
 replicate =
   \ (A : Type)-> \ (n : Int)-> \ (x : A)-> proc (os : [!A ^ n])
   split os [o ^ n].
@@ -2324,11 +2345,80 @@ oneTwo : (A : Type)-> (x : A)-> (y : A)-> A =
 notTwo : (b : Two)-> Two =
   \ (b : Two)-> \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
 
+notZero : (A : Type)-> (x : A)-> (y : A)-> A =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> let A' = A in let x' = y in let y' = x in x'
+
+notZero' : (A : Type)-> (x : A)-> (y : A)-> A =
+  \ (A : Type)-> let b = zeroTwo in \ (x : A)-> \ (y : A)-> b A y x
+
+notZero'' : (A : Type)-> (x : A)-> (y : A)-> A =
+  \ (A : Type)-> let b#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in \ (x : A)-> \ (y : A)-> b#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 A y x
+
+assert
+  \ (A : Type)-> let b#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in \ (x : A)-> \ (y : A)-> b#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 A y x
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A : Type)-> let b#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : Two = oneTwo in \ (x : A)-> \ (y : A)-> b#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c A y x
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
 andTwo : (b0 : Two)-> (b1 : Two)-> Two =
   \ (b0 : Two)-> \ (b1 : Two)-> b0 Two zeroTwo b1
 
+assert
+  \ (A : Type)-> let A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd : Type = Two in let b0#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in let b1#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in let x#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd = zeroTwo in \ (x : A)-> \ (y : A)-> x
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A : Type)-> let A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd : Type = Two in let b0#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in let b1#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : Two = oneTwo in let x#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd = zeroTwo in \ (x : A)-> \ (y : A)-> x
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A : Type)-> let A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd : Type = Two in let b0#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : Two = oneTwo in let b1#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in let x#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd = zeroTwo in \ (x : A)-> \ (y : A)-> x
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A : Type)-> let A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd : Type = Two in let b0#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : Two = oneTwo in let b1#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : Two = oneTwo in let x#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd = zeroTwo in \ (x : A)-> \ (y : A)-> y
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
 orTwo : (b0 : Two)-> (b1 : Two)-> Two =
   \ (b0 : Two)-> \ (b1 : Two)-> b0 Two b1 oneTwo
+
+assert
+  \ (A : Type)-> let A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd : Type = Two in let b0#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in let b1#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in let y#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd = oneTwo in \ (x : A)-> \ (y : A)-> x
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A : Type)-> let A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd : Type = Two in let b0#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in let b1#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : Two = oneTwo in let y#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd = oneTwo in \ (x : A)-> \ (y : A)-> y
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A : Type)-> let A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd : Type = Two in let b0#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : Two = oneTwo in let b1#a1032ed7ec0a71b890ab3ad3d128b8b7f92411a1f031c5c6c996f574103bee89 : Two = zeroTwo in let y#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd = oneTwo in \ (x : A)-> \ (y : A)-> y
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A : Type)-> let A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd : Type = Two in let b0#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : Two = oneTwo in let b1#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : Two = oneTwo in let y#dd4d930250c0b1189836bad6f81cd280b08a773639e23329a612004f6805865c : A#81df918a3cdf464b14ed9f0ccb1a5d9866a14c84e261f3fe9fea9cbba4902ccd = oneTwo in \ (x : A)-> \ (y : A)-> y
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
 
 Nat : Type =
   (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
@@ -2339,8 +2429,83 @@ zeroNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
 sucNat : (n : Nat)-> Nat =
   \ (n : Nat)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s)
 
+oneNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A z s)
+
+twoNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> let n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 A z s)
+
+threeNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> let n#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 : Nat = twoNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 A z s)
+
+fourNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> let n#f298406fe782c521fa0d81b36553d7ea84ad2a93ae254c0b62a56e34cab816ee : Nat = threeNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#f298406fe782c521fa0d81b36553d7ea84ad2a93ae254c0b62a56e34cab816ee A z s)
+
+fiveNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> let n#8adfa12024a731669cefe9e69b4acfbaaf3d7c0201ec9135bde2876c5ea56bfd : Nat = fourNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#8adfa12024a731669cefe9e69b4acfbaaf3d7c0201ec9135bde2876c5ea56bfd A z s)
+
+sixNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> let n#ca7aa09d36f6c99a82fb4dbf67cf9f2497d8eb6cbbb4961c1bca0364cb9c99c3 : Nat = fiveNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#ca7aa09d36f6c99a82fb4dbf67cf9f2497d8eb6cbbb4961c1bca0364cb9c99c3 A z s)
+
 addNat : (m : Nat)-> (n : Nat)-> Nat =
   \ (m : Nat)-> \ (n : Nat)-> m Nat n sucNat
+
+assert
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in let n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (n#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A z s)
+  =
+  \ (A : Type)-> let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A z s)
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#0dfc8a608285a4561fa5013342f1faff6ceedbabbda5ab02caad6302c8ac6de8 : Nat = n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 in let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#0dfc8a608285a4561fa5013342f1faff6ceedbabbda5ab02caad6302c8ac6de8 A z s)
+  =
+  \ (A : Type)-> let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A z s)
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 : Nat = twoNat in let n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#3452d5b789d398728af5c68006dab2b55a2ea93a977ccfa3be325641ee5a0277 : Nat = n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 n#f298406fe782c521fa0d81b36553d7ea84ad2a93ae254c0b62a56e34cab816ee s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 in let n#f298406fe782c521fa0d81b36553d7ea84ad2a93ae254c0b62a56e34cab816ee : Nat = threeNat in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#3452d5b789d398728af5c68006dab2b55a2ea93a977ccfa3be325641ee5a0277 A z s)
+  =
+  \ (A : Type)-> let n#8adfa12024a731669cefe9e69b4acfbaaf3d7c0201ec9135bde2876c5ea56bfd : Nat = fourNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#8adfa12024a731669cefe9e69b4acfbaaf3d7c0201ec9135bde2876c5ea56bfd A z s)
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+mulNat : (m : Nat)-> (n : Nat)-> Nat =
+  \ (m : Nat)-> \ (n : Nat)-> m Nat zeroNat (addNat n)
+
+assert
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in let n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let s#47a3ee3452eda16eb2265991a945057ce58ae61f82619d7123d81b8ceae6ff82 : (n#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = addNat n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 in let z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = zeroNat in \ (z : A)-> \ (s : (n : A)-> A)-> z
+  =
+  \ (A : Type)-> \ (z : A)-> \ (s : (n : A)-> A)-> z
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#2dc5554023d78f13299a32dc7d7540e8e74a2ea522e544438a535d5bd91045b5 : Nat = n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 s#3faa2d2e010890cbf9cc3d41096b8ed20d88825c16d7881387caab375f622e9b in let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in let s#3faa2d2e010890cbf9cc3d41096b8ed20d88825c16d7881387caab375f622e9b : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = addNat n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (n#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in let z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = zeroNat in \ (z : A)-> \ (s : (n : A)-> A)-> z
+  =
+  \ (A : Type)-> \ (z : A)-> \ (s : (n : A)-> A)-> z
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#91e1f4b2960f33b0a3619e687b177e77fd0337a6a52ba20e8f00557188563afa : Nat = n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 n#fdbe3135b4c6fe64eb0c42762439b224914ba3ff107fcd07f809380ddbc36c32 s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 in let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in let n#fdbe3135b4c6fe64eb0c42762439b224914ba3ff107fcd07f809380ddbc36c32 : Nat = n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 s#47a3ee3452eda16eb2265991a945057ce58ae61f82619d7123d81b8ceae6ff82 in let s#47a3ee3452eda16eb2265991a945057ce58ae61f82619d7123d81b8ceae6ff82 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = addNat n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in let z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = zeroNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#91e1f4b2960f33b0a3619e687b177e77fd0337a6a52ba20e8f00557188563afa A z s)
+  =
+  \ (A : Type)-> let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A z s)
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#91e1f4b2960f33b0a3619e687b177e77fd0337a6a52ba20e8f00557188563afa : Nat = n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 n#fdbe3135b4c6fe64eb0c42762439b224914ba3ff107fcd07f809380ddbc36c32 s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 in let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in let n#fdbe3135b4c6fe64eb0c42762439b224914ba3ff107fcd07f809380ddbc36c32 : Nat = n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 s#47a3ee3452eda16eb2265991a945057ce58ae61f82619d7123d81b8ceae6ff82 in let s#47a3ee3452eda16eb2265991a945057ce58ae61f82619d7123d81b8ceae6ff82 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = addNat n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in let z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = zeroNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#91e1f4b2960f33b0a3619e687b177e77fd0337a6a52ba20e8f00557188563afa A z s)
+  =
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#0dfc8a608285a4561fa5013342f1faff6ceedbabbda5ab02caad6302c8ac6de8 : Nat = n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 in let n#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : Nat = zeroNat in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#0dfc8a608285a4561fa5013342f1faff6ceedbabbda5ab02caad6302c8ac6de8 A z s)
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 : Nat = twoNat in let n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 : Nat = twoNat in let n#23b13b5eb442693a86a7c04081cfbf73b8957ed0b5a4dc0efd5d330b96e5374d : Nat = n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 s#053a5ba47315e1402c5adb3d98a031578669fdd2501b7ca13e8810e1259bf901 in let n#ad69e7ca1b69fd225648c0a3e7bd41ce230233ce0e52ee7663efa7d753d30d15 : Nat = n#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 n#23b13b5eb442693a86a7c04081cfbf73b8957ed0b5a4dc0efd5d330b96e5374d s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 in let n#f298406fe782c521fa0d81b36553d7ea84ad2a93ae254c0b62a56e34cab816ee : Nat = threeNat in let s#053a5ba47315e1402c5adb3d98a031578669fdd2501b7ca13e8810e1259bf901 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = addNat n#f298406fe782c521fa0d81b36553d7ea84ad2a93ae254c0b62a56e34cab816ee in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in let z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = zeroNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#ad69e7ca1b69fd225648c0a3e7bd41ce230233ce0e52ee7663efa7d753d30d15 A z s)
+  =
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#f298406fe782c521fa0d81b36553d7ea84ad2a93ae254c0b62a56e34cab816ee : Nat = threeNat in let n#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 : Nat = twoNat in let n#65cb451576b45ae218eedff505380b6caa5dfe67f79a5e561128690f20b3067d : Nat = n#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 n#8713f101fe5fd55f29177a6cf25818c72b6c484115cdb50935ade4e25fc28151 s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 in let n#8713f101fe5fd55f29177a6cf25818c72b6c484115cdb50935ade4e25fc28151 : Nat = addNat threeNat zeroNat in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#65cb451576b45ae218eedff505380b6caa5dfe67f79a5e561128690f20b3067d A z s)
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A : Type)-> let A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 : Type = Nat in let m#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 : Nat = twoNat in let n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 : Nat = oneNat in let n#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 : Nat = twoNat in let n#23b13b5eb442693a86a7c04081cfbf73b8957ed0b5a4dc0efd5d330b96e5374d : Nat = n#03a7d9b252a656bf8fb6203da660d7016a326e3aae4b3ccfe33a51ea2f252b40 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 s#053a5ba47315e1402c5adb3d98a031578669fdd2501b7ca13e8810e1259bf901 in let n#ad69e7ca1b69fd225648c0a3e7bd41ce230233ce0e52ee7663efa7d753d30d15 : Nat = n#1776e3a1457fc94889a6acf57a07ad84995ca1305d644883571b8f2f9e1d6de7 A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 n#23b13b5eb442693a86a7c04081cfbf73b8957ed0b5a4dc0efd5d330b96e5374d s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 in let n#f298406fe782c521fa0d81b36553d7ea84ad2a93ae254c0b62a56e34cab816ee : Nat = threeNat in let s#053a5ba47315e1402c5adb3d98a031578669fdd2501b7ca13e8810e1259bf901 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = addNat n#f298406fe782c521fa0d81b36553d7ea84ad2a93ae254c0b62a56e34cab816ee in let s#aaca7d140ea100750f3f7bea1979a8dcaf0c5bfe9af02502ac9e8aef7b92cb32 : (m#s : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5)-> A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = sucNat in let z#da2414b69a834952944a33018df0b7079f5632a7958189857156d5c036707ee2 : A#0af8a077f4ca580884d9189cf8edcccf40b0f8697ba7521303c157943cad87d5 = zeroNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#ad69e7ca1b69fd225648c0a3e7bd41ce230233ce0e52ee7663efa7d753d30d15 A z s)
+  =
+  \ (A : Type)-> let n#ca7aa09d36f6c99a82fb4dbf67cf9f2497d8eb6cbbb4961c1bca0364cb9c99c3 : Nat = fiveNat in \ (z : A)-> \ (s : (m : A)-> A)-> s (n#ca7aa09d36f6c99a82fb4dbf67cf9f2497d8eb6cbbb4961c1bca0364cb9c99c3 A z s)
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
 
 Bin : Type =
   (A : Type)-> (leaf : A)-> (fork : (left : A)-> (right : A)-> A)-> A

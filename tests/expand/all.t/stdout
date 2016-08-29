@@ -1,6 +1,12 @@
 
 {- Expanded program -}
 
+assert
+  'a'
+  =
+  'a'
+  : Char
+
 ap =
   \ (S : Session)-> \ (T : Session)-> proc (c : {[S, ~ T],{~ S, T}})
   split c {f, xo}.
@@ -16,6 +22,15 @@ ap_SInt_SBool =
   split f [fi, fo].
   ( fwd (!Int)(fi, x)
   | fwd (!Bool)(o, fo))
+
+app_lambda =
+  42
+
+app_lambda_2 =
+  63
+
+app_lambda_let =
+  42
 
 assert
   `true
@@ -1901,6 +1916,12 @@ assert
   "Hello World!"
 
 
+assert
+  "Hello Let!"
+  =
+  "Hello Let!"
+
+
 replicate =
   \ (A : Type)-> \ (n : Int)-> \ (x : A)-> proc (os : [!A ^ n])
   split os [o ^ n].
@@ -2346,11 +2367,80 @@ oneTwo : (A : Type)-> (x : A)-> (y : A)-> A =
 notTwo : (b : (A : Type)-> (x : A)-> (y : A)-> A)-> (A : Type)-> (x : A)-> (y : A)-> A =
   \ (b : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
 
+notZero : (A : Type)-> (x : A)-> (y : A)-> A =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+
+notZero' : (A : Type)-> (x : A)-> (y : A)-> A =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+
+notZero'' : (A : Type)-> (x : A)-> (y : A)-> A =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+
+assert
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
 andTwo : (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> (A : Type)-> (x : A)-> (y : A)-> A =
   \ (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> b0 ((A : Type)-> (x : A)-> (y : A)-> A)(\ (A : Type)-> \ (x : A)-> \ (y : A)-> x)b1
 
+assert
+  \ (A#x#b0 : Type)-> \ (x#x#b0 : A#x#b0)-> \ (y#x#b0 : A#x#b0)-> x#x#b0
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A#x#b0 : Type)-> \ (x#x#b0 : A#x#b0)-> \ (y#x#b0 : A#x#b0)-> x#x#b0
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A#b1 : Type)-> \ (x#b1 : A#b1)-> \ (y#b1 : A#b1)-> x#b1
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A#b1 : Type)-> \ (x#b1 : A#b1)-> \ (y#b1 : A#b1)-> y#b1
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
 orTwo : (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> (A : Type)-> (x : A)-> (y : A)-> A =
   \ (b0 : (A : Type)-> (x : A)-> (y : A)-> A)-> \ (b1 : (A : Type)-> (x : A)-> (y : A)-> A)-> b0 ((A : Type)-> (x : A)-> (y : A)-> A)b1 (\ (A : Type)-> \ (x : A)-> \ (y : A)-> y)
+
+assert
+  \ (A#b1 : Type)-> \ (x#b1 : A#b1)-> \ (y#b1 : A#b1)-> x#b1
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> x
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A#b1 : Type)-> \ (x#b1 : A#b1)-> \ (y#b1 : A#b1)-> y#b1
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A#y#b0 : Type)-> \ (x#y#b0 : A#y#b0)-> \ (y#y#b0 : A#y#b0)-> y#y#b0
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
+
+assert
+  \ (A#y#b0 : Type)-> \ (x#y#b0 : A#y#b0)-> \ (y#y#b0 : A#y#b0)-> y#y#b0
+  =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> y
+  : (A : Type)-> (x : A)-> (y : A)-> A
 
 Nat : Type =
   (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
@@ -2361,8 +2451,83 @@ zeroNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
 sucNat : (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
   \ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s)
 
+oneNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s z
+
+twoNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (s z)
+
+threeNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (s (s z))
+
+fourNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (s (s (s z)))
+
+fiveNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (s (s (s (s z))))
+
+sixNat : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (s (s (s (s (s z)))))
+
 addNat : (m : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
   \ (m : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> m ((A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)n (\ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s))
+
+assert
+  \ (A#n : Type)-> \ (z#n : A#n)-> \ (s#n : (m#n : A#n)-> A#n)-> s#n z#n
+  =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s z
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A#s#m : Type)-> \ (z#s#m : A#s#m)-> \ (s#s#m : (m#c94ec791bb72f06cbe4734e579cde852eaac34d4bdc2b35ab5ebc9f1546348ec#s#m : A#s#m)-> A#s#m)-> s#s#m z#s#m
+  =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s z
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A#s#m : Type)-> \ (z#s#m : A#s#m)-> \ (s#s#m : (m#5d0fc7b2cedae37cd88c41e9524f5879c579fe740122e5405d44ffc778cc525d#s#m : A#s#m)-> A#s#m)-> s#s#m (s#s#m (s#s#m (s#s#m (s#s#m z#s#m))))
+  =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (s (s (s (s z))))
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+mulNat : (m : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A =
+  \ (m : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> m ((A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)(\ (A : Type)-> \ (z : A)-> \ (s : (n : A)-> A)-> z)(\ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> n ((A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)n (\ (n : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A)-> \ (A : Type)-> \ (z : A)-> \ (s : (m#d7e330a0314d1cec9f612e669477a8f9bd582844bee41fd19866cad236183168 : A)-> A)-> s (n A z s)))
+
+assert
+  \ (A#z#m : Type)-> \ (z#z#m : A#z#m)-> \ (s#z#m : (n#z#m : A#z#m)-> A#z#m)-> z#z#m
+  =
+  \ (A : Type)-> \ (z : A)-> \ (s : (n : A)-> A)-> z
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A#z#m#n#s#m#z#z#m#n#s#m : Type)-> \ (z#z#m#n#s#m#z#z#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m)-> \ (s#z#m#n#s#m#z#z#m#n#s#m : (n#z#m#n#s#m#z#z#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m)-> A#z#m#n#s#m#z#z#m#n#s#m)-> z#z#m#n#s#m#z#z#m#n#s#m
+  =
+  \ (A : Type)-> \ (z : A)-> \ (s : (n : A)-> A)-> z
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A#z#m#n#s#m#z#z#m#n#s#m : Type)-> \ (z#z#m#n#s#m#z#z#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m)-> \ (s#z#m#n#s#m#z#z#m#n#s#m : (n#z#m#n#s#m#z#z#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m)-> A#z#m#n#s#m#z#z#m#n#s#m)-> z#z#m#n#s#m#z#z#m#n#s#m
+  =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s z
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A#z#m#n#s#m#z#z#m#n#s#m : Type)-> \ (z#z#m#n#s#m#z#z#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m)-> \ (s#z#m#n#s#m#z#z#m#n#s#m : (n#z#m#n#s#m#z#z#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m)-> A#z#m#n#s#m#z#z#m#n#s#m)-> z#z#m#n#s#m#z#z#m#n#s#m
+  =
+  \ (A#s#m : Type)-> \ (z#s#m : A#s#m)-> \ (s#s#m : (m#c94ec791bb72f06cbe4734e579cde852eaac34d4bdc2b35ab5ebc9f1546348ec#s#m : A#s#m)-> A#s#m)-> s#s#m z#s#m
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m : Type)-> \ (z#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m)-> \ (s#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m : (n#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m)-> A#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m)-> z#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m
+  =
+  \ (A#s#m : Type)-> \ (z#s#m : A#s#m)-> \ (s#s#m : (m#6c9189abda3c8f3421235b23bb1bcd7a8b65cf7c218b9b66706b02aa05dc5819#s#m : A#s#m)-> A#s#m)-> s#s#m (s#s#m (s#s#m (s#s#m (s#s#m (s#s#m z#s#m)))))
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
+
+assert
+  \ (A#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m : Type)-> \ (z#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m)-> \ (s#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m : (n#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m : A#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m)-> A#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m)-> z#z#m#n#s#m#z#z#m#n#s#m#n#s#m#z#z#m#n#s#m#z#z#m#n#s#m#n#s#m
+  =
+  \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (s (s (s (s (s z)))))
+  : (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
 
 Bin : Type =
   (A : Type)-> (leaf : A)-> (fork : (left : A)-> (right : A)-> A)-> A

@@ -216,6 +216,25 @@ reifyAct = \case
   N.At       t ps     -> PAct $ At (reify t) (reify ps)
   N.LetA defs         -> reifyDefsA defs
 
+app :: [N.Term] -> N.Term
+app = \case
+  [] -> error "app: IMPOSSIBLE"
+  [e] -> e
+  N.Def k d es : es' -> N.Def k d (es ++ es')
+  N.Let defs t : es -> N.Let defs (app (t : es))
+  N.Lam (Arg x os) t : e : es -> N.Let (N.aDef x os e) (app (t : es))
+  -- N.Case e brs : es -> N.Case e [ (con, app br es) | (con, br) <- brs ] <-- dup es
+  N.Case{} : _ -> error "app: TODO Case"
+  N.Lit{} : _ -> tyerr
+  N.Con{} : _ -> tyerr
+  N.Proc{} : _ -> tyerr
+  N.TTyp{} : _ -> tyerr
+  N.TFun{} : _ -> tyerr
+  N.TSig{} : _ -> tyerr
+  N.TProto{} : _ -> tyerr
+  N.TSession{} : _ -> tyerr
+  where tyerr = error "app: type error"
+
 -- Really naive rawApp parsing
 -- Next step is to carry an environment with
 -- the operators and their fixity.
@@ -236,9 +255,7 @@ normRawApp (Var (Name "Fwd"):es)
 normRawApp (Var (Name "Log"):es)
   | [e] <- es = log (norm (AS e)) ^. N.tSession
   | otherwise = error "invalid usage of Log"
-normRawApp (Var x:es) = N.Def N.Defined (norm x) (norm es)
-normRawApp [] = error "normRawApp: IMPOSSIBLE"
-normRawApp _ = error "normRawApp: unexpected application"
+normRawApp es = app (norm es)
 
 reifyRawApp :: N.Term -> [ATerm]
 reifyRawApp e0 =
