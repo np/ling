@@ -21,7 +21,7 @@ import Ling.Print
 import Ling.Session
 import Ling.Proc
 import Ling.Norm
-import Ling.Reduce (reduce, reduced)
+import Ling.Reduce (flatRSessions, reduce, reduced)
 import Ling.Scoped (Scoped(Scoped), scoped, ldefs)
 import Ling.SubTerms (transProgramTerms)
 import Ling.Defs (pushDefs, reduceP, mkLet)
@@ -102,8 +102,8 @@ stepEnv c tm env =
 sessionsStatus :: (RW -> Status) -> Location -> Scoped Sessions -> [(Location,Status)]
 sessionsStatus dflt l sss =
   [ ls
-  | (i,s) <- zip [0..] (unsafeFlatSessions (sss ^. scoped))
-  , ls <- sessionStatus dflt (Proj l i) (sss $> s) ]
+  | (i,ss) <- zip [0..] $ flatRSessions sss
+  , ls <- rsessionStatus dflt (Proj l i) ss ]
 
 sessionStatus :: (RW -> Status) -> Location -> Scoped Session -> [(Location,Status)]
 sessionStatus dflt l ss =
