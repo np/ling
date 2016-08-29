@@ -1,5 +1,9 @@
 [WARNING] Skipping compilation of unsupported definition _:_
 [WARNING] Skipping compilation of unsupported definition not
+[WARNING] Skipping compilation of unsupported definition _&&_
+[WARNING] Skipping compilation of unsupported definition _||_
+[WARNING] Skipping compilation of unsupported definition _==B_
+[WARNING] Skipping compilation of unsupported definition _/=B_
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type A
 [WARNING] Unsupported type A

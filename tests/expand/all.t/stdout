@@ -103,6 +103,114 @@ If : (b : Bool)-> (A : Type)-> (B : Type)-> (t : A)-> (e : B)-> case b of {
     `true -> t
   }
 
+assert
+  `false
+  =
+  `false
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `false
+  =
+  `false
+
+
+assert
+  `false
+  =
+  `false
+
+
+assert
+  `false
+  =
+  `false
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `false
+  =
+  `false
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `false
+  =
+  `false
+
+
+assert
+  `false
+  =
+  `false
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `false
+  =
+  `false
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `false
+  =
+  `false
+
+
 case_con : Int =
   1
 

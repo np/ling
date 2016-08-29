@@ -26,3 +26,22 @@ IF : (b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)-> A b
    = \(b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)->
       case b of { `true -> t, `false -> e }
 -}
+
+assert not `true = `false
+assert not `false = `true
+assert `false &&  `false = `false
+assert `false &&  `true  = `false
+assert `true  &&  `false = `false
+assert `true  &&  `true  = `true
+assert `false ||  `false = `false
+assert `false ||  `true  = `true
+assert `true  ||  `false = `true
+assert `true  ||  `true  = `true
+assert `false ==B `false = `true
+assert `false ==B `true  = `false
+assert `true  ==B `false = `false
+assert `true  ==B `true  = `true
+assert `false /=B `false = `false
+assert `false /=B `true  = `true
+assert `true  /=B `false = `true
+assert `true  /=B `true  = `false

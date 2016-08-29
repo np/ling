@@ -69,8 +69,11 @@ _:_ :  (A : Type)(x : A)-> A
 data Empty =
 data Unit = `unit
 data Bool = `false | `true
-not : (x : Bool)-> Bool
-    = \(x : Bool)-> case x of { `false -> `true, `true -> `false }
+not   : (x   : Bool)-> Bool = \(x   : Bool)-> case x of { `false -> `true, `true -> `false }
+_&&_  : (x y : Bool)-> Bool = \(x y : Bool)-> case x of { `false -> `false, `true -> y }
+_||_  : (x y : Bool)-> Bool = \(x y : Bool)-> case x of { `false -> y, `true -> `true }
+_==B_ : (x y : Bool)-> Bool = \(x y : Bool)-> case x of { `false -> not y, `true -> y }
+_/=B_ : (x y : Bool)-> Bool = \(x y : Bool)-> case x of { `false -> y, `true -> not y }
 data LR = `left | `right
 Int   : Type
 _+_   : (m : Int)(n : Int) -> Int

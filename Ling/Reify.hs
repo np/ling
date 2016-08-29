@@ -245,7 +245,7 @@ normRawApp :: [ATerm] -> N.Term
 normRawApp [e] = norm e
 normRawApp (e0:Op d:es)
   | (unOpName # d) `elem` ["-", "+", "*", "/", "%", "-D", "+D", "*D", "/D", "++S"
-                          ,"==I","==D","==C","==S"] =
+                          ,"==I","==D","==C","==S","&&","||","==B","/=B"] =
       N.Def N.Defined (norm (infixed # d)) [norm e0, normRawApp es]
 normRawApp (Var (Name "Fwd"):es)
   | [e0, e1] <- es

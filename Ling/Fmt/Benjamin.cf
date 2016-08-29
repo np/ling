@@ -6,9 +6,9 @@ comment "{-" "-}" ;
 
 Prg. Program ::= [Dec] ;
 
-token Name ( ["_"] (letter | ["-+*/%:="] | digit)*
-                   (letter | ["-+*/%:="])
-                   (letter | ["-+*/%:='"] | digit)*
+token Name ( ["_"] (letter | ["-+*/%:=&|"] | digit)*
+                   (letter | ["-+*/%:=&|"])
+                   (letter | ["-+*/%:=&|'"] | digit)*
              ["_"]
            | ["_"]
            | letter
@@ -19,10 +19,10 @@ token OpName
   ( (letter | ["-+*/%"] | digit)*
     ["-+*/%"]
     (letter | ["-+*/%_'"] | digit)*
-  | (letter | ["-+*/%:="] | digit)*
-    ["-+*/%:="]
-    ["-+*/%:="]
-    (letter | ["-+*/%_:='"] | digit)*
+  | (letter | ["-+*/%:=&|"] | digit)*
+    ["-+*/%:=&|"]
+    ["-+*/%:=&|"]
+    (letter | ["-+*/%_:=&|'"] | digit)*
   );
 
 DDef. Dec ::= Name OptSig "=" Term ;

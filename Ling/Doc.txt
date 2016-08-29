@@ -34,10 +34,10 @@ Character literals //Char// have the form
 
 
 Name literals are recognized by the regular expression
-`````["_"] (letter | ["-+*/%:="] | digit)* (letter | ["-+*/%:="]) (letter | ["-+*/%:='"] | digit)* ["_"] | ["_"] | letter (letter | ["_-'"] | digit)*`````
+`````["_"] (letter | ["-+*/%:=&|"] | digit)* (letter | ["-+*/%:=&|"]) (letter | ["-+*/%:=&|'"] | digit)* ["_"] | ["_"] | letter (letter | ["_-'"] | digit)*`````
 
 OpName literals are recognized by the regular expression
-`````(letter | ["-+*/%"] | digit)* ["-+*/%"] (letter | ["-+*/%_'"] | digit)* | (letter | ["-+*/%:="] | digit)* ["-+*/%:="] ["-+*/%:="] (letter | ["-+*/%_:='"] | digit)*`````
+`````(letter | ["-+*/%"] | digit)* ["-+*/%"] (letter | ["-+*/%_'"] | digit)* | (letter | ["-+*/%:=&|"] | digit)* ["-+*/%:=&|"] ["-+*/%:=&|"] (letter | ["-+*/%_:=&|'"] | digit)*`````
 
 
 ===Reserved words and symbols===
