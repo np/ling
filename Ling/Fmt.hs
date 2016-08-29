@@ -30,7 +30,7 @@ parseB = B.pProgram . B.resolveLayout True . B.myLexer
 (<<|>>) :: Err a -> Err a -> Err a
 Ok tree  <<|>> _        = Ok tree
 _        <<|>> Ok tree  = Ok tree
-Bad err0 <<|>> Bad err1 = Bad (err0 <> err1)
+Bad err0 <<|>> Bad err1 = Bad (err0 <> "\n\n" <> err1)
 
 run :: String -> IO ()
 run s = case  (B.transProgram <$> parseB s)

@@ -1723,6 +1723,18 @@ assert
 
 
 assert
+  (16 % 3)==I 16
+  =
+  `false
+
+
+assert
+  (pow 2 9)==I 512
+  =
+  `true
+
+
+assert
   3.03 +D 0.11000000000000032
   =
   3.14
@@ -1753,9 +1765,33 @@ assert
 
 
 assert
+  300000.0 *D 1.0e-5
+  =
+  3.0000000000000004
+
+
+assert
+  (300000.0 *D 1.0e-5)==D 3.0000000000000004
+  =
+  `true
+
+
+assert
+  (300000.0 *D 1.0e-5)==D 3.0
+  =
+  `false
+
+
+assert
   Int2Double 42
   =
   42.0
+
+
+assert
+  (Int2Double 44)==D 42.0
+  =
+  `false
 
 
 assert
@@ -1765,9 +1801,21 @@ assert
 
 
 assert
+  (showInt 42)==S "41"
+  =
+  `false
+
+
+assert
   showDouble 3.14
   =
   "3.14"
+
+
+assert
+  (showDouble 3.14)==S "314"
+  =
+  `false
 
 
 assert
@@ -1777,9 +1825,21 @@ assert
 
 
 assert
+  (showChar 'a')==S "'a'"
+  =
+  `true
+
+
+assert
   showString "Hello \"World\"!"
   =
   "\"Hello \\\"World\\\"!\""
+
+
+assert
+  (showString "Hello \"World\"!")==S ""
+  =
+  `false
 
 
 assert

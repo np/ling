@@ -70,24 +70,32 @@ reduceCase st0 brs =
   where st1   = reduce st0
         scase = (`mkCase` brs) <$> st1 ^. reduced
 
-reducePrim :: String -> [Literal] -> Maybe Literal
-reducePrim "_+_"        [LInteger x, LInteger y] = Just $ LInteger (x + y)
-reducePrim "_-_"        [LInteger x, LInteger y] = Just $ LInteger (x - y)
-reducePrim "_*_"        [LInteger x, LInteger y] = Just $ LInteger (x * y)
-reducePrim "_/_"        [LInteger x, LInteger y] = Just $ LInteger (x `div` y)
-reducePrim "_%_"        [LInteger x, LInteger y] = Just $ LInteger (x `mod` y)
-reducePrim "pow"        [LInteger x, LInteger y] = Just $ LInteger (x ^ y)
-reducePrim "_+D_"       [LDouble  x, LDouble  y] = Just $ LDouble  (x + y)
-reducePrim "_-D_"       [LDouble  x, LDouble  y] = Just $ LDouble  (x - y)
-reducePrim "_*D_"       [LDouble  x, LDouble  y] = Just $ LDouble  (x * y)
-reducePrim "_/D_"       [LDouble  x, LDouble  y] = Just $ LDouble  (x / y)
-reducePrim "powD"       [LDouble  x, LDouble  y] = Just $ LDouble  (x ** y)
-reducePrim "_++S_"      [LString  x, LString  y] = Just $ LString  (x ++ y)
-reducePrim "Int2Double" [LInteger x]             = Just $ LDouble  (fromInteger x)
-reducePrim "showInt"    [LInteger x]             = Just $ LString  (show x)
-reducePrim "showDouble" [LDouble  x]             = Just $ LString  (show x)
-reducePrim "showChar"   [LChar    x]             = Just $ LString  (show x)
-reducePrim "showString" [LString  x]             = Just $ LString  (show x)
+mkBool :: Bool -> Term
+mkBool False = Con (Name "false")
+mkBool True  = Con (Name "true")
+
+reducePrim :: String -> [Literal] -> Maybe Term
+reducePrim "_+_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x + y
+reducePrim "_-_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x - y
+reducePrim "_*_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x * y
+reducePrim "_/_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x `div` y
+reducePrim "_%_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x `mod` y
+reducePrim "pow"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x ^ y
+reducePrim "_+D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x + y
+reducePrim "_-D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x - y
+reducePrim "_*D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x * y
+reducePrim "_/D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x / y
+reducePrim "powD"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x ** y
+reducePrim "_++S_"      [LString  x, LString  y] = Just . Lit . LString  $ x ++ y
+reducePrim "Int2Double" [LInteger x]             = Just . Lit . LDouble  $ fromInteger x
+reducePrim "showInt"    [LInteger x]             = Just . Lit . LString  $ show x
+reducePrim "showDouble" [LDouble  x]             = Just . Lit . LString  $ show x
+reducePrim "showChar"   [LChar    x]             = Just . Lit . LString  $ show x
+reducePrim "showString" [LString  x]             = Just . Lit . LString  $ show x
+reducePrim "_==I_"      [LInteger x, LInteger y] = Just . mkBool $ x == y
+reducePrim "_==D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x == y
+reducePrim "_==C_"      [LChar    x, LChar    y] = Just . mkBool $ x == y
+reducePrim "_==S_"      [LString  x, LString  y] = Just . mkBool $ x == y
 reducePrim _            _                        = Nothing
 
 reduceDef :: Scoped (DefKind, Name, [Term]) -> Reduced Term
@@ -100,7 +108,7 @@ reduceDef sdef =
           | Just st <- scopedName (sdef $> d) -> reduceApp st es
         Undefined
           | Just ls <- es' ^? reduced . scoped . below _Lit
-          , Just  l <- reducePrim (unName # d) ls -> pure $ Lit l
+          , Just  e <- reducePrim (unName # d) ls -> pure e
         _ -> Def k d <$> es'
       where
         es' = reduce (sdef $> es)

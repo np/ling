@@ -1851,6 +1851,18 @@ assert
 
 
 assert
+  `false
+  =
+  `false
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
   3.14
   =
   3.14
@@ -1881,9 +1893,33 @@ assert
 
 
 assert
+  3.0000000000000004
+  =
+  3.0000000000000004
+
+
+assert
+  `true
+  =
+  `true
+
+
+assert
+  `false
+  =
+  `false
+
+
+assert
   42.0
   =
   42.0
+
+
+assert
+  `false
+  =
+  `false
 
 
 assert
@@ -1893,9 +1929,21 @@ assert
 
 
 assert
+  `false
+  =
+  `false
+
+
+assert
   "3.14"
   =
   "3.14"
+
+
+assert
+  `false
+  =
+  `false
 
 
 assert
@@ -1905,9 +1953,21 @@ assert
 
 
 assert
+  `true
+  =
+  `true
+
+
+assert
   "\"Hello \\\"World\\\"!\""
   =
   "\"Hello \\\"World\\\"!\""
+
+
+assert
+  `false
+  =
+  `false
 
 
 assert

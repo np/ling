@@ -36,7 +36,7 @@ substDef f k d es
   | Defined <- k
   , Just e <- f ^? at d . _Just . annotated = substApp f e es
   | Just ls <- es' ^? below _Lit
-  , Just  l <- reducePrim (unName # d) ls = Lit l
+  , Just  e <- reducePrim (unName # d) ls = e
   | otherwise                             = Def k d (subst f es)
 
   where

@@ -79,6 +79,7 @@ _*_   : (m : Int)(n : Int) -> Int
 _/_   : (m : Int)(n : Int) -> Int
 _%_   : (m : Int)(n : Int) -> Int
 pow   : (m : Int)(n : Int) -> Int
+_==I_ : (m : Int)(n : Int) -> Bool
 Vec   : (A : Type)(n : Int) -> Type
 take  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A m
 drop  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A n
@@ -146,8 +147,11 @@ _-D_ : (m : Double)(n : Double) -> Double
 _*D_ : (m : Double)(n : Double) -> Double
 _/D_ : (m : Double)(n : Double) -> Double
 powD : (m : Double)(n : Double) -> Double
+_==D_ : (m : Double)(n : Double) -> Bool
 Char : Type
+_==C_ : (c0 c1 : Char)-> Bool
 String : Type
+_==S_ : (s0 s1 : String)-> Bool
 showInt : (n : Int) -> String
 showDouble : (n : Double) -> String
 showChar : (c : Char) -> String

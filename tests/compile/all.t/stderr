@@ -1,5 +1,6 @@
 [WARNING] Skipping compilation of unsupported definition _:_
 [WARNING] Skipping compilation of unsupported definition not
+[WARNING] Unsupported type Bool
 [WARNING] Unsupported type A
 [WARNING] Unsupported type A
 [WARNING] Unsupported type A
@@ -33,6 +34,9 @@
 [WARNING] Unsupported type Allocation
 [WARNING] Unsupported type Allocation
 [WARNING] Skipping compilation of unsupported definition alloc
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
 [WARNING] Skipping compilation of unsupported definition ap
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
