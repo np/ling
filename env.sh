@@ -2,17 +2,21 @@
 # MODE=stack
 # MODE=cabal
 MODE=docker
+LING_GHC_RTS=()
+BUILD_OPTS=(--fast --pedantic)
+#LING_GHC_RTS=(+RTS -p)
+#BUILD_OPTS=(--profile --trace --pedantic)
 buildling() {
-  stack "${STACK_FLAGS[@]}" build --fast --pedantic "$@"
+  stack "${STACK_FLAGS[@]}" build "${BUILD_OPTS[@]}" "$@"
 }
 envexec(){
-  stack "${STACK_FLAGS[@]}" --docker-run-args '--memory 100m --memory-swap 100m' exec "$@"
+  stack "${STACK_FLAGS[@]}" --docker-run-args '--memory 100m --memory-swap 100m' exec -- "$@"
 }
 ling() {
-  envexec ling -- "$@"
+  envexec ling "$@" "${LING_GHC_RTS[@]}"
 }
 'ling-fmt'() {
-  envexec ling-fmt -- "$@"
+  envexec ling-fmt "$@" "${LING_GHC_RTS[@]}"
 }
 checkling() {
   envexec ./check.sh
@@ -134,10 +138,10 @@ DIST="$TOP"/dist
 case "$MODE" in
   (docker)
     cmdcheck() {
-      envexec "$TOP"/tools/cmdcheck -- "$@"
+      envexec "$TOP"/tools/cmdcheck "$@"
     }
     cmdrecord() {
-      envexec "$TOP"/tools/cmdrecord -- "$@"
+      envexec "$TOP"/tools/cmdrecord "$@"
     }
     rm -rf "$DIST"/shims
     STACK_FLAGS=(--docker);;
