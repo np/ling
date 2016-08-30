@@ -19,8 +19,30 @@ import           Ling.Session.Core
 strong :: Bool
 strong = False
 
-newtype Reduced a = Reduced { _reduced :: Scoped a }
-  deriving (Eq, Monoid, Functor, Applicative)
+data Reduced a = Reduced { _hasReduced :: Bool, _reduced :: Scoped a }
+  deriving (Eq)
+
+instance Monoid a => Monoid (Reduced a) where
+  mempty = Reduced False ø
+  Reduced hx x `mappend` Reduced hy y =
+    Reduced (hx || hy) (x <> y)
+
+instance Functor Reduced where
+  fmap f (Reduced h x) = Reduced h (f <$> x)
+
+  x <$ Reduced h _ = Reduced h (pure x)
+
+-- Scopes must always be compatible. Namely in a Defs, a given Name always map to the same Term.
+instance Applicative Reduced where
+  pure = Reduced False . pure
+  Reduced hf f <*> Reduced hx x =
+    Reduced (hf || hx) (f <*> x)
+
+  Reduced hx _ *> Reduced hy y =
+    Reduced (hx || hy) y
+
+  Reduced hx x <* Reduced hy _ =
+    Reduced (hx || hy) x
 
 makePrisms ''Reduced
 makeLenses ''Reduced
@@ -63,12 +85,12 @@ reduceCase :: Scoped Term -> [Branch] -> Reduced Term
 reduceCase st0 brs =
   traceReduce "reduceCase" st0 $
   case st1 ^. reduced . scoped of
-    Con{} -> reduce (st0 *> scase)
-    _ | strong    -> Reduced scase
+    Con{} -> reduce (st0 *> scase ^. reduced)
+    _ | strong    -> scase
       | otherwise -> mkCase <$> st1 <*> reduce (st0 $> brs)
 
   where st1   = reduce st0
-        scase = (`mkCase` brs) <$> st1 ^. reduced
+        scase = (`mkCase` brs) <$> st1
 
 mkBool :: Bool -> Term
 mkBool False = Con (Name "false")
@@ -131,7 +153,7 @@ instance HasReduce Session Session where
       IO rw vd s -> whenStrong $ IO rw <$> reduce (s0 $> vd) <*> reduce (s0 $> s)
     where
       whenStrong s | strong    = s
-                   | otherwise = Reduced s0
+                   | otherwise = Reduced False s0
 
 instance HasReduce RFactor RFactor where
   reduce = reduce_ rterm
@@ -166,7 +188,7 @@ instance HasReduce Term Term where
     where
       t0 = st0 ^. scoped
       whenStrong s | strong    = s
-                   | otherwise = Reduced st0
+                   | otherwise = Reduced False st0
 
 -- TODO assumptions!!!
 reduce_ :: HasReduce a b => Traversal s t a b -> Reduce s t
@@ -191,7 +213,7 @@ flatRSessions :: Scoped Sessions -> [Scoped RSession]
 flatRSessions sss = sss ^. scoped . _Sessions >>= flatRSession . (sss $>)
 
 instance HasReduce Sessions Sessions where
-  reduce = Reduced . fmap Sessions . sequenceA . flatRSessions
+  reduce = Reduced True{-not always-} . fmap Sessions . sequenceA . flatRSessions
 
 -- This is not really about some sort of Weak Head Normal Form.
 -- What matters is to reduce the At constructor:
@@ -203,5 +225,5 @@ instance HasReduce Proc Proc where
       proc0 `Dot` proc1 -> (dotP :: Op2 Proc) <$> reduce (sp $> proc0) <*> reduce (sp $> proc1)
       NewSlice cs r n p
         | strong    -> NewSlice cs <$> reduce (sp $> r) <*> pure n <*> reduce (sp $> p)
-        | otherwise -> Reduced sp
+        | otherwise -> Reduced False sp
       Procs procs -> procs ^. each . to (reduce . (sp $>))
