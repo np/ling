@@ -3,7 +3,6 @@
 module Ling.SubTerms
   ( SubTerms(subTerms)
   , transProgramTerms
-  , argTerms
   , varDecTerms
   , absTerms )
   where
@@ -17,6 +16,12 @@ class SubTerms a where
 
 transProgramTerms :: (Defs -> Endom Term) -> Endom Program
 transProgramTerms = transProgramDecs . (over subTerms .)
+
+varDecTerms :: Traversal' VarDec Term
+varDecTerms = argBody . _Just
+
+absTerms :: Traversal' (VarDec, Term) Term
+absTerms = varDecTerms `beside` id
 
 instance SubTerms a => SubTerms (Maybe a) where
   subTerms = _Just . subTerms
@@ -49,18 +54,6 @@ instance SubTerms RSession where
 
 instance SubTerms ChanDec where
   subTerms f (ChanDec c r os) = ChanDec c <$> subTerms f r <*> subTerms f os
-
-instance SubTerms a => SubTerms (Arg a) where
-  subTerms = argTerms subTerms
-
-argTerms :: Traversal' a Term -> Traversal' (Arg a) Term
-argTerms trv f (Arg x b) = Arg x <$> trv f b
-
-varDecTerms :: Traversal' VarDec Term
-varDecTerms = argTerms _Just
-
-absTerms :: Traversal' (VarDec, Term) Term
-absTerms = varDecTerms `beside` id
 
 instance SubTerms CPatt where
   subTerms f = \case
