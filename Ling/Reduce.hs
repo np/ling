@@ -63,17 +63,22 @@ reduceCase :: Scoped Term -> [Branch] -> Reduced Term
 reduceCase st0 brs =
   traceReduce "reduceCase" st0 $
   case st1 ^. reduced . scoped of
-    Con{} -> reduce (st0 *> scase)
-    _ | strong    -> Reduced scase
-      | otherwise -> mkCase <$> st1 <*> reduce (st0 $> brs)
-
-  where st1   = reduce st0
-        scase = (`mkCase` brs) <$> st1 ^. reduced
+    Con con
+      | Just rhs <- lookup con brs -> reduce (st0 $> rhs)
+      | otherwise                  -> error "reduceCase: IMPOSSIBLE"
+    _ | strong    -> mkCase <$> st1 <*> reduce (st0 $> brs)
+      | otherwise -> (`Case` brs) <$> st1
+                  -- ^ no need for mkCase here since:
+                  -- * the scrutinee is not a constructor
+                  -- * the branches have not changed
+                  -- * mkCase would not do anything useful
+  where st1 = reduce st0
 
 mkBool :: Bool -> Term
 mkBool False = Con (Name "false")
 mkBool True  = Con (Name "true")
 
+-- The resulting Term should be in normal form.
 reducePrim :: String -> [Literal] -> Maybe Term
 reducePrim "_+_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x + y
 reducePrim "_-_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x - y
