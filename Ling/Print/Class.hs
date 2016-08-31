@@ -48,6 +48,7 @@ render d = rend 0 (($ "") <$> d []) "" where
     ['\n',c]    :ts | c `elem` ")"  -> {-unlessElem " " (showChar ' ') .-} showChar c . rend (i-1) ts
     ",\n\n"     :ts -> new 0 . new 0 . rend 0 ts
     [c,'\n']    :ts | c `elem` ",.;" -> showChar c . new i . rend i ts
+    "in\n"      :ts -> showString "in" . new i . rend i ts
     ['\n',c]    :ts | c `elem` "|X⁇" -> new (i-1) . space [c] . rend i ts
     t:","       :ts -> showString t . space "," . rend i ts
     ","         :ts -> showChar ',' . rend i ts

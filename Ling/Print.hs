@@ -92,7 +92,7 @@ instance Print Term where
     Loli term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "-o"), prt 1 term2])
     TFun term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "->"), prt 1 term2])
     TSig term1 term2 -> prPrec i 1 (concatD [prt 2 term1, doc (showString "**"), prt 1 term2])
-    Let name optsig term1 term2 -> prPrec i 1 (concatD [doc (showString "let"), prt 0 name, prt 0 optsig, doc (showString "="), prt 0 term1, doc (showString "in"), prt 0 term2])
+    Let name optsig term1 term2 -> prPrec i 1 (concatD [doc (showString "let"), prt 0 name, prt 0 optsig, doc (showString "="), prt 0 term1, doc (showString "in\n"), prt 0 term2])
     Lam term1 term2 -> prPrec i 0 (concatD [doc (showString "\\"), prt 2 term1, doc (showString "->"), prt 0 term2])
     TProc chandecs proc -> prPrec i 0 (concatD [txt "proc", txt "(", prt 0 chandecs, txt ")", nl, prt 0 proc])
 
@@ -199,7 +199,7 @@ instance Print a => Print (Scoped a) where
     | nullDefs ld = prt i x
     | otherwise   =
         concatD [ doc (showString "let ") , prt 0 ld
-                , doc (showString "in")
+                , doc (showString "in\n")
                 , prt i x ]
 
 instance Print N.Defs where

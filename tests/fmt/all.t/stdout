@@ -22,13 +22,16 @@ app_lambda_2 =
   (\ (x : Int)(y : Int)-> x + y)21 42
 
 app_lambda_let =
-  (let x = 21 in \ (y : Int)-> x + y)(let notx = 7 in notx + notx + notx)
+  (let x = 21 in
+  \ (y : Int)-> x + y)(let notx = 7 in
+  notx + notx + notx)
 
 assert
   `true
   =
   `true
-  : let B = Bool in case `left of {
+  : let B = Bool in
+  case `left of {
     `left -> B ,
     `right -> Int
   }
@@ -335,7 +338,8 @@ com_new_mk_ten2 =
   let mk_tensor2 = \ (S0 S1 : Session)(p0 : < S0 >)(p1 : < S1 >)-> proc (c : [S0, S1])
   split c as [c0, c1]
   ( @ p0 (c0)
-  | @ p1 (c1))in \ (S : Session)(p : < S >)(q : < ~ S >)-> proc ()
+  | @ p1 (c1))in
+  \ (S : Session)(p : < S >)(q : < ~ S >)-> proc ()
   new [c : S, d : ~ S].
   @ (mk_tensor2 S (~ S)p q)[c, d]
 
@@ -885,7 +889,8 @@ idTypeX : idType idTypeA
 assert
   42
   =
-  let x = 42 in x
+  let x = 42 in
+  x
 
 
 infer_plus =
@@ -921,13 +926,17 @@ rot2 : (x : ABC)-> ABC =
   \ (x : ABC)-> rot (rot x)
 
 let42ann =
-  let x : Int = 42 in x + x
+  let x : Int = 42 in
+  x + x
 
 let42 =
-  let x = 42 in x + x
+  let x = 42 in
+  x + x
 
 let_example =
-  let T = Int in let f = _+_ in proc (c : ?T.!T)
+  let T = Int in
+  let f = _+_ in
+  proc (c : ?T.!T)
   recv c (x : T).
   let y = (f x x).
   send c y
@@ -938,10 +947,14 @@ let_in_proc_for_session =
   let x : A <- c
 
 let_let =
-  let x = 1 in let y = x in y
+  let x = 1 in
+  let y = x in
+  y
 
 let_order =
-  let x = 1 in let y = 2 in x + y
+  let x = 1 in
+  let y = 2 in
+  x + y
 
 let_order_proc =
   proc (c : !Int)
@@ -962,16 +975,28 @@ letrecv =
   send c y
 
 letsession =
-  let f = \ (S0 : Session)-> let S1 = {S0, S0}in let S2 = {S1, S1}in let S3 = {S2, S2}in let S4 = {S3, S3}in let S5 = {S4, S4}in let S6 = {S5, S5}in let S7 = {S6, S6}in S7 in proc (c)
+  let f = \ (S0 : Session)-> let S1 = {S0, S0}in
+  let S2 = {S1, S1}in
+  let S3 = {S2, S2}in
+  let S4 = {S3, S3}in
+  let S5 = {S4, S4}in
+  let S6 = {S5, S5}in
+  let S7 = {S6, S6}in
+  S7 in
+  proc (c)
   fwd 2 (f (?Int)) c
 
 lettype : (P : (A B : Type)-> Type)(p : (A : Type)-> P A A)(A : Type)-> P (P (P (P A A)(P A A)) (P (P A A)(P A A)))(P (P (P A A)(P A A)) (P (P A A)(P A A)))=
-  \ (P : (A B : Type)-> Type)(p : (A : Type)-> P A A)(A : Type)-> let B = P A A in let C = P B B in let D = P C C in p D
+  \ (P : (A B : Type)-> Type)(p : (A : Type)-> P A A)(A : Type)-> let B = P A A in
+  let C = P B B in
+  let D = P C C in
+  p D
 
 assert
   1
   =
-  let f = \ (x : Int)-> x in f (f 1)
+  let f = \ (x : Int)-> x in
+  f (f 1)
   : Int
 
 showMult =
@@ -1322,12 +1347,14 @@ new_alloc =
   | fwd (!Int)(c, e))
 
 new_ann_let_fuse_0 =
-  let ann = fuse 0 in proc ()
+  let ann = fuse 0 in
+  proc ()
   new/ann [c : [], d]
   fwd [] (c, d)
 
 new_ann_let_fuse_1 =
-  let ann = fuse 1 in proc ()
+  let ann = fuse 1 in
+  proc ()
   new/ann [c : [], d]
   fwd [] (c, d)
 
@@ -1954,7 +1981,9 @@ assert
 
 
 assert
-  let hello = "Hello " in let world = "Let!" in hello ++S world
+  let hello = "Hello " in
+  let world = "Let!" in
+  hello ++S world
   =
   "Hello Let!"
 
@@ -2382,10 +2411,14 @@ notTwo : (b : Two)-> Two =
   \ (b : Two)(A : Type)(x y : A)-> b A y x
 
 notZero : Two =
-  \ (A : Type)(x y : A)-> let A' = A in let x' = y in let y' = x in x'
+  \ (A : Type)(x y : A)-> let A' = A in
+  let x' = y in
+  let y' = x in
+  x'
 
 notZero' : Two =
-  let b = zeroTwo in \ (A : Type)(x y : A)-> b A y x
+  let b = zeroTwo in
+  \ (A : Type)(x y : A)-> b A y x
 
 notZero'' : Two =
   notTwo zeroTwo
@@ -2688,10 +2721,12 @@ wrong_integer_literal : Double =
   42
 
 wrong_let42ann =
-  let x : Bool = 42 in x
+  let x : Bool = 42 in
+  x
 
 wrong_let42 =
-  let x = 42 in x x
+  let x = 42 in
+  x x
 
 wrong_merger_ParSort_full_seq =
   \ (m n : Int)-> proc (c0 : [!Vec Int m, ?Vec Int m],c1 : [!Vec Int n, ?Vec Int n],c : {?Vec Int (m + n),!Vec Int (m + n)})
