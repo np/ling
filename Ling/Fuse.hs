@@ -6,6 +6,7 @@ import           Ling.Norm
 import           Ling.Prelude
 import           Ling.Proc
 import           Ling.Print
+import           Ling.Reduce
 import           Ling.Rename
 import           Ling.Scoped
 import           Ling.SubTerms
@@ -160,9 +161,17 @@ fuse2Chans nu cd0 cd1 p0 =
     mact0 = p0 ^? {-scoped .-} fetchActProc predA . _Act
     -- p1    = p0 &  {-scoped .-} fetchActProc predA .~ ø
 
+-- This is quite similar to Sequential.transTermProc.
+fuseTermProc :: Defs -> Endom Term
+fuseTermProc gdefs0 tm0
+  | tm1 <- reduce (Scoped gdefs0 ø tm0) ^. reduced
+  , Proc cs proc0 <- tm1 ^. scoped
+  = mkLetS $ tm1 $> Proc cs (fuseProc (gdefs0 <> tm1 ^. ldefs) proc0)
+  | otherwise
+  = tm0
+
 fuseProgram :: Defs -> Endom Program
--- fuseProgram = prgDecs . each . _Sig . _3 . _Just . _Proc . _2 %~ fuseProc
-fuseProgram pdefs = transProgramTerms (over (_Proc . _2) . fuseProc . (pdefs <>))
+fuseProgram pdefs = transProgramTerms $ fuseTermProc . (pdefs <>)
 {-
 fuse2Chans c0 c1 p0 =
   p0 & partsOf (scoped . procActsChans (l2s [c0,c1])) %~ f

@@ -7,7 +7,7 @@ import Ling.Prelude
 import Ling.Proc
 import Ling.Reduce
 import Ling.Scoped
-import Ling.Session.Core
+--import Ling.Session.Core
 import Ling.SubTerms
 
 mkLet :: Defs -> Endom Term
@@ -26,6 +26,9 @@ mkLet defs0 = \case
   t0@TSig{}           -> Let defs0 t0
   t0@TProto{}         -> Let defs0 t0
   t0@TSession{}       -> Let defs0 t0
+
+mkLetS :: Scoped Term -> Term
+mkLetS s = mkLet (s ^. ldefs) (s ^. scoped)
 
 -- Short-cutting the traversal when defs is null requires s ~ t
 mkLet_ :: Traversal s t Term Term -> Scoped s -> t
@@ -86,16 +89,21 @@ instance PushDefs Term where
         = trace $ "[WARNING] PushDefs Term: pushDefs should be called on reduced terms but " ++ show d ++ " has a definition"
       warn _ _ _ = id
 
+{-
 instance PushDefs RSession where
   pushDefs = mkLet__
+-}
 
 instance PushDefs Session where
+  pushDefs = mkLet__
+{-
   pushDefs s0 =
     case s0 ^. scoped of
       TermS p t  -> termS p $ pushDefs (s0 $> t)
       Array k ss -> Array k $ mkLet__ (s0 $> ss)
       IO rw vd s -> uncurry (IO rw) $
                       mkLet_ (varDecTerms `beside` subTerms) (s0 $> (vd, s))
+-}
 
 instance PushDefs Proc where
   pushDefs sp0 =

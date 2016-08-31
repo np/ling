@@ -22,9 +22,10 @@ import Ling.Session
 import Ling.Proc
 import Ling.Norm
 import Ling.Reduce (flatRSessions, reduce, reduced)
-import Ling.Scoped (Scoped(Scoped), scoped, ldefs)
+import Ling.Scoped (Scoped(Scoped), scoped, ldefs, allDefs)
+import Ling.Subst (substScoped)
 import Ling.SubTerms (transProgramTerms)
-import Ling.Defs (pushDefs, reduceP, mkLet)
+import Ling.Defs (mkLet, mkLet__, mkLetS)
 
 data Status = Full | Empty deriving (Eq,Read,Show)
 
@@ -113,8 +114,8 @@ sessionStatus dflt l ss =
     TermS p t ->
       let st' = reduce (ss $> t) ^. reduced in
       case st' ^. scoped of
-        TSession s -> sessionStatus dflt l (st' $> sessionOp p s)
-        t'         -> trace ("[WARNING] Skipping abstract session " ++ pretty t')
+        TSession s -> sessionStatus dflt l (ss *> st' $> sessionOp p s)
+        _          -> trace ("[WARNING] Skipping abstract session " ++ pretty (substScoped (ss *> st')))
                       [(l, Empty)]
 
 rsessionStatus :: (RW -> Status) -> Location -> Scoped RSession -> [(Location,Status)]
@@ -180,8 +181,7 @@ addChanDecs scds =
     cds@(Arg c0 c0S : _) ->
       let l = Root c0 in
       addLocs  (sessionStatus (const Empty) l (scds $> c0S)) .
-      addChans [(c,(l,oneS (pushDefs (scds $> cS)))) | Arg c cS <- cds]
-      -- TODO check pushDefs, or should it be mkLet to be lazier
+      addChans [(c,(l,oneS (mkLet__ (scds $> cS)))) | Arg c cS <- cds]
 
 {-
 -- This could be part of the Dual class, a special Seq operation could also
@@ -239,10 +239,6 @@ transProcs env0 p0s waiting k0
         _   -> transErr "All the processes are stuck" waiting
 
     p0':ps ->
-      -- Here one might prefer to avoid the pushDefs of reduceP,
-      -- the question becomes: should we add the resulting defs into edefs?
-      -- Or should the gdefs go to edefs and the ldefs be put back into the
-      -- resulting proc using dotP?
       let rp0 = reduce (env0 ^. scope $> p0') ^. reduced
           env1 = env0 & edefs <>~ rp0 ^. ldefs
           k1 env2 p2 = k0 env2 (rp0 ^. ldefs `dotP` p2)
@@ -293,13 +289,13 @@ transProcs env0 p0s waiting k0
 
         _ -> error "IMPOSSIBLE: transProcs"
 
-initEnv :: Int -> Defs -> [ChanDec] -> Env
-initEnv maxgas gdefs cs =
+initEnv :: Int -> Scoped () -> [ChanDec] -> Env
+initEnv maxgas sc cs =
   emptyEnv
-    & edefs .~ gdefs
+    & edefs .~ allDefs sc
     & gas .~ maxgas
     & addLocs  [ ls | ChanDec c _ (Just s) <- cs
-               , ls <- rsessionStatus decSt (Root c) (Scoped gdefs ø s) ]
+               , ls <- rsessionStatus decSt (Root c) (sc $> s) ]
     & addChans [ (c, (Root c, s)) | ChanDec c _ (Just s) <- cs ]
   where
     decSt Write = Empty
@@ -308,8 +304,10 @@ initEnv maxgas gdefs cs =
 
 transTermProc :: Int -> Defs -> Endom Term
 transTermProc maxgas gdefs tm0
-  | Proc cs proc0 <- reduceP $ Scoped gdefs ø tm0
-  = transProc (initEnv maxgas gdefs cs) proc0 (const $ Proc cs)
+  | tm1 <- reduce (Scoped gdefs ø tm0) ^. reduced
+  , Proc cs proc0 <- tm1 ^. scoped
+  = transProc (initEnv maxgas (Scoped gdefs (tm1 ^. ldefs) ()) cs) proc0 . const $
+      mkLetS . (tm1 $>) . Proc cs
   | otherwise
   = tm0
 

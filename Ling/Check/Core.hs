@@ -14,6 +14,7 @@ import           Ling.Proto
 import           Ling.Reduce
 import           Ling.Scoped
 import           Ling.Session
+import           Ling.Subst           (substScoped)
 import           Ling.Prelude         hiding (subst1)
 import           Prelude              hiding (log)
 
@@ -67,18 +68,19 @@ sendRecvSession = \case
       Nothing -> (,) c . (pure .) . sendS <$> inferTerm e
       Just s0  -> do
         checkSession s0
-        s1 <- pushDefsR . reduce_ tSession <$> tcScope s0
-        case s1 of
+        s1 <- view reduced . reduce <$> tcScope s0
+        case s1 ^. scoped of
           IO Write (Arg x typ) s2 ->
-            checkAnnTerm (Ann typ e) $>
-              (c, \s -> checkEqSessions c (pure s) (subst1 (x, Ann typ e) s2) $> s0)
+            checkCheckedAnnTerm (Ann (mkLetS . (s1 $>) <$> typ) e) $>
+              (c, \s -> checkEqSessions c (pure s) (s1 *> subst1 (x, Ann typ e) s2) $> s0)
+            -- Instead of returning s0 we could return `mkLetS s1`
           _ ->
             tcError . unlines $
               ["Annotation when sending on channel " <> pretty c <> " should be of the form `!(_ : _). _`."
               ,"Instead the current annotation:"
               ,"  " <> pretty s0
               ,"which reduces to: "
-              ,"  " <> pretty s1]
+              ,"  " <> pretty (substScoped s1)]
   Recv c arg@(Arg _c typ) ->
     checkMaybeTyp typ $> (c, (pure .) $ depRecv arg)
   _ -> tcError "typeSendRecv: Not Send/Recv"
@@ -125,23 +127,24 @@ checkAx s cs = do
       pure $ mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
 
 inferNewChan :: Print channel => channel -> Session -> TC Typ
-inferNewChan c = go Read where
-  go rw' s = do
-    s' <- reduce_ tSession <$> tcScope s
-    case pushDefsR s' of
+inferNewChan c s0 = go Read =<< tcScope s0 where
+  go rw' ss = do
+    let rss = reduce ss ^. reduced
+    case rss ^. scoped of
       IO rw (Arg _ mty) s1 -> do
         when (rw == rw') . tcError . concat $ ["Unexpected ", map toLower (show rw), " on channel ", pretty c]
-        let ty0 = mty ?| error "IMPOSSIBLE: inferred session must have type annotations"
+        let ty0 =
+              mkLetS $ rss $> (mty ?| error "IMPOSSIBLE: inferred session must have type annotations")
         when (endS `isn't` s1) $ do
-          ty1 <- go rw s1
+          ty1 <- go rw (rss $> s1)
           checkTypeEquivalence ty0 ty1
         pure ty0
       Array{} -> tcError . concat $
-                    ["Unexpected array session (", pretty s, ") when "
+                    ["Unexpected array session (", pretty (substScoped ss), ") when "
                     ,"allocating channel ", pretty c, ".\n"
                     ,"To allocate an array use `new [c:S,c':~S]` or `new [:c:S,c':~S:]`"]
       TermS{} -> tcError . concat $
-                    ["Unsupported abstract session (", pretty s, ") when "
+                    ["Unsupported abstract session (", pretty (substScoped ss), ") when "
                     ,"allocating channel ", pretty c, "."]
 
 
@@ -269,8 +272,10 @@ checkAct act proto =
       return $ proto' `dotProto` proto
 
 unTProto :: Term -> TC Sessions
-unTProto t0 =
-  case pushDefsR (reduce (pure t0)) of
+unTProto t0 = do
+  -- TODO: I would prefer to avoid using pushDefs.
+  st0 <- tcScope t0
+  case pushDefsR (reduce st0) of
     TProto ss  -> return ss
     Case u brs -> mkCaseSessions (==) u <$> branches unTProto brs
   {-
@@ -353,6 +358,11 @@ checkMaybeTerm :: Typ -> Maybe Term -> TC ()
 checkMaybeTerm _   Nothing   = return ()
 checkMaybeTerm typ (Just tm) = checkTerm typ tm
 
+-- Like `checkAnnTerm` but the type annotation is already checked.
+checkCheckedAnnTerm :: AnnTerm -> TC Typ
+checkCheckedAnnTerm (Ann Nothing    tm) = inferTerm tm
+checkCheckedAnnTerm (Ann (Just typ) tm) = checkTerm typ tm $> typ
+
 checkAnnTerm :: AnnTerm -> TC Typ
 checkAnnTerm (Ann Nothing    tm) = inferTerm tm
 checkAnnTerm (Ann (Just typ) tm) = checkTyp typ >> checkTerm typ tm $> typ
@@ -412,6 +422,17 @@ checkSession s0 = case s0 of
   TermS _ t   -> checkTerm sessionTyp t
   IO _ arg s  -> checkVarDec arg $ checkSession s
   Array _ ss  -> for_ (ss ^. _Sessions) checkRSession
+
+{- Not used yet...
+   This makes sense to use these when the definitions should scope on everything which is
+   being type checked. Otherwise prefer the use of Scoped, or mkLet.
+
+localDefs :: Defs -> Endom (TC b)
+localDefs defs = local $ edefs <>~ defs
+
+localScope :: Scoped a -> Endom (TC b)
+localScope = localDefs . view ldefs
+-}
 
 -- The arguments are assumed to be already checked,
 -- otherwise use `checkDef` or `checkVarDec`.

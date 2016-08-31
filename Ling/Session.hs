@@ -28,7 +28,7 @@ constRWOp :: RW -> SessionOp
 constRWOp rw = SessionOp (constEndom rw) idEndom
 
 sessionStep :: Term -> Endom Session
-sessionStep tm (IO _ (Arg x mty) s) = pushDefs $ subst1 (x, Ann mty tm) s
+sessionStep tm (IO _ (Arg x mty) s) = mkLet__ $ subst1 (x, Ann mty tm) s
 sessionStep _  s                    = error $ "sessionStep: no steps " ++ show s
 
 -- Should be length preserving
