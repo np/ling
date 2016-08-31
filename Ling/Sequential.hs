@@ -103,7 +103,7 @@ sessionsStatus :: (RW -> Status) -> Location -> Scoped Sessions -> [(Location,St
 sessionsStatus dflt l sss =
   [ ls
   | (i,ss) <- zip [0..] $ flatRSessions sss
-  , ls <- rsessionStatus dflt (Proj l i) ss ]
+  , ls <- rsessionStatus dflt (Proj l i) (sss *> ss) ]
 
 sessionStatus :: (RW -> Status) -> Location -> Scoped Session -> [(Location,Status)]
 sessionStatus dflt l ss =
