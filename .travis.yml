@@ -126,3 +126,11 @@ script:
   ling fixtures/compile/double.ll
   echo | ling-fmt
   ./check.sh
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/c02970ff9151d71221a4
+    on_success: always  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: never     # options: [always|never|change] default: always
