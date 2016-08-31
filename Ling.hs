@@ -30,7 +30,7 @@ import           Ling.Prelude
 import           Ling.Print
 import           Ling.Fuse          (fuseProgram)
 import           Ling.Scoped        (Scoped(Scoped))
-import           Ling.Subst         (subst)
+import           Ling.Subst         (substDefs)
 import           Ling.SubTerms      (transProgramTerms)
 import           Ling.Reify
 import           Ling.Rename        (hDec)
@@ -246,7 +246,7 @@ transP' opts tcenv prg = do
          | otherwise         = sprg
     wprg | opts ^. doReduce  = transProgramTerms (\defs -> reduceP . Scoped (pdefs <> defs) ø) fprg
          | otherwise         = fprg
-    eprg | opts ^. doExpand  = transProgramTerms (subst . (pdefs <>)) wprg
+    eprg | opts ^. doExpand  = transProgramTerms (substDefs . (pdefs <>)) wprg
          | otherwise         = wprg
     cprg = Compile.transProgram $ addPrims (opts ^. compilePrims) eprg
 

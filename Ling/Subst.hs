@@ -8,7 +8,7 @@ reduction rules:
 * case
 * @(proc...)
 -}
-module Ling.Subst (Subst(subst), substScoped, reduceS) where
+module Ling.Subst (Subst(subst), substDefs, substScoped, reduceS) where
 
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
@@ -37,10 +37,15 @@ substDef f k d es
   , Just e <- f ^? at d . _Just . annotated = substApp f e es
   | Just ls <- es' ^? below _Lit
   , Just  e <- reducePrim (unName # d) ls = e
-  | otherwise                             = Def k d (subst f es)
+  | otherwise                             = Def k d $ subst f es
 
   where
     es' = subst f es
+
+substDefs :: Subst a => Defs -> Endom a
+substDefs defs
+  | defs == ø = id
+  | otherwise = subst defs
 
 substScoped :: Subst a => Scoped a -> a
 substScoped s = subst (allDefs s) (s ^. scoped)
