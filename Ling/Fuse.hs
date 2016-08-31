@@ -12,6 +12,7 @@ import           Ling.Scoped
 import           Ling.SubTerms
 import           Ling.Defs
 import           Ling.Session
+import           Ling.Subst
 
 type Allocation = Term
 
@@ -68,14 +69,17 @@ doFuse anns =
 
 type NU = [ChanDec] -> Act
 
+type Fuse2 a b = NU -> Reduced ChanDec -> a -> Reduced ChanDec -> b -> Fused
+type Fuse2' a = Fuse2 a a
+
 fuseDot :: Defs -> Op2 Proc
 fuseDot defs = \case
   Act (Nu anns0 newpatt)
-    | anns1 <- reduceP $ Scoped defs ø anns0
+    | anns1 <- reduceS $ Scoped defs ø anns0
     , Just anns2 <- doFuse anns1 ->
     case newpatt of
       NewChans k cs
-        | [c, d] <- reduceP . Scoped defs ø <$> cs
+        | [c, d] <- reduce . Scoped defs ø <$> cs
         -> fuseProc defs . fuseChanDecs (Nu anns2 . NewChans k) [(c, d)]
       _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty newpatt
                              , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
@@ -93,14 +97,16 @@ fuseProc defs = \case
   Procs procs -> Procs $ procs & each %~ fuseProc defs
   NewSlice cs t x proc0 -> NewSlice cs t x $ fuseProc defs proc0
 
-fuseChanDecs :: NU -> [(ChanDec,ChanDec)] -> Endom Proc
+fuseChanDecs :: NU -> [(Reduced ChanDec, Reduced ChanDec)] -> Endom Proc
 fuseChanDecs _  []           = id
 fuseChanDecs nu ((c0,c1):cs) = fuse2Chans nu c0 c1 . fuseChanDecs nu cs
 
-fuseSendRecv :: NU -> ChanDec -> Term -> ChanDec -> VarDec -> Fused
-fuseSendRecv nu c0 e c1 (Arg x mty) = Fused (aDef x mty e) (Order [nu cs])
+fuseSendRecv :: Fuse2 Term VarDec
+fuseSendRecv nu c0 e c1 (Arg x mty) = Fused (aDef x mty e) (Order [nu [f c0, f c1]])
   where
-    cs = [c0,c1] & each . cdSession . _Just . rsession %~ sessionStep {-TODO defs-} (mkVar x)
+    f rc = (rc ^. reduced . scoped) & cdSession . _Just . rsession
+                                    %~ substScoped . (rc ^. reduced $>)
+                                     . sessionStep {-TODO defs-} (mkVar x)
 
 two :: ([a] -> b) -> a -> a -> b
 two f x y = f [x, y]
@@ -112,15 +118,13 @@ new[c0 : A, d0 : ~A]
 new[c1 : B, d1 : ~B]
 -}
 
-type Fuse2 a = NU -> ChanDec -> a -> ChanDec -> a -> Fused
-
-fuse2Pats :: Fuse2 CPatt
+fuse2Pats :: Fuse2' CPatt
 fuse2Pats nu _c0 pat0 _c1 pat1
   | Just (_, cs0) <- pat0 ^? _ArrayCs
   , Just (_, cs1) <- pat1 ^? _ArrayCs = Fused ø (Order $ zipWith (two nu) cs0 cs1)
   | otherwise                         = error "Fuse.fuse2Pats unsupported split"
 
-fuse2Acts :: Fuse2 Act
+fuse2Acts :: Fuse2' Act
 fuse2Acts nu c0 act0 c1 act1 =
   case (act0, act1) of
     (Split _c0 pat0, Split _c1 pat1) -> fuse2Pats nu c0 pat0 c1 pat1
@@ -134,26 +138,27 @@ fuse2Acts nu c0 act0 c1 act1 =
     (Ax{}, _)       -> error "fuse2Acts/Ax: should be expanded before"
     (At{}, _)       -> error "fuse2Acts/At: should be expanded before"
 
-fuse2Chans :: NU -> ChanDec -> ChanDec -> Endom Proc
+fuse2Chans :: NU -> Reduced ChanDec -> Reduced ChanDec -> Endom Proc
 fuse2Chans nu cd0 cd1 p0 =
   case mact0 of
     Nothing -> p0 -- error "fuse2Chans: mact0 is Nothing"
     Just actA ->
       let
         (cdA, cdB) = if setOf freeChans actA ^. hasKey c0 then (cd0, cd1) else (cd1, cd0)
+        cB = cdB ^. reduced . scoped . cdChan
         predB :: Set Channel -> Bool
-        predB fc = fc ^. hasKey (cdB ^. cdChan)
+        predB fc = fc ^. hasKey cB
         mactB = p0 {- was p1 -} ^? {-scoped .-} fetchActProc predB . _Act
       in
       case mactB of
         Nothing ->
-          error $ "fuse2Chans: cannot find " ++ pretty (cdB ^. cdChan) ++ " in " ++ pretty p0
+          error $ "fuse2Chans: cannot find " ++ pretty cB ++ " in " ++ pretty p0
         Just actB ->
           p0 & fetchActProc predA .~ toProc (fuse2Acts nu cdA actA cdB actB)
              & fetchActProc predB .~ ø
   where
-    c0 = cd0 ^. cdChan
-    c1 = cd1 ^. cdChan
+    c0 = cd0 ^. reduced . scoped . cdChan
+    c1 = cd1 ^. reduced . scoped . cdChan
     predA :: Set Channel -> Bool
     predA fc = fc ^. hasKey c0 || fc ^. hasKey c1
 
