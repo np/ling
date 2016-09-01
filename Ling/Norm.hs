@@ -367,26 +367,11 @@ mkCaseViewBy rel t brs
   | Just (_, s) <- theUniqBy (rel `on` snd) brs = NoCase s
   | otherwise                                   = SoCase t brs
 
-mkCaseBy :: Rel Term -> MkCase' Term
-mkCaseBy rel t = unCaseView . mkCaseViewBy rel t
+mkCaseBy :: (a -> Term) -> Rel a -> MkCase a Term
+mkCaseBy f rel t = unCaseView . fmap f . mkCaseViewBy rel t
 
 mkCase :: MkCase' Term
-mkCase = mkCaseBy (==)
-
-mkCaseRSession :: Rel Term -> MkCase' RSession
-mkCaseRSession rel u = repl . bimap h h . unzip . fmap unRepl
-  where
-    repl   (s, r)    = (s ^. from tSession) `Repl` (r ^. from rterm)
-    unRepl (con, rs) = ((con, rs ^. rsession . tSession),
-                        (con, rs ^. rfactor . rterm))
-    h                = mkCaseBy rel u
-
-mkCaseSessions :: Rel Term -> MkCase' Sessions
-mkCaseSessions rel u brs =
-  Sessions [mkCaseRSession rel u (brs & branches %~ unSingleton)]
-  where
-    unSingleton (Sessions [x]) = x
-    unSingleton _              = error "mkCaseSessions"
+mkCase = mkCaseBy id (==)
 
 int0, int1 :: Term
 int0 = Lit (LInteger 0)

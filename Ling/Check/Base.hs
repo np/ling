@@ -266,7 +266,7 @@ caseType t ty brs = do
                      "Inferred:" (Comma (fst <$> brs))
 
           env <- tcEqEnv
-          return $ mkCaseBy (equiv env) t brs
+          return $ mkCaseBy id (equiv env) t brs
         _ -> err
     _ -> err
 

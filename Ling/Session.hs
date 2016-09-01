@@ -63,4 +63,19 @@ projSessions n (Sessions (Repl s r:ss))
 
 replRSession :: RFactor -> Endom RSession
 replRSession r (Repl s t) = Repl s (r <> t)
+
+mkCaseRSession :: (Scoped Term -> Term) -> Rel (Scoped Term) -> MkCase' (Scoped RSession)
+mkCaseRSession f rel u = repl . bimap h h . unzip . fmap unrepl
+  where
+    repl   (s, r)    = pure $ (s ^. from tSession) `Repl` (r ^. from rterm)
+    unrepl (con, rs) = ((con, view (rsession . tSession) <$> rs),
+                        (con, view (rfactor  . rterm)    <$> rs))
+    h                = mkCaseBy f rel u
+
+mkCaseSessions :: (Scoped Term -> Term) -> Rel (Scoped Term) -> MkCase' (Scoped Sessions)
+mkCaseSessions f rel u brs =
+  Sessions . pure <$> mkCaseRSession f rel u (brs & branches . scoped %~ unSingleton)
+  where
+    unSingleton (Sessions [x]) = x
+    unSingleton _              = error "mkCaseSessions"
 -- -}

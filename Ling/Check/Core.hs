@@ -267,30 +267,31 @@ checkAct act proto =
       proto' <- checkAx s cs
       return $ proto' `dotProto` proto
     At e p -> do
-      ss <- unTProto =<< inferTerm e
-      proto' <- checkCPatt (wrapSessions ss) p
+      ss <- unTProto =<< tcScope =<< inferTerm e
+      proto' <- checkCPatt (wrapSessions <$> ss) p
       return $ proto' `dotProto` proto
 
-unTProto :: Term -> TC Sessions
-unTProto t0 = do
-  -- TODO: I would prefer to avoid using pushDefs.
-  st0 <- tcScope t0
-  case pushDefsR (reduce st0) of
-    TProto ss  -> return ss
-    Case u brs -> mkCaseSessions (==) u <$> branches unTProto brs
+unTProto :: Scoped Term -> TC (Scoped Sessions)
+unTProto st0 = do
+  let st1 = reduce st0 ^. reduced
+  case st1 ^. scoped of
+    TProto ss  -> pure (st1 $> ss)
+    Case u brs -> mkCaseSessions substScoped (==) u <$> branches (unTProto . (st0 $>)) brs
+    -- ^ avoiding this call to substScoped would be nice
   {-
     Case u brs -> do env <- tcEqEnv
                     mkCaseSessions (equiv env) u <$> branches unTProto brs
   -}
     t1         -> tcError . unlines $ ["Expected a protocol type, not:", pretty t1]
 
-checkCPatt :: Session -> CPatt -> TC Proto
+checkCPatt :: Scoped Session -> CPatt -> TC Proto
 checkCPatt s = \case
   ChanP cd ->
-    let proto = pureProto (cd ^. cdChan) s in
+    let proto = pureProto (cd ^. cdChan) (substScoped s) in
+    -- ^ avoiding this call to substScoped would be nice
     checkChanDec proto cd $> proto
   ArrayP kpat pats ->
-    case s of
+    case s ^. scoped of
       Array k (Sessions ss) -> do
         assert (kpat == k)
           ["Expected an array splitting pattern with " ++ kindSymbols kpat ++
@@ -298,14 +299,15 @@ checkCPatt s = \case
         assert (length pats == length ss)
           ["Expected " ++ show (length ss) ++ " sub-patterns, not " ++
             show (length pats)]
-        arrayProto k <$> zipWithM checkCPattR ss pats
+        arrayProto k <$> zipWithM checkCPattR (map (s $>) ss) pats
       _ ->
         tcError $ "Unexpected array splitting pattern (" ++
                   kindSymbols kpat ++ ") for session " ++ pretty s
 
-checkCPattR :: RSession -> CPatt -> TC Proto
-checkCPattR (s `Repl` r) pat
-  | litR1 `is` r = checkCPatt s pat
+checkCPattR :: Scoped RSession -> CPatt -> TC Proto
+checkCPattR ss pat
+  | s `Repl` r <- ss ^. scoped
+  , litR1 `is` r = checkCPatt (ss $> s) pat
   | otherwise    = tcError "Unexpected pattern for replicated session"
 
 inferBranch :: (name, Term) -> TC (name, Typ)
