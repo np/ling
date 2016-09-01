@@ -341,7 +341,7 @@ branches :: Traversal (Brs a) (Brs b) a b
 branches = traverse . _2
 
 data CaseView a
-  = NoCase Term
+  = NoCase a
   -- ^ One branch has matched so this is not a `case` anymore.
   --   Or all the branches where equivalent so a/the branch was selected.
   | SoCase { _caseOf :: Term, _caseBrs :: Brs a }
@@ -354,12 +354,14 @@ unCaseView = \case
   SoCase t brs -> Case t brs
 
 instance Functor CaseView where
-  fmap = over (caseBrs . branches)
+  fmap f = \case
+    NoCase x     -> NoCase (f x)
+    SoCase t brs -> SoCase t (brs & branches %~ f)
 
 type MkCase a b = Term -> Brs a -> b
 type MkCase' a = MkCase a a
 
-mkCaseViewBy :: Rel Term -> MkCase Term (CaseView Term)
+mkCaseViewBy :: Rel a -> MkCase a (CaseView a)
 mkCaseViewBy rel t brs
   | Con con <- t, Just rhs <- lookup con brs    = NoCase rhs
   | Just (_, s) <- theUniqBy (rel `on` snd) brs = NoCase s
