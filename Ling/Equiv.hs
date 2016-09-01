@@ -156,6 +156,7 @@ chanDecArg (ChanDec c r _) = Arg c r
 
 equivRedTerm :: IsEquiv Term
 equivRedTerm env s0 s1 =
+    traceEquiv "Equiv Reduced Term" env s0 s1 $
     case (s0,s1) of
       (Def _ d0 es0, Def _ d1 es1) -> equiv env (d0, es0) (d1, es1)
       (Lit l0,       Lit l1)       -> l0 == l1
