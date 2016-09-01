@@ -30,7 +30,6 @@ module Ling.Proto
   where
 
 import           Ling.Check.Base
-import           Ling.Defs
 import           Ling.Norm
 import           Ling.Prelude
 import           Ling.Print
@@ -71,9 +70,6 @@ instance Monoid Proto where
   -- **parallel** (namely tensor).
   -- If the processes are in sequence use dotProto instead.
   mappend = combineProto TenK
-
-instance PushDefs Proto where
-  pushDefs = mkLet__
 
 instance SubTerms Proto where
   subTerms = chans . each . subTerms

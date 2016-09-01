@@ -39,15 +39,15 @@ module Ling.Compile.C where
 import           Prelude         hiding (log)
 
 import qualified Data.Map        as Map
-import           Ling.Defs       (reduceP)
 import           Ling.Fwd        (fwdProc')
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
 import           Ling.Print
 import           Ling.Proc       (_Pref, _ArrayCs)
+import           Ling.Reduce     (reduce, reduced)
 --import           Ling.Rename     (hDec)
 import           Ling.Session
-import           Ling.Scoped     (Scoped(Scoped))
+import           Ling.Scoped     (Scoped(Scoped), ldefs, scoped)
 import           Ling.Subst      (reduceS)
 import qualified MiniC.Abs       as C
 import qualified MiniC.Print     as C
@@ -129,6 +129,9 @@ $(makeLenses ''Env)
 
 scope :: Getter Env (Scoped ())
 scope = to $ \env -> Scoped (env ^. edefs) ø ()
+
+addScope :: Scoped a -> Endom Env
+addScope s = edefs <>~ s ^. ldefs
 
 basicTypes :: Map Name C.Typ
 basicTypes = l2m [ (Name n, t) | (n,t) <-
@@ -225,22 +228,26 @@ transLiteral l = case l of
   LChar    c -> C.LChar    c
 
 transTerm :: Env -> Term -> C.Exp
-transTerm env t0 =
-  let t1 = reduceS (env ^. scope $> t0) in case t1 of
+transTerm env0 tm0 =
+  let
+    stm1 = reduce (env0 ^. scope $> tm0) ^. reduced
+    env1 = env0 & addScope stm1
+    tm1  = stm1 ^. scoped
+  in case tm1 of
   Def _ f es0
-   | env ^. types . contains f -> dummyTyp
+   | env1 ^. types . contains f -> dummyTyp
    | otherwise ->
-     case transTerm env <$> es0 of
-       []                             -> C.EVar (transEVar env f)
+     case transTerm env1 <$> es0 of
+       []                             -> C.EVar (transEVar env1 f)
        [e0,e1] | Just d <- transOp f  -> d e0 e1
        es                             -> C.EApp (C.EVar (transName f)) es
-  Let{}          -> error $ "IMPOSSIBLE: Let after reduce (" ++ ppShow t1 ++ ")"
+  Let{}          -> error $ "IMPOSSIBLE: Let after reduce (" ++ ppShow tm1 ++ ")"
   Lit l          -> C.ELit (transLiteral l)
-  Lam{}          -> transErr "transTerm/Lam" t1
+  Lam{}          -> transErr "transTerm/Lam" tm1
   Con n          -> C.EVar (transCon n)
-  Case t brs     -> switchE (transTerm env t)
-                            (bimap transCon (transTerm env) <$> brs)
-  Proc{}         -> transErr "transTerm/Proc" t1
+  Case t brs     -> switchE (transTerm env1 t)
+                            (bimap transCon (transTerm env1) <$> brs)
+  Proc{}         -> transErr "transTerm/Proc" tm1
   TFun{}         -> dummyTyp
   TSig{}         -> dummyTyp
   TProto{}       -> dummyTyp
@@ -252,27 +259,32 @@ dummyTyp :: C.Exp
 dummyTyp = C.ELit (C.LInteger 0)
 
 transProc :: Env -> Proc -> [C.Stm]
-transProc env = \case
-  proc0 `Dot` proc1
-    | Just pref <- proc0 ^? _Pref -> transPref env pref proc1
-    | otherwise                   -> transProc env proc0 ++ transProc env proc1
-  Act act -> transAct env act ^. _2
-  LetP defs proc0 ->
-    transProc (env & edefs <>~ defs) proc0
-  Procs (Prll procs) ->
-    case procs of
-      [] -> []
-      [p] -> transErr "transProc/Procs/[_] not a normal form" p
-      _   -> transErr "transProc/Procs: parallel processes should be in sequence" (Prll procs)
-  NewSlice cs r xi proc0 ->
-    [stdFor (transName xi) (transRFactor env r) $
-       transProc env' proc0]
-    where
-      i = transName xi
-      sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
-                  | otherwise   = l
-      env' = env & locs . imapped %@~ sliceIf
-                  & addEVar xi i
+transProc env0 proc0 =
+  let
+    proc1 = reduce (env0 ^. scope $> proc0) ^. reduced
+    env1  = env0 & addScope proc1
+  in
+  case proc1 ^. scoped of
+    proc2 `Dot` proc3
+      | Just pref <- proc2 ^? _Pref -> transPref env1 pref proc3
+      | otherwise                   -> transProc env1 proc2 ++ transProc env1 proc3
+    Act act -> transAct env1 act ^. _2
+    LetP defs proc2 ->
+      transProc (env1 & edefs <>~ defs) proc2
+    Procs (Prll procs) ->
+      case procs of
+        [] -> []
+        [p] -> transErr "transProc/Procs/[_] not a normal form" p
+        _   -> transErr "transProc/Procs: parallel processes should be in sequence" (Prll procs)
+    NewSlice cs r xi proc2 ->
+      [stdFor (transName xi) (transRFactor env1 r) $
+        transProc env2 proc2]
+      where
+        i = transName xi
+        sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
+                    | otherwise   = l
+        env2 = env1 & locs . imapped %@~ sliceIf
+                    & addEVar xi i
 
 transLVal :: C.LVal -> C.Exp
 transLVal (C.LVar x)   = C.EVar x
@@ -331,21 +343,12 @@ transAct env act =
         y     = transName x
         cinit = C.SoInit (transLVal (env!c))
     Ax s cs ->
-      case fwdProc' (reduceP . (env ^. scope $>)) s cs of
+      -- TODO this should disappear once Ax becomes a term level primitive.
+      case fwdProc' (reduceS . (env ^. scope $>)) s cs of
         Act (Ax{}) -> transErr "transAct/Ax" act
         proc0 -> (rmChans cs env, transProc env proc0)
-    At t p ->
-      case p of
-        ChanP (ChanDec c _ _) ->
-          case reduceP (env ^. scope $> t) of
-            Proc cs proc0 ->
-              case cs of
-                [ChanDec c' _ _] ->
-                  let env1 = renChan c c' env in
-                  (rmChan c env, transMkProc env1 cs proc0 ^. _2)
-                _ -> transErr "transAct/At/Non single proc" act
-            _ -> transErr "transAct/At/Non Proc" act
-        _ -> transErr "transAct/At/Non ChanP" act
+    At{} ->
+      transErr "transAct/At (should have been reduced before)" act
 
 -- The actions in this prefix are in parallel and thus can be reordered
 transPref :: Env -> Pref -> Proc -> [C.Stm]
@@ -417,18 +420,22 @@ unsupportedTyp :: Typ -> ATyp
 unsupportedTyp ty = trace ("[WARNING] Unsupported type " ++ pretty ty) tVoidPtr
 
 transTyp :: Env -> Typ -> ATyp
-transTyp env ty0 =
-  let ty1 = reduceS (env ^. scope $> ty0) in case ty1 of
+transTyp env0 ty0 =
+  let
+    sty1 = reduce (env0 ^. scope $> ty0) ^. reduced
+    env1 = env0 & addScope sty1
+    ty1  = sty1 ^. scoped
+  in case ty1 of
   Def _ x es
     | null es, Just t <- Map.lookup x basicTypes -> (t, [])
     | otherwise ->
     case (unName # x, es) of
       ("Vec", [a,e])
-        | env ^. farr, Just i <- reduceS (env ^. scope $> e) ^? _Lit . _LInteger ->
+        | env1 ^. farr, Just i <- reduce (env1 ^. scope $> e) ^? reduced . scoped . _Lit . _LInteger ->
            -- Here we could use transTerm if we could still fallback on a
            -- pointer type.
-            tArr (transTyp env a) (C.ELit (C.LInteger i))
-        | otherwise -> tPtr (transTyp env a)
+            tArr (transTyp env1 a) (C.ELit (C.LInteger i))
+        | otherwise -> tPtr (transTyp env1 a)
       _ -> unsupportedTyp ty1
   Let{}      -> error $ "IMPOSSIBLE: Let after reduce (" ++ ppShow ty1 ++ ")"
   TTyp{}     -> tInt -- <- types are erased to 0
@@ -457,8 +464,9 @@ transSession env x = case x of
     | otherwise     -> transErr "Cannot compile a dependent session (yet): " x
   Array _ ss -> tupQ (transSessions env ss)
   TermS p t ->
-    case reduceP (env ^. scope $> t) of
-      TSession s -> transSession env (sessionOp p s)
+    let t' = reduce ((env ^. scope) $> t) ^. reduced in
+    case t' ^. scoped of
+      TSession s -> transSession (env & addScope t') (sessionOp p s)
       ty         -> unsupportedTyp ty & _1 %~ C.QTyp C.NoQual
 
 transRFactor :: Env -> RFactor -> C.Exp
@@ -509,16 +517,25 @@ transSig env0 f mty0 tm
       Nothing -> error "IMPOSSIBLE transSig missing type signature"
       Just ty0 ->
         let
-          go args = \case
-            TFun (Arg n ms) t ->
-              go (dDec (transMaybeCTyp env0 C.QConst ms) (transName n) : args)
-                 (reduceP (addEVar n (transName n) env0 ^. scope $> t))
-            t1 ->
-              [dSig (dDec (transCTyp env0 C.NoQual t1) (transName f)) (reverse args)]
-        in go [] (reduceP (env0 ^. scope $> ty0))
+          go env1 ty1 args =
+            let
+              sty2 = reduce (env1 ^. scope $> ty1) ^. reduced
+              env2 = env1 & addScope sty2
+            in
+            case sty2 ^. scoped of
+              TFun (Arg n ms) t ->
+                go (addEVar n (transName n) env2) t
+                   (dDec (transMaybeCTyp env2 C.QConst ms) (transName n) : args)
+              ty2 ->
+                [dSig (dDec (transCTyp env2 C.NoQual ty2) (transName f)) (reverse args)]
+        in go env0 ty0 []
   | otherwise =
-    case reduceP (env0 ^. scope $> tm) of
-      Proc cs proc0 -> [uncurry (C.DDef (C.Dec voidQ (transName f) [])) (transMkProc env0 cs proc0)]
+    let
+      stm  = reduce (env0 ^. scope $> tm) ^. reduced
+      env1 = env0 & addScope stm
+    in
+    case stm ^. scoped of
+      Proc cs proc0 -> [uncurry (C.DDef (C.Dec voidQ (transName f) [])) (transMkProc env1 cs proc0)]
       _ -> trace ("[WARNING] Skipping compilation of unsupported definition " ++ pretty f) []
 
 transDec :: Env -> Dec -> (Env, [C.Def])
