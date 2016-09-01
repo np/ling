@@ -19,7 +19,7 @@ import           Ling.Check.Base    ( TCEnv, TCOpts, debugChecker, defaultTCOpts
                                     , runTCEnv, strictPar, edefs, errorScope, tcOpts)
 import           Ling.Check.Program (checkProgram)
 import qualified Ling.Compile.C     as Compile
-import           Ling.Defs          (reduceP)
+import           Ling.Defs          (reduceL)
 import           Ling.ErrM
 import           Ling.Layout        (resolveLayout)
 import           Ling.Lex           (Token)
@@ -244,7 +244,7 @@ transP' opts tcenv prg = do
          | otherwise         = rprg
     fprg | opts ^. doFuse    = fuseProgram pdefs sprg
          | otherwise         = sprg
-    wprg | opts ^. doReduce  = transProgramTerms (\defs -> reduceP . Scoped (pdefs <> defs) ø) fprg
+    wprg | opts ^. doReduce  = transProgramTerms (\defs -> reduceL . Scoped (pdefs <> defs) ø) fprg
          | otherwise         = fprg
     eprg | opts ^. doExpand  = transProgramTerms (substDefs . (pdefs <>)) wprg
          | otherwise         = wprg

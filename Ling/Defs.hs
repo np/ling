@@ -50,6 +50,9 @@ pushDefsR = pushDefs . view reduced
 reduceP :: (HasReduce a b, PushDefs b) => Scoped a -> b
 reduceP = pushDefsR . reduce
 
+reduceL :: Scoped Term -> Term
+reduceL = mkLetS . view reduced . reduce
+
 class PushDefs a where
   pushDefs :: Scoped a -> a
 
