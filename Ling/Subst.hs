@@ -8,7 +8,7 @@ reduction rules:
 * case
 * @(proc...)
 -}
-module Ling.Subst (Subst(subst), substDefs, substScoped, reduceS) where
+module Ling.Subst (Subst, substDefs, substScoped, reduceS) where
 
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
@@ -19,6 +19,8 @@ import           Ling.Scoped
 import           Ling.Session
 
 class Subst a where
+  -- The method subst is not exported since we want all the exported functions
+  -- to check if Defs is empty.
   subst :: Defs -> Endom a
 
 substApp :: Defs -> Term -> [Term] -> Term
@@ -48,7 +50,7 @@ substDefs defs
   | otherwise = subst defs
 
 substScoped :: Subst a => Scoped a -> a
-substScoped s = subst (allDefs s) (s ^. scoped)
+substScoped s = substDefs (allDefs s) (s ^. scoped)
 
 -- Reduce the argument and substitute away the left-over
 -- definitions using `subst`.

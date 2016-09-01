@@ -185,6 +185,10 @@ type HasEquiv a = (Print a, Eq a, Equiv a, Subst a)
 isEquiv :: (HasEquiv a, MonadTC m) => Scoped a -> Scoped a -> m (Bool, a, a)
 isEquiv t0 t1 = do
   env <- tcEqEnv
+  sco <- tcScope ()
+  let
+    ut0 = substScoped $ sco *> t0
+    ut1 = substScoped $ sco *> t1
   whenDebug $
     when (t0 /= t1) $ do
       debug . unlines $
@@ -192,10 +196,6 @@ isEquiv t0 t1 = do
       when (ut0 == ut1) . debug . unlines $
         ["Once expanded they are equal:", pretty ut0]
   return (equiv env t0 t1, ut0, ut1)
-
-  where
-    ut0 = substScoped t0
-    ut1 = substScoped t1
 
 checkEquivalence :: (HasEquiv a, MonadTC m) => String -> String -> Scoped a -> String -> Scoped a -> m ()
 checkEquivalence msg expected t0 inferred t1 = do
