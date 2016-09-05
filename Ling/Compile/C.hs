@@ -161,6 +161,7 @@ renChan c c' env = env & locs . at c' .~ (env ^. locs . at c)
 
 addEVar :: Name -> C.Ident -> Endom Env
 addEVar x y env
+  | x == anonName           = env
   | env ^. evars . hasKey x = error $ "addEVar/IMPOSSIBLE: " ++ show x ++ " is already bound"
   | otherwise               = env & evars . at x ?~ y
 
