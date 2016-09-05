@@ -22,8 +22,8 @@ import           Ling.Prelude
 import qualified Ling.Raw     as Raw
 import           Prelude      hiding (log)
 
-array :: TraverseKind -> Sessions -> Session
-array = Array
+array :: TraverseKind -> [RSession] -> Session
+array k = Array k . Sessions
 
 oneS :: Session -> RSession
 oneS s = Repl s ø
