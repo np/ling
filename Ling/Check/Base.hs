@@ -122,6 +122,12 @@ checkPrefWellFormness (Prll pref) = do
   checkDisjointness "bound channels" boundChans pref
   checkDisjointness "bound names"    boundVars  pref
 
+requireAnnotation :: (MonadError TCErr m, Print a)
+                  => String -> a -> Maybe b -> m b
+requireAnnotation k a = \case
+  Nothing -> tcError $ unwords [ "Missing type annotation for", k, pretty a ]
+  Just c  -> pure c
+
 type IsSession a = (HasEquiv a, Dual a)
 
 checkEqSessions :: (IsSession s, MonadTC m, Print channel)
