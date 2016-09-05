@@ -64,7 +64,7 @@ fvAct = \case
   Split{}         -> ø
   Send _ tm       -> fvTerm tm
   Recv _ x        -> fvVarDec x
-  NewSlice _ tm _ -> fvTerm tm
+  Replicate _ tm _ -> fvTerm tm
   Ax s _          -> fvSession s
   At tm _         -> fvTerm tm
 -}
@@ -81,7 +81,7 @@ bcProc :: Fold Proc Channel
 bcProc f = \case
   Act act      -> Act <$> bcAct f act
   Procs procs  -> Procs <$> bcProcs f procs
-  p@NewSlice{} -> pure p
+  p@Replicate{}-> pure p
   Dot{}        -> error "bcProc: Dot"
   LetP defs p  -> LetP defs <$> bcProc f p
 
@@ -92,7 +92,7 @@ bvProc :: Fold Proc Name
 bvProc f = \case
   Act act           -> Act <$> bvAct f act
   Procs procs       -> Procs <$> bvProcs f procs
-  p@NewSlice{}      -> pure p
+  p@Replicate{}     -> pure p
   proc0 `Dot` proc1 -> Dot <$> bvProc f proc0 <*> bvProc f proc1
   LetP defs p       -> LetP defs <$> bvProc f p
 
@@ -107,7 +107,7 @@ fcProcSet = \case
   Act act           -> setOf fcAct act
   proc0 `Dot` proc1 -> fcProcSet proc0 <>
                        (fcProcSet proc1 `Set.difference` setOf bcProc proc0)
-  NewSlice cs _ _ p -> setOf each cs <> fcProcSet p
+  Replicate _ _ _ p -> fcProcSet p
   Procs procs       -> setOf (_Prll . each . fcProc) procs
   LetP _ p          -> fcProcSet p
 -- -}

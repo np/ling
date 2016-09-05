@@ -63,4 +63,4 @@ indep D C
 TODO:
   Ax
   At
-  NewSlice
+  Replicate

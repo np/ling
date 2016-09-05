@@ -248,9 +248,9 @@ transProcs env0 p0s waiting k0
               k1 env2 (proc0 `dotP` procs')
       in
       case p0 of
-        NewSlice cs t x p ->
+        Replicate _ t x p ->
           transProc env1 p $ \env2 p' ->
-            transProcsProgress env2 (NewSlice cs t x p') []
+            transProcsProgress env2 (Replicate SeqK t x p') []
 
         Procs (Prll ps0) ->
           transProcs env1 (ps0 ++ ps) waiting k1

@@ -83,7 +83,7 @@ fuseDot defs = \case
         -> fuseProc defs . fuseChanDecs (Nu anns2 . NewChans k) [(c, d)]
       _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty newpatt
                              , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
-  proc0@NewSlice{} -> (fuseProc defs proc0 `dotP`) . fuseProc defs
+  proc0@Replicate{} -> (fuseProc defs proc0 `dotP`) . fuseProc defs
   proc0 -> (proc0 `dotP`) . fuseProc defs
 
 fuseProc :: Defs -> Endom Proc
@@ -95,7 +95,7 @@ fuseProc defs = \case
   -- go recurse...
   LetP defs0 proc0 -> defs0 `dotP` fuseProc (defs <> defs0) proc0
   Procs procs -> Procs $ procs & each %~ fuseProc defs
-  NewSlice cs t x proc0 -> NewSlice cs t x $ fuseProc defs proc0
+  Replicate k t x proc0 -> Replicate k t x $ fuseProc defs proc0
 
 fuseChanDecs :: NU -> [(Reduced ChanDec, Reduced ChanDec)] -> Endom Proc
 fuseChanDecs _  []           = id

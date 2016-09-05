@@ -91,15 +91,15 @@ instance Norm Proc where
     proc0 `N.Dot` proc1 -> reify proc0 `pDot` reify proc1
     N.Procs (Prll procs) -> pPrll $ reify procs
     N.LetP defs proc0 -> reifyDefsP defs (reify proc0)
-    N.NewSlice cs t x p ->
-      NewSlice ((justChannel #) <$> cs) (t ^. N.rterm . reified) x (reify p)
+    N.Replicate _ t x p ->
+      NewSlice [] (t ^. N.rterm . reified) x (reify p)
   norm = \case
     PAct act         -> normAct act
     PNxt proc0 proc1 -> norm proc0 `dotP` norm proc1
     PDot proc0 proc1 -> norm proc0 `dotP` norm proc1
     PSem proc0 proc1 -> norm proc0 `dotP` norm proc1
     PPrll procs      -> mconcat $ norm procs
-    NewSlice cs t x p -> N.NewSlice (view justChannel <$> cs) (norm (Some t)) x (norm p)
+    NewSlice _ t x p -> N.Replicate N.SeqK (norm (Some t)) x (norm p)
 
 kCPatt :: N.TraverseKind -> [CPatt] -> CPatt
 kCPatt = \case

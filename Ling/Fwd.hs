@@ -23,7 +23,7 @@ fwdSplit fprocs ks redSession used (Sessions rss) cs
   where
     cdss = zipWith subChanDecs (transpose (fwds (length cs) <$> rss)) cs
     css  = map _cdChan <$> cdss
-    ps   = zipWith (fwdR redSession used) rss (transpose css)
+    ps   = zipWith3 (\k -> fwdR k redSession used) ks rss (transpose css)
     pref = zipWith3 splitK ks cs cdss
 
 fwdIO :: MkFwd (RW, VarDec, Session)
@@ -42,10 +42,10 @@ fwdArray = \case
   TenK -> fwdSplit mconcat $ TenK : repeat ParK
   ParK -> fwdSplit mconcat $ ParK : TenK : repeat ParK
 
-fwdR :: MkFwd RSession
-fwdR redSession used (s `Repl` r) cs
-  | litR1 `is` r = fwdP redSession used s cs
-  | otherwise    = NewSlice cs r anonName (fwdP redSession used s cs)
+fwdR :: TraverseKind -> MkFwd RSession
+fwdR k redSession used (s `Repl` r)
+  | litR1 `is` r = fwdP redSession used s
+  | otherwise    = Replicate k r anonName . fwdP redSession used s
 
 fwdP :: MkFwd Session
 fwdP _          _    _  [] = ø

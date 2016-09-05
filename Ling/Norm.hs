@@ -51,7 +51,7 @@ data Proc
   | LetP { _letPDefs :: !Defs, _letPProc :: Proc }
   | Procs { _procProcs :: !(Prll Proc) }
   | Dot { _procDotL, _procDotR :: Proc }
-  | NewSlice ![Channel] !RFactor !Name Proc
+  | Replicate !TraverseKind !RFactor !Name Proc
   deriving (Eq,Ord,Show,Read)
 
 type Pref  = Prll Act

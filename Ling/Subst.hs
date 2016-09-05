@@ -127,7 +127,7 @@ instance Subst Proc where
       subst f proc0 `dotP` subst (hide boundVars proc0 f) proc1
     Procs procs -> Procs $ subst f procs
     LetP defs p -> subst (f <> subst f defs) p
-    NewSlice cs t x p -> NewSlice cs (subst f t) x (subst (hide id x f) p)
+    Replicate k t x p -> Replicate k (subst f t) x (subst (hide id x f) p)
 
 instance Subst Session where
   subst f = \case

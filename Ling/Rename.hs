@@ -215,9 +215,8 @@ instance Rename Proc where
       Procs <$> rename f procs
     LetP defs proc0 ->
       LetP <$> rename f defs <*> rename (markBoundVars defs f) proc0
-    NewSlice cs t x proc0 ->
-      NewSlice <$> (each . from _FC . rename) f cs <*> rename f t
-               <*> from _BV (rename f) x <*> rename (markBoundVars (BV x) f) proc0
+    Replicate k t x proc0 ->
+      Replicate k <$> rename f t <*> from _BV (rename f) x <*> rename (markBoundVars (BV x) f) proc0
 
 instance Rename a => Rename (Prll a) where
   rename = _Prll . rename

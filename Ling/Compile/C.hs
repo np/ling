@@ -276,14 +276,13 @@ transProc env0 proc0 =
         [] -> []
         [p] -> transErr "transProc/Procs/[_] not a normal form" p
         _   -> transErr "transProc/Procs: parallel processes should be in sequence" (Prll procs)
-    NewSlice cs r xi proc2 ->
+    Replicate _k r xi proc2 ->
       [stdFor (transName xi) (transRFactor env1 r) $
         transProc env2 proc2]
       where
         i = transName xi
-        sliceIf c l | c `elem` cs = C.LArr l (C.EVar i)
-                    | otherwise   = l
-        env2 = env1 & locs . imapped %@~ sliceIf
+        slice l = C.LArr l (C.EVar i)
+        env2 = env1 & locs . mapped %~ slice
                     & addEVar xi i
 
 transLVal :: C.LVal -> C.Exp

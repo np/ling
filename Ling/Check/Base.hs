@@ -155,9 +155,8 @@ validAx _ (_ : _ : _) = pure True
 -- the other side is a Log and there can be any number of Logs.
 validAx s (_ : _)     = isSink s
 
-checkDual :: MonadTC m => [RSession] -> m ()
-checkDual [] = pure ()
-checkDual [Repl s0 r0, Repl s1 r1] = do
+checkDual2 :: MonadTC m => RSession -> RSession -> m ()
+checkDual2 (s0 `Repl` r0) (s1 `Repl` r1) = do
   checkOneR r0
   checkOneR r1
   (b, us0, us1) <- isEquiv (pure s0) (pure (dual s1))
@@ -165,10 +164,39 @@ checkDual [Repl s0 r0, Repl s1 r1] = do
     "Sessions are not dual." (\_ _ -> b)
     "Given session (expanded):" us0
     "Inferred dual session:"    (dual us1)
+
+
+
+checkDual :: MonadTC m => [RSession] -> m ()
+checkDual [] = pure ()
+checkDual [s0, s1] = checkDual2 s0 s1
 checkDual _ = error "checkDual: too many channels"
 
-checkCompat :: MonadTC m => [RSession] -> m ()
-checkCompat = checkDual . sessionOp (constArrOp SeqK)
+checkSeqNew :: MonadTC m => [(Channel, RSession)] -> m ()
+checkSeqNew = \case
+  []                      -> pure ()
+  (c0, s0 `Repl` r0):crs0 -> do
+    errorScope c0 $ do
+      b <- isSource s0
+      checkOneR r0
+      assert b
+        ["Sequential `new` expects the session for channel " ++
+        pretty c0 ++
+        " to be made of sends (a Log)"
+        ,pretty s0]
+    go {-sessionOp (constArrOp SeqK)-}(oneS s0) crs0
+  where
+    go rs0 = \case
+      (c1, s1 `Repl` r1):crs1 | r1 /= ø -> do
+        -- TODO check ALLOC
+        errorScope c1 $
+          checkEquivalence "Sessions are not equivalent"
+                           "Expected:" (pure (array SeqK [dual rs0, rs0]))
+                           "Inferred:" (pure s1)
+        go rs0 crs1
+      crs ->
+        forM_ crs $ \(c, rs) ->
+          errorScope c $ checkDual2 rs0 rs
 
 checkSlice :: (Print channel, MonadError TCErr m) => (channel -> Bool) -> channel -> RSession -> m ()
 checkSlice cond c (s `Repl` r) = when (cond c) $ do

@@ -272,8 +272,8 @@ instance Equiv Proc where
     equiv env act0 act1
   equiv env (Procs procs0) (Procs procs1) =
     equiv env procs0 procs1
-  equiv env (NewSlice cs0 r0 x0 proc0) (NewSlice cs1 r1 x1 proc1) =
-    cs0 == cs1 && equiv env r0 r1 &&
+  equiv env (Replicate k0 r0 x0 proc0) (Replicate k1 r1 x1 proc1) =
+    k0 == k1 && equiv env r0 r1 &&
     equiv env (Abs (Arg x0 (Ignored ())) proc0) (Abs (Arg x1 (Ignored ())) proc1)
   equiv env (proc0 `Dot` pp0) (proc1 `Dot` pp1)
     | Just (Prll pr0) <- proc0 ^? _Pref
@@ -293,7 +293,7 @@ instance Equiv Proc where
   equiv _ Act{} _ = False
   equiv _ Procs{} _ = False
   equiv _ Dot{} _ = False
-  equiv _ NewSlice{} _ = False
+  equiv _ Replicate{} _ = False
 
 instance Print EqEnv where
   prt _i (EqEnv nms defs0 defs1 gdefS) =

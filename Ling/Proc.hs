@@ -88,7 +88,7 @@ instance Dottable Proc where
         Act act -> act `dotP` proc1
         proc00 `Dot` proc01 -> proc00 `dotP` proc01 `dotP` proc1
         LetP defs proc00 -> defs `dotP` proc00 `dotP` proc1
-        NewSlice{} -> proc0 `Dot` proc1
+        Replicate{} -> proc0 `Dot` proc1
         Procs procs0 -> procs0 `dotP` proc1
   toProc = id
 
@@ -101,7 +101,7 @@ _Pref =  prism' toProc go
       Procs (Prll procs) -> post =<< mconcat <$> procs ^? below _Pref
       LetP{}             -> Nothing
       Dot{}              -> Nothing
-      NewSlice{}         -> Nothing
+      Replicate{}        -> Nothing
     post pref@(Prll acts) =
       case acts of
         [_] -> Just pref
@@ -137,7 +137,7 @@ _PrefDotProc = prism' (uncurry dotP) go
       proc0 `Dot` proc1 -> proc0 ^? _Pref . to (\pref -> (pref, proc1))
       Procs{} -> Nothing
       LetP{} -> Nothing
-      NewSlice{} -> Nothing
+      Replicate{} -> Nothing
 
 cPattAsArrayChanDecs :: CPatt -> Maybe (TraverseKind, [ChanDec])
 cPattAsArrayChanDecs = \case
@@ -233,8 +233,8 @@ procActs :: Traversal' Proc Act
 procActs f = \case
   Act act -> Act <$> f act
   Procs procs -> Procs <$> (each . procActs) f procs
-  NewSlice cs t x proc0 ->
-    NewSlice cs t x <$> procActs f proc0
+  Replicate k t x proc0 ->
+    Replicate k t x <$> procActs f proc0
   proc0 `Dot` proc1 ->
     Dot <$> procActs f proc0 <*> procActs f proc1
   LetP defs proc0 -> LetP defs <$> procActs f proc0
@@ -251,7 +251,7 @@ skippableAct :: Channel -> Act -> Bool
 skippableAct c = \case
   Send{}     -> False
   Recv{}     -> False
-  NewSlice{} -> False -- TODO
+  Replicate{}-> False -- TODO
   Ax{}       -> False -- TODO
   At{}       -> False -- TODO
 
@@ -305,8 +305,8 @@ fetchActProc' :: (Print Act, Print Proc) => (Set Channel -> Bool) -> Lens Proc P
 fetchActProc' pred f = \case
   Act act -> fetchActAct pred f act
   Procs procs -> toProc <$> fetchActProcs pred f procs
-  NewSlice cs t x proc0 ->
-    NewSlice cs t x <$> fetchActProc' pred f proc0
+  Replicate k t x proc0 ->
+    Replicate k t x <$> fetchActProc' pred f proc0
   LetP defs proc0 ->
     LetP defs <$> fetchActProc' pred f proc0
   proc0 `Dot` proc1
@@ -333,7 +333,7 @@ replPref n x pref p =
     Send _c _e     -> error "replPref/Send"
     Recv _c _xt    -> error "replPref/Recv"
     Nu _c _d       -> error "replPref/Nu"
-    NewSlice{}     -> error "replPref/NewSlice"
+    Replicate{}    -> error "replPref/Replicate"
     -- If Ax are expanded before, nothing to do here
     -- Otherwise this should do the same as the
     -- replication of the expansion.

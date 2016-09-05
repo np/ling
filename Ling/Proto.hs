@@ -21,7 +21,7 @@ module Ling.Proto
   , pureProto
   , mkProto
   , protoSendRecv
-  , replProtoWhen
+  , replProto
   , assertUsed
   , assertAbsent
   , checkOrderedChans
@@ -205,6 +205,10 @@ checkSomeOrderChans proto cs = do
     ["These channels should be used in some order (not in parallel):", pretty (s2l cs)]
     where my = Skel.dotChannelSet $ Skel.select cs (proto^.skel)
 
+replProto :: RFactor -> Endom Proto
+replProto = over (chans . mapped) . replRSession
+
+{-
 replProtoWhen :: (Channel -> Bool) -> RFactor -> Endom Proto
 replProtoWhen cond n = chans . imapped %@~ replRSessionWhen where
   replRSessionWhen c s | cond c    = replRSession n s

@@ -42,12 +42,11 @@ checkProc proc0 = do
   case proc0 of
     Procs procs -> checkProcs procs
 
-    NewSlice cs r i proc1 -> do
+    Replicate _k r i proc1 -> do
       checkRFactor r
       proto <- local (scopeVarDef i intTyp Nothing) $
                  checkProc proc1
-      ifor_ (proto^.chans) (checkSlice (`notElem` cs))
-      return $ replProtoWhen (`elem` cs) r proto
+      pure $ replProto r proto
 
     LetP defs proc1 ->
        mkLet__ . Scoped ø defs <$> checkDefs defs (checkProc proc1)
@@ -164,7 +163,8 @@ checkNewPatt proto = \case
     checkNewChan c mty s $> rmChans [c] proto
   NewChans k cds -> do
     let cs = cds ^.. each . cdChan
-        csNSession = [ proto ^. chanSession c . endedRS | ChanDec c _ _ <- cds ]
+        crs = [ (c, proto ^. chanSession c . endedRS) | ChanDec c _ _ <- cds ]
+        csNSession = crs ^.. each . _2
     unless (all (is endRS) csNSession) $
       for_ cs $ assertUsed proto
     for_ cds $ checkChanDec proto
@@ -174,14 +174,7 @@ checkNewPatt proto = \case
           checkDual csNSession
           checkConflictingChans proto Nothing cs
         SeqK -> do
-          let (Just s) = csNSession ^? _head
-          b <- isSource s
-          assert b
-                  ["Sequential `new` expects the session for channel " ++
-                  pretty (cds ^.. _head . cdChan) ++
-                  " to be made of sends (a Log)"
-                  ,pretty s]
-          checkCompat csNSession
+          checkSeqNew crs
           checkOrderedChans proto cs $> proto
         ParK -> error "checkAct: IMPOSSIBLE"
     -- This rmChans is potentially partly redundant.
@@ -252,7 +245,7 @@ checkAct act proto =
           for_ dOSs $ checkChanDec proto
           let ds         = dOSs ^.. each . cdChan
               dsSessions = ds & each %~ \d -> proto ^. chanSession d . endedRS
-              s          = array k (Sessions dsSessions)
+              s          = array k dsSessions
           proto' <-
             case k of
               TenK -> checkConflictingChans proto (Just c) ds

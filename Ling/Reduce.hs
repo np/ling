@@ -210,7 +210,7 @@ instance HasReduce Proc Proc where
       proc0 `Dot` proc1 -> (dotP :: Op2 Proc) <$> reduce (sp $> proc0) <*> reduce (sp $> proc1)
       LetP defs proc0 ->
         reduce (sp *> Scoped defs ø () $> proc0) & reduced . scoped %~ LetP defs
-      NewSlice cs r n p
-        | strong    -> NewSlice cs <$> reduce (sp $> r) <*> pure n <*> reduce (sp $> p)
+      Replicate k r n p
+        | strong    -> Replicate k <$> reduce (sp $> r) <*> pure n <*> reduce (sp $> p)
         | otherwise -> Reduced sp
       Procs procs -> procs ^. each . to (reduce . (sp $>))
