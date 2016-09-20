@@ -73,10 +73,16 @@ data Term
 data Proc
     = PAct Act
     | PPrll [Proc]
+    | PRepl ReplKind ATerm WithIndex Proc
     | PNxt Proc Proc
     | PDot Proc Proc
     | PSem Proc Proc
-    | NewSlice [ChanDec] ATerm Name Proc
+  deriving (Eq, Ord, Show, Read)
+
+data ReplKind = ReplSeq | ReplPar
+  deriving (Eq, Ord, Show, Read)
+
+data WithIndex = NoIndex | SoIndex Name
   deriving (Eq, Ord, Show, Read)
 
 data Act
@@ -135,10 +141,11 @@ data CSession = Cont Term | Done
 data AllocTerm = AVar Name | ALit Literal | AParen Term OptSig
   deriving (Eq, Ord, Show, Read)
 
+data NewSig = NoNewSig | NewTypeSig Term | NewSessSig Term
+  deriving (Eq, Ord, Show, Read)
+
 data NewPatt
-    = TenNewPatt [ChanDec]
-    | SeqNewPatt [ChanDec]
-    | CntNewPatt Name OptSig
+    = TenNewPatt [CPatt] | SeqNewPatt [CPatt] | CntNewPatt Name NewSig
   deriving (Eq, Ord, Show, Read)
 
 data NewAlloc

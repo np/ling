@@ -1,3 +1,3 @@
-wrong_read_cnt_new = proc()
-  new (c: Int).
+wrong_read_cnt_new = \(ann : Allocation) -> proc()
+  new/ann (c :* Int).
   let x : Int <- c

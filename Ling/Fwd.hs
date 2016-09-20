@@ -45,7 +45,7 @@ fwdArray = \case
 fwdR :: TraverseKind -> MkFwd RSession
 fwdR k redSession used (s `Repl` r)
   | litR1 `is` r = fwdP redSession used s
-  | otherwise    = Replicate k r anonName . fwdP redSession used s
+  | otherwise    = mkReplicate k r anonName . fwdP redSession used s
 
 fwdP :: MkFwd Session
 fwdP _          _    _  [] = ø

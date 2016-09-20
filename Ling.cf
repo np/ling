@@ -106,13 +106,19 @@ _.        Term   ::= Term1 ;
 
 PAct.     Proc1 ::= Act ;
 PPrll.    Proc1 ::= "(" [Proc] ")" ;
+PRepl.    Proc1 ::= ReplKind "^" ATerm WithIndex Proc1 ;
 
 PNxt.     Proc ::= Proc1 Proc ;
 PDot.     Proc ::= Proc1 "." Proc ;
 PSem.     Proc ::= Proc1 ";" Proc ;
-NewSlice. Proc ::= "slice" "(" [ChanDec] ")" ATerm "as" Name Proc ;
 _.        Proc ::= Proc1 ;
 separator Proc "|" ;
+
+ReplSeq.  ReplKind ::= "sequence" ;
+ReplPar.  ReplKind ::= "parallel" ;
+
+NoIndex.  WithIndex ::= ;
+SoIndex.  WithIndex ::= "with" Name ;
 
 Nu.       Act ::= NewAlloc ;
 Split.    Act ::= Split ;
@@ -165,9 +171,13 @@ ALit.     AllocTerm ::= Literal ;
 AParen.   AllocTerm ::= "(" Term OptSig ")" ;
 separator AllocTerm "" ;
 
-TenNewPatt. NewPatt ::= "["  [ChanDec]  "]" ;
-SeqNewPatt. NewPatt ::= "[:" [ChanDec] ":]" ;
-CntNewPatt. NewPatt ::= "(" Name OptSig ")" ;
+NoNewSig.   NewSig  ::= ;
+NewTypeSig. NewSig  ::= ":*" Term ;
+NewSessSig. NewSig  ::= ":" Term ;
+
+TenNewPatt. NewPatt ::= "["  [CPatt]  "]" ;
+SeqNewPatt. NewPatt ::= "[:" [CPatt] ":]" ;
+CntNewPatt. NewPatt ::= "(" Name NewSig ")" ;
 
 New.      NewAlloc ::= "new" NewPatt ;
 NewSAnn.  NewAlloc ::= "new/" "(" Term OptSig ")" NewPatt ;

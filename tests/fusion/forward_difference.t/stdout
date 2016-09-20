@@ -1,0 +1,227 @@
+
+{- Fused Expanded program -}
+
+Fwd_diff =
+  \ (m : Int)-> \ (n : Int)-> {[: ?Int ^ (m + n):], [: !Int ^ n :]}
+
+fwd_diff1 =
+  \ (n : Int)-> proc (c : {[: ?Int ^ (1 + n):], [: !Int ^ n :]})
+  split c {a, b}.
+  split a [: a0, ai ^ n :].
+  split b [: bi ^ n :].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ n :].
+  sequence ^ n
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)
+
+fwd_diff1_10 : < {[: ?Int ^ 11 :], [: !Int ^ 10 :]}> =
+  proc (c : {[: ?Int ^ 11 :], [: !Int ^ 10 :]})
+  split c {a, b}.
+  split a [: a0, ai ^ 10 :].
+  split b [: bi ^ 10 :].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ 10 :].
+  sequence ^ 10
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)
+
+fwd_diff0 : (n : Int)-> < {[: ?Int ^ (0 + n):], [: !Int ^ n :]}> =
+  \ (n : Int)-> proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
+  split c {c#0 : [: ?Int ^ n :], c#1 : [: !Int ^ n :]}.
+  split c#0 [: c#0#0 ^ n : ?Int ^ n :].
+  split c#1 [: c#1#0 ^ n : !Int ^ n :].
+  sequence ^ n
+    (let x#c#0#0 : Int <- c#0#0.
+    c#1#0 <- x#c#0#0)
+
+fwd_diff_succ =
+  \ (ann : Allocation)-> \ (n : Int)-> \ (m1 : Int)-> \ (p : < {[: ?Int ^ (m1 + n):], [: !Int ^ n :]}>)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
+  split ad {a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :]}.
+  new/ann [: b : [: !Int ^ (m1 + n):], c :].
+  split a [: a0, ai ^ (m1 + n):].
+  split b [: bi ^ (m1 + n):].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ (m1 + n):].
+  (sequence ^ (m1 + n)
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  @ p {c, d}
+
+fwd_diff2 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (2 + n):], [: !Int ^ n :]}> =
+  \ (ann : Allocation)-> \ (n : Int)-> proc (ad : {[: ?Int ^ (2 + n):], [: !Int ^ n :]})
+  split ad {a : [: ?Int ^ (1 + 1 + n):], d : [: !Int ^ n :]}.
+  new/ann [: b : [: !Int ^ (1 + n):], c :].
+  split a [: a0, ai ^ (1 + n):].
+  split b [: bi ^ (1 + n):].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ (1 + n):].
+  (sequence ^ (1 + n)
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  split c [: a0#p, ai#p ^ n :].
+  split d [: bi#p ^ n :].
+  new/alloc (acc#p :* Int).
+  let x#a0#p : Int <- a0#p.
+  acc#p <- x#a0#p.
+  split acc#p [: acci#p ^ n :].
+  sequence ^ n
+    (let x#p : Int <- ai#p.
+    let y#p : Int <- acci#p.
+    bi#p <- (x#p - y#p).
+    acci#p <- x#p)
+
+fwd_diff2_10_alloc : < {[: ?Int ^ 12 :], [: !Int ^ 10 :]}> =
+  proc (ad : {[: ?Int ^ 12 :], [: !Int ^ 10 :]})
+  split ad {a : [: ?Int ^ 12 :], d : [: !Int ^ 10 :]}.
+  new/alloc [: b : [: !Int ^ 11 :], c :].
+  split a [: a0, ai ^ 11 :].
+  split b [: bi ^ 11 :].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ 11 :].
+  (sequence ^ 11
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  split c [: a0, ai ^ 10 :].
+  split d [: bi ^ 10 :].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ 10 :].
+  sequence ^ 10
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)
+
+fwd_diff3 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (3 + n):], [: !Int ^ n :]}> =
+  \ (ann : Allocation)-> \ (n : Int)-> proc (ad : {[: ?Int ^ (3 + n):], [: !Int ^ n :]})
+  split ad {a : [: ?Int ^ (1 + 2 + n):], d : [: !Int ^ n :]}.
+  new/ann [: b : [: !Int ^ (2 + n):], c :].
+  split a [: a0, ai ^ (2 + n):].
+  split b [: bi ^ (2 + n):].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ (2 + n):].
+  (sequence ^ (2 + n)
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  new/ann [: b#p : [: !Int ^ (1 + n):], c#p :].
+  split c [: a0#p, ai#p ^ (1 + n):].
+  split b#p [: bi#p ^ (1 + n):].
+  new/alloc (acc#p :* Int).
+  let x#a0#p : Int <- a0#p.
+  acc#p <- x#a0#p.
+  split acc#p [: acci#p ^ (1 + n):].
+  (sequence ^ (1 + n)
+    (let x#p : Int <- ai#p.
+    let y#p : Int <- acci#p.
+    bi#p <- (x#p - y#p).
+    acci#p <- x#p)).
+  split c#p [: a0#p#p, ai#p#p ^ n :].
+  split d [: bi#p#p ^ n :].
+  new/alloc (acc#p#p :* Int).
+  let x#a0#p#p : Int <- a0#p#p.
+  acc#p#p <- x#a0#p#p.
+  split acc#p#p [: acci#p#p ^ n :].
+  sequence ^ n
+    (let x#p#p : Int <- ai#p#p.
+    let y#p#p : Int <- acci#p#p.
+    bi#p#p <- (x#p#p - y#p#p).
+    acci#p#p <- x#p#p)
+
+recInt : (A : (n : Int)-> Type)-> (e : String)-> (z : A 0)-> (s : (n1 : Int)-> (a : A n1)-> A (1 + n1)) -> (n : Int)-> A n
+
+fwd_diff : (ann : Allocation)-> (m : Int)-> (n : Int)-> < {[: ?Int ^ (m + n):], [: !Int ^ n :]}> =
+  \ (ann : Allocation)-> \ (m0 : Int)-> \ (n : Int)-> recInt (\ (m : Int)-> < {[: ?Int ^ (m + n):], [: !Int ^ n :]}>)"m < 0" (proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
+  split c {c#0 : [: ?Int ^ n :], c#1 : [: !Int ^ n :]}.
+  split c#0 [: c#0#0 ^ n : ?Int ^ n :].
+  split c#1 [: c#1#0 ^ n : !Int ^ n :].
+  sequence ^ n
+    (let x#c#0#0 : Int <- c#0#0.
+    c#1#0 <- x#c#0#0)) (\ (m1 : Int)-> \ (p : < {[: ?Int ^ (m1 + n):], [: !Int ^ n :]}>)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
+  split ad {a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :]}.
+  new/ann [: b : [: !Int ^ (m1 + n):], c :].
+  split a [: a0, ai ^ (m1 + n):].
+  split b [: bi ^ (m1 + n):].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ (m1 + n):].
+  (sequence ^ (m1 + n)
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  @ p {c, d}) m0
+
+tabulate_seq =
+  \ (A : Type)-> \ (f : (i : Int)-> A)-> \ (n : Int)-> proc (a : [: !A ^ n :])
+  split a [: a_i ^ n :].
+  sequence ^ n with i
+    a_i <- (f i)
+
+main =
+  proc (cc : [: !Int ^ 7 :])
+  new/alloc [: a : [: !Int ^ 10 :], bb :].
+  split a [: a_i ^ 10 :].
+  (sequence ^ 10 with i
+    a_i <- (10 - i)).
+  new/alloc [: b : [: !Int ^ 9 :], c :].
+  split bb [: a0, ai ^ 9 :].
+  split b [: bi ^ 9 :].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ 9 :].
+  (sequence ^ 9
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  new/alloc [: b : [: !Int ^ 8 :], c :].
+  split c [: a0, ai ^ 8 :].
+  split b [: bi ^ 8 :].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ 8 :].
+  (sequence ^ 8
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  split c [: a0#p, ai#p ^ 7 :].
+  split cc [: bi#p ^ 7 :].
+  new/alloc (acc#p :* Int).
+  let x#a0#p : Int <- a0#p.
+  acc#p <- x#a0#p.
+  split acc#p [: acci#p ^ 7 :].
+  sequence ^ 7
+    (let x#p : Int <- ai#p.
+    let y#p : Int <- acci#p.
+    bi#p <- (x#p - y#p).
+    acci#p <- x#p)

@@ -53,8 +53,82 @@ IF : (b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)-> A b
    = \(b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)->
       case b of { `true -> t, `false -> e }
 -}
+
+assert not `true = `false
+assert not `false = `true
+assert `false &&  `false = `false
+assert `false &&  `true  = `false
+assert `true  &&  `false = `false
+assert `true  &&  `true  = `true
+assert `false ||  `false = `false
+assert `false ||  `true  = `true
+assert `true  ||  `false = `true
+assert `true  ||  `true  = `true
+assert `false ==B `false = `true
+assert `false ==B `true  = `false
+assert `true  ==B `false = `false
+assert `true  ==B `true  = `true
+assert `false /=B `false = `false
+assert `false /=B `true  = `true
+assert `true  /=B `false = `true
+assert `true  /=B `true  = `false
 case_con : case `true of { `true -> Int, `false -> Bool }
          = 1
+com_new =
+ \(S : Session)
+  (p : < S  >)
+  (q : < ~S >)
+  (ann : Allocation)->
+  proc()
+  new/ann [c : S, d : ~S].
+  ( @p(c)
+  | @q(d))
+
+com_new_SInt =
+  com_new
+    (!Int)
+    (proc(c' : !Int) c' <- 42)
+    (proc(d : ?Int) let x : Int <- d)
+
+com_new_SInt_alloc = com_new_SInt alloc
+com_new_SInt_fuse1 = com_new_SInt fuse1
+
+com_new_SInt_RBool =
+  com_new
+    (!Int.?Bool)
+    (proc(c' : !Int.?Bool) c' <- 42. let b : Bool <- c')
+    (proc(d : ?Int.!Bool) let x : Int <- d. d <- `true)
+
+com_new_SInt_RBool_alloc = com_new_SInt_RBool alloc
+com_new_SInt_RBool_fuse1 = com_new_SInt_RBool fuse1
+com_new_SInt_RBool_fuse2 = com_new_SInt_RBool fuse2
+com_new_SInt_RBool_fuse3 = com_new_SInt_RBool fuse3
+com_new_mk_ten2 =
+  let
+    mk_tensor2 =
+      \ (S0 S1 : Session)
+        (p0 : < S0 >)
+        (p1 : < S1 >)->
+      proc(c : [S0, S1])
+        split c as [c0,c1].
+        ( @p0(c0)
+        | @p1(c1))
+  in
+  \ (S : Session)
+    (p : < S  >)
+    (q : < ~S >)
+    (ann : Allocation)->
+  proc()
+    new/ann [c : S, d : ~S].
+    @(mk_tensor2 S (~S) p q)[c,d]
+
+com_new_mk_ten2_SInt =
+  com_new_mk_ten2 (!Int) (proc(c' : !Int) send c' 42)
+                         (proc(d : ?Int) recv d (x : Int))
+
+com_new_mk_ten2_SInt_alloc = com_new_mk_ten2_SInt alloc
+com_new_mk_ten2_SInt_fuse1 = com_new_mk_ten2_SInt fuse1
+com_new_mk_ten2_SInt_fuse2 = com_new_mk_ten2_SInt fuse2
 conv_fun =
   \ (A A' B : Type)
     (S : Session)
@@ -198,7 +272,12 @@ double = proc(a: ?Int, b: !Int)
   b <- (x + x)
 
 double_21 = proc(b: !Int)
-  new [: c: !Int, c': ?Int :].
+  new (c :* Int).
+  c <- 21.
+  @double{c,b}
+
+double_21_seq = proc(b: !Int)
+  new [: c : !Int, c' : ?Int :].
   c <- 21.
   @double{c',b}
 
@@ -398,11 +477,9 @@ group_nested_seq :
 
 group_nested_seq_SInt_SDouble_SBool_SString =
   group_nested_seq (!Int) (!Double) (!Bool) (!String)
-id : (A : Type)(x : A) -> A
-
-idproc = proc(c : ?Int, d : !Int)
-  recv c (y : Int)
-  send d (id Int y)
+idProc = proc(c : ?Int, d : !Int)
+  let y : Int <- c.
+  d <- (id Int y)
 assert 42 = let x = 42 in x
 i42 : Int = 42
 one : Int = 1
@@ -501,6 +578,120 @@ loli_id :  (A : Session)-> < A -o A >
 
 loli_id_SInt =
   loli_id (!Int)
+zipWith =
+  \(A B C : Type)
+   (f : (a : A)(b : B)-> C)
+   (n : Int)->
+  proc(cas : [: ?A ^ n :], cbs : [: ?B ^ n :], ccs : [: !C ^ n :])
+    split cas[:ca^n:]
+    split cbs[:cb^n:]
+    split ccs[:cc^n:]
+    sequence ^ n (
+      -- could be parallel
+      let a : A <- ca.
+      let b : B <- cb.
+      cc <- (f a b)
+    )
+
+{-
+zipWith =
+  \(A B C : Type)
+   (f : (a : A)(b : B)-> C)
+   (n : Int)->
+  proc([: ca : ?A ^ n :], [: cb : ?B ^ n :], [: cc : !C ^ n :])
+    sequence ^ n as _
+      cc <- (f (<- ca) (<- cb))
+-}
+
+zip_multD = zipWith Double Double Double _*D_
+
+{-
+zip_multI = zipWith Int Int Int _*_
+
+_==D_ : (x y : Double)-> Bool
+
+zip_multI = zipWith Double Double Bool _==D_
+-}
+
+foldl =
+  \(A B : Type)
+   (f : (acc : B)(a : A)-> B)
+   (init : B)
+   (n : Int)->
+  proc(ca : [: ?A ^ n :], cr : !B)
+  new/alloc (acc :* B).
+  acc <- init.
+  split acc [: acci ^ n, accn :]
+  split ca[: ai^n :].
+  sequence ^ n (
+     ( let a : A <- ai
+     | let b : B <- acci).
+     acci <- (f b a)
+  ).
+  fwd(?B)(accn, cr)
+
+sumD : (n : Int)-> < [: ?Double ^ n :], !Double >
+     = foldl Double Double _+D_ 0.0
+
+dotproduct = \(n : Int)(ann : Allocation)->
+  proc(as' : [: ?Double ^ n :], bs : [: ?Double ^ n :], o : !Double)
+    new/ann [: cs : [: !Double ^ n :], ds :].
+    @(zip_multD n){as', bs, cs}.
+    @(sumD n){ds, o}
+
+dotproduct_4_alloc = dotproduct 4 alloc
+dotproduct_4_fused = dotproduct 4 fused
+
+-- There should be a proof that i is in 0..n-1
+ix : (A : Type)(n : Int)(v : Vec A n)(i : Int) -> A
+
+{- conventions:
+  m: number of rows
+  n: number of cols
+  i: row index (valued in 0..m-1)
+  j: col index (valued in 0..n-1)
+
+  each row is a vector of n elements
+  each col is a vector of m elements
+
+  m_{i,j} is located at position ((i * n) + j) in m
+
+  Use (/ n) to get back i
+  Use (% n) to get back j
+-}
+
+row = \(A : Type)(m n : Int)(a : Vec A (m * n))(i : Int)-> proc(v : [: !A^n :])
+  split v [: v_i^n :].
+  sequence ^ n with j (
+    v_i <- (ix A (m * n) a ((i * n) + j))
+  )
+
+col = \(A : Type)(m n : Int)(a : Vec A (m * n))(j : Int)-> proc(v : [: !A^m :])
+  split v [: v_j^m :].
+  sequence ^ m with i (
+    v_j <- (ix A (m * n) a ((i * n) + j))
+  )
+
+matmult = \(m n p : Int)(ann0 ann1 ann2 : Allocation)->
+           proc(a : ?Vec Double (m * n),
+                b : ?Vec Double (n * p),
+                c : [: !Double^(m * p) :])
+  let a' : Vec Double (m * n) <- a.
+  let b' : Vec Double (n * p) <- b.
+  split c as [: c_i_j^(m * p) :].
+  sequence ^ (m * p) with ij (
+    new/ann0 [: u : [: !Double^n :], u' :].
+    @(row Double m n a' (ij / n))(u).
+    new/ann1 [: v : [: !Double^n :], v' :].
+    @(col Double n p b' (ij % n))(v).
+    -- Working around a bug name-binding bug...
+    let nn = n.
+    @(dotproduct nn ann2){u',v',c_i_j}
+  )
+
+matmult_4_alloc = matmult 4 4 4 alloc alloc alloc
+-- TODO turning any fusion here is broken so far.
+-- matmult_4_fused = matmult 4 4 4 alloc alloc fused
 -- Should be renamed merge_ParSort_seq_recv
 merger =
  \(m n : Int)->
@@ -990,62 +1181,59 @@ assert 4  * 32 = 128
 assert 512 / 2 = 256
 assert pow 2 9 = 512
 
+assert (16 % 3)  ==I 16  = `false
+assert (pow 2 9) ==I 512 = `true
+
 assert 3.03 +D 0.11000000000000032 = 3.14
 assert 3.28 -D 0.13999999999999968 = 3.14
 assert 6.28 *D 0.5  = 3.14
 assert 1.57 /D 0.5  = 3.14
 assert powD 0.1 0.001 = 0.9977000638225533
+assert 300000.0 *D 0.00001 = 3.0000000000000004
+
+assert (300000.0 *D 0.00001) ==D 3.0000000000000004 = `true
+assert (300000.0 *D 0.00001) ==D 3.0 = `false
 
 assert Int2Double 42 = 42.0
+assert (Int2Double 44) ==D 42.0 = `false
 assert showInt 42 = "42"
+assert (showInt 42) ==S "41" = `false
 assert showDouble 3.14 = "3.14"
+assert (showDouble 3.14) ==S "314" = `false
 assert showChar 'a' = "'a'"
+assert (showChar 'a') ==S "'a'" = `true
 assert showString "Hello \"World\"!" = "\"Hello \\\"World\\\"!\""
-
+assert (showString "Hello \"World\"!") ==S "" = `false
 assert "Hello " ++S "World!" = "Hello World!"
+assert let hello = "Hello " in
+       let world = "Let!" in
+       hello ++S world = "Hello Let!"
 replicate =
-  \(A : Type)(n : Int)(x : A)->
+  \ (A : Type)(n : Int)(x : A)->
   proc(os : [!A ^ n])
-  os[o^n]
-  slice (o) n as _
-    send o x
+    split os as [o^n]
+    parallel ^ n (o <- x)
 -- should be named enum_par
 replicate_par = proc(c : {!Int ^ 10})
-  c{d^10}
-  slice (d) 10 as i
-    send d i
--- The slice command will sequence the `fwd` actions making the `i`
--- channel be read many times.
--- Some sessions are thus considered safe to be repeated, including: ?A
+  split c as {d^10}.
+  sequence ^ 10 with i
+    d <- i
 replicate_proc =
-  \(A : Type)(n : Int)->
+  \ (A : Type)(n : Int)->
   proc(c : !A -o [!A ^ n])
-  c{i,os}
-  os[o^n]
-  slice (o) n as _
-    fwd(!A)(o,i)
+    split c as {i,os}.
+    let x : A <- i.
+    split os as [o^n].
+    parallel ^ n (o <- x)
 
 replicate_proc_Int_10 = replicate_proc Int 10
+tabulate_ten =
+  \ (A : Type)(f : (i : Int)-> A)(n : Int)->
+  proc(c : [ !A ^ n ])
+    split c as [ c_ ^ n ]
+    parallel ^ n with i (c_ <- (f i))
 
--- Here is a version without this trick which relies on the persistency of
--- the variables (not channels)
-replicate_proc_alt =
-  \(A : Type)(n : Int)->
-  proc(c : !A -o [!A ^ n])
-  c{i,os}
-  recv i (x : A).
-  os[o^n]
-  slice (o) n as _
-    new [j : ?A, k].
-    ( fwd(!A)(o,j)
-    | send k x)
-
-replicate_proc_alt_Int_10 = replicate_proc_alt Int 10
--- should be name enum_ten
-replicate_ten = proc(c : [!Int ^ 10])
-  c[d^10]
-  slice (d) 10 as i
-    send d i
+replicate_ten_10 = tabulate_ten Int (id Int) 10
 Int1 = Int
 send_1 = proc(c : !Int1)
   send c 1
@@ -1112,14 +1300,16 @@ split_nested_seq :
     fwd C (c,nc).
     fwd D (d,nd)
 sum_int = proc(a : {?Int ^ 10}, r : !Int)
-  new/alloc [itmp : !Int.?Int, tmp]
-  ( send itmp 0
-    fwd(?Int)(itmp, r)
-  | a{ai^10}
-    slice (ai) 10 as i
-      recv ai  (x : Int)
-      recv tmp (y : Int)
-      send tmp (x + y))
+  new/alloc (acc :* Int).
+  acc <- 0.
+  split acc as [: acci ^ 10, accn :].
+  split a   as {  ai   ^ 10 }.
+  sequence ^ 10 with i (
+    let x : Int <- ai.
+    let y : Int <- acci.
+    acci <- (x + y)
+  ).
+  fwd(?Int)(accn, r)
 
 switch
   : (A B C : Session)->
@@ -1222,11 +1412,37 @@ oneTwo : Two
 notTwo : (b : Two)-> Two
        = \(b : Two)(A : Type)(x y : A)-> b A y x
 
+notZero : Two =
+  \(A : Type)(x y : A)->
+    let A' = A in
+    let x' = y in
+    let y' = x in
+    x'
+
+notZero' : Two =
+  let b = zeroTwo in
+  \(A : Type)(x y : A)-> b A y x
+
+notZero'' : Two = notTwo zeroTwo
+
+assert notTwo zeroTwo = oneTwo : Two
+assert notTwo oneTwo = zeroTwo : Two
+
 andTwo : (b0 b1 : Two)-> Two
        = \(b0 b1 : Two)-> b0 Two zeroTwo b1
 
+assert andTwo zeroTwo zeroTwo = zeroTwo : Two
+assert andTwo zeroTwo oneTwo  = zeroTwo : Two
+assert andTwo oneTwo  zeroTwo = zeroTwo : Two
+assert andTwo oneTwo  oneTwo  = oneTwo  : Two
+
 orTwo : (b0 b1 : Two)-> Two
       = \(b0 b1 : Two)-> b0 Two b1 oneTwo
+
+assert orTwo zeroTwo zeroTwo = zeroTwo : Two
+assert orTwo zeroTwo oneTwo  = oneTwo  : Two
+assert orTwo oneTwo  zeroTwo = oneTwo  : Two
+assert orTwo oneTwo  oneTwo  = oneTwo  : Two
 
 Nat : Type
     = (A : Type)(z : A)(s : (n : A)-> A)-> A
@@ -1237,8 +1453,42 @@ zeroNat : Nat
 sucNat : (n : Nat)-> Nat
        = \(n : Nat)(A : Type)(z : A)(s : (m : A)-> A)-> s (n A z s)
 
+oneNat : Nat = sucNat zeroNat
+
+twoNat : Nat = sucNat oneNat
+
+threeNat : Nat = sucNat twoNat
+
+fourNat : Nat = sucNat threeNat
+
+fiveNat : Nat = sucNat fourNat
+
+sixNat : Nat = sucNat fiveNat
+
 addNat : (m n : Nat)-> Nat
        = \(m n : Nat)-> m Nat n sucNat
+
+assert addNat zeroNat oneNat = oneNat : Nat
+assert addNat oneNat zeroNat = oneNat : Nat
+
+assert addNat twoNat threeNat = fiveNat : Nat
+
+mulNat : (m n : Nat)-> Nat
+       = \(m n : Nat)-> m Nat zeroNat (addNat n)
+
+assert mulNat zeroNat oneNat  = zeroNat : Nat
+assert mulNat oneNat  zeroNat = zeroNat : Nat
+assert mulNat oneNat  oneNat  = oneNat  : Nat
+
+assert mulNat oneNat oneNat
+     = addNat oneNat zeroNat
+     : Nat
+
+assert mulNat twoNat threeNat
+     = addNat threeNat (addNat threeNat zeroNat)
+     : Nat
+
+assert mulNat twoNat threeNat = sixNat : Nat
 
 Bin : Type
     = (A : Type)(leaf : A)(fork : (left : A)(right : A)-> A)-> A
@@ -1310,63 +1560,59 @@ uncurry =
 zap =
   \(S T : Session)(n : Int)->
   proc(c : [S -o T ^ n] -o [S ^ n] -o [T ^ n])
-  c{fs,xos}
-  xos{xs,os}
-  fs{f^n}
-  xs{x^n}
-  os[o^n]
-  slice (f,x,o) n as _
-    f[fi,fo]
+  split c   as {fs,xos}.
+  split xos as {xs,os}.
+  split fs  as {f^n}.
+  split xs  as {x^n}.
+  split os  as [o^n].
+  parallel ^ n (
+    split f as [fi,fo].
     ( fwd(S)(fi,x)
-    | fwd(T)(o,fo))
+    | fwd(T)(o,fo)))
 
 {- later on...
 zap :  (S T : Session)(n : Int)-> < [S -o T ^ n] -o [S ^ n] -o [T ^ n] >
     = \(S T : Session)(n : Int)->
   proc{{f^n},{{x^n},[o^n]}}
-  slice (f,x,o) n as _
+  parallel ^ n
     fwd(S -o T){f, {x,o}}
 -}
 -- cf: would be more precise with {~(!Int -o !Int) ^ 10}
 zap_ten_fwd = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
-  cf{cfi^10}
-  cn{cni^10}
-  co[coi^10]
-  slice (cfi,cni,coi) 10 as i
-  cfi{cfii,cfio}
-  ( fwd(?Int)(cni,cfii)
-  | fwd(?Int)(cfio,coi)
-  )
-
+  split cf as {cfi^10}.
+  split cn as {cni^10}.
+  split co as [coi^10].
+  parallel ^ 10 (
+    split cfi as {cfii,cfio}.
+    ( fwd(?Int)(cni,cfii)
+    | fwd(?Int)(cfio,coi)))
 -- cf: would be more precise with {~(!Int -o !Int) ^ 10}
 zap_ten_par = proc(cf : {(?Int -o ?Int) ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
-  cf{cfi^10}
-  cn{cni^10}
-  co[coi^10]
-  slice (cfi,cni,coi) 10 as i
-    cfi{cfii,cfio}
-    ( recv cni (x : Int)
-      send cfii x
-    | recv cfio (y : Int)
-      send coi y
-    )
+  split cf as {cfi^10}.
+  split cn as {cni^10}.
+  split co as [coi^10].
+  parallel ^ 10 (
+    split cfi as {cfii,cfio}.
+    ( let x : Int <- cni.
+      cfii <- x
+    | let y : Int <- cfio.
+      coi <- y))
 -- cf: would be more precise with {~(!Int -o !Int) ^ 10}
 zap_ten_seq = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
-  cf{cfi^10}
-  cn{cni^10}
-  co[coi^10]
-  slice (cfi,cni,coi) 10 as i
-    cfi{cfii,cfio}
-    recv cni (x : Int)
-    send cfii x
-    recv cfio (y : Int)
-    send coi y
-
+  split cf as {cfi^10}.
+  split cn as {cni^10}.
+  split co as [coi^10].
+  sequence ^ 10 (
+    split cfi as {cfii,cfio}.
+    let x : Int <- cni.
+    cfii <- x.
+    let y : Int <- cfio.
+    coi <- y)
 zip_add = proc(xs : {?Int ^ 10}, ys : {?Int ^ 10}, zs : [!Int ^ 10])
-  xs{x^10}
-  ys{y^10}
-  zs[z^10]
-  slice (x,y,z) 10 as i
-  recv x (a : Int)
-  recv y (b : Int)
-  send z (a + b)
+  split xs as {x^10}.
+  split ys as {y^10}.
+  split zs as [z^10].
+  parallel ^ 10 (
+    let a : Int <- x.
+    let b : Int <- y.
+    z <- (a + b))

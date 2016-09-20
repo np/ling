@@ -38,12 +38,7 @@ actChans f = \case
   Recv c vd       -> (`Recv` vd)           <$> re _Free f c
   Ax s cs         -> Ax s                  <$> (each . re _Free) f cs
   At t p          -> At t                  <$> (pattChans . re _Free) f p
-  Nu ann newpatt  -> Nu ann                <$> newPattChans f newpatt
-
-newPattChans :: Chans NewPatt
-newPattChans f = \case
-  NewChans k cs -> NewChans  k    <$> (each . cdChan . re _Bound) f cs
-  NewChan c mt  -> (`NewChan` mt) <$> re _Bound f c
+  Nu ann pat      -> Nu ann                <$> (pattChans . re _Bound) f pat
 
 bvDefs :: Fold Defs Name
 bvDefs = to (\defs -> keysSet (defs ^. defsMap)) . folded

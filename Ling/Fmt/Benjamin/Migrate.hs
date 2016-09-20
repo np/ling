@@ -83,6 +83,16 @@ transTerm = \case
                                   (transTerm t) (transTerm u)
   TRecv x                -> L.TRecv (transName x)
 
+transWithIndex :: WithIndex -> L.WithIndex
+transWithIndex = \case
+  NoIndex -> L.NoIndex
+  SoIndex i -> L.SoIndex (transName i)
+
+transReplKind :: ReplKind -> L.ReplKind
+transReplKind = \case
+  ReplSeq -> L.ReplSeq
+  ReplPar -> L.ReplPar
+
 transProc :: Proc -> L.Proc
 transProc = \case
   PAct act         -> L.PAct (transAct act)
@@ -90,9 +100,10 @@ transProc = \case
   PDot proc0 proc1 -> transProc proc0 `L.PDot` transProc proc1
   PSem proc0 proc1 -> transProc proc0 `L.PSem` transProc proc1
   PPrll procs      -> L.PPrll $ transProc <$> procs
-  NewSlice chandecs aterm name proc0 ->
-    L.NewSlice (transChanDec <$> chandecs) (transATerm aterm)
-               (transName name) (transProc proc0)
+  PRepl replkind aterm withindex proc0 ->
+    L.PRepl (transReplKind replkind) (transATerm aterm) (transWithIndex withindex) (transProc proc0)
+  NewSlice _chandecs aterm name proc0 ->
+    L.PRepl L.ReplSeq{-safer default-} (transATerm aterm) (L.SoIndex (transName name)) (transProc proc0)
 
 transAct :: Act -> L.Act
 transAct = \case
@@ -124,15 +135,24 @@ transAllocTerm (AVar d) = L.AVar (transName d)
 transAllocTerm (ALit lit) = L.ALit (transLiteral lit)
 transAllocTerm (AParen t os) = L.AParen (transTerm t) (transOptSig os)
 
+transNewSig :: NewSig -> L.NewSig
+transNewSig = \case
+  NoNewSig -> L.NoNewSig
+  NewTypeSig t -> L.NewTypeSig (transTerm t)
+  NewSessSig s -> L.NewSessSig (transTerm s)
+
 transNewPatt :: NewPatt -> L.NewPatt
-transNewPatt (TenNewPatt chandecs) = L.TenNewPatt (transChanDec <$> chandecs)
-transNewPatt (SeqNewPatt chandecs) = L.SeqNewPatt (transChanDec <$> chandecs)
+transNewPatt = \case
+  TenNewPatt pats -> L.TenNewPatt (transCPatt <$> pats)
+  SeqNewPatt pats -> L.SeqNewPatt (transCPatt <$> pats)
+  CntNewPatt n ns -> L.CntNewPatt (transName n) (transNewSig ns)
 
 transNewAlloc :: NewAlloc -> L.NewAlloc
-transNewAlloc (New newpatt) = L.New (transNewPatt newpatt)
-transNewAlloc (OldNew chandecs) = L.New (L.TenNewPatt (transChanDec <$> chandecs))
-transNewAlloc (NewSAnn term optsig newpatt) = L.NewSAnn (transTerm term) (transOptSig optsig) (transNewPatt newpatt)
-transNewAlloc (NewNAnn opnname allocterms newpatt) = L.NewNAnn (transOpName opnname) (transAllocTerm <$> allocterms) (transNewPatt newpatt)
+transNewAlloc = \case
+  New newpatt -> L.New (transNewPatt newpatt)
+  OldNew chandecs -> L.New (L.TenNewPatt (L.ChaPatt . transChanDec <$> chandecs))
+  NewSAnn term optsig newpatt -> L.NewSAnn (transTerm term) (transOptSig optsig) (transNewPatt newpatt)
+  NewNAnn opnname allocterms newpatt -> L.NewNAnn (transOpName opnname) (transAllocTerm <$> allocterms) (transNewPatt newpatt)
 
 transOpName :: OpName -> L.OpName
 transOpName (OpName x) = L.OpName x

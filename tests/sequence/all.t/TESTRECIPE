@@ -6,7 +6,7 @@ args=( --pretty --no-check --seq )
 exit_code=0
 stdin_file=stdin
 stdout_file=stdout
-stderr_file=/dev/null
+stderr_file=stderr
 sources=( )
 products=( )
 

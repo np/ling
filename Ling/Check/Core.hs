@@ -1,10 +1,10 @@
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TypeFamilies          #-}
 module Ling.Check.Core where
 
-import           Data.Char            (toLower)
 import           Ling.Check.Base
 import           Ling.Defs
 import           Ling.Norm
@@ -22,7 +22,8 @@ import           Prelude              hiding (log)
 -- The channel has a potential session annotation.
 checkChanDec :: Proto -> ChanDec -> TC RSession
 checkChanDec proto (ChanDec c r ms0) = do
-  errorScope c $
+  errorScope c $ do
+    checkRFactor r
     checkEquivalence "Replication factors are not equivalent."
                      "Annotation:" (pure r)
                      "Inferred:"   (pure (ms1 ^. endedRS . rfactor))
@@ -67,7 +68,7 @@ sendRecvSession = \case
       Nothing -> (,) c . (pure .) . sendS <$> inferTerm e
       Just s0  -> do
         checkSession s0
-        s1 <- view reduced . reduce <$> tcScope s0
+        s1 <- tcReduce s0
         case s1 ^. scoped of
           IO Write (Arg x typ) s2 ->
             checkCheckedAnnTerm (Ann (mkLetS . (s1 $>) <$> typ) e) $>
@@ -91,6 +92,7 @@ checkPref (Prll pref) proto
   | all isSendRecv pref = do
       css <- mapM sendRecvSession pref
       proto' <- protoSendRecv css proto
+      forM_ css $ \(c, _)-> assertRepl1 proto c
       when (length pref >= 1) $
         debug . unlines $
           [ "Checked parallel prefix: `" ++ pretty pref ++ "`"
@@ -125,43 +127,21 @@ checkAx s cs = do
     c:d:es ->
       pure $ mkProto ParK ((c,s):(d,dual s):[(e, log s)|e <- es])
 
-inferNewChan :: Print channel => channel -> Session -> TC Typ
-inferNewChan c s0 = go Read =<< tcScope s0 where
-  go rw' ss = do
-    let rss = reduce ss ^. reduced
-    case rss ^. scoped of
-      IO rw (Arg _ mty) s1 -> do
-        when (rw == rw') . tcError . concat $ ["Unexpected ", map toLower (show rw), " on channel ", pretty c]
-        let ty0 =
-              mkLetS $ rss $> (mty ?| error "IMPOSSIBLE: inferred session must have type annotations")
-        when (endS `isn't` s1) $ do
-          ty1 <- go rw (rss $> s1)
-          checkTypeEquivalence ty0 ty1
-        pure ty0
-      Array{} -> tcError . concat $
-                    ["Unexpected array session (", pretty (substScoped ss), ") when "
-                    ,"allocating channel ", pretty c, ".\n"
-                    ,"To allocate an array use `new [c:S,c':~S]` or `new [:c:S,c':~S:]`"]
-      TermS{} -> tcError . concat $
-                    ["Unsupported abstract session (", pretty (substScoped ss), ") when "
-                    ,"allocating channel ", pretty c, "."]
+-- _SingleSendSession :: Prism
 
-
-checkNewChan :: Print channel => channel -> Maybe Typ -> RSession -> TC ()
-checkNewChan c mty (s `Repl` r) = do
-  checkOneR r
-  inferredTyp <- inferNewChan c s
-  case mty of
-    Just expectedTyp -> checkTypeEquivalence expectedTyp inferredTyp
-    Nothing          -> pure ()
-
-checkNewPatt :: Proto -> NewPatt -> TC Proto
-checkNewPatt proto = \case
-  NewChan c mty -> do
+checkNewPatt :: AllocAnnots -> Proto -> CPatt -> TC Proto
+checkNewPatt anns proto = \case
+  ChanP (ChanDec c r s0) -> do
     let s = proto ^. chanSession c . endedRS
     unless (endRS `is` s) $ assertUsed proto c
-    checkNewChan c mty s $> rmChans [c] proto
-  NewChans k cds -> do
+    checkOneR r
+    s1 <- checkOneS (s0 ^. endedRS)
+    case s1 of
+      IO Write (Arg x mty) (Array SeqK (Sessions [])) | x == anonName -> do
+        checkNewChan anns c s mty $> rmChans [c] proto
+      _ ->
+        tcError "Unexpected channel allocation"
+  ArrayP k pats | Just cds <- pats ^? _Chans -> do
     let cs = cds ^.. each . cdChan
         crs = [ (c, proto ^. chanSession c . endedRS) | ChanDec c _ _ <- cds ]
         csNSession = crs ^.. each . _2
@@ -174,12 +154,13 @@ checkNewPatt proto = \case
           checkDual csNSession
           checkConflictingChans proto Nothing cs
         SeqK -> do
-          checkSeqNew crs
+          checkSeqNew anns crs
           checkOrderedChans proto cs $> proto
         ParK -> error "checkAct: IMPOSSIBLE"
     -- This rmChans is potentially partly redundant.
     -- We might `assert` that `cs` is no longer in the `skel`
     return $ rmChans cs proto'
+  _ -> tcError "Unexpected channel allocation"
 
 
 {-
@@ -235,9 +216,9 @@ checkAct act proto =
               [ "Inferred protocol for the whole process:"
               ] ++ prettyError prettyProto proto') $
   case act of
-    Nu anns newpatt -> do
+    Nu anns pat -> do
       for_ anns $ checkTerm allocationTyp
-      checkNewPatt proto newpatt
+      checkNewPatt anns proto pat
     Split c pat ->
       case pat ^? _ArrayCs of
         Just (k, dOSs) -> do
@@ -260,8 +241,9 @@ checkAct act proto =
       proto' <- checkAx s cs
       return $ proto' `dotProto` proto
     At e p -> do
-      ss <- unTProto =<< tcScope =<< inferTerm e
-      proto' <- checkCPatt (wrapSessions <$> ss) p
+      sc <- tcScope ()
+      ss <- unTProto . (sc $>) =<< inferTerm e
+      proto' <- checkCPatt (sc *> (wrapSessions <$> ss)) p
       return $ proto' `dotProto` proto
 
 unTProto :: Scoped Term -> TC (Scoped Sessions)
@@ -284,7 +266,8 @@ checkCPatt s = \case
     -- ^ avoiding this call to substScoped would be nice
     checkChanDec proto cd $> proto
   ArrayP kpat pats ->
-    case s ^. scoped of
+    let rs = reduce s ^. reduced in
+    case rs ^. scoped of
       Array k (Sessions ss) -> do
         assert (kpat == k)
           ["Expected an array splitting pattern with " ++ kindSymbols kpat ++
@@ -292,10 +275,10 @@ checkCPatt s = \case
         assert (length pats == length ss)
           ["Expected " ++ show (length ss) ++ " sub-patterns, not " ++
             show (length pats)]
-        arrayProto k <$> zipWithM checkCPattR (map (s $>) ss) pats
+        arrayProto k <$> zipWithM checkCPattR (map (rs *> s $>) ss) pats
       _ ->
         tcError $ "Unexpected array splitting pattern (" ++
-                  kindSymbols kpat ++ ") for session " ++ pretty s
+                  kindSymbols kpat ++ ") for session " ++ pretty (substScoped s)
 
 checkCPattR :: Scoped RSession -> CPatt -> TC Proto
 checkCPattR ss pat
@@ -373,13 +356,14 @@ inferDef _ f es = do
                           else
                             ""
 
+
 -- `checkApp f n typ es`
 -- `f`   is the name of the definition currently checked
 -- `n`   number of already checked arguments
 -- `typ` the type of definition (minus the previously checked arguments)
 -- `es`  the list of arguments
 checkApp :: Name -> Int -> Scoped Typ -> [Term] -> TC Typ
-checkApp _ _ ty0 []     = return $ unScopedTerm ty0
+checkApp _ _ ty0 []     = return $ mkLetS ty0
 checkApp f n ty0 (e:es) =
   let ty1 = reduce ty0 ^. reduced in
   case ty1 ^. scoped of
@@ -398,11 +382,14 @@ checkApp f n ty0 (e:es) =
         -}
         ]
       ty <- requireAnnotation "argument" x mty
-      checkTerm (unScopedTerm (ty1 $> ty)) e
-      checkApp f (n + 1) (ty1 *> subst1 (x, Ann (Just ty) e) s) es
+      checkTerm (mkLetS (ty0 *> ty1 $> ty)) e
+      checkApp f (n + 1) (ty0 *> ty1 *> subst1 (x, Ann (Just ty) e) s) es
     _ -> tcError ("Too many arguments given to " ++ pretty f ++ ", " ++
                      show n ++ " arguments expected and " ++
                      show (n + 1 + length es) ++ " were given.")
+
+checkOneS :: RSession -> TC Session
+checkOneS (s `Repl` r) = checkOneR r >> checkSession s $> s
 
 checkRSession :: RSession -> TC ()
 checkRSession (s `Repl` r) = checkSession s >> checkRFactor r

@@ -11,5 +11,5 @@ sqrs_body = \(x: Int)-> proc(c: sqrs_body_session, o: !Int)
 
 sqrs_main = proc(i: ?Int, o: !Int)
   let x: Int <- i.
-  new (c: Int).
+  new/alloc (c :* Int).
   @(sqrs_body x)(c,o)

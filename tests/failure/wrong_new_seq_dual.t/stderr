@@ -1,7 +1,8 @@
 While checking `wrong_new_seq_dual`
-  Sessions are not dual.
-  Given session (expanded):
-    !Int
-  Inferred dual session:
-    !Int
+  While checking `d`
+    Sessions are not dual.
+    Given session (expanded):
+      !Int
+    Inferred dual session:
+      !Int
 

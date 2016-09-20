@@ -91,15 +91,34 @@ instance Norm Proc where
     proc0 `N.Dot` proc1 -> reify proc0 `pDot` reify proc1
     N.Procs (Prll procs) -> pPrll $ reify procs
     N.LetP defs proc0 -> reifyDefsP defs (reify proc0)
-    N.Replicate _ t x p ->
-      NewSlice [] (t ^. N.rterm . reified) x (reify p)
+    N.Replicate k t x p ->
+      PRepl (reify k) (t ^. N.rterm . reified) (reify x) (reify p)
   norm = \case
     PAct act         -> normAct act
     PNxt proc0 proc1 -> norm proc0 `dotP` norm proc1
     PDot proc0 proc1 -> norm proc0 `dotP` norm proc1
     PSem proc0 proc1 -> norm proc0 `dotP` norm proc1
     PPrll procs      -> mconcat $ norm procs
-    NewSlice _ t x p -> N.Replicate N.SeqK (norm (Some t)) x (norm p)
+    PRepl k t x p    -> N.mkReplicate (norm k) (norm (Some t)) (norm x) (norm p)
+
+instance Norm ReplKind where
+  type Normalized ReplKind = N.TraverseKind
+  reify = \case
+    N.SeqK -> ReplSeq
+    N.ParK -> ReplPar
+    N.TenK -> error "unexpected Replicate with TenK"
+  norm = \case
+    ReplSeq -> N.SeqK
+    ReplPar -> N.ParK
+
+instance Norm WithIndex where
+  type Normalized WithIndex = Name
+  reify n
+    | n == anonName = NoIndex
+    | otherwise     = SoIndex n
+  norm = \case
+    NoIndex   -> anonName
+    SoIndex n -> n
 
 kCPatt :: N.TraverseKind -> [CPatt] -> CPatt
 kCPatt = \case
@@ -115,8 +134,8 @@ kTopPatt = \case
 
 newChans :: N.TraverseKind -> [ChanDec] -> NewPatt
 newChans = \case
-  N.TenK -> TenNewPatt
-  N.SeqK -> SeqNewPatt
+  N.TenK -> TenNewPatt . fmap ChaPatt
+  N.SeqK -> SeqNewPatt . fmap ChaPatt
   N.ParK -> error "newChans: IMPOSSIBLE"
 
 instance Norm CPatt where
@@ -168,7 +187,7 @@ normAct = \case
     SplitAx  n s c    -> toProc ... (splitAx        n (norm s) c)
 -}
 
-    Nu newalloc       -> toProc $ N._Nu # norm newalloc
+    Nu newalloc       -> toProc $ N._Nu . aside _NewPatt # norm newalloc
     Split split       -> toProc $ N._Split # normSplit split
     Send     c t      -> toProc $ N.Send c Nothing     (norm t)
     Recv     c a      -> toProc $ N.Recv c             (norm a)
@@ -209,7 +228,7 @@ newRecv c (VD x os) = NewRecv x os c
 
 reifyAct :: N.Act -> Proc
 reifyAct = \case
-  N.Nu anns newpatt   -> PAct $ Nu (reify (anns, newpatt))
+  N.Nu anns cpatt     -> PAct $ Nu (reify (anns, cpatt ^?! _NewPatt))
   N.Split c pat       -> PAct . Split $ PatSplit c NoAs (reify pat)
   N.Send     c os t   -> PAct $ NewSend c (reify (oneS <$> os)) (reify t)
   N.Recv     c a      -> PAct $ newRecv c                       (reify a)
@@ -253,10 +272,17 @@ normRawApp (Var (Name "Fwd"):es)
       fwd n (norm (AS e1)) ^. N.tSession
   | otherwise =
       error "invalid usage of Fwd"
-normRawApp (Var (Name "Log"):es)
-  | [e] <- es = log (norm (AS e)) ^. N.tSession
-  | otherwise = error "invalid usage of Log"
+normRawApp (Var (Name n):[e])
+  | Just f <- normSessionOp n = f (norm (AS e)) ^. N.tSession
 normRawApp es = app (norm es)
+
+normSessionOp :: String -> Maybe (Endom N.Session)
+normSessionOp = \case
+  "Log"  -> Just log
+  "Seq"  -> Just seq_
+  "Send" -> Just send_
+  "Recv" -> Just recv_
+  _      -> Nothing
 
 reifyRawApp :: N.Term -> [ATerm]
 reifyRawApp e0 =
@@ -392,18 +418,27 @@ instance Norm NewPatt where
   type Normalized NewPatt = N.NewPatt
   reify = \case
     N.NewChans k cds -> newChans k (reify cds)
-    N.NewChan c os   -> CntNewPatt (reify c) (reify os)
+    N.NewChan c ty   -> CntNewPatt (reify c) (NewTypeSig $ reify ty)
 
   norm = \case
-    TenNewPatt cds  -> N.NewChans N.TenK $ norm cds
-    SeqNewPatt cds  -> N.NewChans N.SeqK $ norm cds
-    CntNewPatt c os -> N.NewChan  (norm c) (norm os)
+    TenNewPatt pats | Just cds <- norm pats ^? _Chans -> N.NewChans N.TenK cds
+    SeqNewPatt pats | Just cds <- norm pats ^? _Chans -> N.NewChans N.SeqK cds
+    CntNewPatt c ns ->
+      case ns of
+        NewTypeSig ty -> N.NewChan (norm c) (norm ty)
+        NoNewSig -> error "norm/NoNewSig: not supported"
+        NewSessSig _ -> error "norm/NewSessSig: not supported"
+    _ -> error "norm/NewPatt unexpected splits"
+
+type AllocAnnots = [N.Term]
 
 instance Norm NewAlloc where
-  type Normalized NewAlloc = ([N.Term], N.NewPatt)
-  reify (os, kcds) =
-    case os of
+  type Normalized NewAlloc = (AllocAnnots, N.NewPatt)
+  reify (anns, kcds) =
+    case anns of
       [] -> New (reify kcds)
+      [N.Def _ (Name "fuse") [N.Lit (N.LInteger 0)]] -> NewNAnn (OpName "new/alloc") [] (reify kcds)
+      -- ^ special case to normalize "fuse 0" into "alloc".
       [N.Def _ (Name d) ts] -> NewNAnn (OpName ("new/" ++ d)) (reify ts) (reify kcds)
       [t] -> NewSAnn (reify t) NoSig (reify kcds)
       _ -> error "reify/NewAlloc: IMPOSSIBLE"

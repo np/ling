@@ -46,8 +46,9 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 The reserved words used in Ling are the following:
   | ``Type`` | ``as`` | ``assert`` | ``case``
   | ``data`` | ``end`` | ``fwd`` | ``in``
-  | ``let`` | ``new`` | ``of`` | ``proc``
-  | ``recv`` | ``send`` | ``slice`` | ``split``
+  | ``let`` | ``new`` | ``of`` | ``parallel``
+  | ``proc`` | ``recv`` | ``send`` | ``sequence``
+  | ``split`` | ``with`` |  | 
 
 The symbols used in Ling are the following:
   | = | : | ` | |
@@ -55,9 +56,9 @@ The symbols used in Ling are the following:
   | < | > | { | }
   | [ | ] | [: | :]
   | ! | ? | ~ | <-
-  | -o | ** | \ | .
-  | ; | <= | @ | ^
-  | new/ |  |  | 
+  | -o | ** | \ | ^
+  | . | ; | <= | @
+  | :* | new/ |  | 
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {- and -}.
@@ -126,14 +127,18 @@ All other symbols are terminals.
   |  |  **|**  | //Term1// 
   | //Proc1// | -> | //Act// 
   |  |  **|**  | ``(`` //[Proc]// ``)`` 
+  |  |  **|**  | //ReplKind// ``^`` //ATerm// //WithIndex// //Proc1// 
   | //Proc// | -> | //Proc1// //Proc// 
   |  |  **|**  | //Proc1// ``.`` //Proc// 
   |  |  **|**  | //Proc1// ``;`` //Proc// 
-  |  |  **|**  | ``slice`` ``(`` //[ChanDec]// ``)`` //ATerm// ``as`` //Name// //Proc// 
   |  |  **|**  | //Proc1// 
   | //[Proc]// | -> | **eps**
   |  |  **|**  | //Proc// 
   |  |  **|**  | //Proc// ``|`` //[Proc]// 
+  | //ReplKind// | -> | ``sequence`` 
+  |  |  **|**  | ``parallel`` 
+  | //WithIndex// | -> | **eps**
+  |  |  **|**  | ``with`` //Name// 
   | //Act// | -> | //NewAlloc// 
   |  |  **|**  | //Split// 
   |  |  **|**  | ``send`` //Name// //ATerm// 
@@ -178,9 +183,12 @@ All other symbols are terminals.
   |  |  **|**  | ``(`` //Term// //OptSig// ``)`` 
   | //[AllocTerm]// | -> | **eps**
   |  |  **|**  | //AllocTerm// //[AllocTerm]// 
-  | //NewPatt// | -> | ``[`` //[ChanDec]// ``]`` 
-  |  |  **|**  | ``[:`` //[ChanDec]// ``:]`` 
-  |  |  **|**  | ``(`` //Name// //OptSig// ``)`` 
+  | //NewSig// | -> | **eps**
+  |  |  **|**  | ``:*`` //Term// 
+  |  |  **|**  | ``:`` //Term// 
+  | //NewPatt// | -> | ``[`` //[CPatt]// ``]`` 
+  |  |  **|**  | ``[:`` //[CPatt]// ``:]`` 
+  |  |  **|**  | ``(`` //Name// //NewSig// ``)`` 
   | //NewAlloc// | -> | ``new`` //NewPatt// 
   |  |  **|**  | ``new/`` ``(`` //Term// //OptSig// ``)`` //NewPatt// 
   |  |  **|**  | //OpName// //[AllocTerm]// //NewPatt// 

@@ -48,7 +48,8 @@ mkLet defs0 t0 = case t0 of
 
   where lt0 = Let defs0 t0
 
--- Same as `mkLet` but takes a `Scoped Term`.
+-- Same as `mkLet` but takes a `Scoped Term` considering this layer of definitions
+-- to be local definitions.
 mkLetS :: Scoped Term -> Term
 mkLetS s = mkLet (s ^. ldefs) (s ^. scoped)
 
@@ -58,11 +59,6 @@ mkLet_ trv s = (s ^. scoped) & trv %~ mkLet (s ^. ldefs)
 
 mkLet__ :: SubTerms a => Scoped a -> a
 mkLet__ = mkLet_ subTerms
-
--- If one considers this layer of definitions to be local definitions.
-unScopedTerm :: Scoped Term -> Term
-unScopedTerm (Scoped _ defs t) = mkLet defs t
--- TODO
 
 reduceL :: Scoped Term -> Term
 reduceL = mkLetS . view reduced . reduce

@@ -58,3 +58,11 @@ pDot proc0            proc1      = proc0 `PDot` proc1
 
 pDots :: [Proc] -> Proc
 pDots = foldr pDot (PPrll [])
+
+mkPrimOp :: String -> [Term] -> Term
+mkPrimOp x = RawApp (Var (Name x)) . fmap paren
+
+_PrimOp :: Prism' Term (String, [Term])
+_PrimOp = prism (uncurry mkPrimOp) $ \case
+  RawApp (Var (Name x)) ts -> Right (x,aTerm <$> ts)
+  t -> Left t

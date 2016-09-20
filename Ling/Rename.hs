@@ -190,11 +190,6 @@ renameAtChanDec :: Applicative f => Ren f -> EndoM f ChanDec
 renameAtChanDec f (ChanDec c r os) =
   ChanDec <$> from _FC (rename f) c <*> rename f r <*> rename f os
 
-instance Rename NewPatt where
-  rename f = \case
-    NewChans k cs -> NewChans k <$> rename f cs
-    NewChan c os  -> NewChan <$> from _BC (rename f) c <*> rename f os
-
 instance Rename Act where
   rename f = \case
     Split c pat     -> Split <$> from _FC (rename f) c <*> rename f pat
@@ -216,7 +211,7 @@ instance Rename Proc where
     LetP defs proc0 ->
       LetP <$> rename f defs <*> rename (markBoundVars defs f) proc0
     Replicate k t x proc0 ->
-      Replicate k <$> rename f t <*> from _BV (rename f) x <*> rename (markBoundVars (BV x) f) proc0
+      mkReplicate k <$> rename f t <*> from _BV (rename f) x <*> rename (markBoundVars (BV x) f) proc0
 
 instance Rename a => Rename (Prll a) where
   rename = _Prll . rename

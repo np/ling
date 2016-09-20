@@ -94,11 +94,134 @@ If : (b : Bool)-> (A : Type)-> (B : Type)-> (t : A)-> (e : B)-> case b of {
     `true -> t
   }
 
+assert
+  not `true
+  =
+  `false
+
+
+assert
+  not `false
+  =
+  `true
+
+
+assert
+  `false && `false
+  =
+  `false
+
+
+assert
+  `false && `true
+  =
+  `false
+
+
+assert
+  `true && `false
+  =
+  `false
+
+
+assert
+  `true && `true
+  =
+  `true
+
+
+assert
+  `false || `false
+  =
+  `false
+
+
+assert
+  `false || `true
+  =
+  `true
+
+
+assert
+  `true || `false
+  =
+  `true
+
+
+assert
+  `true || `true
+  =
+  `true
+
+
+assert
+  `false ==B `false
+  =
+  `true
+
+
+assert
+  `false ==B `true
+  =
+  `false
+
+
+assert
+  `true ==B `false
+  =
+  `false
+
+
+assert
+  `true ==B `true
+  =
+  `true
+
+
+assert
+  `false /=B `false
+  =
+  `false
+
+
+assert
+  `false /=B `true
+  =
+  `true
+
+
+assert
+  `true /=B `false
+  =
+  `true
+
+
+assert
+  `true /=B `true
+  =
+  `false
+
+
 case_con : case `true of {
     `false -> Bool ,
     `true -> Int
   } =
   1
+
+case_fun_server =
+  proc (c : ?(x : Bool).case x of {
+    `false -> {!String, !String},
+    `true -> !String
+  } )
+  let x : Bool <- c.
+  @ (case x of {
+    `false -> proc (c)
+    split c {d, e}.
+    d <- "Hello".
+    e <- "World" ,
+    `true -> proc (c)
+    c <- "Hello World!"
+  } ) (c)
 
 dbl =
   \ (n : Int)-> n + n
@@ -123,32 +246,106 @@ case_proto : (x : Bool)-> < ?Int > =
   } ) (c)
 
 com_new =
-  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
-  new [c : S, d : ~ S].
+  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> \ (ann : Allocation)-> proc ()
+  new/ann [c : S, d : ~ S].
   ( @ p (c)
   | @ q (d))
 
 com_new_SInt =
+  com_new (!Int)(proc (c' : !Int)
+  c' <- 42)(proc (d : ?Int)
+  let x : Int <- d)
+
+com_new_SInt_alloc =
   proc ()
   let S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a : Session = (!Int).
+  let ann#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc : Allocation = alloc.
   let p#5554dd5f470e6ed0f2e5fbc1e4c23a5f4dd5b16757bbe563455768a667b6e00c : < S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a > = (proc (c'#p : !Int)
   c'#p <- 42).
   let q#74dbc8252fe888ddf597a3487bdf98df293e4d0fe41379412212e047ab1859b3 : < ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a > = (proc (d#q : ?Int)
   let x#q : Int <- d#q).
-  new [c : S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, d : ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a].
+  new/ann#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc [c : S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, d : ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a].
+  c <- 42.
+  let x#q : Int <- d
+
+com_new_SInt_fuse1 =
+  proc ()
+  let S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a : Session = (!Int).
+  let ann#cc40f3dcd14927decb69fc86af066439772650ab76dfb9a3483879be91560789 : Allocation = fuse1.
+  let p#5554dd5f470e6ed0f2e5fbc1e4c23a5f4dd5b16757bbe563455768a667b6e00c : < S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a > = (proc (c'#p : !Int)
+  c'#p <- 42).
+  let q#74dbc8252fe888ddf597a3487bdf98df293e4d0fe41379412212e047ab1859b3 : < ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a > = (proc (d#q : ?Int)
+  let x#q : Int <- d#q).
+  new/ann#cc40f3dcd14927decb69fc86af066439772650ab76dfb9a3483879be91560789 [c : S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, d : ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a].
   c <- 42.
   let x#q : Int <- d
 
 com_new_SInt_RBool =
+  com_new (!Int.?Bool)(proc (c' : !Int.?Bool)
+  c' <- 42.
+  let b : Bool <- c')(proc (d : ?Int.!Bool)
+  let x : Int <- d.
+  d <- `true)
+
+com_new_SInt_RBool_alloc =
   proc ()
   let S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca : Session = (!Int.?Bool).
+  let ann#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc : Allocation = alloc.
   let p#c2265179388dfb6a9162794b4025c7d02b635b24684ce04c5bbf389df9502e5b : < S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca > = (proc (c'#p : !Int.?Bool)
   c'#p <- 42.
   let b#p : Bool <- c'#p).
   let q#a718104b7522487772e05b5dfcbfa8089848257aef94552ee25ba954ea121a4c : < ~ S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca > = (proc (d#q : ?Int.!Bool)
   let x#q : Int <- d#q.
   d#q <- `true).
-  new [c : S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca, d : ~ S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca].
+  new/ann#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc [c : S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca, d : ~ S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca].
+  c <- 42.
+  let x#q : Int <- d.
+  d <- `true.
+  let b#p : Bool <- c
+
+com_new_SInt_RBool_fuse1 =
+  proc ()
+  let S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca : Session = (!Int.?Bool).
+  let ann#cc40f3dcd14927decb69fc86af066439772650ab76dfb9a3483879be91560789 : Allocation = fuse1.
+  let p#c2265179388dfb6a9162794b4025c7d02b635b24684ce04c5bbf389df9502e5b : < S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca > = (proc (c'#p : !Int.?Bool)
+  c'#p <- 42.
+  let b#p : Bool <- c'#p).
+  let q#a718104b7522487772e05b5dfcbfa8089848257aef94552ee25ba954ea121a4c : < ~ S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca > = (proc (d#q : ?Int.!Bool)
+  let x#q : Int <- d#q.
+  d#q <- `true).
+  new/ann#cc40f3dcd14927decb69fc86af066439772650ab76dfb9a3483879be91560789 [c : S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca, d : ~ S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca].
+  c <- 42.
+  let x#q : Int <- d.
+  d <- `true.
+  let b#p : Bool <- c
+
+com_new_SInt_RBool_fuse2 =
+  proc ()
+  let S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca : Session = (!Int.?Bool).
+  let ann#5c17eb5b88064ce5775fe297433913ed0646e660ef86644367d803be0a911af8 : Allocation = fuse2.
+  let p#c2265179388dfb6a9162794b4025c7d02b635b24684ce04c5bbf389df9502e5b : < S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca > = (proc (c'#p : !Int.?Bool)
+  c'#p <- 42.
+  let b#p : Bool <- c'#p).
+  let q#a718104b7522487772e05b5dfcbfa8089848257aef94552ee25ba954ea121a4c : < ~ S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca > = (proc (d#q : ?Int.!Bool)
+  let x#q : Int <- d#q.
+  d#q <- `true).
+  new/ann#5c17eb5b88064ce5775fe297433913ed0646e660ef86644367d803be0a911af8 [c : S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca, d : ~ S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca].
+  c <- 42.
+  let x#q : Int <- d.
+  d <- `true.
+  let b#p : Bool <- c
+
+com_new_SInt_RBool_fuse3 =
+  proc ()
+  let S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca : Session = (!Int.?Bool).
+  let ann#1fd7702d77e161ac45815cbc270061bd3e9493e42deb56012e5eb2a5efd73837 : Allocation = fuse3.
+  let p#c2265179388dfb6a9162794b4025c7d02b635b24684ce04c5bbf389df9502e5b : < S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca > = (proc (c'#p : !Int.?Bool)
+  c'#p <- 42.
+  let b#p : Bool <- c'#p).
+  let q#a718104b7522487772e05b5dfcbfa8089848257aef94552ee25ba954ea121a4c : < ~ S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca > = (proc (d#q : ?Int.!Bool)
+  let x#q : Int <- d#q.
+  d#q <- `true).
+  new/ann#1fd7702d77e161ac45815cbc270061bd3e9493e42deb56012e5eb2a5efd73837 [c : S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca, d : ~ S#7622c0cec5e744e44bc95eccba8e3a333bcee97ead3cfae8052de7ee40b545ca].
   c <- 42.
   let x#q : Int <- d.
   d <- `true.
@@ -159,13 +356,19 @@ com_new_mk_ten2 =
   split c [c0, c1].
   ( @ p0 (c0)
   | @ p1 (c1))in
-  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
-  new [c : S, d : ~ S].
+  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> \ (ann : Allocation)-> proc ()
+  new/ann [c : S, d : ~ S].
   @ (mk_tensor2 S (~ S)p q)[c, d]
 
 com_new_mk_ten2_SInt =
+  com_new_mk_ten2 (!Int)(proc (c' : !Int)
+  c' <- 42)(proc (d : ?Int)
+  let x : Int <- d)
+
+com_new_mk_ten2_SInt_alloc =
   proc ()
   let S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a : Session = (!Int).
+  let ann#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc : Allocation = alloc.
   let mk_tensor2 = (\ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
   split c [c0, c1].
   ( @ p0 (c0)
@@ -175,7 +378,41 @@ com_new_mk_ten2_SInt =
   let q#74dbc8252fe888ddf597a3487bdf98df293e4d0fe41379412212e047ab1859b3 : < ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a > = (proc (d#q : ?Int)
   let x#q : Int <- d#q).
   let S1#1dbf20ff644fdad3e47918591ef9ed1ca79b13e3816d109e025eb585eef86af0 : Session = (~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a).
-  new [c : S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, d : ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a].
+  new/ann#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc [c : S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, d : ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a].
+  c <- 42.
+  let x#q : Int <- d
+
+com_new_mk_ten2_SInt_fuse1 =
+  proc ()
+  let S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a : Session = (!Int).
+  let ann#cc40f3dcd14927decb69fc86af066439772650ab76dfb9a3483879be91560789 : Allocation = fuse1.
+  let mk_tensor2 = (\ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
+  split c [c0, c1].
+  ( @ p0 (c0)
+  | @ p1 (c1))).
+  let p#5554dd5f470e6ed0f2e5fbc1e4c23a5f4dd5b16757bbe563455768a667b6e00c : < S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a > = (proc (c'#p : !Int)
+  c'#p <- 42).
+  let q#74dbc8252fe888ddf597a3487bdf98df293e4d0fe41379412212e047ab1859b3 : < ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a > = (proc (d#q : ?Int)
+  let x#q : Int <- d#q).
+  let S1#1dbf20ff644fdad3e47918591ef9ed1ca79b13e3816d109e025eb585eef86af0 : Session = (~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a).
+  new/ann#cc40f3dcd14927decb69fc86af066439772650ab76dfb9a3483879be91560789 [c : S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, d : ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a].
+  c <- 42.
+  let x#q : Int <- d
+
+com_new_mk_ten2_SInt_fuse2 =
+  proc ()
+  let S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a : Session = (!Int).
+  let ann#5c17eb5b88064ce5775fe297433913ed0646e660ef86644367d803be0a911af8 : Allocation = fuse2.
+  let mk_tensor2 = (\ (S0 : Session)-> \ (S1 : Session)-> \ (p0 : < S0 >)-> \ (p1 : < S1 >)-> proc (c : [S0, S1])
+  split c [c0, c1].
+  ( @ p0 (c0)
+  | @ p1 (c1))).
+  let p#5554dd5f470e6ed0f2e5fbc1e4c23a5f4dd5b16757bbe563455768a667b6e00c : < S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a > = (proc (c'#p : !Int)
+  c'#p <- 42).
+  let q#74dbc8252fe888ddf597a3487bdf98df293e4d0fe41379412212e047ab1859b3 : < ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a > = (proc (d#q : ?Int)
+  let x#q : Int <- d#q).
+  let S1#1dbf20ff644fdad3e47918591ef9ed1ca79b13e3816d109e025eb585eef86af0 : Session = (~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a).
+  new/ann#5c17eb5b88064ce5775fe297433913ed0646e660ef86644367d803be0a911af8 [c : S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, d : ~ S#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a].
   c <- 42.
   let x#q : Int <- d
 
@@ -356,6 +593,13 @@ double =
   b <- (x + x)
 
 double_21 =
+  proc (b : !Int)
+  new (c :* Int).
+  c <- 21.
+  let x : Int <- c.
+  b <- (x + x)
+
+double_21_seq =
   proc (b : !Int)
   new [: c : !Int, c' : ?Int :].
   c <- 21.
@@ -637,18 +881,18 @@ fwd_parN_tenN =
   \ (n : Int)-> proc (i : {?Int ^ n},o : [!Int ^ n])
   split i {i#0 ^ n : ?Int ^ n}.
   split o [o#0 ^ n : !Int ^ n].
-  slice (i#0, o#0)n as _
-    let x#i#0 : Int <- i#0.
-    o#0 <- x#i#0
+  parallel ^ n
+    (let x#i#0 : Int <- i#0.
+    o#0 <- x#i#0)
 
 fwd_par10_ten10 =
   let n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd : Int = 10 in
   proc (i : {?Int ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd},o : [!Int ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd])
   split i {i#0 ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd : ?Int ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd}.
   split o [o#0 ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd : !Int ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd].
-  slice (i#0, o#0)n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd as _
-    let x#i#0 : Int <- i#0.
-    o#0 <- x#i#0
+  sequence ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd
+    (let x#i#0 : Int <- i#0.
+    o#0 <- x#i#0)
 
 fwd_send_recv =
   proc (i : ?Int, o : !Int)
@@ -766,9 +1010,7 @@ group_nested_seq_SInt_SDouble_SBool_SString =
   fwd C#caadb9df3bdf995155876e4594ccf799bab5dffa34b71e48de3a01d76d97ce79 (c, nc).
   fwd D#870a4ccf0d13e883210d8bda9b102dda116e5c30942d73c125f129615baf54ed (d, nd)
 
-id : (A : Type)-> (x : A)-> A
-
-idproc =
+idProc =
   proc (c : ?Int, d : !Int)
   let y : Int <- c.
   d <- (id Int y)
@@ -909,6 +1151,178 @@ loli_id_SInt =
   let A#264d12f0701178b3d57928a82453a0dc2a0ebf22a6bcf05fd1536162c14afc71 : Session = (~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a).
   split naa {na, a}.
   fwd A#264d12f0701178b3d57928a82453a0dc2a0ebf22a6bcf05fd1536162c14afc71 (na, a)
+
+zipWith =
+  \ (A : Type)-> \ (B : Type)-> \ (C : Type)-> \ (f : (a : A)-> (b : B)-> C)-> \ (n : Int)-> proc (cas : [: ?A ^ n :], cbs : [: ?B ^ n :], ccs : [: !C ^ n :])
+  split cas [: ca ^ n :].
+  split cbs [: cb ^ n :].
+  split ccs [: cc ^ n :].
+  sequence ^ n
+    (let a : A <- ca.
+    let b : B <- cb.
+    cc <- (f a b))
+
+zip_multD =
+  zipWith Double Double Double _*D_
+
+foldl =
+  \ (A : Type)-> \ (B : Type)-> \ (f : (acc : B)-> (a : A)-> B)-> \ (init : B)-> \ (n : Int)-> proc (ca : [: ?A ^ n :], cr : !B)
+  new/alloc (acc :* B).
+  acc <- init.
+  split acc [: acci ^ n, accn :].
+  split ca [: ai ^ n :].
+  (sequence ^ n
+    (( let a : A <- ai
+    | let b : B <- acci ).
+    acci <- (f b a)) ).
+  let x#accn : B <- accn.
+  cr <- x#accn
+
+sumD : (n : Int)-> < [: ?Double ^ n :], !Double > =
+  foldl Double Double _+D_ 0.0
+
+dotproduct =
+  \ (n : Int)-> \ (ann : Allocation)-> proc (as' : [: ?Double ^ n :], bs : [: ?Double ^ n :], o : !Double)
+  new/ann [: cs : [: !Double ^ n :], ds :].
+  @ (zip_multD n){as', bs, cs}.
+  @ (sumD n){ds, o}
+
+dotproduct_4_alloc =
+  let ann#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc : Allocation = alloc in
+  let n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 : Int = 4 in
+  proc (as' : [: ?Double ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :], bs : [: ?Double ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :], o : !Double)
+  let A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let C#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let f#8e0d827ff373ce6d968c5468bab8e2e4d06dcfdc4d713d097129586ed21f1a6c : (acc#f : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> (a#f : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab = _+D_.
+  let f#dbab05df58de62d874fb098cf9bfeca6169ba054f04850f38b9a36b20c9dde1a : (a#f : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> (b#f : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> C#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab = _*D_.
+  let init#91b8e97e1c981514c5a72c3926c92866cb48b9b10b8f0b2e1dc50bed4df5c89d : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab = 0.0.
+  new/ann#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc [: cs : [: !Double ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :], ds :].
+  split as' [: ca ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+  split bs [: cb ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+  split cs [: cc ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+  (sequence ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9
+    (let a : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- ca.
+    let b : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- cb.
+    cc <- (f#dbab05df58de62d874fb098cf9bfeca6169ba054f04850f38b9a36b20c9dde1a a b)) ).
+  new/alloc (acc :* B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab).
+  acc <- init#91b8e97e1c981514c5a72c3926c92866cb48b9b10b8f0b2e1dc50bed4df5c89d.
+  split acc [: acci ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9, accn :].
+  split ds [: ai ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+  (sequence ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9
+    (let a : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- ai.
+    let b : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- acci.
+    acci <- (f#8e0d827ff373ce6d968c5468bab8e2e4d06dcfdc4d713d097129586ed21f1a6c b a)) ).
+  let x#accn : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- accn.
+  o <- x#accn
+
+dotproduct_4_fused =
+  let ann#47d781f2688eff35434d58e35a537991b5fbfe16841a1609843ae641af58792b : Allocation = fused in
+  let n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 : Int = 4 in
+  proc (as' : [: ?Double ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :], bs : [: ?Double ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :], o : !Double)
+  let A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let C#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let f#8e0d827ff373ce6d968c5468bab8e2e4d06dcfdc4d713d097129586ed21f1a6c : (acc#f : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> (a#f : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab = _+D_.
+  let f#dbab05df58de62d874fb098cf9bfeca6169ba054f04850f38b9a36b20c9dde1a : (a#f : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> (b#f : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> C#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab = _*D_.
+  let init#91b8e97e1c981514c5a72c3926c92866cb48b9b10b8f0b2e1dc50bed4df5c89d : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab = 0.0.
+  new/ann#47d781f2688eff35434d58e35a537991b5fbfe16841a1609843ae641af58792b [: cs : [: !Double ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :], ds :].
+  split as' [: ca ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+  split bs [: cb ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+  split cs [: cc ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+  (sequence ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9
+    (let a : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- ca.
+    let b : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- cb.
+    cc <- (f#dbab05df58de62d874fb098cf9bfeca6169ba054f04850f38b9a36b20c9dde1a a b)) ).
+  new/alloc (acc :* B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab).
+  acc <- init#91b8e97e1c981514c5a72c3926c92866cb48b9b10b8f0b2e1dc50bed4df5c89d.
+  split acc [: acci ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9, accn :].
+  split ds [: ai ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+  (sequence ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9
+    (let a : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- ai.
+    let b : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- acci.
+    acci <- (f#8e0d827ff373ce6d968c5468bab8e2e4d06dcfdc4d713d097129586ed21f1a6c b a)) ).
+  let x#accn : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- accn.
+  o <- x#accn
+
+ix : (A : Type)-> (n : Int)-> (v : Vec A n)-> (i : Int)-> A
+
+row =
+  \ (A : Type)-> \ (m : Int)-> \ (n : Int)-> \ (a : Vec A (m * n)) -> \ (i : Int)-> proc (v : [: !A ^ n :])
+  split v [: v_i ^ n :].
+  sequence ^ n with j
+    v_i <- (ix A (m * n)a ((i * n)+ j))
+
+col =
+  \ (A : Type)-> \ (m : Int)-> \ (n : Int)-> \ (a : Vec A (m * n)) -> \ (j : Int)-> proc (v : [: !A ^ m :])
+  split v [: v_j ^ m :].
+  sequence ^ m with i
+    v_j <- (ix A (m * n)a ((i * n)+ j))
+
+matmult =
+  \ (m : Int)-> \ (n : Int)-> \ (p : Int)-> \ (ann0 : Allocation)-> \ (ann1 : Allocation)-> \ (ann2 : Allocation)-> proc (a : ?Vec Double (m * n),b : ?Vec Double (n * p),c : [: !Double ^ (m * p):])
+  let a' : Vec Double (m * n)<- a.
+  let b' : Vec Double (n * p)<- b.
+  split c [: c_i_j ^ (m * p):].
+  sequence ^ (m * p)with ij
+    (new/ann0 [: u : [: !Double ^ n :], u' :].
+    @ (row Double m n a' (ij / n)) (u).
+    new/ann1 [: v : [: !Double ^ n :], v' :].
+    @ (col Double n p b' (ij % n)) (v).
+    let nn = n.
+    @ (dotproduct nn ann2){u', v', c_i_j})
+
+matmult_4_alloc =
+  let ann0#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc : Allocation = alloc in
+  let ann1#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc : Allocation = alloc in
+  let ann2#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc : Allocation = alloc in
+  let m#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 : Int = 4 in
+  let n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 : Int = 4 in
+  let p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 : Int = 4 in
+  proc (a : ?Vec Double (m#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9),b : ?Vec Double (n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9),c : [: !Double ^ (m#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9):])
+  let A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let a#78179c1f7960c2583776bc879ef8af0eb21b9e3a78b93ff2303b72544a504572 : Vec A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab (n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)= b'.
+  let a#d5960e7cd6c4de08f6585a101a84e659e5ba6a9b23cc837742ea57b3684019db : Vec A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab (m#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)= a'.
+  let i#56ab9e04ef279c47ab4f8ebd4465af022b0953dea1b7c48a55b840666826ff59 : Int = (ij / n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9).
+  let j#f232b2e0485baea290ef1eff812ce00ab02e1cb19c1525879d5086ff4e9ecc16 : Int = (ij % n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9).
+  let n#607f4c171ce9d41867051267c6cab642c93319eee6b115d436274dd08e2d468e : Int = nn.
+  let a' : Vec Double (m#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)<- a.
+  let A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let C#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab : Type = Double.
+  let f#8e0d827ff373ce6d968c5468bab8e2e4d06dcfdc4d713d097129586ed21f1a6c : (acc#f : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> (a#f : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab = _+D_.
+  let f#dbab05df58de62d874fb098cf9bfeca6169ba054f04850f38b9a36b20c9dde1a : (a#f : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> (b#f : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab)-> C#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab = _*D_.
+  let init#91b8e97e1c981514c5a72c3926c92866cb48b9b10b8f0b2e1dc50bed4df5c89d : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab = 0.0.
+  let b' : Vec Double (n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)<- b.
+  split c [: c_i_j ^ (m#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9):].
+  sequence ^ (m#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)with ij
+    (new/ann0#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc [: u : [: !Double ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :], u' :].
+    split u [: v_i ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+    (sequence ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 with j
+      v_i <- (ix A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab (m#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)a#d5960e7cd6c4de08f6585a101a84e659e5ba6a9b23cc837742ea57b3684019db ((i#56ab9e04ef279c47ab4f8ebd4465af022b0953dea1b7c48a55b840666826ff59 * n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)+ j)) ).
+    new/ann1#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc [: v : [: !Double ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :], v' :].
+    split v [: v_j ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 :].
+    (sequence ^ n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 with i
+      v_j <- (ix A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab (n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9 * p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)a#78179c1f7960c2583776bc879ef8af0eb21b9e3a78b93ff2303b72544a504572 ((i * p#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9)+ j#f232b2e0485baea290ef1eff812ce00ab02e1cb19c1525879d5086ff4e9ecc16)) ).
+    let nn = n#9b0fd9c8f1862702ba20da045df8f1a50e437cad43e11db966941fc57aff46a9.
+    new/ann2#6bc3cda78e0b38f1cc66f91fea469a35d39e924b5d30307ed336b7624e7ba7dc [: cs : [: !Double ^ n#607f4c171ce9d41867051267c6cab642c93319eee6b115d436274dd08e2d468e :], ds :].
+    split u' [: ca ^ n#607f4c171ce9d41867051267c6cab642c93319eee6b115d436274dd08e2d468e :].
+    split v' [: cb ^ n#607f4c171ce9d41867051267c6cab642c93319eee6b115d436274dd08e2d468e :].
+    split cs [: cc ^ n#607f4c171ce9d41867051267c6cab642c93319eee6b115d436274dd08e2d468e :].
+    (sequence ^ n#607f4c171ce9d41867051267c6cab642c93319eee6b115d436274dd08e2d468e
+      (let a : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- ca.
+      let b : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- cb.
+      cc <- (f#dbab05df58de62d874fb098cf9bfeca6169ba054f04850f38b9a36b20c9dde1a a b)) ).
+    new/alloc (acc :* B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab).
+    acc <- init#91b8e97e1c981514c5a72c3926c92866cb48b9b10b8f0b2e1dc50bed4df5c89d.
+    split acc [: acci ^ n#607f4c171ce9d41867051267c6cab642c93319eee6b115d436274dd08e2d468e, accn :].
+    split ds [: ai ^ n#607f4c171ce9d41867051267c6cab642c93319eee6b115d436274dd08e2d468e :].
+    (sequence ^ n#607f4c171ce9d41867051267c6cab642c93319eee6b115d436274dd08e2d468e
+      (let a : A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- ai.
+      let b : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- acci.
+      acci <- (f#8e0d827ff373ce6d968c5468bab8e2e4d06dcfdc4d713d097129586ed21f1a6c b a)) ).
+    let x#accn : B#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab <- accn.
+    c_i_j <- x#accn)
 
 merger =
   \ (m : Int)-> \ (n : Int)-> proc (c0 : [!Vec Int m, ?Vec Int m],c1 : [!Vec Int n, ?Vec Int n],ci : ?Vec Int (m + n),co : !Vec Int (m + n))
@@ -1105,7 +1519,7 @@ new_fuse1_recv_send_send_recv =
 
 new_seq_par_par =
   proc ()
-  new [: cd : {!Int, !Bool},ef : {?Int, ?Bool}:].
+  new/alloc [: cd : {!Int, !Bool},ef : {?Int, ?Bool}:].
   split cd {c, d}.
   split ef {e, f}.
   c <- 1.
@@ -1484,6 +1898,11 @@ par_loli_ten_send_v2 =
   ( ss <- vs
   | st <- vt )
 
+par_pat =
+  proc (d : !Int, e : ?Int)
+  let x#f#1 : Int <- e.
+  d <- x#f#1
+
 par_seq_back =
   proc (a : {[: !Int, !Int :], !Int})
   split a {b, e}.
@@ -1667,6 +2086,18 @@ assert
 
 
 assert
+  (16 % 3)==I 16
+  =
+  `false
+
+
+assert
+  (pow 2 9)==I 512
+  =
+  `true
+
+
+assert
   3.03 +D 0.11000000000000032
   =
   3.14
@@ -1697,9 +2128,33 @@ assert
 
 
 assert
+  300000.0 *D 1.0e-5
+  =
+  3.0000000000000004
+
+
+assert
+  (300000.0 *D 1.0e-5)==D 3.0000000000000004
+  =
+  `true
+
+
+assert
+  (300000.0 *D 1.0e-5)==D 3.0
+  =
+  `false
+
+
+assert
   Int2Double 42
   =
   42.0
+
+
+assert
+  (Int2Double 44)==D 42.0
+  =
+  `false
 
 
 assert
@@ -1709,9 +2164,21 @@ assert
 
 
 assert
+  (showInt 42)==S "41"
+  =
+  `false
+
+
+assert
   showDouble 3.14
   =
   "3.14"
+
+
+assert
+  (showDouble 3.14)==S "314"
+  =
+  `false
 
 
 assert
@@ -1721,9 +2188,21 @@ assert
 
 
 assert
+  (showChar 'a')==S "'a'"
+  =
+  `true
+
+
+assert
   showString "Hello \"World\"!"
   =
   "\"Hello \\\"World\\\"!\""
+
+
+assert
+  (showString "Hello \"World\"!")==S ""
+  =
+  `false
 
 
 assert
@@ -1732,74 +2211,67 @@ assert
   "Hello World!"
 
 
+assert
+  let hello = "Hello " in
+  let world = "Let!" in
+  hello ++S world
+  =
+  "Hello Let!"
+
+
 replicate =
   \ (A : Type)-> \ (n : Int)-> \ (x : A)-> proc (os : [!A ^ n])
   split os [o ^ n].
-  slice (o)n as _
+  parallel ^ n
     o <- x
 
 replicate_par =
   proc (c : {!Int ^ 10})
   split c {d ^ 10}.
-  slice (d)10 as i
+  sequence ^ 10 with i
     d <- i
 
 replicate_proc =
   \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
   split c {i, os}.
+  let x : A <- i.
   split os [o ^ n].
-  slice (o)n as _
-    let x#i : A <- i.
-    o <- x#i
+  parallel ^ n
+    o <- x
 
 replicate_proc_Int_10 =
   let A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 : Type = Int in
   let n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd : Int = 10 in
   proc (c : {?A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2, [!A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd]})
   split c {i, os}.
-  split os [o ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd].
-  slice (o)n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd as _
-    let x#i : A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 <- i.
-    o <- x#i
-
-replicate_proc_alt =
-  \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
-  split c {i, os}.
-  let x : A <- i.
-  split os [o ^ n].
-  slice (o)n as _
-    new [j : ?A, k].
-    ( let x#j : A <- j.
-      o <- x#j
-    | k <- x )
-
-replicate_proc_alt_Int_10 =
-  let A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 : Type = Int in
-  let n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd : Int = 10 in
-  proc (c : {?A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2, [!A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd]})
-  split c {i, os}.
   let x : A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 <- i.
   split os [o ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd].
-  slice (o)n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd as _
-    new [j : ?A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2, k].
-    k <- x.
-    let x#j : A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 <- j.
-    o <- x#j
+  sequence ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd
+    o <- x
 
-replicate_ten =
-  proc (c : [!Int ^ 10])
-  split c [d ^ 10].
-  slice (d)10 as i
-    d <- i
+tabulate_ten =
+  \ (A : Type)-> \ (f : (i : Int)-> A)-> \ (n : Int)-> proc (c : [!A ^ n])
+  split c [c_ ^ n].
+  parallel ^ n with i
+    c_ <- (f i)
+
+replicate_ten_10 =
+  let A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 : Type = Int in
+  let f#a5d515deb50c9a55bc22b1fe4da48cf445a7abd6b81d0913b1829ace4d53bbff : (i#f : Int)-> A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 = id Int in
+  let n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd : Int = 10 in
+  proc (c : [!A#2d0382a85cd5a47852d1b3bb6ae425877166868333e37ddc334687f16d39abc2 ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd])
+  split c [c_ ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd].
+  sequence ^ n#8b6bdcd17d3f6de80744efcc6aed2afd586ac1c1b6904bad50440163d9320ddd with i
+    c_ <- (f#a5d515deb50c9a55bc22b1fe4da48cf445a7abd6b81d0913b1829ace4d53bbff i)
 
 rotate_seq =
   \ (A : Type)-> \ (n : Int)-> proc (i : [: ?A ^ (1 + n):], o : [: !A ^ (n + 1):])
   split i [: iL, iH ^ n :].
   split o [: oL ^ n, oH :].
   let xL : A <- iL.
-  (slice (iH, oL)n as _
-    let x#iH : A <- iH.
-    oL <- x#iH ).
+  (sequence ^ n
+    (let x#iH : A <- iH.
+    oL <- x#iH)).
   oH <- xL
 
 Int1 =
@@ -1929,17 +2401,64 @@ split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)
   fwd C (c, nc).
   fwd D (d, nd)
 
+sqr_dbl =
+  proc (i : ?Int, o : !Int)
+  let x : Int <- i.
+  new/alloc (c :* Int).
+  c <- (x * x).
+  let y : Int <- c.
+  o <- (y + y)
+
+sqrs_body_session =
+  !Int.?Int.!Int.?Int.!Int.?Int
+
+sqrs_body =
+  \ (x : Int)-> proc (c : sqrs_body_session, o : !Int)
+  c <- (x * x).
+  let x2 : Int <- c.
+  c <- (x2 * x2).
+  let x4 : Int <- c.
+  c <- (x4 * x4).
+  let x8 : Int <- c.
+  o <- (x8 * x8)
+
+sqrs_main =
+  proc (i : ?Int, o : !Int)
+  let x#ca236efbbc86c0faaedd7a177b93cb56e3aab1e76c361fb9f0a33a1ba42102ab : Int = x.
+  let x : Int <- i.
+  new/alloc (c :* Int).
+  c <- (x#ca236efbbc86c0faaedd7a177b93cb56e3aab1e76c361fb9f0a33a1ba42102ab * x#ca236efbbc86c0faaedd7a177b93cb56e3aab1e76c361fb9f0a33a1ba42102ab).
+  let x2 : Int <- c.
+  c <- (x2 * x2).
+  let x4 : Int <- c.
+  c <- (x4 * x4).
+  let x8 : Int <- c.
+  o <- (x8 * x8)
+
+sqrs =
+  proc (i : ?Int, o : !Int)
+  let x : Int <- i.
+  new/alloc (c :* Int).
+  c <- (x * x).
+  let x2 : Int <- c.
+  c <- (x2 * x2).
+  let x4 : Int <- c.
+  c <- (x4 * x4).
+  let x8 : Int <- c.
+  o <- (x8 * x8)
+
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new/alloc [itmp : !Int.?Int, tmp].
-  itmp <- 0.
+  new/alloc (acc :* Int).
+  acc <- 0.
+  split acc [: acci ^ 10, accn :].
   split a {ai ^ 10}.
-  (slice (ai)10 as i
-    let x : Int <- ai.
-    let y : Int <- tmp.
-    tmp <- (x + y)).
-  let x#itmp : Int <- itmp.
-  r <- x#itmp
+  (sequence ^ 10 with i
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    acci <- (x + y)) ).
+  let x#accn : Int <- accn.
+  r <- x#accn
 
 switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {[A, B],C}} > =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (c : {{~ A, [~ B, ~ C]}, {[A, B],C}})
@@ -1955,7 +2474,7 @@ switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {
 tabulate_seq =
   \ (A : Type)-> \ (f : (i : Int)-> A)-> \ (n : Int)-> proc (a : [: !A ^ n :])
   split a [: a_i ^ n :].
-  slice (a_i)n as i
+  sequence ^ n with i
     a_i <- (f i)
 
 tabulate_seq_Double_40 =
@@ -1964,7 +2483,7 @@ tabulate_seq_Double_40 =
   let n#907b9b20948f556e7cd1b0ad47ee0021aa411b3f9777bb398049d6f15e73d6c6 : Int = 41 in
   proc (a : [: !A#6195445550164ff88a795bf40158f1d2b9d7dcc832a2fa0d514f405b621fb6ab ^ n#907b9b20948f556e7cd1b0ad47ee0021aa411b3f9777bb398049d6f15e73d6c6 :])
   split a [: a_i ^ n#907b9b20948f556e7cd1b0ad47ee0021aa411b3f9777bb398049d6f15e73d6c6 :].
-  slice (a_i)n#907b9b20948f556e7cd1b0ad47ee0021aa411b3f9777bb398049d6f15e73d6c6 as i
+  sequence ^ n#907b9b20948f556e7cd1b0ad47ee0021aa411b3f9777bb398049d6f15e73d6c6 with i
     a_i <- (f#eb986a4b77a005e7653bfe40b87cace5cc366bc879b6d056c286c038a0e1fb8f i)
 
 ten_loli_par =
@@ -2103,11 +2622,84 @@ oneTwo : Two =
 notTwo : (b : Two)-> Two =
   \ (b : Two)-> \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
 
+notZero : Two =
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> let A' = A in
+  let x' = y in
+  let y' = x in
+  x'
+
+notZero' : Two =
+  let b = zeroTwo in
+  \ (A : Type)-> \ (x : A)-> \ (y : A)-> b A y x
+
+notZero'' : Two =
+  notTwo zeroTwo
+
+assert
+  notTwo zeroTwo
+  =
+  oneTwo
+  : Two
+
+assert
+  notTwo oneTwo
+  =
+  zeroTwo
+  : Two
+
 andTwo : (b0 : Two)-> (b1 : Two)-> Two =
   \ (b0 : Two)-> \ (b1 : Two)-> b0 Two zeroTwo b1
 
+assert
+  andTwo zeroTwo zeroTwo
+  =
+  zeroTwo
+  : Two
+
+assert
+  andTwo zeroTwo oneTwo
+  =
+  zeroTwo
+  : Two
+
+assert
+  andTwo oneTwo zeroTwo
+  =
+  zeroTwo
+  : Two
+
+assert
+  andTwo oneTwo oneTwo
+  =
+  oneTwo
+  : Two
+
 orTwo : (b0 : Two)-> (b1 : Two)-> Two =
   \ (b0 : Two)-> \ (b1 : Two)-> b0 Two b1 oneTwo
+
+assert
+  orTwo zeroTwo zeroTwo
+  =
+  zeroTwo
+  : Two
+
+assert
+  orTwo zeroTwo oneTwo
+  =
+  oneTwo
+  : Two
+
+assert
+  orTwo oneTwo zeroTwo
+  =
+  oneTwo
+  : Two
+
+assert
+  orTwo oneTwo oneTwo
+  =
+  oneTwo
+  : Two
 
 Nat : Type =
   (A : Type)-> (z : A)-> (s : (n : A)-> A)-> A
@@ -2118,8 +2710,83 @@ zeroNat : Nat =
 sucNat : (n : Nat)-> Nat =
   \ (n : Nat)-> \ (A : Type)-> \ (z : A)-> \ (s : (m : A)-> A)-> s (n A z s)
 
+oneNat : Nat =
+  sucNat zeroNat
+
+twoNat : Nat =
+  sucNat oneNat
+
+threeNat : Nat =
+  sucNat twoNat
+
+fourNat : Nat =
+  sucNat threeNat
+
+fiveNat : Nat =
+  sucNat fourNat
+
+sixNat : Nat =
+  sucNat fiveNat
+
 addNat : (m : Nat)-> (n : Nat)-> Nat =
   \ (m : Nat)-> \ (n : Nat)-> m Nat n sucNat
+
+assert
+  addNat zeroNat oneNat
+  =
+  oneNat
+  : Nat
+
+assert
+  addNat oneNat zeroNat
+  =
+  oneNat
+  : Nat
+
+assert
+  addNat twoNat threeNat
+  =
+  fiveNat
+  : Nat
+
+mulNat : (m : Nat)-> (n : Nat)-> Nat =
+  \ (m : Nat)-> \ (n : Nat)-> m Nat zeroNat (addNat n)
+
+assert
+  mulNat zeroNat oneNat
+  =
+  zeroNat
+  : Nat
+
+assert
+  mulNat oneNat zeroNat
+  =
+  zeroNat
+  : Nat
+
+assert
+  mulNat oneNat oneNat
+  =
+  oneNat
+  : Nat
+
+assert
+  mulNat oneNat oneNat
+  =
+  addNat oneNat zeroNat
+  : Nat
+
+assert
+  mulNat twoNat threeNat
+  =
+  addNat threeNat (addNat threeNat zeroNat)
+  : Nat
+
+assert
+  mulNat twoNat threeNat
+  =
+  sixNat
+  : Nat
 
 Bin : Type =
   (A : Type)-> (leaf : A)-> (fork : (left : A)-> (right : A)-> A)-> A
@@ -2197,53 +2864,53 @@ zap =
   split fs {f ^ n}.
   split xs {x ^ n}.
   split os [o ^ n].
-  slice (f, x, o)n as _
-    split f [fi, fo].
+  parallel ^ n
+    (split f [fi, fo].
     ( fwd S (fi, x)
-    | fwd T (o, fo))
+    | fwd T (o, fo)))
 
 zap_ten_fwd =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   split cf {cfi ^ 10}.
   split cn {cni ^ 10}.
   split co [coi ^ 10].
-  slice (cfi, cni, coi)10 as i
-    split cfi {cfii, cfio}.
+  sequence ^ 10
+    (split cfi {cfii, cfio}.
     let x#cni : Int <- cni.
     let x#cfio : Int <- cfio.
     cfii <- x#cni.
-    coi <- x#cfio
+    coi <- x#cfio)
 
 zap_ten_par =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   split cf {cfi ^ 10}.
   split cn {cni ^ 10}.
   split co [coi ^ 10].
-  slice (cfi, cni, coi)10 as i
-    split cfi {cfii, cfio}.
+  sequence ^ 10
+    (split cfi {cfii, cfio}.
     let x : Int <- cni.
     let y : Int <- cfio.
     cfii <- x.
-    coi <- y
+    coi <- y)
 
 zap_ten_seq =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   split cf {cfi ^ 10}.
   split cn {cni ^ 10}.
   split co [coi ^ 10].
-  slice (cfi, cni, coi)10 as i
-    split cfi {cfii, cfio}.
+  sequence ^ 10
+    (split cfi {cfii, cfio}.
     let x : Int <- cni.
     cfii <- x.
     let y : Int <- cfio.
-    coi <- y
+    coi <- y)
 
 zip_add =
   proc (xs : {?Int ^ 10},ys : {?Int ^ 10},zs : [!Int ^ 10])
   split xs {x ^ 10}.
   split ys {y ^ 10}.
   split zs [z ^ 10].
-  slice (x, y, z)10 as i
-    let a : Int <- x.
+  sequence ^ 10
+    (let a : Int <- x.
     let b : Int <- y.
-    z <- (a + b)
+    z <- (a + b))

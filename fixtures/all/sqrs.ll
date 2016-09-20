@@ -1,6 +1,6 @@
 sqrs = proc(i: ?Int, o: !Int)
   let x : Int <- i.
-  new (c: Int).
+  new/alloc (c :* Int).
   c <- (x * x).
   let x2 : Int <- c.
   c <- (x2 * x2).

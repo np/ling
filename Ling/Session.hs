@@ -21,12 +21,6 @@ wrapSessions :: Sessions -> Session
 wrapSessions (Sessions [s `Repl` (is litR1 -> True)]) = s
 wrapSessions ss                                       = Array ParK ss
 
-constArrOp :: TraverseKind -> SessionOp
-constArrOp = SessionOp idEndom . constEndom
-
-constRWOp :: RW -> SessionOp
-constRWOp rw = SessionOp (constEndom rw) idEndom
-
 sessionStep :: Term -> Endom Session
 sessionStep tm (IO _ (Arg x mty) s) = mkLet__ $ subst1 (x, Ann mty tm) s
 sessionStep _  s                    = error $ "sessionStep: no steps " ++ show s

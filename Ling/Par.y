@@ -30,6 +30,8 @@ import Ling.ErrM
 %name pProc1 Proc1
 %name pProc Proc
 %name pListProc ListProc
+%name pReplKind ReplKind
+%name pWithIndex WithIndex
 %name pAct Act
 %name pASession ASession
 %name pSplit Split
@@ -44,6 +46,7 @@ import Ling.ErrM
 %name pCSession CSession
 %name pAllocTerm AllocTerm
 %name pListAllocTerm ListAllocTerm
+%name pNewSig NewSig
 %name pNewPatt NewPatt
 %name pNewAlloc NewAlloc
 -- no lexer declaration
@@ -59,42 +62,45 @@ import Ling.ErrM
   '-o' { PT _ (TS _ 7) }
   '.' { PT _ (TS _ 8) }
   ':' { PT _ (TS _ 9) }
-  ':]' { PT _ (TS _ 10) }
-  ';' { PT _ (TS _ 11) }
-  '<' { PT _ (TS _ 12) }
-  '<-' { PT _ (TS _ 13) }
-  '<=' { PT _ (TS _ 14) }
-  '=' { PT _ (TS _ 15) }
-  '>' { PT _ (TS _ 16) }
-  '?' { PT _ (TS _ 17) }
-  '@' { PT _ (TS _ 18) }
-  'Type' { PT _ (TS _ 19) }
-  '[' { PT _ (TS _ 20) }
-  '[:' { PT _ (TS _ 21) }
-  '\\' { PT _ (TS _ 22) }
-  ']' { PT _ (TS _ 23) }
-  '^' { PT _ (TS _ 24) }
-  '`' { PT _ (TS _ 25) }
-  'as' { PT _ (TS _ 26) }
-  'assert' { PT _ (TS _ 27) }
-  'case' { PT _ (TS _ 28) }
-  'data' { PT _ (TS _ 29) }
-  'end' { PT _ (TS _ 30) }
-  'fwd' { PT _ (TS _ 31) }
-  'in' { PT _ (TS _ 32) }
-  'let' { PT _ (TS _ 33) }
-  'new' { PT _ (TS _ 34) }
-  'new/' { PT _ (TS _ 35) }
-  'of' { PT _ (TS _ 36) }
-  'proc' { PT _ (TS _ 37) }
-  'recv' { PT _ (TS _ 38) }
-  'send' { PT _ (TS _ 39) }
-  'slice' { PT _ (TS _ 40) }
-  'split' { PT _ (TS _ 41) }
-  '{' { PT _ (TS _ 42) }
-  '|' { PT _ (TS _ 43) }
-  '}' { PT _ (TS _ 44) }
-  '~' { PT _ (TS _ 45) }
+  ':*' { PT _ (TS _ 10) }
+  ':]' { PT _ (TS _ 11) }
+  ';' { PT _ (TS _ 12) }
+  '<' { PT _ (TS _ 13) }
+  '<-' { PT _ (TS _ 14) }
+  '<=' { PT _ (TS _ 15) }
+  '=' { PT _ (TS _ 16) }
+  '>' { PT _ (TS _ 17) }
+  '?' { PT _ (TS _ 18) }
+  '@' { PT _ (TS _ 19) }
+  'Type' { PT _ (TS _ 20) }
+  '[' { PT _ (TS _ 21) }
+  '[:' { PT _ (TS _ 22) }
+  '\\' { PT _ (TS _ 23) }
+  ']' { PT _ (TS _ 24) }
+  '^' { PT _ (TS _ 25) }
+  '`' { PT _ (TS _ 26) }
+  'as' { PT _ (TS _ 27) }
+  'assert' { PT _ (TS _ 28) }
+  'case' { PT _ (TS _ 29) }
+  'data' { PT _ (TS _ 30) }
+  'end' { PT _ (TS _ 31) }
+  'fwd' { PT _ (TS _ 32) }
+  'in' { PT _ (TS _ 33) }
+  'let' { PT _ (TS _ 34) }
+  'new' { PT _ (TS _ 35) }
+  'new/' { PT _ (TS _ 36) }
+  'of' { PT _ (TS _ 37) }
+  'parallel' { PT _ (TS _ 38) }
+  'proc' { PT _ (TS _ 39) }
+  'recv' { PT _ (TS _ 40) }
+  'send' { PT _ (TS _ 41) }
+  'sequence' { PT _ (TS _ 42) }
+  'split' { PT _ (TS _ 43) }
+  'with' { PT _ (TS _ 44) }
+  '{' { PT _ (TS _ 45) }
+  '|' { PT _ (TS _ 46) }
+  '}' { PT _ (TS _ 47) }
+  '~' { PT _ (TS _ 48) }
 
 L_integ  { PT _ (TI $$) }
 L_doubl  { PT _ (TD $$) }
@@ -190,16 +196,22 @@ Term : '\\' Term2 '->' Term { Ling.Abs.Lam $2 $4 }
 Proc1 :: { Proc }
 Proc1 : Act { Ling.Abs.PAct $1 }
       | '(' ListProc ')' { Ling.Abs.PPrll $2 }
+      | ReplKind '^' ATerm WithIndex Proc1 { Ling.Abs.PRepl $1 $3 $4 $5 }
 Proc :: { Proc }
 Proc : Proc1 Proc { Ling.Abs.PNxt $1 $2 }
      | Proc1 '.' Proc { Ling.Abs.PDot $1 $3 }
      | Proc1 ';' Proc { Ling.Abs.PSem $1 $3 }
-     | 'slice' '(' ListChanDec ')' ATerm 'as' Name Proc { Ling.Abs.NewSlice $3 $5 $7 $8 }
      | Proc1 { $1 }
 ListProc :: { [Proc] }
 ListProc : {- empty -} { [] }
          | Proc { (:[]) $1 }
          | Proc '|' ListProc { (:) $1 $3 }
+ReplKind :: { ReplKind }
+ReplKind : 'sequence' { Ling.Abs.ReplSeq }
+         | 'parallel' { Ling.Abs.ReplPar }
+WithIndex :: { WithIndex }
+WithIndex : {- empty -} { Ling.Abs.NoIndex }
+          | 'with' Name { Ling.Abs.SoIndex $2 }
 Act :: { Act }
 Act : NewAlloc { Ling.Abs.Nu $1 }
     | Split { Ling.Abs.Split $1 }
@@ -257,10 +269,14 @@ AllocTerm : Name { Ling.Abs.AVar $1 }
 ListAllocTerm :: { [AllocTerm] }
 ListAllocTerm : {- empty -} { [] }
               | ListAllocTerm AllocTerm { flip (:) $1 $2 }
+NewSig :: { NewSig }
+NewSig : {- empty -} { Ling.Abs.NoNewSig }
+       | ':*' Term { Ling.Abs.NewTypeSig $2 }
+       | ':' Term { Ling.Abs.NewSessSig $2 }
 NewPatt :: { NewPatt }
-NewPatt : '[' ListChanDec ']' { Ling.Abs.TenNewPatt $2 }
-        | '[:' ListChanDec ':]' { Ling.Abs.SeqNewPatt $2 }
-        | '(' Name OptSig ')' { Ling.Abs.CntNewPatt $2 $3 }
+NewPatt : '[' ListCPatt ']' { Ling.Abs.TenNewPatt $2 }
+        | '[:' ListCPatt ':]' { Ling.Abs.SeqNewPatt $2 }
+        | '(' Name NewSig ')' { Ling.Abs.CntNewPatt $2 $3 }
 NewAlloc :: { NewAlloc }
 NewAlloc : 'new' NewPatt { Ling.Abs.New $2 }
          | 'new/' '(' Term OptSig ')' NewPatt { Ling.Abs.NewSAnn $3 $4 $6 }

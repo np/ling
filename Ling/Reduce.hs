@@ -44,9 +44,17 @@ traceReduce _ _ = id
 --traceReduce msg x y = trace (msg ++ ":\n" ++ ppShow (x & gdefs .~ ø)) (y `seq` trace ("---> " ++ ppShow (y & reduced . gdefs .~ ø)) y)
 --traceReduce msg x y = trace (msg ++ ":\n" ++ ppShow x) (y `seq` trace ("---> " ++ ppShow y) y)
 
+alreadyReduced :: Scoped a -> Reduced a
+alreadyReduced s = pure $ s ^. scoped
+
+reducedOrReduce :: HasReduce' a => Scoped a -> Reduced a
+reducedOrReduce
+  | strong    = reduce
+  | otherwise = alreadyReduced
+
 reduceApp :: Scoped Term -> [Term] -> Reduced Term
 reduceApp st0 = \case
-  []     -> rt1
+  []     -> Reduced (st0 & gdefs .~ ø) *> rt1
   (u:us) ->
     traceReduce "reduceApp" st1 $
     case st1 ^. scoped of
@@ -126,7 +134,7 @@ instance (HasReduce a b, HasReduce a' b') => HasReduce (a, a') (b, b') where
   reduce sxy = bitraverse (reduce . (sxy $>)) (reduce . (sxy $>)) (sxy ^. scoped)
 
 -- Only needed for ConName
-instance HasReduce Name Name where reduce = Reduced
+instance HasReduce Name Name where reduce = alreadyReduced
 
 instance HasReduce Session Session where
   reduce s0 =
@@ -136,7 +144,7 @@ instance HasReduce Session Session where
       IO rw vd s -> whenStrong $ IO rw <$> reduce (s0 $> vd) <*> reduce (s0 $> s)
     where
       whenStrong s | strong    = s
-                   | otherwise = Reduced s0
+                   | otherwise = alreadyReduced s0
 
 instance HasReduce RFactor RFactor where
   reduce = reduce_ rterm
@@ -155,7 +163,7 @@ instance HasReduce Term Term where
   reduce st0 =
     -- traceReduce "reduceTerm" st0 $
     case t0 of
-      Let defs t  -> reduce (st0 *> Scoped ø defs () $> t)
+      Let defs t  -> Reduced (Scoped ø defs ()) *> reduce (st0 *> Scoped defs ø () $> t)
       Def k d es  -> reduceDef (st0 $> (k, d, es))
       Case t brs  -> reduceCase (st0 $> t) brs
       Lit{}       -> pure t0
@@ -171,7 +179,7 @@ instance HasReduce Term Term where
     where
       t0 = st0 ^. scoped
       whenStrong s | strong    = s
-                   | otherwise = Reduced st0
+                   | otherwise = alreadyReduced st0
 
 -- TODO assumptions!!!
 reduce_ :: HasReduce a b => Traversal s t a b -> Reduce s t
@@ -210,7 +218,6 @@ instance HasReduce Proc Proc where
       proc0 `Dot` proc1 -> (dotP :: Op2 Proc) <$> reduce (sp $> proc0) <*> reduce (sp $> proc1)
       LetP defs proc0 ->
         reduce (sp *> Scoped defs ø () $> proc0) & reduced . scoped %~ LetP defs
-      Replicate k r n p
-        | strong    -> Replicate k <$> reduce (sp $> r) <*> pure n <*> reduce (sp $> p)
-        | otherwise -> Reduced sp
+      Replicate k r n p ->
+        mkReplicate k <$> reducedOrReduce (sp $> r) <*> pure n <*> reduce (sp $> p)
       Procs procs -> procs ^. each . to (reduce . (sp $>))

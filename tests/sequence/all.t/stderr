@@ -1,0 +1,12 @@
+[WARNING] Skipping abstract session case x of {
+  `false -> {!String, !String},
+  `true -> !String
+}
+[WARNING] Sequencing a non-ready prefix (@ (case x of {
+  `false -> proc (c)
+  split c {d, e}.
+  d <- "Hello".
+  e <- "World" ,
+  `true -> proc (c)
+  c <- "Hello World!"
+} ) (c))

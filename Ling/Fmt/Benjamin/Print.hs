@@ -174,6 +174,7 @@ instance Print Proc where
   prt i e = case e of
     PAct act -> prPrec i 1 (concatD [prt 0 act])
     PPrll procs -> prPrec i 1 (concatD [doc (showString "("), prt 0 procs, doc (showString ")")])
+    PRepl replkind aterm withindex proc -> prPrec i 1 (concatD [prt 0 replkind, doc (showString "^"), prt 0 aterm, prt 0 withindex, prt 1 proc])
     PNxt proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, prt 0 proc2])
     PDot proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, doc (showString "."), prt 0 proc2])
     PSem proc1 proc2 -> prPrec i 0 (concatD [prt 1 proc1, doc (showString ";"), prt 0 proc2])
@@ -181,6 +182,16 @@ instance Print Proc where
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "|"), prt 0 xs])
+instance Print ReplKind where
+  prt i e = case e of
+    ReplSeq -> prPrec i 0 (concatD [doc (showString "sequence")])
+    ReplPar -> prPrec i 0 (concatD [doc (showString "parallel")])
+
+instance Print WithIndex where
+  prt i e = case e of
+    NoIndex -> prPrec i 0 (concatD [])
+    SoIndex name -> prPrec i 0 (concatD [doc (showString "with"), prt 0 name])
+
 instance Print Act where
   prt i e = case e of
     Nu newalloc -> prPrec i 0 (concatD [prt 0 newalloc])
@@ -255,10 +266,17 @@ instance Print AllocTerm where
     AParen term optsig -> prPrec i 0 (concatD [doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+instance Print NewSig where
+  prt i e = case e of
+    NoNewSig -> prPrec i 0 (concatD [])
+    NewTypeSig term -> prPrec i 0 (concatD [doc (showString ":*"), prt 0 term])
+    NewSessSig term -> prPrec i 0 (concatD [doc (showString ":"), prt 0 term])
+
 instance Print NewPatt where
   prt i e = case e of
-    TenNewPatt chandecs -> prPrec i 0 (concatD [doc (showString "["), prt 0 chandecs, doc (showString "]")])
-    SeqNewPatt chandecs -> prPrec i 0 (concatD [doc (showString "[:"), prt 0 chandecs, doc (showString ":]")])
+    TenNewPatt cpatts -> prPrec i 0 (concatD [doc (showString "["), prt 0 cpatts, doc (showString "]")])
+    SeqNewPatt cpatts -> prPrec i 0 (concatD [doc (showString "[:"), prt 0 cpatts, doc (showString ":]")])
+    CntNewPatt name newsig -> prPrec i 0 (concatD [doc (showString "("), prt 0 name, prt 0 newsig, doc (showString ")")])
 
 instance Print NewAlloc where
   prt i e = case e of

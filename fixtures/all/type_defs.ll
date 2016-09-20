@@ -31,6 +31,7 @@ notZero' : Two =
   \(A : Type)(x y : A)-> b A y x
 
 notZero'' : Two = notTwo zeroTwo
+
 assert notTwo zeroTwo = oneTwo : Two
 assert notTwo oneTwo = zeroTwo : Two
 

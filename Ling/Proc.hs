@@ -11,6 +11,7 @@ module Ling.Proc
   , _Chans
   , _SplitCs
   , _ArrayCs
+  , _NewPatt
   , splitK
   , splitAx
   , subChanDecs
@@ -157,22 +158,28 @@ matchCPatt p0 p1 =
 
 -- This is incomplete as some valid processes can be missed.
 -- TODO generate a `cut` when this short-cut does not work.
-matchProcSplit :: TraverseKind -> ChanDec -> Proc -> Maybe ([ChanDec], Proc)
-matchProcSplit k cd = \case
-  Act (Split c pat) `Dot` proc0
-    | c == cd ^. cdChan
-    , Just (k', cds) <- cPattAsArrayChanDecs pat
-    , k == k'
-    -> Just (cds, proc0)
+matchProcSplit :: TraverseKind -> Endom Proc -> ChanDec -> Proc -> Maybe (Endom Proc, [ChanDec], Proc)
+matchProcSplit k pref cd = \case
+  proc0 `Dot` proc1 ->
+    -- trace ("matchProcSplit: Dot " <> show proc0) $
+    case proc0 of
+      Act (Split c pat)
+        | c == cd ^. cdChan
+        , Just (k', cds) <- cPattAsArrayChanDecs pat
+        , k == k'
+        -> Just (pref, cds, proc1)
+      _ -> matchProcSplit k (pref . dotP proc0) cd proc1
   Act act ->
-    matchProcSplit k cd (Act act `Dot` ø)
+    matchProcSplit k pref cd (Act act `Dot` ø)
+  LetP defs proc0 ->
+    matchProcSplit k (pref . dotP defs) cd proc0
+  -- proc0 -> trace ("matchProcSplit: " <> show proc0) Nothing
   _ -> Nothing
 
-matchChanDecs :: TraverseKind -> EndoM Maybe ([ChanDec], Proc)
-matchChanDecs ParK = Just
-matchChanDecs k    = \case
-  ([cd],proc) -> matchProcSplit k cd proc
-  _           -> Nothing
+matchChanDecs :: TraverseKind -> EndoM Maybe (Endom Proc, [ChanDec], Proc)
+matchChanDecs k = \case
+  (pref,[cd],proc) -> matchProcSplit k pref cd proc
+  _                -> Nothing
 
 -- Prism valid up to the reduction rules
 _ActAt :: Prism' Proc (Term, CPatt)
@@ -183,20 +190,23 @@ _ActAt = prism con pat
       case t of
         Proc cs0 proc0 ->
           case cPattAsArrayChanDecs p of
-            Just (k, cs') | Just (cs1, proc1) <- matchChanDecs k (cs0, proc0)
-                          , length cs1 == length cs' ->
-              let
-                l = zip cs1 cs' & each . both %~ view cdChan
-                m = l2m l
-                r = Ren (\_ _ x -> pure $ Map.lookup x m ?| x) ø ø
-              in
-              renameI r proc1
+            Just (k, cs') | Just (pref1, cs1, proc1) <- matchChanDecs k (id, cs0, proc0)
+                          , length cs1 == length cs' -> pref1 $ renProc (zip cs1 cs') proc1
+                          | k == ParK
+                          , length cs0 == length cs' -> renProc (zip cs0 cs') proc0
             _ -> p0
         _ -> p0
       where
         p0 = Act (At t p)
+
     pat (Act (At t p)) = Right (t, p)
     pat proc0          = Left  proc0
+
+    renProc bs = renameI r
+      where
+        l = bs & each . both %~ view cdChan
+        m = l2m l
+        r = Ren (\_ _ x -> pure $ Map.lookup x m ?| x) ø ø
 
 -- Prism valid up to the reduction rules
 __Act :: Prism' Proc Act
@@ -211,6 +221,24 @@ _Chans = below _ChanP
 
 _ArrayCs :: Prism' CPatt (TraverseKind, [ChanDec])
 _ArrayCs = _ArrayP . aside _Chans
+
+_NewPatt :: Prism' CPatt NewPatt
+_NewPatt = prism' con pat
+  where
+    con = \case
+      NewChan c ty -> ChanP (ChanDec c (litR1 # ()) (Just . oneS $ IO Write (Arg anonName (Just ty)) (Array SeqK (Sessions []))))
+      NewChans k cds -> ArrayP k (ChanP <$> cds)
+    pat = \case
+      ChanP (ChanDec c r os) | r & is litR1 ->
+        case os of
+          Just (IO Write (Arg x (Just ty)) (Array SeqK (Sessions [])) `Repl` r') | x == anonName, r' & is litR1 ->
+            Just (NewChan c ty)
+          _ ->
+            Nothing
+      ArrayP k pats | Just cds <- pats ^? _Chans ->
+        Just (NewChans k cds)
+      _ ->
+        Nothing
 
 _SplitCs :: Prism' Act (Channel, TraverseKind, [ChanDec])
 _SplitCs = _Split . aside _ArrayCs . flat3
@@ -234,7 +262,7 @@ procActs f = \case
   Act act -> Act <$> f act
   Procs procs -> Procs <$> (each . procActs) f procs
   Replicate k t x proc0 ->
-    Replicate k t x <$> procActs f proc0
+    mkReplicate k t x <$> procActs f proc0
   proc0 `Dot` proc1 ->
     Dot <$> procActs f proc0 <*> procActs f proc1
   LetP defs proc0 -> LetP defs <$> procActs f proc0
@@ -306,7 +334,7 @@ fetchActProc' pred f = \case
   Act act -> fetchActAct pred f act
   Procs procs -> toProc <$> fetchActProcs pred f procs
   Replicate k t x proc0 ->
-    Replicate k t x <$> fetchActProc' pred f proc0
+    mkReplicate k t x <$> fetchActProc' pred f proc0
   LetP defs proc0 ->
     LetP defs <$> fetchActProc' pred f proc0
   proc0 `Dot` proc1

@@ -1,1 +1,0 @@
-../../fixtures/all/sqrs_abs.ll

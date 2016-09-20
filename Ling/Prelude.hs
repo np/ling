@@ -79,6 +79,10 @@ newtype Order a = Order { _unOrder :: [a] }
 makePrisms ''Order
 makeLenses ''Order
 
+instance Monoid (Order a) where
+  mempty = Order []
+  mappend (Order x) (Order y) = Order (x <> y)
+
 instance Each (Order a) (Order b) a b where
   each = _Order . each
 
@@ -403,8 +407,12 @@ mkFinEndom f = FinEndom (l2m (filter ((/=d).snd) g)) d
   -- TODO pick the most recurring element
     (_,d):g = [(x, f x) | x <- [toEnum 0..]]
 
-idEndom :: (Enum a, Ord a) => FinEndom a
-idEndom = mkFinEndom id
+evalFinEndom :: Ord a => FinEndom a -> Endom a
+evalFinEndom (FinEndom m d) a = m ^. at a ?| d
+
+instance (Enum a, Ord a) => Monoid (FinEndom a) where
+  mempty = mkFinEndom id
+  mappend f g = mkFinEndom (evalFinEndom f . evalFinEndom g)
 
 constEndom :: Ord a => a -> FinEndom a
 constEndom = FinEndom ø
@@ -418,12 +426,6 @@ finEndomMap :: (Enum a, Ord a) => FinEndom a -> Map a a
 finEndomMap (FinEndom m d) = foldr (\a -> at a %~ f) m [toEnum 0..]
   where f Nothing = Just d
         f x       = x
-
-evalFinEndom :: Ord a => FinEndom a -> Endom a
-evalFinEndom (FinEndom m d) a = m ^. at a ?| d
-
-composeFinEndom :: (Enum a, Ord a) => Op2 (FinEndom a)
-composeFinEndom f g = mkFinEndom (evalFinEndom f . evalFinEndom g)
 
 instance (Enum a, Ord a) => Eq (FinEndom a) where
   f == g = all (\x -> evalFinEndom f x == evalFinEndom g x) [toEnum 0..]

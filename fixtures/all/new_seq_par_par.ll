@@ -1,6 +1,6 @@
 new_seq_par_par =
   proc()
-  new [: cd: {!Int,!Bool}, ef: {?Int,?Bool} :].
+  new/alloc [: cd: {!Int,!Bool}, ef: {?Int,?Bool} :].
   split cd {c,d}.
   split ef {e,f}.
   c <- 1.

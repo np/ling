@@ -1,3 +1,8 @@
 While checking `wrong_repeat_par`
-  checkSlice: non send/recv session on channel c
+  While checking `c`
+    Replication factors are not equivalent.
+    Annotation:
+      1
+    Inferred:
+      10
 

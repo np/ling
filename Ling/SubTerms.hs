@@ -32,11 +32,6 @@ instance SubTerms a => SubTerms [a] where
 instance (SubTerms a, SubTerms b) => SubTerms (a, b) where
   subTerms = subTerms `beside` subTerms
 
-instance SubTerms NewPatt where
-  subTerms f = \case
-    NewChans k cds -> NewChans k <$> subTerms f cds
-    NewChan  c os  -> NewChan c <$> _Just f os
-
 instance SubTerms Session where
   subTerms f = \case
     TermS p t  -> termS p <$> f t

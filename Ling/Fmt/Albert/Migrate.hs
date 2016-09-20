@@ -120,8 +120,8 @@ transAllocTerm (ALit lit) = L.ALit (transLiteral lit)
 transAllocTerm (AParen t os) = L.AParen (transTerm t) (transOptSig os)
 
 transNewPatt :: NewPatt -> L.NewPatt
-transNewPatt (TenNewPatt chandecs) = L.TenNewPatt (transChanDec <$> chandecs)
-transNewPatt (SeqNewPatt chandecs) = L.SeqNewPatt (transChanDec <$> chandecs)
+transNewPatt (TenNewPatt chandecs) = L.TenNewPatt (L.ChaPatt . transChanDec <$> chandecs)
+transNewPatt (SeqNewPatt chandecs) = L.SeqNewPatt (L.ChaPatt . transChanDec <$> chandecs)
 
 transNewAlloc :: NewAlloc -> L.NewAlloc
 transNewAlloc (New newpatt) = L.New (transNewPatt newpatt)

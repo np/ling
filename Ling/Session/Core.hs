@@ -63,9 +63,25 @@ endedRS = non' endRS
 logOp :: SessionOp
 logOp = SessionOp (constEndom Write) (ifEndom TenK ParK (ifEndom ParK ParK (constEndom SeqK)))
 
+-- I guess that dualOp raises SessionOp from a monoid to a group.
 dualOp :: SessionOp
 dualOp = SessionOp (ifEndom Read Write (constEndom Read))
                    (ifEndom TenK ParK  (ifEndom ParK TenK (constEndom SeqK)))
+
+constArrOp :: TraverseKind -> SessionOp
+constArrOp = SessionOp ø . constEndom
+
+constRWOp :: RW -> SessionOp
+constRWOp rw = SessionOp (constEndom rw) ø
+
+seqOp :: SessionOp
+seqOp = constArrOp SeqK
+
+sendOp :: SessionOp
+sendOp = constRWOp Write
+
+recvOp :: SessionOp
+recvOp = constRWOp Read
 
 -- Laws (not the minimal set):
 -- * dual . dual = id
@@ -77,6 +93,15 @@ class Dual a where
 
   log :: Endom a
   log = sessionOp logOp
+
+  seq_ :: Endom a
+  seq_ = sessionOp seqOp
+
+  send_ :: Endom a
+  send_ = sessionOp sendOp
+
+  recv_ :: Endom a
+  recv_ = sessionOp sendOp
 
   sessionOp :: Dual a => SessionOp -> Endom a
 
@@ -106,9 +131,8 @@ instance (Ord a, Dual a) => Dual (FinEndom a) where
   isMaster (FinEndom m d) = anyOf each isMaster m || isMaster d
 
 instance Dual SessionOp where
-  sessionOp (SessionOp rwf kf) (SessionOp rwg kg) =
-    SessionOp (composeFinEndom rwf rwg) (composeFinEndom kf kg)
-  isMaster  (SessionOp rwf kf) = isMaster (rwf, kf)
+  sessionOp = (<>)
+  isMaster (SessionOp rwf kf) = isMaster (rwf, kf)
 
 instance Dual TraverseKind where
   dual ParK = TenK
@@ -137,18 +161,44 @@ instance Dual Raw.Term where
   dual (Raw.Dual s) =          s
   dual           s  = Raw.Dual s
 
-  log s
-    | Raw.RawApp (Raw.Var (Raw.Name "Log")) [_] <- s =
-        s
-    | otherwise =
-        Raw.RawApp (Raw.Var (Raw.Name "Log")) [Raw.paren s]
+  log s0 = Raw.mkPrimOp "Log" [logBody] where
+    logBody
+      | Just (x,[s1]) <- s0 ^? Raw._PrimOp
+      , x `elem` ["Log","Send","Recv"]     = s1
+      | otherwise                          = s0
+
+  seq_ s0
+    | Just ("Log",[s1]) <- s0 ^? Raw._PrimOp = Raw.mkPrimOp "Seq" [Raw.mkPrimOp "Send" [s1]]
+    | Just ("Seq",_)    <- s0 ^? Raw._PrimOp = s0
+    | otherwise                              = Raw.mkPrimOp "Seq" [s0]
+
+  send_ s0
+    | Just ("Seq",[s1]) <- s0 ^? Raw._PrimOp = Raw.mkPrimOp "Seq" [Raw.mkPrimOp "Send" [s1]]
+    | Just (x,_)        <- s0 ^? Raw._PrimOp
+    , x `elem` ["Send", "Recv", "Log"]       = s0
+    | otherwise                              = Raw.mkPrimOp "Send" [s0]
+
+  recv_ s0
+    | Just ("Seq",[s1]) <- s0 ^? Raw._PrimOp = Raw.mkPrimOp "Seq" [Raw.mkPrimOp "Recv" [s1]]
+    | Just (x,_)        <- s0 ^? Raw._PrimOp
+    , x `elem` ["Send", "Recv"]              = s0
+    | otherwise                              = Raw.mkPrimOp "Recv" [s0]
 
   sessionOp f
-    | f == idOp        = id
-    | f == dualOp      = dual
-    | f == logOp       = log
-    | f == dual logOp  = dual . log
-    | otherwise        = error $ "Raw.Term.sessionOp: not implemented " ++ show f
+    | Just g <- lookup f        ops = g
+    | Just g <- lookup (dual f) ops = dual . g
+    | otherwise                     = error $ "Raw.Term.sessionOp: not implemented " ++ show f
+
+    where
+      ops =
+        [(ø, id)
+        ,(logOp,  log)
+        ,(seqOp,  seq_)
+        ,(sendOp, send_)
+        ,(recvOp, recv_)
+        ,(seqOp <> sendOp,  seq_ . send_)
+        ,(seqOp <> recvOp,  seq_ . recv_)
+        ]
 
   isMaster  = error "Raw.Term.isMaster: not implemented"
 

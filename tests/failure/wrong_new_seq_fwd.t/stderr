@@ -1,4 +1,5 @@
 While checking `wrong_new_seq_fwd`
-  Sequential `new` expects the session for channel c to be made of sends (a Log)
-  ?(x#c : Int)
+  While checking `c`
+    Sequential `new` expects the session for channel c to be made of sends (a Log)
+    ?(x#c : Int)
 

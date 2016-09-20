@@ -252,34 +252,96 @@ case_proto : (x : Bool)-> < ?Int > =
   } ) (c)
 
 com_new =
-  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
-  new [c : S, d : ~ S].
+  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> \ (ann : Allocation)-> proc ()
+  new/ann [c : S, d : ~ S].
   ( @ p (c)
   | @ q (d))
 
 com_new_SInt =
+  \ (ann : Allocation)-> proc ()
+  new/ann [c : !Int, d : ?Int].
+  ( c <- 42
+  | let x#q : Int <- d )
+
+com_new_SInt_alloc =
   proc ()
-  new [c : !Int, d : ?Int].
+  new/alloc [c : !Int, d : ?Int].
+  ( c <- 42
+  | let x#q : Int <- d )
+
+com_new_SInt_fuse1 =
+  proc ()
+  new/fuse 1 [c : !Int, d : ?Int].
   ( c <- 42
   | let x#q : Int <- d )
 
 com_new_SInt_RBool =
+  \ (ann : Allocation)-> proc ()
+  new/ann [c : !Int.?Bool, d : ?Int.!Bool].
+  ( c <- 42.
+    let b#p : Bool <- c
+  | let x#q : Int <- d.
+    d <- `true )
+
+com_new_SInt_RBool_alloc =
   proc ()
-  new [c : !Int.?Bool, d : ?Int.!Bool].
+  new/alloc [c : !Int.?Bool, d : ?Int.!Bool].
+  ( c <- 42.
+    let b#p : Bool <- c
+  | let x#q : Int <- d.
+    d <- `true )
+
+com_new_SInt_RBool_fuse1 =
+  proc ()
+  new/fuse 1 [c : !Int.?Bool, d : ?Int.!Bool].
+  ( c <- 42.
+    let b#p : Bool <- c
+  | let x#q : Int <- d.
+    d <- `true )
+
+com_new_SInt_RBool_fuse2 =
+  proc ()
+  new/fuse 2 [c : !Int.?Bool, d : ?Int.!Bool].
+  ( c <- 42.
+    let b#p : Bool <- c
+  | let x#q : Int <- d.
+    d <- `true )
+
+com_new_SInt_RBool_fuse3 =
+  proc ()
+  new/fuse 3 [c : !Int.?Bool, d : ?Int.!Bool].
   ( c <- 42.
     let b#p : Bool <- c
   | let x#q : Int <- d.
     d <- `true )
 
 com_new_mk_ten2 =
-  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> proc ()
-  new [c : S, d : ~ S].
+  \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> \ (ann : Allocation)-> proc ()
+  new/ann [c : S, d : ~ S].
   ( @ p (c)
   | @ q (d))
 
 com_new_mk_ten2_SInt =
+  \ (ann : Allocation)-> proc ()
+  new/ann [c : !Int, d : ?Int].
+  ( c <- 42
+  | let x#q : Int <- d )
+
+com_new_mk_ten2_SInt_alloc =
   proc ()
-  new [c : !Int, d : ?Int].
+  new/alloc [c : !Int, d : ?Int].
+  ( c <- 42
+  | let x#q : Int <- d )
+
+com_new_mk_ten2_SInt_fuse1 =
+  proc ()
+  new/fuse 1 [c : !Int, d : ?Int].
+  ( c <- 42
+  | let x#q : Int <- d )
+
+com_new_mk_ten2_SInt_fuse2 =
+  proc ()
+  new/fuse 2 [c : !Int, d : ?Int].
   ( c <- 42
   | let x#q : Int <- d )
 
@@ -434,6 +496,13 @@ double =
 
 double_21 =
   proc (b : !Int)
+  new (c :* Int).
+  c <- 21.
+  let x : Int <- c.
+  b <- (x + x)
+
+double_21_seq =
+  proc (b : !Int)
   new [: c : !Int, c' : ?Int :].
   c <- 21.
   let x : Int <- c'.
@@ -546,84 +615,230 @@ feed_send_then_recv =
 flexible_telescope : (A : Type)-> (B : Type)-> (x : A)-> (y : A)-> (z : B)-> (t : B)-> Int =
   \ (A : Type)-> \ (B : Type)-> \ (x : A)-> \ (y : A)-> \ (z : B)-> \ (t : B)-> 42
 
+Fwd_diff =
+  \ (m : Int)-> \ (n : Int)-> {[: ?Int ^ (m + n):], [: !Int ^ n :]}
+
 fwd_diff1 =
-  \ (n : Int)-> proc (a : [: ?Int ^ (1 + n):], b : [: !Int ^ n :])
+  \ (n : Int)-> proc (c : {[: ?Int ^ (1 + n):], [: !Int ^ n :]})
+  split c {a, b}.
   split a [: a0, ai ^ n :].
   split b [: bi ^ n :].
-  new (tmp : Int).
+  new/alloc (acc :* Int).
   let x#a0 : Int <- a0.
-  tmp <- x#a0.
-  slice (ai, bi)n as _
-    let x : Int <- ai.
-    let y : Int <- tmp.
+  acc <- x#a0.
+  split acc [: acci ^ n :].
+  sequence ^ n
+    (let x : Int <- ai.
+    let y : Int <- acci.
     bi <- (x - y).
-    tmp <- x
+    acci <- x)
+
+fwd_diff1_10 : < {[: ?Int ^ 11 :], [: !Int ^ 10 :]}> =
+  proc (c : {[: ?Int ^ 11 :], [: !Int ^ 10 :]})
+  split c {a, b}.
+  split a [: a0, ai ^ 10 :].
+  split b [: bi ^ 10 :].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ 10 :].
+  sequence ^ 10
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)
+
+fwd_diff0 : (n : Int)-> < {[: ?Int ^ (0 + n):], [: !Int ^ n :]}> =
+  \ (n : Int)-> proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
+  split c {c#0 : [: ?Int ^ n :], c#1 : [: !Int ^ n :]}.
+  split c#0 [: c#0#0 ^ n : ?Int ^ n :].
+  split c#1 [: c#1#0 ^ n : !Int ^ n :].
+  sequence ^ n
+    (let x#c#0#0 : Int <- c#0#0.
+    c#1#0 <- x#c#0#0)
+
+fwd_diff_succ =
+  \ (ann : Allocation)-> \ (n : Int)-> \ (m1 : Int)-> \ (p : < {[: ?Int ^ (m1 + n):], [: !Int ^ n :]}>)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
+  split ad {a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :]}.
+  new/ann [: b : [: !Int ^ (m1 + n):], c :].
+  split a [: a0, ai ^ (m1 + n):].
+  split b [: bi ^ (m1 + n):].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ (m1 + n):].
+  (sequence ^ (m1 + n)
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  @ p {c, d}
+
+fwd_diff2 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (2 + n):], [: !Int ^ n :]}> =
+  \ (ann : Allocation)-> \ (n : Int)-> proc (ad : {[: ?Int ^ (2 + n):], [: !Int ^ n :]})
+  split ad {a : [: ?Int ^ (1 + 1 + n):], d : [: !Int ^ n :]}.
+  new/ann [: b : [: !Int ^ (1 + n):], c :].
+  split a [: a0, ai ^ (1 + n):].
+  split b [: bi ^ (1 + n):].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ (1 + n):].
+  (sequence ^ (1 + n)
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  split c [: a0#p, ai#p ^ n :].
+  split d [: bi#p ^ n :].
+  new/alloc (acc#p :* Int).
+  let x#a0#p : Int <- a0#p.
+  acc#p <- x#a0#p.
+  split acc#p [: acci#p ^ n :].
+  sequence ^ n
+    (let x#p : Int <- ai#p.
+    let y#p : Int <- acci#p.
+    bi#p <- (x#p - y#p).
+    acci#p <- x#p)
+
+fwd_diff2_10_alloc : < {[: ?Int ^ 12 :], [: !Int ^ 10 :]}> =
+  proc (ad : {[: ?Int ^ 12 :], [: !Int ^ 10 :]})
+  split ad {a : [: ?Int ^ 12 :], d : [: !Int ^ 10 :]}.
+  new/alloc [: b : [: !Int ^ 11 :], c :].
+  split a [: a0, ai ^ 11 :].
+  split b [: bi ^ 11 :].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ 11 :].
+  (sequence ^ 11
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  split c [: a0#p, ai#p ^ 10 :].
+  split d [: bi#p ^ 10 :].
+  new/alloc (acc#p :* Int).
+  let x#a0#p : Int <- a0#p.
+  acc#p <- x#a0#p.
+  split acc#p [: acci#p ^ 10 :].
+  sequence ^ 10
+    (let x#p : Int <- ai#p.
+    let y#p : Int <- acci#p.
+    bi#p <- (x#p - y#p).
+    acci#p <- x#p)
+
+fwd_diff3 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (3 + n):], [: !Int ^ n :]}> =
+  \ (ann : Allocation)-> \ (n : Int)-> proc (ad : {[: ?Int ^ (3 + n):], [: !Int ^ n :]})
+  split ad {a : [: ?Int ^ (1 + 2 + n):], d : [: !Int ^ n :]}.
+  new/ann [: b : [: !Int ^ (2 + n):], c :].
+  split a [: a0, ai ^ (2 + n):].
+  split b [: bi ^ (2 + n):].
+  new/alloc (acc :* Int).
+  let x#a0 : Int <- a0.
+  acc <- x#a0.
+  split acc [: acci ^ (2 + n):].
+  (sequence ^ (2 + n)
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    bi <- (x - y).
+    acci <- x)).
+  new/ann [: b#p : [: !Int ^ (1 + n):], c#p :].
+  split c [: a0#p, ai#p ^ (1 + n):].
+  split b#p [: bi#p ^ (1 + n):].
+  new/alloc (acc#p :* Int).
+  let x#a0#p : Int <- a0#p.
+  acc#p <- x#a0#p.
+  split acc#p [: acci#p ^ (1 + n):].
+  (sequence ^ (1 + n)
+    (let x#p : Int <- ai#p.
+    let y#p : Int <- acci#p.
+    bi#p <- (x#p - y#p).
+    acci#p <- x#p)).
+  split c#p [: a0#p#p, ai#p#p ^ n :].
+  split d [: bi#p#p ^ n :].
+  new/alloc (acc#p#p :* Int).
+  let x#a0#p#p : Int <- a0#p#p.
+  acc#p#p <- x#a0#p#p.
+  split acc#p#p [: acci#p#p ^ n :].
+  sequence ^ n
+    (let x#p#p : Int <- ai#p#p.
+    let y#p#p : Int <- acci#p#p.
+    bi#p#p <- (x#p#p - y#p#p).
+    acci#p#p <- x#p#p)
 
 recInt : (A : (n : Int)-> Type)-> (e : String)-> (z : A 0)-> (s : (n1 : Int)-> (a : A n1)-> A (1 + n1)) -> (n : Int)-> A n
 
-fwd_diff : (m : Int)-> (n : Int)-> < [: ?Int ^ (m + n):], [: !Int ^ n :] > =
-  \ (m0 : Int)-> \ (n : Int)-> recInt (\ (m : Int)-> < [: ?Int ^ (m + n):], [: !Int ^ n :] >)"m < 0" (proc (a : [: ?Int ^ n :], d : [: !Int ^ n :])
-  split a [: a#0 ^ n : ?Int ^ n :].
-  split d [: d#0 ^ n : !Int ^ n :].
-  slice (a#0, d#0)n as _
-    let x#a#0 : Int <- a#0.
-    d#0 <- x#a#0 ) (\ (m1 : Int)-> \ (p : < [: ?Int ^ (m1 + n):], [: !Int ^ n :] >)-> proc (a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :])
-  new [: b : [: !Int ^ (m1 + n):], c :].
+fwd_diff : (ann : Allocation)-> (m : Int)-> (n : Int)-> < {[: ?Int ^ (m + n):], [: !Int ^ n :]}> =
+  \ (ann : Allocation)-> \ (m0 : Int)-> \ (n : Int)-> recInt (\ (m : Int)-> < {[: ?Int ^ (m + n):], [: !Int ^ n :]}>)"m < 0" (proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
+  split c {c#0 : [: ?Int ^ n :], c#1 : [: !Int ^ n :]}.
+  split c#0 [: c#0#0 ^ n : ?Int ^ n :].
+  split c#1 [: c#1#0 ^ n : !Int ^ n :].
+  sequence ^ n
+    (let x#c#0#0 : Int <- c#0#0.
+    c#1#0 <- x#c#0#0)) (\ (m1 : Int)-> \ (p : < {[: ?Int ^ (m1 + n):], [: !Int ^ n :]}>)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
+  split ad {a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :]}.
+  new/ann [: b : [: !Int ^ (m1 + n):], c :].
   split a [: a0, ai ^ (m1 + n):].
   split b [: bi ^ (m1 + n):].
-  new (tmp : Int).
+  new/alloc (acc :* Int).
   let x#a0 : Int <- a0.
-  tmp <- x#a0.
-  (slice (ai, bi)(m1 + n)as _
-    let x : Int <- ai.
-    let y : Int <- tmp.
+  acc <- x#a0.
+  split acc [: acci ^ (m1 + n):].
+  (sequence ^ (m1 + n)
+    (let x : Int <- ai.
+    let y : Int <- acci.
     bi <- (x - y).
-    tmp <- x ).
+    acci <- x)).
   @ p {c, d}) m0
-
-fwd_diff1_10 =
-  proc (a : [: ?Int ^ 11 :], b : [: !Int ^ 10 :])
-  split a [: a0, ai ^ 10 :].
-  split b [: bi ^ 10 :].
-  new (tmp : Int).
-  let x#a0 : Int <- a0.
-  tmp <- x#a0.
-  slice (ai, bi)10 as _
-    let x : Int <- ai.
-    let y : Int <- tmp.
-    bi <- (x - y).
-    tmp <- x
 
 tabulate_seq =
   \ (A : Type)-> \ (f : (i : Int)-> A)-> \ (n : Int)-> proc (a : [: !A ^ n :])
   split a [: a_i ^ n :].
-  slice (a_i)n as i
+  sequence ^ n with i
     a_i <- (f i)
 
 main =
-  proc (c)
-  new [: a : [: !Int ^ 10 :], b :].
+  proc (cc : [: !Int ^ 7 :])
+  new/alloc [: a : [: !Int ^ 10 :], bb :].
   split a [: a_i ^ 10 :].
-  (slice (a_i)10 as i
+  (sequence ^ 10 with i
     a_i <- (10 - i)).
-  @ (recInt (\ (m : Int)-> < [: ?Int ^ (m + 7):], [: !Int ^ 7 :] >)"m < 0" (proc (a : [: ?Int ^ 7 :], d : [: !Int ^ 7 :])
-  split a [: a#0 ^ 7 : ?Int ^ 7 :].
-  split d [: d#0 ^ 7 : !Int ^ 7 :].
-  slice (a#0, d#0)7 as _
-    let x#a#0 : Int <- a#0.
-    d#0 <- x#a#0 ) (\ (m1 : Int)-> \ (p : < [: ?Int ^ (m1 + 7):], [: !Int ^ 7 :] >)-> proc (a : [: ?Int ^ (1 + m1 + 7):], d : [: !Int ^ 7 :])
-  new [: b : [: !Int ^ (m1 + 7):], c :].
-  split a [: a0, ai ^ (m1 + 7):].
-  split b [: bi ^ (m1 + 7):].
-  new (tmp : Int).
+  new/alloc [: b : [: !Int ^ 9 :], c :].
+  split bb [: a0, ai ^ 9 :].
+  split b [: bi ^ 9 :].
+  new/alloc (acc :* Int).
   let x#a0 : Int <- a0.
-  tmp <- x#a0.
-  (slice (ai, bi)(m1 + 7)as _
-    let x : Int <- ai.
-    let y : Int <- tmp.
+  acc <- x#a0.
+  split acc [: acci ^ 9 :].
+  (sequence ^ 9
+    (let x : Int <- ai.
+    let y : Int <- acci.
     bi <- (x - y).
-    tmp <- x ).
-  @ p {c, d}) 3){b, c}
+    acci <- x)).
+  new/alloc [: b#p : [: !Int ^ 8 :], c#p :].
+  split c [: a0#p, ai#p ^ 8 :].
+  split b#p [: bi#p ^ 8 :].
+  new/alloc (acc#p :* Int).
+  let x#a0#p : Int <- a0#p.
+  acc#p <- x#a0#p.
+  split acc#p [: acci#p ^ 8 :].
+  (sequence ^ 8
+    (let x#p : Int <- ai#p.
+    let y#p : Int <- acci#p.
+    bi#p <- (x#p - y#p).
+    acci#p <- x#p)).
+  split c#p [: a0#p#p, ai#p#p ^ 7 :].
+  split cc [: bi#p#p ^ 7 :].
+  new/alloc (acc#p#p :* Int).
+  let x#a0#p#p : Int <- a0#p#p.
+  acc#p#p <- x#a0#p#p.
+  split acc#p#p [: acci#p#p ^ 7 :].
+  sequence ^ 7
+    (let x#p#p : Int <- ai#p#p.
+    let y#p#p : Int <- acci#p#p.
+    bi#p#p <- (x#p#p - y#p#p).
+    acci#p#p <- x#p#p)
 
 fun1_to_proc_ord =
   \ (I : Type)-> \ (O : Type)-> \ (f : (x : I)-> O)-> proc (c : [: ?I, !O :])
@@ -780,17 +995,17 @@ fwd_parN_tenN =
   \ (n : Int)-> proc (i : {?Int ^ n},o : [!Int ^ n])
   split i {i#0 ^ n : ?Int ^ n}.
   split o [o#0 ^ n : !Int ^ n].
-  slice (i#0, o#0)n as _
-    let x#i#0 : Int <- i#0.
-    o#0 <- x#i#0
+  parallel ^ n
+    (let x#i#0 : Int <- i#0.
+    o#0 <- x#i#0)
 
 fwd_par10_ten10 =
   proc (i : {?Int ^ 10},o : [!Int ^ 10])
   split i {i#0 ^ 10 : ?Int ^ 10}.
   split o [o#0 ^ 10 : !Int ^ 10].
-  slice (i#0, o#0)10 as _
-    let x#i#0 : Int <- i#0.
-    o#0 <- x#i#0
+  parallel ^ 10
+    (let x#i#0 : Int <- i#0.
+    o#0 <- x#i#0)
 
 fwd_send_recv =
   proc (i : ?Int, o : !Int)
@@ -907,12 +1122,10 @@ group_nested_seq_SInt_SDouble_SBool_SString =
   fwd (?Bool)(c, nc).
   fwd (?String)(d, nd)
 
-id : (A : Type)-> (x : A)-> A
-
-idproc =
+idProc =
   proc (c : ?Int, d : !Int)
   let y : Int <- c.
-  d <- (id Int y)
+  d <- y
 
 idType =
   \ (idTypeA : Type)-> idTypeA
@@ -1042,162 +1255,189 @@ zipWith =
   split cas [: ca ^ n :].
   split cbs [: cb ^ n :].
   split ccs [: cc ^ n :].
-  slice (ca, cb, cc)n as _
-    let a : A <- ca.
+  sequence ^ n
+    (let a : A <- ca.
     let b : B <- cb.
-    cc <- (f a b)
+    cc <- (f a b))
 
 zip_multD =
   \ (n : Int)-> proc (cas : [: ?Double ^ n :], cbs : [: ?Double ^ n :], ccs : [: !Double ^ n :])
   split cas [: ca ^ n :].
   split cbs [: cb ^ n :].
   split ccs [: cc ^ n :].
-  slice (ca, cb, cc)n as _
-    let a : Double <- ca.
+  sequence ^ n
+    (let a : Double <- ca.
     let b : Double <- cb.
-    cc <- (a *D b)
+    cc <- (a *D b))
 
 foldl =
   \ (A : Type)-> \ (B : Type)-> \ (f : (acc : B)-> (a : A)-> B)-> \ (init : B)-> \ (n : Int)-> proc (ca : [: ?A ^ n :], cr : !B)
-  new/fuse 0 [itmp : !B.?B, tmp].
-  ( itmp <- init.
-    let x#itmp : B <- itmp.
-    cr <- x#itmp
-  | split ca [: ai ^ n :].
-    slice (ai)n as _
-      ( let a : A <- ai
-      | let b : B <- tmp ).
-      tmp <- (f b a))
+  new/alloc (acc :* B).
+  acc <- init.
+  split acc [: acci ^ n, accn :].
+  split ca [: ai ^ n :].
+  (sequence ^ n
+    (( let a : A <- ai
+    | let b : B <- acci ).
+    acci <- (f b a)) ).
+  let x#accn : B <- accn.
+  cr <- x#accn
 
 sumD : (n : Int)-> < [: ?Double ^ n :], !Double > =
   \ (n : Int)-> proc (ca : [: ?Double ^ n :], cr : !Double)
-  new/fuse 0 [itmp : !Double.?Double, tmp].
-  ( itmp <- 0.0.
-    let x#itmp : Double <- itmp.
-    cr <- x#itmp
-  | split ca [: ai ^ n :].
-    slice (ai)n as _
-      ( let a : Double <- ai
-      | let b : Double <- tmp ).
-      tmp <- (b +D a))
+  new/alloc (acc :* Double).
+  acc <- 0.0.
+  split acc [: acci ^ n, accn :].
+  split ca [: ai ^ n :].
+  (sequence ^ n
+    (( let a : Double <- ai
+    | let b : Double <- acci ).
+    acci <- (b +D a)) ).
+  let x#accn : Double <- accn.
+  cr <- x#accn
 
 dotproduct =
-  \ (n : Int)-> proc (as' : [: ?Double ^ n :], bs : [: ?Double ^ n :], o : !Double)
-  new/fuse 0 [: cs : [: !Double ^ n :], ds :].
+  \ (n : Int)-> \ (ann : Allocation)-> proc (as' : [: ?Double ^ n :], bs : [: ?Double ^ n :], o : !Double)
+  new/ann [: cs : [: !Double ^ n :], ds :].
   split as' [: ca ^ n :].
   split bs [: cb ^ n :].
   split cs [: cc ^ n :].
-  (slice (ca, cb, cc)n as _
-    let a : Double <- ca.
+  (sequence ^ n
+    (let a : Double <- ca.
     let b : Double <- cb.
-    cc <- (a *D b)).
-  new/fuse 0 [itmp : !Double.?Double, tmp].
-  ( itmp <- 0.0.
-    let x#itmp : Double <- itmp.
-    o <- x#itmp
-  | split ds [: ai ^ n :].
-    slice (ai)n as _
-      ( let a : Double <- ai
-      | let b : Double <- tmp ).
-      tmp <- (b +D a))
+    cc <- (a *D b)) ).
+  new/alloc (acc :* Double).
+  acc <- 0.0.
+  split acc [: acci ^ n, accn :].
+  split ds [: ai ^ n :].
+  (sequence ^ n
+    (( let a : Double <- ai
+    | let b : Double <- acci ).
+    acci <- (b +D a)) ).
+  let x#accn : Double <- accn.
+  o <- x#accn
 
-dotproduct_4 =
+dotproduct_4_alloc =
   proc (as' : [: ?Double ^ 4 :], bs : [: ?Double ^ 4 :], o : !Double)
-  new/fuse 0 [: cs : [: !Double ^ 4 :], ds :].
+  new/alloc [: cs : [: !Double ^ 4 :], ds :].
   split as' [: ca ^ 4 :].
   split bs [: cb ^ 4 :].
   split cs [: cc ^ 4 :].
-  (slice (ca, cb, cc)4 as _
-    let a : Double <- ca.
+  (sequence ^ 4
+    (let a : Double <- ca.
     let b : Double <- cb.
-    cc <- (a *D b)).
-  new/fuse 0 [itmp : !Double.?Double, tmp].
-  ( itmp <- 0.0.
-    let x#itmp : Double <- itmp.
-    o <- x#itmp
-  | split ds [: ai ^ 4 :].
-    slice (ai)4 as _
-      ( let a : Double <- ai
-      | let b : Double <- tmp ).
-      tmp <- (b +D a))
+    cc <- (a *D b)) ).
+  new/alloc (acc :* Double).
+  acc <- 0.0.
+  split acc [: acci ^ 4, accn :].
+  split ds [: ai ^ 4 :].
+  (sequence ^ 4
+    (( let a : Double <- ai
+    | let b : Double <- acci ).
+    acci <- (b +D a)) ).
+  let x#accn : Double <- accn.
+  o <- x#accn
+
+dotproduct_4_fused =
+  proc (as' : [: ?Double ^ 4 :], bs : [: ?Double ^ 4 :], o : !Double)
+  new/fused [: cs : [: !Double ^ 4 :], ds :].
+  split as' [: ca ^ 4 :].
+  split bs [: cb ^ 4 :].
+  split cs [: cc ^ 4 :].
+  (sequence ^ 4
+    (let a : Double <- ca.
+    let b : Double <- cb.
+    cc <- (a *D b)) ).
+  new/alloc (acc :* Double).
+  acc <- 0.0.
+  split acc [: acci ^ 4, accn :].
+  split ds [: ai ^ 4 :].
+  (sequence ^ 4
+    (( let a : Double <- ai
+    | let b : Double <- acci ).
+    acci <- (b +D a)) ).
+  let x#accn : Double <- accn.
+  o <- x#accn
 
 ix : (A : Type)-> (n : Int)-> (v : Vec A n)-> (i : Int)-> A
 
 row =
   \ (A : Type)-> \ (m : Int)-> \ (n : Int)-> \ (a : Vec A (m * n)) -> \ (i : Int)-> proc (v : [: !A ^ n :])
   split v [: v_i ^ n :].
-  slice (v_i)n as j
+  sequence ^ n with j
     v_i <- (ix A (m * n)a ((i * n)+ j))
 
 col =
   \ (A : Type)-> \ (m : Int)-> \ (n : Int)-> \ (a : Vec A (m * n)) -> \ (j : Int)-> proc (v : [: !A ^ m :])
   split v [: v_j ^ m :].
-  slice (v_j)m as i
+  sequence ^ m with i
     v_j <- (ix A (m * n)a ((i * n)+ j))
 
 matmult =
-  \ (m : Int)-> \ (n : Int)-> \ (p : Int)-> proc (a : ?Vec Double (m * n),b : ?Vec Double (n * p),c : [: !Double ^ (m * p):])
+  \ (m : Int)-> \ (n : Int)-> \ (p : Int)-> \ (ann0 : Allocation)-> \ (ann1 : Allocation)-> \ (ann2 : Allocation)-> proc (a : ?Vec Double (m * n),b : ?Vec Double (n * p),c : [: !Double ^ (m * p):])
   let a' : Vec Double (m * n)<- a.
   let b' : Vec Double (n * p)<- b.
   split c [: c_i_j ^ (m * p):].
-  slice (c_i_j)(m * p)as ij
-    new/fuse 0 [: u : [: !Double ^ n :], u' :].
+  sequence ^ (m * p)with ij
+    (new/ann0 [: u : [: !Double ^ n :], u' :].
     split u [: v_i ^ n :].
-    (slice (v_i)n as j
+    (sequence ^ n with j
       v_i <- (ix Double (m * n)a' (((ij / n)* n)+ j)) ).
-    new/fuse 0 [: v : [: !Double ^ n :], v' :].
+    new/ann1 [: v : [: !Double ^ n :], v' :].
     split v [: v_j ^ p :].
-    (slice (v_j)p as i
+    (sequence ^ p with i
       v_j <- (ix Double (p * p)b' ((i * p)+ ij % n)) ).
-    new/fuse 0 [: cs : [: !Double ^ n :], ds :].
+    new/ann2 [: cs : [: !Double ^ n :], ds :].
     split u' [: ca ^ n :].
     split v' [: cb ^ n :].
     split cs [: cc ^ n :].
-    (slice (ca, cb, cc)n as _
-      let a : Double <- ca.
+    (sequence ^ n
+      (let a : Double <- ca.
       let b : Double <- cb.
-      cc <- (a *D b)).
-    new/fuse 0 [itmp : !Double.?Double, tmp].
-    ( itmp <- 0.0.
-      let x#itmp : Double <- itmp.
-      c_i_j <- x#itmp
-    | split ds [: ai ^ n :].
-      slice (ai)n as _
-        ( let a : Double <- ai
-        | let b : Double <- tmp ).
-        tmp <- (b +D a))
+      cc <- (a *D b)) ).
+    new/alloc (acc :* Double).
+    acc <- 0.0.
+    split acc [: acci ^ n, accn :].
+    split ds [: ai ^ n :].
+    (sequence ^ n
+      (( let a : Double <- ai
+      | let b : Double <- acci ).
+      acci <- (b +D a)) ).
+    let x#accn : Double <- accn.
+    c_i_j <- x#accn)
 
-matmult_4 =
+matmult_4_alloc =
   proc (a : ?Vec Double 16, b : ?Vec Double 16, c : [: !Double ^ 16 :])
   let a' : Vec Double 16 <- a.
   let b' : Vec Double 16 <- b.
   split c [: c_i_j ^ 16 :].
-  slice (c_i_j)16 as ij
-    new/fuse 0 [: u : [: !Double ^ 4 :], u' :].
+  sequence ^ 16 with ij
+    (new/alloc [: u : [: !Double ^ 4 :], u' :].
     split u [: v_i ^ 4 :].
-    (slice (v_i)4 as j
+    (sequence ^ 4 with j
       v_i <- (ix Double 16 a' (((ij / 4)* 4)+ j)) ).
-    new/fuse 0 [: v : [: !Double ^ 4 :], v' :].
+    new/alloc [: v : [: !Double ^ 4 :], v' :].
     split v [: v_j ^ 4 :].
-    (slice (v_j)4 as i
+    (sequence ^ 4 with i
       v_j <- (ix Double 16 b' ((i * 4)+ ij % 4)) ).
-    new/fuse 0 [: cs : [: !Double ^ 4 :], ds :].
+    new/alloc [: cs : [: !Double ^ 4 :], ds :].
     split u' [: ca ^ 4 :].
     split v' [: cb ^ 4 :].
     split cs [: cc ^ 4 :].
-    (slice (ca, cb, cc)4 as _
-      let a : Double <- ca.
+    (sequence ^ 4
+      (let a : Double <- ca.
       let b : Double <- cb.
-      cc <- (a *D b)).
-    new/fuse 0 [itmp : !Double.?Double, tmp].
-    ( itmp <- 0.0.
-      let x#itmp : Double <- itmp.
-      c_i_j <- x#itmp
-    | split ds [: ai ^ 4 :].
-      slice (ai)4 as _
-        ( let a : Double <- ai
-        | let b : Double <- tmp ).
-        tmp <- (b +D a))
+      cc <- (a *D b)) ).
+    new/alloc (acc :* Double).
+    acc <- 0.0.
+    split acc [: acci ^ 4, accn :].
+    split ds [: ai ^ 4 :].
+    (sequence ^ 4
+      (( let a : Double <- ai
+      | let b : Double <- acci ).
+      acci <- (b +D a)) ).
+    let x#accn : Double <- accn.
+    c_i_j <- x#accn)
 
 merger =
   \ (m : Int)-> \ (n : Int)-> proc (c0 : [!Vec Int m, ?Vec Int m],c1 : [!Vec Int n, ?Vec Int n],ci : ?Vec Int (m + n),co : !Vec Int (m + n))
@@ -1395,7 +1635,7 @@ test_my_loli =
 
 new_alloc =
   proc (c : !Int)
-  new/fuse 0 [d : !Int, e].
+  new/alloc [d : !Int, e].
   ( d <- 1
   | let x#e : Int <- e.
     c <- x#e )
@@ -1410,7 +1650,7 @@ new_fuse1_recv_send_send_recv =
 
 new_seq_par_par =
   proc ()
-  new [: cd : {!Int, !Bool},ef : {?Int, ?Bool}:].
+  new/alloc [: cd : {!Int, !Bool},ef : {?Int, ?Bool}:].
   split cd {c, d}.
   split ef {e, f}.
   c <- 1.
@@ -1448,7 +1688,7 @@ new_fuse_ten2_Int_dbl =
 
 new_fuse0_ten2_Int_dbl =
   proc ()
-  new/fuse 0 [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  new/alloc [ab : [!Int, ?Int],nab : {?Int, !Int}].
   ( split ab [a, b].
     ( a <- 42
     | let b#pB : Int <- b )
@@ -1759,10 +1999,8 @@ par_loli_ten_send_v2 =
 
 par_pat =
   proc (d : !Int, e : ?Int)
-  @ (proc (f)
-  split f {f#0 : !Int, f#1 : ?Int}.
-  let x#f#1 : Int <- f#1.
-  f#0 <- x#f#1){d, e}
+  let x#f#1 : Int <- e.
+  d <- x#f#1
 
 par_seq_back =
   proc (a : {[: !Int, !Int :], !Int})
@@ -2093,67 +2331,51 @@ assert
 replicate =
   \ (A : Type)-> \ (n : Int)-> \ (x : A)-> proc (os : [!A ^ n])
   split os [o ^ n].
-  slice (o)n as _
+  parallel ^ n
     o <- x
 
 replicate_par =
   proc (c : {!Int ^ 10})
   split c {d ^ 10}.
-  slice (d)10 as i
+  sequence ^ 10 with i
     d <- i
 
 replicate_proc =
   \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
   split c {i, os}.
+  let x : A <- i.
   split os [o ^ n].
-  slice (o)n as _
-    let x#i : A <- i.
-    o <- x#i
+  parallel ^ n
+    o <- x
 
 replicate_proc_Int_10 =
   proc (c : {?Int, [!Int ^ 10]})
   split c {i, os}.
-  split os [o ^ 10].
-  slice (o)10 as _
-    let x#i : Int <- i.
-    o <- x#i
-
-replicate_proc_alt =
-  \ (A : Type)-> \ (n : Int)-> proc (c : {?A, [!A ^ n]})
-  split c {i, os}.
-  let x : A <- i.
-  split os [o ^ n].
-  slice (o)n as _
-    new [j : ?A, k].
-    ( let x#j : A <- j.
-      o <- x#j
-    | k <- x )
-
-replicate_proc_alt_Int_10 =
-  proc (c : {?Int, [!Int ^ 10]})
-  split c {i, os}.
   let x : Int <- i.
   split os [o ^ 10].
-  slice (o)10 as _
-    new [j : ?Int, k].
-    ( let x#j : Int <- j.
-      o <- x#j
-    | k <- x )
+  parallel ^ 10
+    o <- x
 
-replicate_ten =
+tabulate_ten =
+  \ (A : Type)-> \ (f : (i : Int)-> A)-> \ (n : Int)-> proc (c : [!A ^ n])
+  split c [c_ ^ n].
+  parallel ^ n with i
+    c_ <- (f i)
+
+replicate_ten_10 =
   proc (c : [!Int ^ 10])
-  split c [d ^ 10].
-  slice (d)10 as i
-    d <- i
+  split c [c_ ^ 10].
+  parallel ^ 10 with i
+    c_ <- i
 
 rotate_seq =
   \ (A : Type)-> \ (n : Int)-> proc (i : [: ?A ^ (1 + n):], o : [: !A ^ (n + 1):])
   split i [: iL, iH ^ n :].
   split o [: oL ^ n, oH :].
   let xL : A <- iL.
-  (slice (iH, oL)n as _
-    let x#iH : A <- iH.
-    oL <- x#iH ).
+  (sequence ^ n
+    (let x#iH : A <- iH.
+    oL <- x#iH)).
   oH <- xL
 
 test_sender =
@@ -2279,7 +2501,7 @@ split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)
 sqr_dbl =
   proc (i : ?Int, o : !Int)
   let x : Int <- i.
-  new (c : Int).
+  new/alloc (c :* Int).
   c <- (x * x).
   let y : Int <- c.
   o <- (y + y)
@@ -2300,7 +2522,7 @@ sqrs_body =
 sqrs_main =
   proc (i : ?Int, o : !Int)
   let x : Int <- i.
-  new (c : Int).
+  new/alloc (c :* Int).
   c <- (x * x).
   let x2 : Int <- c.
   c <- (x2 * x2).
@@ -2312,7 +2534,7 @@ sqrs_main =
 sqrs =
   proc (i : ?Int, o : !Int)
   let x : Int <- i.
-  new (c : Int).
+  new/alloc (c :* Int).
   c <- (x * x).
   let x2 : Int <- c.
   c <- (x2 * x2).
@@ -2323,15 +2545,16 @@ sqrs =
 
 sum_int =
   proc (a : {?Int ^ 10},r : !Int)
-  new/fuse 0 [itmp : !Int.?Int, tmp].
-  ( itmp <- 0.
-    let x#itmp : Int <- itmp.
-    r <- x#itmp
-  | split a {ai ^ 10}.
-    slice (ai)10 as i
-      let x : Int <- ai.
-      let y : Int <- tmp.
-      tmp <- (x + y))
+  new/alloc (acc :* Int).
+  acc <- 0.
+  split acc [: acci ^ 10, accn :].
+  split a {ai ^ 10}.
+  (sequence ^ 10 with i
+    (let x : Int <- ai.
+    let y : Int <- acci.
+    acci <- (x + y)) ).
+  let x#accn : Int <- accn.
+  r <- x#accn
 
 switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {[A, B],C}} > =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (c : {{~ A, [~ B, ~ C]}, {[A, B],C}})
@@ -2347,13 +2570,13 @@ switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {
 tabulate_seq =
   \ (A : Type)-> \ (f : (i : Int)-> A)-> \ (n : Int)-> proc (a : [: !A ^ n :])
   split a [: a_i ^ n :].
-  slice (a_i)n as i
+  sequence ^ n with i
     a_i <- (f i)
 
 tabulate_seq_Double_40 =
   proc (a : [: !Double ^ 41 :])
   split a [: a_i ^ 41 :].
-  slice (a_i)41 as i
+  sequence ^ 41 with i
     a_i <- (1.0 -D 5.0e-2 *D Int2Double i)
 
 ten_loli_par =
@@ -2776,53 +2999,53 @@ zap =
   split fs {f ^ n}.
   split xs {x ^ n}.
   split os [o ^ n].
-  slice (f, x, o)n as _
-    split f [fi, fo].
+  parallel ^ n
+    (split f [fi, fo].
     ( fwd S (fi, x)
-    | fwd T (o, fo))
+    | fwd T (o, fo)))
 
 zap_ten_fwd =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   split cf {cfi ^ 10}.
   split cn {cni ^ 10}.
   split co [coi ^ 10].
-  slice (cfi, cni, coi)10 as i
-    split cfi {cfii, cfio}.
+  parallel ^ 10
+    (split cfi {cfii, cfio}.
     ( let x#cni : Int <- cni.
       cfii <- x#cni
     | let x#cfio : Int <- cfio.
-      coi <- x#cfio )
+      coi <- x#cfio ))
 
 zap_ten_par =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   split cf {cfi ^ 10}.
   split cn {cni ^ 10}.
   split co [coi ^ 10].
-  slice (cfi, cni, coi)10 as i
-    split cfi {cfii, cfio}.
+  parallel ^ 10
+    (split cfi {cfii, cfio}.
     ( let x : Int <- cni.
       cfii <- x
     | let y : Int <- cfio.
-      coi <- y )
+      coi <- y ))
 
 zap_ten_seq =
   proc (cf : {{!Int, ?Int}^ 10},cn : {?Int ^ 10},co : [!Int ^ 10])
   split cf {cfi ^ 10}.
   split cn {cni ^ 10}.
   split co [coi ^ 10].
-  slice (cfi, cni, coi)10 as i
-    split cfi {cfii, cfio}.
+  sequence ^ 10
+    (split cfi {cfii, cfio}.
     let x : Int <- cni.
     cfii <- x.
     let y : Int <- cfio.
-    coi <- y
+    coi <- y)
 
 zip_add =
   proc (xs : {?Int ^ 10},ys : {?Int ^ 10},zs : [!Int ^ 10])
   split xs {x ^ 10}.
   split ys {y ^ 10}.
   split zs [z ^ 10].
-  slice (x, y, z)10 as i
-    let a : Int <- x.
+  parallel ^ 10
+    (let a : Int <- x.
     let b : Int <- y.
-    z <- (a + b)
+    z <- (a + b))

@@ -1,3 +1,3 @@
 While checking `wrong_write_cnt_new`
-  Unexpected write on channel c
+  Unexpected consecutive writes on the allocated channel c
 

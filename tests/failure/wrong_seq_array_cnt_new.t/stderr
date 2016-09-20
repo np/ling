@@ -1,4 +1,3 @@
 While checking `wrong_seq_array_cnt_new`
-  Unexpected array session ([: !Int, !Int :]) when allocating channel c.
-  To allocate an array use `new [c:S,c':~S]` or `new [:c:S,c':~S:]`
+  Unexpected consecutive writes on the allocated channel c
 

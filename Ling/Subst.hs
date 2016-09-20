@@ -98,17 +98,12 @@ instance (Subst a, Subst b) => Subst (a, b) where
 hide :: Fold s Name -> s -> Endom Defs
 hide f = composeMapOf f sans
 
-instance Subst NewPatt where
-  subst f = \case
-    NewChans k cs -> NewChans k (subst f cs)
-    NewChan c os  -> NewChan c (subst f os)
-
 instance Subst Act where
   subst f = \case
     Split c pat  -> Split c (subst f pat)
     Send c os e  -> Send c (subst f os) (subst f e)
     Recv c arg   -> Recv c (subst f arg)
-    Nu ann npatt -> Nu (subst f ann) (subst f npatt)
+    Nu ann pat   -> Nu (subst f ann) (subst f pat)
     Ax s cs      -> Ax (subst f s) cs
     At t cs      -> At (subst f t) (subst f cs)
 
@@ -127,7 +122,7 @@ instance Subst Proc where
       subst f proc0 `dotP` subst (hide boundVars proc0 f) proc1
     Procs procs -> Procs $ subst f procs
     LetP defs p -> subst (f <> subst f defs) p
-    Replicate k t x p -> Replicate k (subst f t) x (subst (hide id x f) p)
+    Replicate k t x p -> mkReplicate k (subst f t) x (subst (hide id x f) p)
 
 instance Subst Session where
   subst f = \case

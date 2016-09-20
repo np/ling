@@ -64,6 +64,8 @@ layoutLexer = resolveLayout True . myLexer
 
 prims :: String
 prims = [q|
+id  :  (A : Type)(x : A)-> A
+    = \(A : Type)(x : A)-> x
 _:_ :  (A : Type)(x : A)-> A
     = \(A : Type)(x : A)-> x
 data Empty =
@@ -89,11 +91,15 @@ drop  : (A : Type)(m : Int)(n : Int)(v : Vec A (m + n)) -> Vec A n
 merge : (m : Int)(n : Int)(v0 : Vec Int m)(v1 : Vec Int n) -> Vec Int (m + n)
 sort  : (n : Int)(v : Vec Int n) -> Vec Int n
 Session : Type
+Log  : (S : Session)-> Session
+Seq  : (S : Session)-> Session
+Send : (S : Session)-> Session
+Recv : (S : Session)-> Session
 IO = \(I : Type)(O : (i : I) -> Type)-> ?(x : I). !O x
 IO' = \(I : Type)(O : Type)-> ?I. !O
-Par = \(S0 : Session)(S1 : Session)-> {S0, S1}
-Ten = \(S0 : Session)(S1 : Session)-> [S0, S1]
-Seq = \(S0 : Session)(S1 : Session)-> [:S0, S1:]
+Par2 = \(S0 : Session)(S1 : Session)-> {S0, S1}
+Ten2 = \(S0 : Session)(S1 : Session)-> [S0, S1]
+Seq2 = \(S0 : Session)(S1 : Session)-> [:S0, S1:]
 ParIO = \(I : Type)(O : Type)-> {?I, !O}
 TenIO = \(I : Type)(O : Type)-> [?I, !O]
 TenOI = \(O : Type)(I : Type)-> [!O, ?I]
@@ -110,7 +116,7 @@ ParSort = \(A : Type)(n : Int)-> EndoLoli (!Vec A n)
 SeqSort = \(A : Type)(n : Int)-> [: ?Vec A n, !Vec A n :]
 With = \(SL SR : Session)-> ?(b : LR). (case b of { `left -> SL, `right -> SR })
 Oplus = \(SL SR : Session)-> !(b : LR). (case b of { `left -> SL, `right -> SR })
-with =
+with_ =
   \(SL SR : Session)
    (pL : < SL >)(pR : < SR >)->
   proc(c : With SL SR)
@@ -143,6 +149,9 @@ auto : Allocation
 fused : Allocation
 fuse : (depth : Int)-> Allocation
 alloc : Allocation = fuse 0
+fuse1 : Allocation = fuse 1
+fuse2 : Allocation = fuse 2
+fuse3 : Allocation = fuse 3
 Double : Type
 Int2Double : (n : Int) -> Double
 _+D_ : (m : Double)(n : Double) -> Double

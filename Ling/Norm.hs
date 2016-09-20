@@ -69,16 +69,17 @@ data CPatt
              , _cpPatts :: ![CPatt] }
   deriving (Eq, Ord, Show, Read)
 
+-- This type is kept as a view type, see _NewPatt
 data NewPatt
   = NewChans { _newKind :: !TraverseKind
              , _newChans :: ![ChanDec] }
   | NewChan  { _newChan :: !Channel
-             , _newSig  :: !(Maybe Typ) }
+             , _newSig  :: !Typ }
   deriving (Eq, Ord, Show, Read)
 
 data Act
   = Nu       { _newAnns :: ![Term]
-             , _newPatt :: !NewPatt }
+             , _newPatt :: !CPatt }
   | Split    { _actChan :: !Channel
              , _actPatt :: !CPatt }
   | Send     { _actChan :: !Channel
@@ -127,10 +128,10 @@ data Term
 tSession :: Iso' Session Term
 tSession = iso fwd bkd
   where
-    fwd (TermS so t) | so == idOp = t
+    fwd (TermS so t) | so == ø = t
     fwd           s  = TSession s
     bkd (TSession s) = s
-    bkd           t  = TermS idOp t
+    bkd           t  = TermS ø t
 
 -- Polarity with a read/write (recv/send) flavor
 data RW = Read | Write
@@ -139,8 +140,10 @@ data RW = Read | Write
 data SessionOp = SessionOp { _rwOp :: !(FinEndom RW), _arrayOp :: !(FinEndom TraverseKind) }
   deriving (Eq,Ord,Show,Read)
 
-idOp :: SessionOp
-idOp = SessionOp idEndom idEndom
+-- Operations on sessions are endomorphic and thus forms a monoid
+instance Monoid SessionOp where
+  mempty = SessionOp ø ø
+  mappend (SessionOp rwf kf) (SessionOp rwg kg) = SessionOp (rwf <> rwg) (kf <> kg)
 
 data Session
   = TermS { _sSessionOp :: !SessionOp, _sTerm :: !Term }
@@ -232,6 +235,7 @@ instance Monoid Program where
   mempty        = Program []
   mappend p0 p1 = Program $ p0^.prgDecs ++ p1^.prgDecs
 
+-- Parallel composition forms a monoid
 instance Monoid Proc where
   mempty        = Procs ø
   mappend p0 p1 = mconcat ((p0,p1)^. both . to asProcs)
@@ -372,6 +376,11 @@ mkCaseBy f rel t = unCaseView . fmap f . mkCaseViewBy rel t
 
 mkCase :: MkCase' Term
 mkCase = mkCaseBy id (==)
+
+mkReplicate :: TraverseKind -> RFactor -> Name -> Endom Proc
+mkReplicate k r x proc0
+  | proc0 == ø = ø
+  | otherwise  = Replicate k r x proc0
 
 int0, int1 :: Term
 int0 = Lit (LInteger 0)

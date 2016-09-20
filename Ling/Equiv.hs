@@ -1,5 +1,6 @@
-{-# LANGUAGE Rank2Types      #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving   #-}
+{-# LANGUAGE Rank2Types                   #-}
+{-# LANGUAGE TemplateHaskell              #-}
 module Ling.Equiv (Equiv(equiv), EqEnv, eqEnv, swapEnv) where
 
 import           Ling.Norm
@@ -70,15 +71,14 @@ traceEquiv _ _ _ _ = id
 equivAt :: Equiv a => Getter s a -> IsEquiv s
 equivAt f env x y = equiv env (x^.f) (y^.f)
 
-reduceEquiv :: (Print a, Print reduced) =>
-               Reduce a reduced -> IsEquiv reduced -> IsEquiv a
-reduceEquiv red eqv env a0 a1 = eqv env' (a0'^.scoped) (a1'^.scoped)
+reduceEquiv :: (Print a, Print reduced, Equiv reduced) =>
+               Reduce a reduced -> IsEquiv a
+reduceEquiv red env a0 a1 = equiv env ra0 ra1
   where
-    red' l = view reduced . red . (env ^.) . scope l
-    a0'    = red' edefs0 a0
-    a1'    = red' edefs1 a1
-    env'  = env & edefs0 <>~ a0' ^. ldefs
-                & edefs1 <>~ a1' ^. ldefs
+    sa0 = env ^. scope edefs0 a0
+    sa1 = env ^. scope edefs1 a1
+    ra0 = red sa0 ^. reduced
+    ra1 = red sa1 ^. reduced
 
 -- This type can be used on type or sessions annotations to ignore them during
 -- equivalence checking.
@@ -125,10 +125,11 @@ nameIndex x = maybe (Right x) Left . elemIndex x
 
 instance Equiv a => Equiv (Scoped a) where
   equiv env s0 s1 =
-    equivAt scoped
-          (env & edefs0 <>~ s0 ^. ldefs
+    -- debugTraceWhen (s0 ^. gdefs /= ø) "equiv/Scoped: s0 non empty gdefs" $
+    -- debugTraceWhen (s1 ^. gdefs /= ø) "equiv/Scoped: s1 non empty gdefs" $
+    equiv (env & edefs0 <>~ s0 ^. ldefs
                & edefs1 <>~ s1 ^. ldefs)
-          s0 s1
+          (s0 ^. scoped) (s1 ^. scoped)
 
 instance Equiv Name where
   equiv env x0 x1 = i0 == i1
@@ -148,14 +149,17 @@ instance Equiv Term where
         | Defined   <- k0, Defined   <- k1, equiv env (d0, es0) (d1, es1) -> True
         -}
         | equiv env (d0, es0) (d1, es1) -> True
-      _ -> reduceEquiv reduce equivRedTerm env t0 t1
+      _ -> reduceEquiv (fmap RedTerm . reduce) env t0 t1
 
 -- The session annotation is ignored
 chanDecArg :: ChanDec -> Arg RFactor
 chanDecArg (ChanDec c r _) = Arg c r
 
-equivRedTerm :: IsEquiv Term
-equivRedTerm env s0 s1 =
+newtype RedTerm = RedTerm Term
+  deriving (Print)
+
+instance Equiv RedTerm where
+  equiv env (RedTerm s0) (RedTerm s1) =
     traceEquiv "Equiv Reduced Term" env s0 s1 $
     case (s0,s1) of
       (Def _ d0 es0, Def _ d1 es1) -> equiv env (d0, es0) (d1, es1)
@@ -213,7 +217,7 @@ instance Equiv RSession where
   equiv env (s0 `Repl` r0) (s1 `Repl` r1) = equiv env (s0, r0) (s1, r1)
 
 instance Equiv Sessions where
-  equiv = reduceEquiv reduce (equivAt _Sessions)
+  equiv = reduceEquiv (fmap (view _Sessions) . reduce)
 
 instance Equiv RFactor where
   equiv = equivAt _RFactor
@@ -221,22 +225,10 @@ instance Equiv RFactor where
 instance Equiv Session where
   equiv = equivAt tSession
 
-instance Equiv NewPatt where
-  equiv env np0 np1 = case (np0, np1) of
-    (NewChans k0 cds0, NewChans k1 cds1) ->
-      k0 == k1 &&
-      -- Annotations are ignored as they are semantic preserving
-      on (==)        (each %~ _cdChan) cds0 cds1 &&
-      on (equiv env) (each %~ _cdRepl) cds0 cds1
-    (NewChan c0 _os0, NewChan c1 _os1) ->
-      -- Type annotations are ignored as they are semantic preserving
-      c0 == c1
-    (NewChans{}, _) -> False
-    (NewChan{}, _) -> False
-
 instance Equiv CPatt where
   equiv env pat0 pat1 = case (pat0, pat1) of
     (ChanP cd0, ChanP cd1) ->
+      -- Annotations are ignored as they are semantic preserving
       ((==) `on` _cdChan) cd0 cd1 &&
       ((equiv env) `on` _cdRepl) cd0 cd1
     (ArrayP k0 pats0, ArrayP k1 pats1) ->

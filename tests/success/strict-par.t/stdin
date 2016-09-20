@@ -247,8 +247,6 @@ fwd_seq2_seq2_seq2 =
       , l : [: !Int, !Int.!Int :]
       )
   fwd [: ?Int,!Int.?Int :](i,o,l)
-id : (A : Type)(x : A) -> A
-
 idproc = proc(c : ?Int, d : !Int)
   recv c (y : Int)
   send d (id Int y)
@@ -541,14 +539,15 @@ _ = 2
 _ = "Hello!"
 -- should be named enum_par
 replicate_par = proc(c : {!Int ^ 10})
-  c{d^10}
-  slice (d) 10 as i
-    send d i
--- should be name enum_ten
-replicate_ten = proc(c : [!Int ^ 10])
-  c[d^10]
-  slice (d) 10 as i
-    send d i
+  split c as {d^10}.
+  sequence ^ 10 with i
+    d <- i
+tabulate_ten =
+  \ (A : Type)(f : (i : Int)-> A)(n : Int)->
+  proc(c : [ !A ^ n ])
+    split c as [ c_ ^ n ]
+    parallel ^ n with i (c_ <- (f i))
+replicate_ten_10 = tabulate_ten Int (id Int) 10
 seq0_explicit =
   proc(c : [: :])
   c[: :]
@@ -601,15 +600,16 @@ sorter =
   send co (sort n v)
 split_fwd1_rcv = proc(c : Fwd 1 (?Int)) c{d} fwd (?Int) (d)
 sum_int = proc(a : {?Int ^ 10}, r : !Int)
-  new/alloc [itmp : !Int.?Int, tmp]
-  ( send itmp 0
-    fwd(?Int)(itmp, r)
-  | a{ai^10}
-    slice (ai) 10 as i
-      recv ai  (x : Int)
-      recv tmp (y : Int)
-      send tmp (x + y))
-
+  new/alloc (acc :* Int).
+  acc <- 0.
+  split acc as [: acci ^ 10, accn :].
+  split a   as {  ai   ^ 10 }.
+  sequence ^ 10 with i (
+    let x : Int <- ai.
+    let y : Int <- acci.
+    acci <- (x + y)
+  ).
+  fwd(?Int)(accn, r)
 ten_par_par_split = proc(c : [{},{}]) c[d,e] (d{} | e{})
 tensor0 = proc(c : []) c[]
 tensor1 = proc(c : [!Int]) c[d] send d 42
@@ -765,21 +765,20 @@ trans : (A : Type)(x y z : A)(p : Id A x y)(q : Id A y z)-> Id A x z
 -- -}
 -- cf: would be more precise with {~(!Int -o !Int) ^ 10}
 zap_ten_seq = proc(cf : {?Int -o ?Int ^ 10}, cn : {?Int ^ 10}, co : [!Int ^ 10])
-  cf{cfi^10}
-  cn{cni^10}
-  co[coi^10]
-  slice (cfi,cni,coi) 10 as i
-    cfi{cfii,cfio}
-    recv cni (x : Int)
-    send cfii x
-    recv cfio (y : Int)
-    send coi y
-
+  split cf as {cfi^10}.
+  split cn as {cni^10}.
+  split co as [coi^10].
+  sequence ^ 10 (
+    split cfi as {cfii,cfio}.
+    let x : Int <- cni.
+    cfii <- x.
+    let y : Int <- cfio.
+    coi <- y)
 zip_add = proc(xs : {?Int ^ 10}, ys : {?Int ^ 10}, zs : [!Int ^ 10])
-  xs{x^10}
-  ys{y^10}
-  zs[z^10]
-  slice (x,y,z) 10 as i
-  recv x (a : Int)
-  recv y (b : Int)
-  send z (a + b)
+  split xs as {x^10}.
+  split ys as {y^10}.
+  split zs as [z^10].
+  parallel ^ 10 (
+    let a : Int <- x.
+    let b : Int <- y.
+    z <- (a + b))

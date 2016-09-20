@@ -4,6 +4,6 @@
 com_new_SType_SA =
   proc ()
   let B : Type = Int.
-  new/fuse 0 [c : !B, d : ?B].
+  new/alloc [c : !B, d : ?B].
   c <- 42.
   let x : B <- d

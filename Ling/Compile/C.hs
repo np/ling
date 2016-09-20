@@ -43,7 +43,7 @@ import           Ling.Fwd        (fwdProc')
 import           Ling.Norm       hiding (mkCase)
 import           Ling.Prelude    hiding (q)
 import           Ling.Print
-import           Ling.Proc       (_Pref, _ArrayCs)
+import           Ling.Proc       (_Pref, _ArrayCs, _NewPatt)
 import           Ling.Reduce     (reduce, reduced)
 --import           Ling.Rename     (hDec)
 import           Ling.Session
@@ -114,14 +114,63 @@ dSig :: C.Dec -> [C.Dec] -> C.Def
 dSig d [] = C.DDec d
 dSig d ds = C.DSig d ds
 
+fldI :: Int -> C.Ident
+fldI n = C.Ident ("f" ++ show n)
+
+uniI :: Int -> C.Ident
+uniI n = C.Ident ("u" ++ show n)
+
+data Loc = Loc
+  { _locLVal  :: C.LVal
+  , _locSplit :: TraverseKind -> [ChanDec] -> [(Channel, Loc)]
+  , _locArr   :: C.Exp -> Loc
+  , _locPtr   :: Loc
+  }
+
+$(makeLenses ''Loc)
+
+instance Show Loc where
+  show = show . _locLVal
+
+{- Special case:
+   {S}/[S] has the same implementation as S.
+   See tupQ and transSplit  -}
+protoLoc :: C.LVal -> Loc -> Loc
+protoLoc lval0 self = Loc
+  { _locLVal  = lval0
+  , _locSplit = \_ cds ->
+      case _cdChan <$> cds of
+        [d] -> [ (d, self) ]
+        ds  -> [ (d, mkLoc (lFld (self ^. locLVal) (fldI n)))
+               | (d,n) <- zip ds [0..]
+               ]
+  , _locArr = mkLoc . C.LArr (self ^. locLVal)
+  , _locPtr = mkLoc $ C.LPtr (self ^. locLVal)
+  }
+
+mkLoc :: C.LVal -> Loc
+mkLoc = fix . protoLoc
+
+protoUniqLoc :: C.LVal -> Loc -> Loc
+protoUniqLoc lval0 self = Loc
+  { _locLVal  = lval0
+  , _locSplit = \_ cds -> [ (cd ^. cdChan, self) | cd <- cds ]
+  , _locArr   = \_ -> self
+  , _locPtr   = error "IMPOSSIBLE: protoUniqLoc"
+  }
+
+mkUniqLoc :: C.LVal -> Loc
+mkUniqLoc = fix . protoUniqLoc
+
 type EVar = Name
 
 data Env =
-  Env { _locs  :: Map Channel C.LVal
+  Env { _locs  :: Map Channel Loc
       , _evars :: Map EVar C.Ident
       , _edefs :: Defs
       , _types :: Set Name
       , _farr  :: Bool
+      , _ixids :: [C.Ident]
       }
   deriving (Show)
 
@@ -143,10 +192,13 @@ basicTypes = l2m [ (Name n, t) | (n,t) <-
 primTypes :: Set Name
 primTypes = l2s (Name "Vec" : keys basicTypes)
 
-emptyEnv :: Env
-emptyEnv = Env ø ø ø primTypes True
+ixIdents :: [C.Ident]
+ixIdents = [C.Ident $ "ix" ++ show i | i <- [0 :: Int ..]]
 
-addChans :: [(Name, C.LVal)] -> Endom Env
+emptyEnv :: Env
+emptyEnv = Env ø ø ø primTypes True ixIdents
+
+addChans :: [(Name, Loc)] -> Endom Env
 addChans xys env = env & locs %~ Map.union (l2m xys)
 
 rmChan :: Channel -> Endom Env
@@ -165,13 +217,14 @@ addEVar x y env
   | env ^. evars . hasKey x = error $ "addEVar/IMPOSSIBLE: " ++ show x ++ " is already bound"
   | otherwise               = env & evars . at x ?~ y
 
-(!) :: Env -> Name -> C.LVal
+(!) :: Env -> Name -> Loc
 (!) = lookupEnv _Name locs
 
 transCon :: Name -> C.Ident
 transCon (Name x) = C.Ident ("con_" ++ x)
 
 transName :: Name -> C.Ident
+transName n | n == anonName = error "Compile.C.transName: unexpected `_`"
 transName (Name x) = C.Ident (concatMap f x ++ "_lin") where
   f '#'  = "__"
   f '\'' = "__"
@@ -180,6 +233,16 @@ transName (Name x) = C.Ident (concatMap f x ++ "_lin") where
   f '/'  = "_div_"
   f '-'  = "_sub_"
   f  c   = [c]
+
+transBoundName :: Show a => Name -> a -> C.Ident
+transBoundName x a
+  | x == anonName = transName $ internalNameFor a # x
+  | otherwise     = transName x
+
+transIxName :: Env -> Name -> (Env, C.Ident)
+transIxName env x
+  | x == anonName = (env & ixids %~ tail, env ^?! ixids . each)
+  | otherwise     = (env, transName x)
 
 transOp :: EVar -> Maybe (Op2 C.Exp)
 transOp (Name v) = (\f x y -> C.EParen (f x y)) <$> case v of
@@ -278,12 +341,12 @@ transProc env0 proc0 =
         [p] -> transErr "transProc/Procs/[_] not a normal form" p
         _   -> transErr "transProc/Procs: parallel processes should be in sequence" (Prll procs)
     Replicate _k r xi proc2 ->
-      [stdFor (transName xi) (transRFactor env1 r) $
-        transProc env2 proc2]
+      [stdFor i (transRFactor env1 r) $
+        transProc env3 proc2]
       where
-        i = transName xi
-        slice l = C.LArr l (C.EVar i)
-        env2 = env1 & locs . mapped %~ slice
+        (env2, i) = transIxName env1 xi
+        slice l = l ^. locArr $ C.EVar i
+        env3 = env2 & locs . mapped %~ slice
                     & addEVar xi i
 
 transLVal :: C.LVal -> C.Exp
@@ -306,19 +369,25 @@ transNewPatt :: Env -> NewPatt -> (Env, [C.Stm])
 transNewPatt env = \case
   NewChans _ cds -> (env', sDec typ cid C.NoInit)
     where
+      -- Here we could use a variation of mkUniqLoc which would ignore the
+      -- first level(s) of arrays.
+      -- Instead of extractSession we should either have a more general
+      -- mechanism to extract the underlying (session then) type.
+      -- Ideally type inference/checking should fill the holes.
       cs   = cds ^.. each . cdChan
       cOSs = cds ^.. each . cdSession
-      s    = log $ extractSession cOSs
+      s    = log $ extractSession cOSs -- this can be wrong with allocations of
+                                       -- the form [:S,[:~S,S:]^n,~S:]
       cid  = transName (cs ^?! _head)
-      l    = C.LVar cid
+      l    = mkLoc $ C.LVar cid
       typ  = transRSession env s
       env' = addChans [(c,l) | c <- cs] env
 
-  NewChan c mty -> (env', sDec typ cid C.NoInit)
+  NewChan c ty -> (env', sDec typ cid C.NoInit)
     where
       cid  = transName c
-      l    = C.LVar cid
-      typ  = transMaybeCTyp env C.NoQual mty
+      l    = mkUniqLoc $ C.LVar cid
+      typ  = transCTyp env C.NoQual ty
       env' = addChans [(c,l)] env
 
 -- Implement the effect of an action over:
@@ -327,21 +396,24 @@ transNewPatt env = \case
 transAct :: Env -> Act -> (Env, [C.Stm])
 transAct env act =
   case act of
-    Nu _ann newpatt -> transNewPatt env newpatt
+    Nu _ann cpatt ->
+      case cpatt ^? _NewPatt of
+        Just newpatt -> transNewPatt env newpatt
+        Nothing      -> error "Sequential.transAct: unsupported `new`"
       -- Issue #24: the annotation should be used to decide
       -- operational choices on channel allocation.
     Split c pat ->
       case pat ^? _ArrayCs of
-        Just (_, ds) -> (transSplit c ds env, [])
-        Nothing -> error "Sequential.transAct unsupported split"
+        Just (k, ds) -> (transSplit c k ds env, [])
+        Nothing -> error "Sequential.transAct unsupported `split`"
     Send c _ expr ->
-      (env, [C.SPut (env ! c) (transTerm env expr)])
+      (env, [C.SPut ((env ! c) ^. locLVal) (transTerm env expr)])
     Recv c (Arg x typ) ->
-      (addEVar x (transName x) env, sDec ctyp y cinit)
+      (addEVar x y env, sDec ctyp y cinit)
       where
         ctyp  = transMaybeCTyp (env & farr .~ False) C.QConst typ
-        y     = transName x
-        cinit = C.SoInit (transLVal (env!c))
+        y     = transBoundName x (c, env) -- PERF (this is serializing the whole env)
+        cinit = C.SoInit (transLVal ((env ! c) ^. locLVal))
     Ax s cs ->
       -- TODO this should disappear once Ax becomes a term level primitive.
       case fwdProc' (reduceS . (env ^. scope $>)) s cs of
@@ -366,27 +438,9 @@ stdFor i t =
          (C.Lt (C.EVar i) t)
          (C.SPut (C.LVar i) (C.Add (C.EVar i) (C.ELit (C.LInteger 1))))
 
-{- Special case:
-   {S}/[S] has the same implementation as S.
-   See tupQ -}
-transSplit :: Name -> [ChanDec] -> Endom Env
-transSplit c dOSs env = rmChan c $ addChans news env
-  where
-    lval = env ! c
-    ds   = _cdChan <$> dOSs
-    news =
-      case ds of
-        [d] -> [ (d, lval) ]
-        _   -> [ (d, lval')
-               | (d,n) <- zip ds [0..]
-               , let lval' = lFld lval (fldI n)
-               ]
-
-fldI :: Int -> C.Ident
-fldI n = C.Ident ("f" ++ show n)
-
-uniI :: Int -> C.Ident
-uniI n = C.Ident ("u" ++ show n)
+{- See protoLoc.locSplit about the special case -}
+transSplit :: Name -> TraverseKind -> [ChanDec] -> Endom Env
+transSplit c k cds env = rmChan c $ addChans (((env ! c) ^. locSplit) k cds) env
 
 unionT :: [ATyp] -> ATyp
 unionT ts
@@ -409,7 +463,7 @@ unionQ :: [AQTyp] -> AQTyp
 unionQ ts = (_1 %~ C.QTyp (unionQuals [ q     | (C.QTyp q _, _) <- ts ]))
             (unionT     [ (t,a) | (C.QTyp _ t, a) <- ts, not (isEmptyTyp t) ])
 
-{- See transSplit about the special case -}
+{- See protoLoc.locSplit about the special case -}
 tupQ :: [AQTyp] -> AQTyp
 tupQ [t] = t
 tupQ ts = (C.QTyp (unionQuals [ q | (C.QTyp q _, _) <- ts ])
@@ -489,17 +543,17 @@ isPtrQTyp (C.QTyp _ t, []) = isPtrTyp t
 isPtrQTyp _                = True
 
 -- Turns a type into a pointer unless it is one already.
-mkPtrTyp :: AQTyp -> (AQTyp, Endom C.LVal)
+mkPtrTyp :: AQTyp -> (AQTyp, Endom Loc)
 mkPtrTyp ctyp
   | isPtrQTyp ctyp = (ctyp, id)
-  | otherwise      = (ctyp & aqATyp %~ tPtr, C.LPtr)
+  | otherwise      = (ctyp & aqATyp %~ tPtr, _locPtr)
 
-transChanDec :: Env -> ChanDec -> (C.Dec , (Channel, C.LVal))
+transChanDec :: Env -> ChanDec -> (C.Dec , (Channel, Loc))
 transChanDec env (ChanDec c _ (Just session)) =
-    (dDec ctyp d, (c, trlval (C.LVar d)))
+    (dDec ctyp d, (c, trloc (mkLoc (C.LVar d))))
   where
-    d              = transName c
-    (ctyp, trlval) = mkPtrTyp (transRSession env session)
+    d             = transName c
+    (ctyp, trloc) = mkPtrTyp (transRSession env session)
 transChanDec _   (ChanDec c _ Nothing)
   = transErr "transChanDec: TODO No Session for channel:" c
 
@@ -517,18 +571,19 @@ transSig env0 f mty0 tm
       Nothing -> error "IMPOSSIBLE transSig missing type signature"
       Just ty0 ->
         let
-          go env1 ty1 args =
+          go env1 ty1 l args =
             let
               sty2 = reduce (env1 ^. scope $> ty1) ^. reduced
               env2 = env1 & addScope sty2
             in
             case sty2 ^. scoped of
-              TFun (Arg n ms) t ->
-                go (addEVar n (transName n) env2) t
-                   (dDec (transMaybeCTyp env2 C.QConst ms) (transName n) : args)
+              TFun (Arg xn ms) t ->
+                let n = transBoundName xn (f, l) in
+                go (addEVar xn n env2) t (l + 1)
+                   (dDec (transMaybeCTyp env2 C.QConst ms) n : args)
               ty2 ->
                 [dSig (dDec (transCTyp env2 C.NoQual ty2) (transName f)) (reverse args)]
-        in go env0 ty0 []
+        in go env0 ty0 (0 :: Int) []
   | otherwise =
     let
       stm  = reduce (env0 ^. scope $> tm) ^. reduced

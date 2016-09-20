@@ -24,6 +24,7 @@ module Ling.Proto
   , replProto
   , assertUsed
   , assertAbsent
+  , assertRepl1
   , checkOrderedChans
   , checkSomeOrderChans
   , checkConflictingChans)
@@ -148,6 +149,12 @@ protoSendRecv cfs p = do
     go (c,f) p2 = do
         s' <- (p ^. chanSession c . endedRS) & rsession %%~ f
         pure $ addChanOnly (c, s') p2
+
+assertRepl1 :: MonadError TCErr m => Proto -> Channel -> m ()
+assertRepl1 proto c =
+  case proto ^. chanSession c of
+    Just s -> assert (has (rfactor . litR1) s) ["Unexpected replication on channel " ++ pretty c]
+    _ -> pure ()
 
 -- Make sure the channel is used.
 -- When the session is ended we want to skip this check and allow the

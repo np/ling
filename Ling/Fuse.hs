@@ -74,14 +74,18 @@ type Fuse2' a = Fuse2 a a
 
 fuseDot :: Defs -> Op2 Proc
 fuseDot defs = \case
-  Act (Nu anns0 newpatt)
+  Act (Nu anns0 pat)
     | anns1 <- reduceS $ Scoped defs ø anns0
     , Just anns2 <- doFuse anns1 ->
-    case newpatt of
-      NewChans k cs
-        | [c, d] <- reduce . Scoped defs ø <$> cs
-        -> fuseProc defs . fuseChanDecs (Nu anns2 . NewChans k) [(c, d)]
-      _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty newpatt
+    case pat of
+      ArrayP k pats
+        | cs <- pats ^. _Chans
+        , [c, d] <- reduce . Scoped defs ø <$> cs
+        -> fuseProc defs . fuse2Chans (Nu anns2 . ArrayP k . (_Chans #)) c d
+      ChanP cd0 ->
+        let cd = reduce $ Scoped defs ø cd0 in
+        fuseProc defs . fuse1Chan (Nu anns2 . ArrayP SeqK . (_Chans #)) cd
+      _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty pat
                              , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
   proc0@Replicate{} -> (fuseProc defs proc0 `dotP`) . fuseProc defs
   proc0 -> (proc0 `dotP`) . fuseProc defs
@@ -95,8 +99,9 @@ fuseProc defs = \case
   -- go recurse...
   LetP defs0 proc0 -> defs0 `dotP` fuseProc (defs <> defs0) proc0
   Procs procs -> Procs $ procs & each %~ fuseProc defs
-  Replicate k t x proc0 -> Replicate k t x $ fuseProc defs proc0
+  Replicate k t x proc0 -> mkReplicate k t x $ fuseProc defs proc0
 
+-- not used
 fuseChanDecs :: NU -> [(Reduced ChanDec, Reduced ChanDec)] -> Endom Proc
 fuseChanDecs _  []           = id
 fuseChanDecs nu ((c0,c1):cs) = fuse2Chans nu c0 c1 . fuseChanDecs nu cs
@@ -138,6 +143,27 @@ fuse2Acts nu c0 act0 c1 act1 =
     (Ax{}, _)       -> error "fuse2Acts/Ax: should be expanded before"
     (At{}, _)       -> error "fuse2Acts/At: should be expanded before"
 
+fuse1Chan :: NU -> Reduced ChanDec -> Endom Proc
+fuse1Chan nu cd p0 =
+  case mact0 of
+    Nothing -> p0 -- error "fuse1Chan: mact0 is Nothing"
+    Just actA ->
+      case mact1 of
+        Nothing ->
+          error $ "fuse1Chan: cannot find " ++ pretty c ++ " in " ++ pretty p1
+        Just actB ->
+          p1 & fetchActProc hasC .~ toProc (fuse2Acts nu cd actA cd actB)
+  where
+    c = cd ^. reduced . scoped . cdChan
+    hasC :: Set Channel -> Bool
+    hasC fc = fc ^. hasKey c
+
+    -- TODO fuse into one traversal
+    mact0 = p0 ^? fetchActProc hasC . _Act
+    p1    = p0 &  fetchActProc hasC .~ ø
+
+    mact1 = p1 ^? fetchActProc hasC . _Act
+
 fuse2Chans :: NU -> Reduced ChanDec -> Reduced ChanDec -> Endom Proc
 fuse2Chans nu cd0 cd1 p0 =
   case mact0 of
@@ -171,7 +197,11 @@ fuseTermProc :: Defs -> Endom Term
 fuseTermProc gdefs0 tm0
   | tm1 <- reduce (Scoped gdefs0 ø tm0) ^. reduced
   , Proc cs proc0 <- tm1 ^. scoped
-  = mkLetS $ tm1 $> Proc cs (fuseProc (gdefs0 <> tm1 ^. ldefs) proc0)
+  , proc1 <- reduce (Scoped gdefs0 ø () *> tm1 $> proc0) ^. reduced
+  = mkLetS $ tm1 $> Proc cs (
+      proc1 ^. ldefs `dotP`
+      fuseProc (gdefs0 <> tm1 ^. ldefs <> proc1 ^. ldefs)
+               (proc1 ^. scoped))
   | otherwise
   = tm0
 

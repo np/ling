@@ -1,3 +1,4 @@
+[WARNING] Skipping compilation of unsupported definition id
 [WARNING] Skipping compilation of unsupported definition _:_
 [WARNING] Skipping compilation of unsupported definition not
 [WARNING] Skipping compilation of unsupported definition _&&_
@@ -9,11 +10,19 @@
 [WARNING] Unsupported type A
 [WARNING] Unsupported type A
 [WARNING] Unsupported type A
+[WARNING] Unsupported type Session
+[WARNING] Unsupported type Session
+[WARNING] Unsupported type Session
+[WARNING] Unsupported type Session
+[WARNING] Unsupported type Session
+[WARNING] Unsupported type Session
+[WARNING] Unsupported type Session
+[WARNING] Unsupported type Session
 [WARNING] Skipping compilation of unsupported definition IO
 [WARNING] Skipping compilation of unsupported definition IO'
-[WARNING] Skipping compilation of unsupported definition Par
-[WARNING] Skipping compilation of unsupported definition Ten
-[WARNING] Skipping compilation of unsupported definition Seq
+[WARNING] Skipping compilation of unsupported definition Par2
+[WARNING] Skipping compilation of unsupported definition Ten2
+[WARNING] Skipping compilation of unsupported definition Seq2
 [WARNING] Skipping compilation of unsupported definition ParIO
 [WARNING] Skipping compilation of unsupported definition TenIO
 [WARNING] Skipping compilation of unsupported definition TenOI
@@ -30,7 +39,7 @@
 [WARNING] Skipping compilation of unsupported definition SeqSort
 [WARNING] Skipping compilation of unsupported definition With
 [WARNING] Skipping compilation of unsupported definition Oplus
-[WARNING] Skipping compilation of unsupported definition with
+[WARNING] Skipping compilation of unsupported definition with_
 [WARNING] Skipping compilation of unsupported definition oplus
 [WARNING] Skipping compilation of unsupported definition receiver
 [WARNING] Skipping compilation of unsupported definition sender
@@ -38,6 +47,9 @@
 [WARNING] Unsupported type Allocation
 [WARNING] Unsupported type Allocation
 [WARNING] Skipping compilation of unsupported definition alloc
+[WARNING] Skipping compilation of unsupported definition fuse1
+[WARNING] Skipping compilation of unsupported definition fuse2
+[WARNING] Skipping compilation of unsupported definition fuse3
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
@@ -57,9 +69,18 @@
 [WARNING] Skipping compilation of unsupported definition My_Int
 [WARNING] Skipping compilation of unsupported definition case_proto
 [WARNING] Skipping compilation of unsupported definition com_new
+[WARNING] Skipping compilation of unsupported definition com_new_SInt
+[WARNING] Skipping compilation of unsupported definition com_new_SInt_RBool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Skipping compilation of unsupported definition com_new_mk_ten2
+[WARNING] Skipping compilation of unsupported definition com_new_mk_ten2_SInt
 [WARNING] Skipping compilation of unsupported definition com_with_log
 [WARNING] Skipping compilation of unsupported definition conv_fun
 [WARNING] Skipping compilation of unsupported definition curry
@@ -92,8 +113,6 @@
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
-[WARNING] Unsupported type A
-[WARNING] Unsupported type A
 [WARNING] Skipping compilation of unsupported definition i42
 [WARNING] Skipping compilation of unsupported definition one
 [WARNING] Skipping compilation of unsupported definition suc
@@ -112,6 +131,16 @@
 [WARNING] Skipping compilation of unsupported definition myNewline
 [WARNING] Skipping compilation of unsupported definition mkfwd
 [WARNING] Skipping compilation of unsupported definition loli_id
+[WARNING] Skipping compilation of unsupported definition zipWith
+[WARNING] Skipping compilation of unsupported definition zip_multD
+[WARNING] Skipping compilation of unsupported definition foldl
+[WARNING] Skipping compilation of unsupported definition sumD
+[WARNING] Skipping compilation of unsupported definition dotproduct
+[WARNING] Unsupported type A
+[WARNING] Unsupported type A
+[WARNING] Skipping compilation of unsupported definition row
+[WARNING] Skipping compilation of unsupported definition col
+[WARNING] Skipping compilation of unsupported definition matmult
 [WARNING] Skipping compilation of unsupported definition merger
 [WARNING] Skipping compilation of unsupported definition merger_loli_Sort
 [WARNING] Skipping compilation of unsupported definition merger_nstSort_prll
@@ -133,7 +162,6 @@
 [WARNING] Skipping compilation of unsupported definition my_dual
 [WARNING] Skipping compilation of unsupported definition my_loli
 [WARNING] Skipping compilation of unsupported definition test_my_loli
-[WARNING] Skipping compilation of unsupported definition new_ann_ten_recv
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Skipping compilation of unsupported definition non_dependent_function_type
@@ -160,23 +188,17 @@
 [WARNING] Skipping compilation of unsupported definition test_receiver
 [WARNING] Skipping compilation of unsupported definition replicate
 [WARNING] Skipping compilation of unsupported definition replicate_proc
-[WARNING] Skipping compilation of unsupported definition replicate_proc_alt
+[WARNING] Skipping compilation of unsupported definition tabulate_ten
 [WARNING] Skipping compilation of unsupported definition rotate_seq
 [WARNING] Skipping compilation of unsupported definition Int1
 [WARNING] Skipping compilation of unsupported definition test_sender
 [WARNING] Skipping compilation of unsupported definition seq_assoc_core
 [WARNING] Skipping compilation of unsupported definition sorter
 [WARNING] Skipping compilation of unsupported definition split_nested_seq
-[WARNING] Sequencing a non-ready prefix (let y : Int <- c)
 [WARNING] Skipping compilation of unsupported definition sqrs_body_session
 [WARNING] Skipping compilation of unsupported definition sqrs_body
-[WARNING] Sequencing a non-ready prefix (let x2 : Int <- c)
-[WARNING] Sequencing a non-ready prefix (let x4 : Int <- c)
-[WARNING] Sequencing a non-ready prefix (let x8 : Int <- c)
-[WARNING] Sequencing a non-ready prefix (let x2 : Int <- c)
-[WARNING] Sequencing a non-ready prefix (let x4 : Int <- c)
-[WARNING] Sequencing a non-ready prefix (let x8 : Int <- c)
 [WARNING] Skipping compilation of unsupported definition switch
+[WARNING] Skipping compilation of unsupported definition tabulate_seq
 [WARNING] Skipping compilation of unsupported definition ten_loli_par
 [WARNING] Skipping compilation of unsupported definition ten_loli_par_sequential
 [WARNING] Skipping compilation of unsupported definition type_annotation
@@ -187,12 +209,22 @@
 [WARNING] Skipping compilation of unsupported definition zeroTwo
 [WARNING] Skipping compilation of unsupported definition oneTwo
 [WARNING] Skipping compilation of unsupported definition notTwo
+[WARNING] Skipping compilation of unsupported definition notZero
+[WARNING] Skipping compilation of unsupported definition notZero'
+[WARNING] Skipping compilation of unsupported definition notZero''
 [WARNING] Skipping compilation of unsupported definition andTwo
 [WARNING] Skipping compilation of unsupported definition orTwo
 [WARNING] Skipping compilation of unsupported definition Nat
 [WARNING] Skipping compilation of unsupported definition zeroNat
 [WARNING] Skipping compilation of unsupported definition sucNat
+[WARNING] Skipping compilation of unsupported definition oneNat
+[WARNING] Skipping compilation of unsupported definition twoNat
+[WARNING] Skipping compilation of unsupported definition threeNat
+[WARNING] Skipping compilation of unsupported definition fourNat
+[WARNING] Skipping compilation of unsupported definition fiveNat
+[WARNING] Skipping compilation of unsupported definition sixNat
 [WARNING] Skipping compilation of unsupported definition addNat
+[WARNING] Skipping compilation of unsupported definition mulNat
 [WARNING] Skipping compilation of unsupported definition Bin
 [WARNING] Skipping compilation of unsupported definition Nats
 [WARNING] Skipping compilation of unsupported definition List

@@ -4,6 +4,6 @@
 com_new_SInt_RBool2 =
   proc ()
   let x : Int = 42.
-  new/fuse 0 [c : ?Bool, d : !Bool].
+  new/alloc [c : ?Bool, d : !Bool].
   d <- `true.
   let b : Bool <- c

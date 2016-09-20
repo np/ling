@@ -1,5 +1,5 @@
 wrong_repeat_par = proc(c : {!Int})
-  slice () 10 as i
-  c{d}
-  send d 1
-
+  parallel ^ 10 with i (
+    split c as {d}.
+    d <- 1
+  )

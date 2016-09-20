@@ -25,9 +25,14 @@ import Ling.Reduce (flatRSessions, reduce, reduced)
 import Ling.Scoped (Scoped(Scoped), scoped, ldefs, allDefs)
 import Ling.Subst (substScoped)
 import Ling.SubTerms (transProgramTerms)
-import Ling.Defs (mkLet, mkLet__, mkLetS)
+import Ling.Defs (mkLetS)
 
 data Status = Full | Empty deriving (Eq,Read,Show)
+
+rwStatus :: RW -> Status
+rwStatus = \case
+  Write -> Empty
+  Read  -> Full
 
 status :: Iso' (Maybe ()) Status
 status = iso toStatus fromStatus
@@ -37,13 +42,29 @@ status = iso toStatus fromStatus
     fromStatus Empty = Nothing
     fromStatus Full  = Just ()
 
+-- One could add a External
+data LocationKind
+  = Unique
+  | Normal
+  deriving (Read,Show,Ord,Eq)
+
 data Location
-  = Root Channel
+  = Root { _rootKind :: LocationKind, _rootChannel :: Channel }
   | Proj Location Int
   | Next Location
   deriving (Read,Show,Ord,Eq)
 
-data Env = Env { _chans   :: Map Channel (Location, RSession)
+$(makeLenses ''Location)
+
+proj :: Location -> Int -> Location
+proj l i | Root Unique _ <- l = l
+         | otherwise          = Proj l i
+
+next :: Endom Location
+next l | Root Unique _ <- l = l
+       | otherwise          = Next l
+
+data Env = Env { _chans   :: Map Channel Location
                , _edefs   :: Defs
                -- ^ This stores only definitions which are put back into the
                -- output.
@@ -72,13 +93,13 @@ transErr msg v = error $ msg ++ "\n" ++ pretty v
 emptyEnv :: Env
 emptyEnv = Env ø ø ø ø maxBound
 
-addChans :: [(Channel, (Location, RSession))] -> Endom Env
-addChans xys = chans %~ Map.union (l2m xys)
+addChans :: [(Channel, Location)] -> Endom Env
+addChans = over chans . Map.union . l2m
 
 rmChan :: Channel -> Endom Env
 rmChan c = chans .\\ c
 
-(!) :: Env -> Channel -> (Location, RSession)
+(!) :: Env -> Channel -> Location
 (!) = lookupEnv _Name chans
 
 addLoc :: (Location, Status) -> Endom Env
@@ -93,24 +114,30 @@ statusStep Full  = Empty
 statusStep Empty = Full
 -}
 
-stepEnv :: Channel -> Term -> Endom Env
-stepEnv c tm env =
-  env & chans   . at c . mapped %~ bimap Next (rsession %~ sessionStep tm)
+stepEnv :: Channel -> RW -> Endom Env
+stepEnv c _rw env =
+  env & chans   . at c . mapped %~ next
       & locs    . at l %~ mnot ()
       & writers . at l %~ mnot c
-  where l = fst (env!c)
+      -- TODO: why do we toggle the writer even we are only reading?
+  where l = env ! c
+
+splitLoc :: Location -> [ChanDec] -> [(Channel, Location)]
+splitLoc l dOSs = [ (d, proj l n) | (d, n) <- zip ds [0 :: Int ..] ]
+  where
+    ds = dOSs ^.. each . cdChan
 
 sessionsStatus :: (RW -> Status) -> Location -> Scoped Sessions -> [(Location,Status)]
 sessionsStatus dflt l sss =
   [ ls
   | (i,ss) <- zip [0..] $ flatRSessions sss
-  , ls <- rsessionStatus dflt (Proj l i) (sss *> ss) ]
+  , ls <- rsessionStatus dflt (proj l i) (sss *> ss) ]
 
 sessionStatus :: (RW -> Status) -> Location -> Scoped Session -> [(Location,Status)]
 sessionStatus dflt l ss =
   case ss ^. scoped of
     Array _ sessions -> sessionsStatus dflt l (ss $> sessions)
-    IO rw _ s  -> (l, dflt rw) : sessionStatus dflt (Next l) (ss $> s)
+    IO rw _ s  -> (l, dflt rw) : sessionStatus dflt (next l) (ss $> s)
     TermS p t ->
       let st' = reduce (ss $> t) ^. reduced in
       case st' ^. scoped of
@@ -123,12 +150,13 @@ rsessionStatus dflt l ssr@(Scoped _ _ sr@(s `Repl` r))
   | litR1 `is` r = sessionStatus  dflt l (ssr $> s)
   | otherwise    = sessionsStatus dflt l (ssr $> Sessions [sr])
 
-statusAt :: Channel -> Env -> Maybe Status
-statusAt c env
-  | Just c == d = Nothing -- We were the last one to write so we're not ready
-  | otherwise   = Just s
+isReadyFor :: Channel -> RW -> Env -> Bool
+isReadyFor c rw env
+  =  (l ^? rootKind == Just Unique)
+  || (Just c /= d -- We were the last one to write so we're not ready
+      && s == rwStatus rw)
   where
-    l = fst (env ! c)
+    l = env ! c
     s = env ^. locs . at l . status
     d = env ^. writers . at l
 
@@ -144,8 +172,8 @@ isReady env = \case
   -- `At` is considered non-ready. Therefor we cannot put
   -- a process like (@p0() | @p1()) in sequence.
   At{}       -> False
-  Send c _ _ -> statusAt c env == Just Empty
-  Recv c _   -> statusAt c env == Just Full
+  Send c _ _ -> isReadyFor c Write env
+  Recv c _   -> isReadyFor c Read  env
 
 -- TODO: Scoped CPatt ?
 transSplitPatt :: Channel -> CPatt -> Endom Env
@@ -156,13 +184,7 @@ transSplitPatt c pat env =
 
 -- TODO: Scoped [ChanDec]
 transSplit :: Channel -> [ChanDec] -> Endom Env
-transSplit c dOSs env =
-  rmChan c $
-  addChans [ (d, (Proj l n, oneS (projSessions (integral # n) sessions)))
-           | (d, n) <- zip ds [(0 :: Int)..] ] env
-  where (l, session) = env ! c
-        sessions = session ^? to unRepl . _Array . _2 {-. to unsafeFlatSessions-} ?| error "transSplit: expected to split an array"
-        ds = dOSs ^.. each . cdChan
+transSplit c dOSs env = rmChan c $ addChans (splitLoc (env ! c) dOSs) env
 
 -- All these prefixes can be reordered as they are in parallel
 transPref :: Env -> Pref -> (Env -> Proc -> r) -> r
@@ -174,14 +196,14 @@ transPref env (Prll pref0) k =
         k env' (act `dotP` proc')
 
 
-addChanDecs :: Scoped [Arg Session] -> Endom Env
-addChanDecs scds =
+addChanDecs :: LocationKind -> Scoped [Arg Session] -> Endom Env
+addChanDecs lk scds =
   case scds ^. scoped of
     [] -> id
     cds@(Arg c0 c0S : _) ->
-      let l = Root c0 in
+      let l = Root lk c0 in
       addLocs  (sessionStatus (const Empty) l (scds $> c0S)) .
-      addChans [(c,(l,oneS (mkLet__ (scds $> cS)))) | Arg c cS <- cds]
+      addChans [(c,l) | Arg c _ <- cds]
 
 {-
 -- This could be part of the Dual class, a special Seq operation could also
@@ -206,21 +228,20 @@ transNew spat =
     NewChans _ [] ->
       id
     NewChans _ cds0 ->
-      addChanDecs . (spat $>)
+      addChanDecs Normal . (spat $>)
             $ [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
             & each . argBody . _Just %~ unRepl
             & unsafePartsOf (each . argBody) %~ extractDuals
-    NewChan _ Nothing -> error "transNew: TODO"
-    NewChan c (Just ty) ->
-      addChanDecs $ spat $> [Arg c (sendS ty (endS # ()))]
+    NewChan c ty ->
+      addChanDecs Unique $ spat $> [Arg c (sendS ty (endS # ()))]
 
 transAct :: Scoped Act -> Endom Env
 transAct sact =
   case sact ^. scoped of
-    Nu _ newpatt -> transNew $ sact $> newpatt
+    Nu _ cpatt   -> transNew $ sact $> cpatt ^?! _NewPatt
     Split c pat  -> transSplitPatt c pat
-    Send c _ t   -> stepEnv c $ mkLet (sact ^. ldefs) t
-    Recv c a     -> stepEnv c $ mkVar (a ^. argName)
+    Send c _ _   -> stepEnv c Write
+    Recv c _     -> stepEnv c Read
     Ax{}         -> id
     At{}         -> id
 
@@ -250,7 +271,7 @@ transProcs env0 p0s waiting k0
       case p0 of
         Replicate _ t x p ->
           transProc env1 p $ \env2 p' ->
-            transProcsProgress env2 (Replicate SeqK t x p') []
+            transProcsProgress env2 (mkReplicate SeqK t x p') []
 
         Procs (Prll ps0) ->
           transProcs env1 (ps0 ++ ps) waiting k1
@@ -295,11 +316,8 @@ initEnv maxgas sc cs =
     & edefs .~ allDefs sc
     & gas .~ maxgas
     & addLocs  [ ls | ChanDec c _ (Just s) <- cs
-               , ls <- rsessionStatus decSt (Root c) (sc $> s) ]
-    & addChans [ (c, (Root c, s)) | ChanDec c _ (Just s) <- cs ]
-  where
-    decSt Write = Empty
-    decSt Read  = Full
+               , ls <- rsessionStatus rwStatus (Root Normal c) (sc $> s) ]
+    & addChans [ (c, Root Normal c) | ChanDec c _ _ <- cs ]
 
 
 transTermProc :: Int -> Defs -> Endom Term

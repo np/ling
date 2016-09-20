@@ -6,11 +6,12 @@ zipWith =
     split cas[:ca^n:]
     split cbs[:cb^n:]
     split ccs[:cc^n:]
-    slice (ca,cb,cc) n as _
+    sequence ^ n (
       -- could be parallel
       let a : A <- ca.
       let b : B <- cb.
       cc <- (f a b)
+    )
 
 {-
 zipWith =
@@ -18,7 +19,7 @@ zipWith =
    (f : (a : A)(b : B)-> C)
    (n : Int)->
   proc([: ca : ?A ^ n :], [: cb : ?B ^ n :], [: cc : !C ^ n :])
-    slice (ca,cb,cc) n as _
+    sequence ^ n as _
       cc <- (f (<- ca) (<- cb))
 -}
 
@@ -38,26 +39,28 @@ foldl =
    (init : B)
    (n : Int)->
   proc(ca : [: ?A ^ n :], cr : !B)
-  new/alloc [itmp : !B. ?B, tmp]
-  ( itmp <- init.
-    fwd(?B)(itmp, cr)
-  | split ca[: ai^n :]
-    slice (ai) n as _
-      ( let a : A <- ai
-      | let b : B <- tmp).
-      tmp <- (f b a))
+  new/alloc (acc :* B).
+  acc <- init.
+  split acc [: acci ^ n, accn :]
+  split ca[: ai^n :].
+  sequence ^ n (
+     ( let a : A <- ai
+     | let b : B <- acci).
+     acci <- (f b a)
+  ).
+  fwd(?B)(accn, cr)
 
 sumD : (n : Int)-> < [: ?Double ^ n :], !Double >
      = foldl Double Double _+D_ 0.0
 
-dotproduct = \(n : Int)->
+dotproduct = \(n : Int)(ann : Allocation)->
   proc(as' : [: ?Double ^ n :], bs : [: ?Double ^ n :], o : !Double)
-    -- TODO fusion
-    new/alloc [: cs : [: !Double ^ n :], ds :].
+    new/ann [: cs : [: !Double ^ n :], ds :].
     @(zip_multD n){as', bs, cs}.
     @(sumD n){ds, o}
 
-dotproduct_4 = dotproduct 4
+dotproduct_4_alloc = dotproduct 4 alloc
+dotproduct_4_fused = dotproduct 4 fused
 
 -- There should be a proof that i is in 0..n-1
 ix : (A : Type)(n : Int)(v : Vec A n)(i : Int) -> A
@@ -79,28 +82,33 @@ ix : (A : Type)(n : Int)(v : Vec A n)(i : Int) -> A
 
 row = \(A : Type)(m n : Int)(a : Vec A (m * n))(i : Int)-> proc(v : [: !A^n :])
   split v [: v_i^n :].
-  slice (v_i) n as j
+  sequence ^ n with j (
     v_i <- (ix A (m * n) a ((i * n) + j))
+  )
 
 col = \(A : Type)(m n : Int)(a : Vec A (m * n))(j : Int)-> proc(v : [: !A^m :])
   split v [: v_j^m :].
-  slice (v_j) m as i
+  sequence ^ m with i (
     v_j <- (ix A (m * n) a ((i * n) + j))
+  )
 
-matmult = \(m n p : Int)->
+matmult = \(m n p : Int)(ann0 ann1 ann2 : Allocation)->
            proc(a : ?Vec Double (m * n),
                 b : ?Vec Double (n * p),
                 c : [: !Double^(m * p) :])
   let a' : Vec Double (m * n) <- a.
   let b' : Vec Double (n * p) <- b.
-  split c   [: c_i_j^(m * p) :].
-  slice (c_i_j) (m * p) as ij
-    new/alloc [: u : [: !Double^n :], u' :].
+  split c as [: c_i_j^(m * p) :].
+  sequence ^ (m * p) with ij (
+    new/ann0 [: u : [: !Double^n :], u' :].
     @(row Double m n a' (ij / n))(u).
-    new/alloc [: v : [: !Double^n :], v' :].
+    new/ann1 [: v : [: !Double^n :], v' :].
     @(col Double n p b' (ij % n))(v).
     -- Working around a bug name-binding bug...
     let nn = n.
-    @(dotproduct nn){u',v',c_i_j}
+    @(dotproduct nn ann2){u',v',c_i_j}
+  )
 
-matmult_4 = matmult 4 4 4
+matmult_4_alloc = matmult 4 4 4 alloc alloc alloc
+-- TODO turning any fusion here is broken so far.
+-- matmult_4_fused = matmult 4 4 4 alloc alloc fused
