@@ -1,13 +1,13 @@
 #!/bin/bash
 
-testname=split_nested_seq.t
+testname=wrong_order_sequence.t
 command=ling
-args=( --check --strict-par split_nested_seq.ll )
+args=( --check wrong_order_sequence.ll )
 exit_code=1
 stdin_file=/dev/null
 stdout_file=/dev/null
 stderr_file=stderr
-sources=( split_nested_seq.ll )
+sources=( wrong_order_sequence.ll )
 products=( )
 
 # Environment variables:

@@ -42,6 +42,25 @@ IF : (b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)-> A b
    = \(b : Bool)(A : (b : Bool)-> Type)(t : A `true)(e : A `false)->
       case b of { `true -> t, `false -> e }
 -}
+
+assert not `true = `false
+assert not `false = `true
+assert `false &&  `false = `false
+assert `false &&  `true  = `false
+assert `true  &&  `false = `false
+assert `true  &&  `true  = `true
+assert `false ||  `false = `false
+assert `false ||  `true  = `true
+assert `true  ||  `false = `true
+assert `true  ||  `true  = `true
+assert `false ==B `false = `true
+assert `false ==B `true  = `false
+assert `true  ==B `false = `false
+assert `true  ==B `true  = `true
+assert `false /=B `false = `false
+assert `false /=B `true  = `true
+assert `true  /=B `false = `true
+assert `true  /=B `true  = `false
 cutEmptyParTensor = proc() new [c : {}, d : []]. (c{} | d[])
 cut_par_cut = proc()
   ( new [c  : !Int, d  : ?Int]. ( send c  1 | recv d  (x  : Int) )
@@ -114,7 +133,12 @@ double = proc(a: ?Int, b: !Int)
   b <- (x + x)
 
 double_21 = proc(b: !Int)
-  new [: c: !Int, c': ?Int :].
+  new (c :* Int).
+  c <- 21.
+  @double{c,b}
+
+double_21_seq = proc(b: !Int)
+  new [: c : !Int, c' : ?Int :].
   c <- 21.
   @double{c',b}
 
@@ -247,9 +271,31 @@ fwd_seq2_seq2_seq2 =
       , l : [: !Int, !Int.!Int :]
       )
   fwd [: ?Int,!Int.?Int :](i,o,l)
-idproc = proc(c : ?Int, d : !Int)
-  recv c (y : Int)
-  send d (id Int y)
+split_nested_seq_core =
+  \(A B C D : Session)->
+   proc(i : [: ~A, ~B, ~C, ~D :], o : [: [: A, B :], [: C, D :] :])
+    i[:na,nb,nc,nd:]
+    o[:ab,cd:]
+    ab[:a,b:]
+    cd[:c,d:]
+    fwd A (a,na).
+    fwd B (b,nb).
+    fwd C (c,nc).
+    fwd D (d,nd)
+
+group_nested_seq :
+  (A B C D : Session)->
+  < [: [: A, B :], [: C, D :] :] -o [: A, B, C, D :] > =
+  \(A B C D : Session)->
+   proc(c : {[: [: ~A, ~B :], [: ~C, ~D :] :], [: A, B, C, D :]})
+     c{i,o}
+     @(split_nested_seq_core (~A) (~B) (~C) (~D))(o,i)
+
+group_nested_seq_SInt_SDouble_SBool_SString =
+  group_nested_seq (!Int) (!Double) (!Bool) (!String)
+idProc = proc(c : ?Int, d : !Int)
+  let y : Int <- c.
+  d <- (id Int y)
 i42 : Int = 42
 one : Int = 1
 
@@ -547,6 +593,7 @@ tabulate_ten =
   proc(c : [ !A ^ n ])
     split c as [ c_ ^ n ]
     parallel ^ n with i (c_ <- (f i))
+
 replicate_ten_10 = tabulate_ten Int (id Int) 10
 seq0_explicit =
   proc(c : [: :])
@@ -599,6 +646,20 @@ sorter =
   recv ci (v : Vec Int n)
   send co (sort n v)
 split_fwd1_rcv = proc(c : Fwd 1 (?Int)) c{d} fwd (?Int) (d)
+split_nested_seq :
+  (A B C D : Session)->
+  < [: A, B, C, D :] -o [: [: A, B :], [: C, D :] :] > =
+  \(A B C D : Session)->
+   proc(c : {[: ~A, ~B, ~C, ~D :], [: [: A, B :], [: C, D :] :]})
+    c{i,o}
+    i[:na,nb,nc,nd:]
+    o[:ab,cd:]
+    ab[:a,b:]
+    cd[:c,d:]
+    fwd A (a,na).
+    fwd B (b,nb).
+    fwd C (c,nc).
+    fwd D (d,nd)
 sum_int = proc(a : {?Int ^ 10}, r : !Int)
   new/alloc (acc :* Int).
   acc <- 0.
@@ -610,6 +671,15 @@ sum_int = proc(a : {?Int ^ 10}, r : !Int)
     acci <- (x + y)
   ).
   fwd(?Int)(accn, r)
+
+ten_loli_par_sequential =
+ \(A B : Session)->
+ proc(c : [A,B] -o {A,B})
+  c{i,o}
+  i{na,nb}
+  o{a,b}
+  fwd(A)(a,na).
+  fwd(B)(b,nb)
 ten_par_par_split = proc(c : [{},{}]) c[d,e] (d{} | e{})
 tensor0 = proc(c : []) c[]
 tensor1 = proc(c : [!Int]) c[d] send d 42
@@ -690,11 +760,37 @@ oneTwo : Two
 notTwo : (b : Two)-> Two
        = \(b : Two)(A : Type)(x y : A)-> b A y x
 
+notZero : Two =
+  \(A : Type)(x y : A)->
+    let A' = A in
+    let x' = y in
+    let y' = x in
+    x'
+
+notZero' : Two =
+  let b = zeroTwo in
+  \(A : Type)(x y : A)-> b A y x
+
+notZero'' : Two = notTwo zeroTwo
+
+assert notTwo zeroTwo = oneTwo : Two
+assert notTwo oneTwo = zeroTwo : Two
+
 andTwo : (b0 b1 : Two)-> Two
        = \(b0 b1 : Two)-> b0 Two zeroTwo b1
 
+assert andTwo zeroTwo zeroTwo = zeroTwo : Two
+assert andTwo zeroTwo oneTwo  = zeroTwo : Two
+assert andTwo oneTwo  zeroTwo = zeroTwo : Two
+assert andTwo oneTwo  oneTwo  = oneTwo  : Two
+
 orTwo : (b0 b1 : Two)-> Two
       = \(b0 b1 : Two)-> b0 Two b1 oneTwo
+
+assert orTwo zeroTwo zeroTwo = zeroTwo : Two
+assert orTwo zeroTwo oneTwo  = oneTwo  : Two
+assert orTwo oneTwo  zeroTwo = oneTwo  : Two
+assert orTwo oneTwo  oneTwo  = oneTwo  : Two
 
 Nat : Type
     = (A : Type)(z : A)(s : (n : A)-> A)-> A
@@ -705,8 +801,42 @@ zeroNat : Nat
 sucNat : (n : Nat)-> Nat
        = \(n : Nat)(A : Type)(z : A)(s : (m : A)-> A)-> s (n A z s)
 
+oneNat : Nat = sucNat zeroNat
+
+twoNat : Nat = sucNat oneNat
+
+threeNat : Nat = sucNat twoNat
+
+fourNat : Nat = sucNat threeNat
+
+fiveNat : Nat = sucNat fourNat
+
+sixNat : Nat = sucNat fiveNat
+
 addNat : (m n : Nat)-> Nat
        = \(m n : Nat)-> m Nat n sucNat
+
+assert addNat zeroNat oneNat = oneNat : Nat
+assert addNat oneNat zeroNat = oneNat : Nat
+
+assert addNat twoNat threeNat = fiveNat : Nat
+
+mulNat : (m n : Nat)-> Nat
+       = \(m n : Nat)-> m Nat zeroNat (addNat n)
+
+assert mulNat zeroNat oneNat  = zeroNat : Nat
+assert mulNat oneNat  zeroNat = zeroNat : Nat
+assert mulNat oneNat  oneNat  = oneNat  : Nat
+
+assert mulNat oneNat oneNat
+     = addNat oneNat zeroNat
+     : Nat
+
+assert mulNat twoNat threeNat
+     = addNat threeNat (addNat threeNat zeroNat)
+     : Nat
+
+assert mulNat twoNat threeNat = sixNat : Nat
 
 Bin : Type
     = (A : Type)(leaf : A)(fork : (left : A)(right : A)-> A)-> A

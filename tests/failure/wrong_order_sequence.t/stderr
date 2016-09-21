@@ -1,0 +1,4 @@
+While checking `wrong_order_sequence`
+  These channels should be used in-order:
+  a, b
+

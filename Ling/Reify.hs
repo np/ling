@@ -105,11 +105,11 @@ instance Norm ReplKind where
   type Normalized ReplKind = N.TraverseKind
   reify = \case
     N.SeqK -> ReplSeq
+    N.TenK -> ReplPar
     N.ParK -> ReplPar
-    N.TenK -> error "unexpected Replicate with TenK"
   norm = \case
     ReplSeq -> N.SeqK
-    ReplPar -> N.ParK
+    ReplPar -> N.TenK
 
 instance Norm WithIndex where
   type Normalized WithIndex = Name

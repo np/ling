@@ -43,11 +43,11 @@ checkProc proc0 = do
   case proc0 of
     Procs procs -> checkProcs procs
 
-    Replicate _k r i proc1 -> do
+    Replicate k r i proc1 -> do
       checkRFactor r
       proto <- local (scopeVarDef i intTyp Nothing) $
                  checkProc proc1
-      pure $ replProto r proto
+      pure $ replProto k r proto
 
     LetP defs proc1 ->
        mkLet__ . Scoped ø defs <$> checkDefs defs (checkProc proc1)

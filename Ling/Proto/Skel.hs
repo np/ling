@@ -10,17 +10,18 @@ module Ling.Proto.Skel (
     prllActS,
     dotActS,
     actS,
+    replS,
     prune,
     select,
     subst,
-    dotChannelSet,
+    nonParallelChannelSet,
     check,
     ) where
 
 import           Data.Set     hiding (foldr)
 import           Prelude      hiding (null)
 
-import           Ling.Norm    (TraverseKind (..))
+import           Ling.Norm    (TraverseKind (..), RFactor)
 import           Ling.Prelude hiding (null, op, q, Prll)
 import           Ling.Print.Class
 
@@ -56,6 +57,9 @@ mkOp op = go where
       op `compat` op',
       c == d       = p
 
+    | Dot <- op,
+      c `elemS` p  = unknownS (Act c) (pruneEq c p)
+
   p     `go` Act c
     | Prll _ <- op,
       c `elemS` p  = p
@@ -63,13 +67,13 @@ mkOp op = go where
   Act c `go` Act d
     | c == d       = Act d
 
-  p     `go` q
+  -- Right nesting: (x * y) * z --> x * (y * z)
+  -- Which also enables further reductions when the result is built back.
+  Op op' p0 p1 `go` q
+    | op `compat` op'
+                   = mkOp op p0 (mkOp op p1 q)
 
-    -- Right nesting: (x * y) * z --> x * (y * z)
-    | Op op' p0 p1 <- p,
-      op `compat` op'     = mkOp op p0 (mkOp op p1 q)
-
-    | otherwise           = Op op p q
+  p     `go` q     = Op op p q
 
 skel :: (Ord a, Ord b) => Traversal (Skel a) (Skel b) a b
 skel f = \case
@@ -138,6 +142,14 @@ dotActS :: Eq a => [a] -> Endom (Skel a)
 dotActS []         sk = sk
 dotActS (act:acts) sk = act `actS` acts `dotActS` sk
 
+replS :: Eq a => TraverseKind -> RFactor -> Endom (Skel a)
+replS k _r sk =
+  case k of
+    SeqK -> sk `dotS` sk
+    TenK -> sk
+    ParK -> sk
+    -- ParK -> error "replS ParK impossible"
+
 elemS :: Eq a => a -> Skel a -> Bool
 elemS c0 = go
   where
@@ -154,27 +166,26 @@ subst act = go
       Act c         -> act c
       Op op sk0 sk1 -> mkOp op (go sk0) (go sk1)
 
+pruneEq :: Eq a => a -> Endom (Skel a)
+pruneEq c = subst (subst1 (c, Zero) Act)
+
 prune :: Ord a => Set a -> Endom (Skel a)
 prune cs = subst (substMember (cs, Zero) Act)
 
 select :: Ord a => Set a -> Endom (Skel a)
 select cs = subst (substPred ((`notMember` cs), Zero) Act)
 
--- TODO: What about unknown?
--- If the meaning of unknown gets tweak to mean
--- "in some order but not in parallel", then
--- sequencingOp Unknown = True
-sequencingOp :: Op -> Bool
-sequencingOp Dot = True
-sequencingOp _   = False
-
-dotChannelSet :: Ord a => Skel a -> Maybe (Set a)
-dotChannelSet = \case
+-- This function is used for the strict-par mode.
+--
+-- This function returns Nothing as soon as a parallel operator is encountered.
+-- In particular Unknown is accepted as in strict-par mode, Unknown is tweaked
+-- to mean "in some order but not in parallel".
+nonParallelChannelSet :: Ord a => Skel a -> Maybe (Set a)
+nonParallelChannelSet = \case
   Zero -> pure ø
   Act c -> pure (l2s [c])
-  Op op sk0 sk1
-    | sequencingOp op -> union <$> dotChannelSet sk0 <*> dotChannelSet sk1
-    | otherwise -> Nothing
+  Op (Prll _) _ _ -> Nothing
+  Op _ sk0 sk1 -> union <$> nonParallelChannelSet sk0 <*> nonParallelChannelSet sk1
 
 mAct :: Maybe channel -> Skel channel
 mAct Nothing  = Zero
