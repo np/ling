@@ -38,8 +38,11 @@ checkChanDec proto (ChanDec c r ms0) = do
   where ms1 = proto ^. chanSession c
 
 checkProc :: Proc -> TC Proto
-checkProc proc0 = do
-  debug $ "Checking proc: `" ++ pretty proc0 ++ "`"
+checkProc proc0 =
+  debugCheck (\proto -> unlines $
+              [ "Checking proc `" ++ pretty proc0 ++ "`"
+              , "Inferred protocol for the whole process:"
+              ] ++ prettyError prettyProto proto) $
   case proc0 of
     Procs procs -> checkProcs procs
 
