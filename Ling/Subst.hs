@@ -7,13 +7,14 @@ reduction rules:
 * prim ops
 * case
 * @(proc...)
+* fwd
 -}
 module Ling.Subst (Subst, substDefs, substScoped, reduceS) where
 
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Proc
-import           Ling.Reduce (reducePrim, HasReduce(reduce), reduced)
+import           Ling.Reduce (reducePrim, HasReduce(reduce), reduced, __Act)
 import           Ling.Rename (boundVars)
 import           Ling.Scoped
 import           Ling.Session

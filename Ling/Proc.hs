@@ -6,8 +6,6 @@ module Ling.Proc
   ( Dottable(..)
   , _Pref
   , _PrefDotProc
-  , _ActAt
-  , __Act
   , _Chans
   , _SplitCs
   , _ArrayCs
@@ -20,11 +18,14 @@ module Ling.Proc
   , procActsChans
 
   , fetchActPref -- Unused
+
+  -- used by Ling.Reduce to define __Act and _ActAt
+  , cPattAsArrayChanDecs
+  , matchChanDecs
   ) where
 
 import Prelude hiding (pred)
 import qualified Data.Set as Set
-import qualified Data.Map as Map
 import Ling.Norm
 import Ling.Print.Class
 import Ling.Prelude
@@ -180,41 +181,6 @@ matchChanDecs :: TraverseKind -> EndoM Maybe (Endom Proc, [ChanDec], Proc)
 matchChanDecs k = \case
   (pref,[cd],proc) -> matchProcSplit k pref cd proc
   _                -> Nothing
-
--- Prism valid up to the reduction rules
-_ActAt :: Prism' Proc (Term, CPatt)
-_ActAt = prism con pat
-  where
-    con (t, p) =
-      -- (\proc0 -> trace ("_ActAt (" ++ ppShow t ++ ", " ++ ppShow p ++ ") = " ++ ppShow proc0) proc0) $
-      case t of
-        Proc cs0 proc0 ->
-          case cPattAsArrayChanDecs p of
-            Just (k, cs') | Just (pref1, cs1, proc1) <- matchChanDecs k (id, cs0, proc0)
-                          , length cs1 == length cs' -> pref1 $ renProc (zip cs1 cs') proc1
-                          | k == ParK
-                          , length cs0 == length cs' -> renProc (zip cs0 cs') proc0
-            _ -> p0
-        _ -> p0
-      where
-        p0 = Act (At t p)
-
-    pat (Act (At t p)) = Right (t, p)
-    pat proc0          = Left  proc0
-
-    renProc bs = renameI r
-      where
-        l = bs & each . both %~ view cdChan
-        m = l2m l
-        r = Ren (\_ _ x -> pure $ Map.lookup x m ?| x) ø ø
-
--- Prism valid up to the reduction rules
-__Act :: Prism' Proc Act
-__Act = prism con pat
-  where
-    con act = Act act & _ActAt %~ id
-    pat (Act act) = Right act
-    pat proc0     = Left proc0
 
 _Chans :: Prism' [CPatt] [ChanDec]
 _Chans = below _ChanP

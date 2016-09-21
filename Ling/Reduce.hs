@@ -6,10 +6,12 @@
 {-# LANGUAGE TemplateHaskell              #-}
 module Ling.Reduce where
 
+import           Ling.Fwd
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
 import           Ling.Print
 import           Ling.Proc
+import           Ling.Rename
 import           Ling.Scoped
 import           Ling.Session.Core
 
@@ -205,6 +207,42 @@ flatRSessions sss = sss ^. scoped . _Sessions >>= flatRSession . (sss $>)
 
 instance HasReduce Sessions Sessions where
   reduce = Reduced . fmap Sessions . sequenceA . flatRSessions
+
+-- Prism valid up to the reduction rules
+_ActAt :: Prism' Proc (Term, CPatt)
+_ActAt = prism con pat
+  where
+    con (t, p) =
+      -- (\proc0 -> trace ("_ActAt (" ++ ppShow t ++ ", " ++ ppShow p ++ ") = " ++ ppShow proc0) proc0) $
+      case t of
+        Proc cs0 proc0 ->
+          case cPattAsArrayChanDecs p of
+            Just (k, cs') | Just (pref1, cs1, proc1) <- matchChanDecs k (id, cs0, proc0)
+                          , length cs1 == length cs' -> pref1 $ renProc (zip cs1 cs') proc1
+                          | k == ParK
+                          , length cs0 == length cs' -> renProc (zip cs0 cs') proc0
+            _ -> p0
+        _ -> p0
+      where
+        p0 = Act (At t p)
+
+    pat (Act (At t p)) = Right (t, p)
+    pat proc0          = Left  proc0
+
+    renProc bs = renameI r
+      where
+        l = bs & each . both %~ view cdChan
+        m = l2m l
+        r = Ren (\_ _ x -> pure $ m ^. at x ?| x) ø ø
+
+-- Prism valid up to the reduction rules
+__Act :: Prism' Proc Act
+__Act = prism con pat
+  where
+    con act = Act act & _ActAt %~ id
+                      & expandFwd
+    pat (Act act) = Right act
+    pat proc0     = Left proc0
 
 -- This is not really about some sort of Weak Head Normal Form.
 -- What matters is:

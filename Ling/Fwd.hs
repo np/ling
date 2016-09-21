@@ -3,6 +3,7 @@ module Ling.Fwd
   ( fwdP
   , fwdProc
   , fwdProc'
+  , expandFwd
   ) where
 
 import Prelude hiding (pred)
@@ -59,6 +60,11 @@ fwdP redSession used s0 cs
 
 fwdProc' :: (Session -> Session) -> Session -> [Channel] -> Proc
 fwdProc' redSession s cs = fwdP redSession ø s cs
+
+expandFwd :: Endom Proc
+expandFwd = \case
+  Act (Ax s cs) -> fwdProc' id s cs
+  proc0         -> proc0
 
 -- The session 'Fwd n session' is a par.
 -- This function builds a process which first splits this par.
