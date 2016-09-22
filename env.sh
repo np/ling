@@ -78,6 +78,18 @@ alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty
 alias cmdrexpandall='cmdrecord tests/expand/all.t  --env empty -- ling --pretty --no-check --expand < fixtures/success/*.ll'
 alias cmdrreduceall='cmdrecord tests/reduce/all.t  --env empty -- ling --pretty --no-check --reduce < fixtures/success/*.ll'
 
+cmdrall(){
+  cmdrseqall
+  cmdrfuseall
+  cmdrcompileall
+  cmdrfmtall
+  cmdrprettyall
+  cmdrnormall
+  cmdrstrictparsuccessall
+  cmdrexpandall
+  cmdrreduceall
+}
+
 # error() @ https://gist.github.com/3736727 {{{
 error(){
   local code="$1"

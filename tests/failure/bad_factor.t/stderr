@@ -1,0 +1,8 @@
+While checking `bad_factor`
+  While checking `c`
+    Types are not equivalent.
+    Expected:
+      Int
+    Inferred:
+      Double
+

@@ -1,4 +1,6 @@
 assert 'a' = 'a' : Char
+anon_arg_plus : Int -> Int -> Int
+anon_arg_suc : (x : Int) -> Int = anon_arg_plus 1
 ap =
   \(S T : Session)->
   proc(c : (S -o T) -o S -o T)
@@ -34,6 +36,7 @@ assert
     (proc (r : !Bool) (send r (not `true)))
   = (proc (r : !Bool) (send r `false))
   : < !Bool >
+at_end = proc() @(proc () ())()
 another_not : (x : Bool)-> Bool
     = \(x : Bool)-> case x of { `false -> `true, `true -> `false }
 
@@ -634,6 +637,14 @@ let_let =
   let x = 1 in
   let y = x in
   y
+letnewchan =
+  let T = Int in
+  proc()
+    new [c:?T.!T,d:!T.?T].
+    ( let x : T <- c.
+      c <- (x + x)
+    | d <- 42.
+      let y : T <- d)
 let_order =
   let x = 1 in
   let y = 2 in
@@ -1151,6 +1162,61 @@ assert leftOplus
 assert rightOplus
      = \(SL SR : Session)-> oplus' SL SR `right
      : (SL SR : Session)(p : < SR >)-> < Oplus' SL SR >
+order_LR =
+  proc()
+    new [: ab : [: !Int, !Int :], cd :].
+    split ab as [: a, b :].
+    split cd as [: c, d :].
+    a <- 1.
+    b <- 2.
+    let x : Int <- c.
+    let y : Int <- d
+
+order_RL =
+  proc()
+    new [: ba : [: !Int, !Int :], dc :].
+    split ba as [: b, a :].
+    split dc as [: d, c :].
+    b <- 2.
+    a <- 1.
+    let y : Int <- d.
+    let x : Int <- c
+
+-- order_LR_fuse1 == fuse1 order_LR
+order_LR_fuse1 =
+  proc()
+    new [: a : !Int, c :].
+    new [: b : !Int, d :].
+    a <- 1.
+    b <- 2.
+    let x : Int <- c.
+    let y : Int <- d
+
+-- order_RL_fuse1 == order_LR_fuse1
+-- order_RL_fuse1 == fuse1 order_RL
+order_RL_fuse1 =
+  proc()
+    new [: b : !Int, d :].
+    new [: a : !Int, c :].
+    b <- 2.
+    a <- 1.
+    let y : Int <- d.
+    let x : Int <- c
+
+-- order_LR_fuse2 == fuse2 order_LR
+order_LR_fuse2 =
+  proc()
+    let x : Int = 1.
+    let y : Int = 2
+
+-- order_RL_fuse2 == order_LR_fuse2
+-- order_RL_fuse2 == fuse2 order_RL
+order_RL_fuse2 =
+  proc()
+    let y : Int = 2.
+    let x : Int = 1
+
+-- TODO assert all the equations above.
 par0 = proc(c : {}) c{}
 par1 = proc(c : {!Int}) c{d} send d 42
 par2 = proc(c : {!Int,?Int}) c{d,e} recv e (x : Int) send d x
@@ -1367,6 +1433,32 @@ test_receiver =
   proc(c)
     let x : A <- c.
     @(p x)(c)
+recv_proc_SInt =
+  proc(c: ?< !Int >, d: !Int, e: !Int)
+    let p : < !Int > <- c.
+    @p(d).
+    @p(e)
+
+recv_proc_useless =
+  proc(c: ?< !Int >, d: !Int, e: !Int)
+    e <- 64.
+    d <- 42.
+    let p : < !Int > <- c
+
+recv_proc_abs_cnt =
+  \(S : Session)->
+  proc(c: ?< S >, d: S, e: S)
+    let p : < S > <- c.
+    @p(d).
+    @p(e)
+
+recv_proc_loli =
+  \(S : Session)->
+  proc(a: !< S > -o [ S, S ])
+    split a  as {c,de}.
+    split de as [d,e].
+    let p : < S > <- c.
+    ( @p(d) | @p(e) )
 assert 16 % 33 =  16
 assert 30 + 2  =  32
 assert 86 - 22 =  64
@@ -1435,6 +1527,18 @@ rotate_seq = \ (A : Type)(n : Int)->
     -- TODO: fwd(?A ^ n)(iH, oL).
     sequence ^ n (fwd(?A)(iH, oL)).
     oH <- xL
+-- This could be:
+--   zip Double Double Double (\(vx vy: Double)-> (a *D vx) +D vy) n
+saxpy =
+  \ (n : Int)(a : Double)->
+  proc(xs:{?Double ^ n}, ys:{?Double ^ n}, rs:[!Double ^ n])
+    split xs as {x ^ n}.
+    split ys as {y ^ n}.
+    split rs as [r ^ n].
+    parallel ^ n (
+      let vx : Double <- x.
+      let vy : Double <- y.
+      r <- ((a *D vx) +D vy))
 test_sender =
   \(A : Type)
    (S : A -> Session)
@@ -1464,6 +1568,11 @@ seq3_seq2 = proc(c : [: !Int, !Int, !Int :], d : [: !Int, !Int :])
   send c2 2
   send d1 1
 
+seq_array_cnt_new = proc()
+  new (c :* Int).
+  split c as [:d,e:].
+  d <- 1.
+  let x : Int <- e
 seq_assoc_core =
  \(A B C : Session)->
  proc(i : ~[:[:A,B:],C:], o : [:A,[:B,C:]:])

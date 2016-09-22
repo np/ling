@@ -510,6 +510,14 @@ let_example =
    send c y
 let_in_proc_for_session = proc(c : ?Int)
   let A = Int. let x : A <- c
+letnewchan =
+  let T = Int in
+  proc()
+    new [c:?T.!T,d:!T.?T].
+    ( let x : T <- c.
+      c <- (x + x)
+    | d <- 42.
+      let y : T <- d)
 let_order =
   let x = 1 in
   let y = 2 in
@@ -980,6 +988,61 @@ some_type : Type = Int , some_value : some_type = 42
 assert ((S : Session)(m n : Int)-> < S ^(m + n) >)
      = ((S : Session)(m n : Int)-> < S ^(n + m) >)
      : Type
+order_LR =
+  proc()
+    new [: ab : [: !Int, !Int :], cd :].
+    split ab as [: a, b :].
+    split cd as [: c, d :].
+    a <- 1.
+    b <- 2.
+    let x : Int <- c.
+    let y : Int <- d
+
+order_RL =
+  proc()
+    new [: ba : [: !Int, !Int :], dc :].
+    split ba as [: b, a :].
+    split dc as [: d, c :].
+    b <- 2.
+    a <- 1.
+    let y : Int <- d.
+    let x : Int <- c
+
+-- order_LR_fuse1 == fuse1 order_LR
+order_LR_fuse1 =
+  proc()
+    new [: a : !Int, c :].
+    new [: b : !Int, d :].
+    a <- 1.
+    b <- 2.
+    let x : Int <- c.
+    let y : Int <- d
+
+-- order_RL_fuse1 == order_LR_fuse1
+-- order_RL_fuse1 == fuse1 order_RL
+order_RL_fuse1 =
+  proc()
+    new [: b : !Int, d :].
+    new [: a : !Int, c :].
+    b <- 2.
+    a <- 1.
+    let y : Int <- d.
+    let x : Int <- c
+
+-- order_LR_fuse2 == fuse2 order_LR
+order_LR_fuse2 =
+  proc()
+    let x : Int = 1.
+    let y : Int = 2
+
+-- order_RL_fuse2 == order_LR_fuse2
+-- order_RL_fuse2 == fuse2 order_RL
+order_RL_fuse2 =
+  proc()
+    let y : Int = 2.
+    let x : Int = 1
+
+-- TODO assert all the equations above.
 par0 = proc(c : {}) c{}
 par1 = proc(c : {!Int}) c{d} send d 42
 par2 = proc(c : {!Int,?Int}) c{d,e} recv e (x : Int) send d x

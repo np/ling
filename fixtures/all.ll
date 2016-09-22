@@ -1,4 +1,6 @@
 assert 'a' = 'a' : Char
+anon_arg_plus : Int -> Int -> Int
+anon_arg_suc : (x : Int) -> Int = anon_arg_plus 1
 ap =
   \(S T : Session)->
   proc(c : (S -o T) -o S -o T)
@@ -34,6 +36,7 @@ assert
     (proc (r : !Bool) (send r (not `true)))
   = (proc (r : !Bool) (send r `false))
   : < !Bool >
+at_end = proc() @(proc () ())()
 assert `false = `true : Bool
 Id : (A : Type)(x y : A)-> Type
 
@@ -43,6 +46,9 @@ bad : (A : Type)(x y : A)-> Id A x y
     = \(A : Type)(x y : A)-> refl A x
 bad : (Y : Type) -> Y = \(Y : Type) -> 42
 badCutSendRecv = proc() new [c : !Int, d : ?Int]. send c 1 recv d (x : Int)
+bad_factor = proc(c ^ 0.0 : !Int) c <- 42
+bad_Log_1 = Log 1
+bad_Log_SInt_2 = Log (!Int) 2
 Id : (A : Type)(x y : A)-> Type
 
 sym : (A : Type)(x y : A)(p : Id A x y)-> Id A y x
@@ -728,6 +734,14 @@ let_let =
   let x = 1 in
   let y = x in
   y
+letnewchan =
+  let T = Int in
+  proc()
+    new [c:?T.!T,d:!T.?T].
+    ( let x : T <- c.
+      c <- (x + x)
+    | d <- 42.
+      let y : T <- d)
 let_order =
   let x = 1 in
   let y = 2 in
@@ -1311,6 +1325,61 @@ assert leftOplus
 assert rightOplus
      = \(SL SR : Session)-> oplus' SL SR `right
      : (SL SR : Session)(p : < SR >)-> < Oplus' SL SR >
+order_LR =
+  proc()
+    new [: ab : [: !Int, !Int :], cd :].
+    split ab as [: a, b :].
+    split cd as [: c, d :].
+    a <- 1.
+    b <- 2.
+    let x : Int <- c.
+    let y : Int <- d
+
+order_RL =
+  proc()
+    new [: ba : [: !Int, !Int :], dc :].
+    split ba as [: b, a :].
+    split dc as [: d, c :].
+    b <- 2.
+    a <- 1.
+    let y : Int <- d.
+    let x : Int <- c
+
+-- order_LR_fuse1 == fuse1 order_LR
+order_LR_fuse1 =
+  proc()
+    new [: a : !Int, c :].
+    new [: b : !Int, d :].
+    a <- 1.
+    b <- 2.
+    let x : Int <- c.
+    let y : Int <- d
+
+-- order_RL_fuse1 == order_LR_fuse1
+-- order_RL_fuse1 == fuse1 order_RL
+order_RL_fuse1 =
+  proc()
+    new [: b : !Int, d :].
+    new [: a : !Int, c :].
+    b <- 2.
+    a <- 1.
+    let y : Int <- d.
+    let x : Int <- c
+
+-- order_LR_fuse2 == fuse2 order_LR
+order_LR_fuse2 =
+  proc()
+    let x : Int = 1.
+    let y : Int = 2
+
+-- order_RL_fuse2 == order_LR_fuse2
+-- order_RL_fuse2 == fuse2 order_RL
+order_RL_fuse2 =
+  proc()
+    let y : Int = 2.
+    let x : Int = 1
+
+-- TODO assert all the equations above.
 over_application : Int = _+_ 1 2 3
 par0 = proc(c : {}) c{}
 par1 = proc(c : {!Int}) c{d} send d 42
@@ -1533,6 +1602,32 @@ test_receiver =
   proc(c)
     let x : A <- c.
     @(p x)(c)
+recv_proc_SInt =
+  proc(c: ?< !Int >, d: !Int, e: !Int)
+    let p : < !Int > <- c.
+    @p(d).
+    @p(e)
+
+recv_proc_useless =
+  proc(c: ?< !Int >, d: !Int, e: !Int)
+    e <- 64.
+    d <- 42.
+    let p : < !Int > <- c
+
+recv_proc_abs_cnt =
+  \(S : Session)->
+  proc(c: ?< S >, d: S, e: S)
+    let p : < S > <- c.
+    @p(d).
+    @p(e)
+
+recv_proc_loli =
+  \(S : Session)->
+  proc(a: !< S > -o [ S, S ])
+    split a  as {c,de}.
+    split de as [d,e].
+    let p : < S > <- c.
+    ( @p(d) | @p(e) )
 data T1 = `c1 | `c2
 data T2 = `c3 | `c1
 data T1 = `c1
@@ -1610,6 +1705,18 @@ rotate_seq = \ (A : Type)(n : Int)->
     -- TODO: fwd(?A ^ n)(iH, oL).
     sequence ^ n (fwd(?A)(iH, oL)).
     oH <- xL
+-- This could be:
+--   zip Double Double Double (\(vx vy: Double)-> (a *D vx) +D vy) n
+saxpy =
+  \ (n : Int)(a : Double)->
+  proc(xs:{?Double ^ n}, ys:{?Double ^ n}, rs:[!Double ^ n])
+    split xs as {x ^ n}.
+    split ys as {y ^ n}.
+    split rs as [r ^ n].
+    parallel ^ n (
+      let vx : Double <- x.
+      let vy : Double <- y.
+      r <- ((a *D vx) +D vy))
 Int1 = Int
 send_1 = proc(c : !Int1)
   send c 1
@@ -1642,6 +1749,11 @@ seq3_seq2 = proc(c : [: !Int, !Int, !Int :], d : [: !Int, !Int :])
   send c2 2
   send d1 1
 
+seq_array_cnt_new = proc()
+  new (c :* Int).
+  split c as [:d,e:].
+  d <- 1.
+  let x : Int <- e
 seq_assoc_core =
  \(A B C : Session)->
  proc(i : ~[:[:A,B:],C:], o : [:A,[:B,C:]:])
@@ -2216,6 +2328,16 @@ wrong_new_ann = proc(c : !Int)
   | fwd(!Int)(c,e))
 wrong_new_seq_dual = proc() new [: c : !Int, d : !Int :] send c 1. send d 2
 wrong_new_seq_fwd = proc() new [: c : ?Int, d :] fwd(?Int)(c,d)
+-- Use /alloc for this example to be accepted
+wrong_new_seq_par_par =
+  proc()
+  new [: cd: {!Int,!Bool}, ef: {?Int,?Bool} :].
+  split cd as {c,d}.
+  split ef as {e,f}.
+  c <- 1.
+  d <- `true.
+  let b : Bool <- f.
+  let i : Int  <- e
 wrong_non_dependent_function_type : Int -> Int = \(x : Bool)-> 42
 wrong_order_par2_par2 = proc(c : [: {!Int,!Int}, {!Int,!Int} :])
   c[:d,e:]
@@ -2257,6 +2379,16 @@ wrong_order_seq_seq_send2 = proc(a : [:[:!Int.!Int,!Int.!Int:],!Int.!Int:])
   a[:b,e:] b[:c,d:] send c 1 send c 2 send d 3 send e 4 send d 5 send e 6
 wrong_order_seq_ten = proc(a : [:[!Int,!Int],!Int:])
   a[:b,e:] b[c,d] (send e 1 send c 2 | send d 3)
+wrong_order_sequence =
+  \ (A: Type)(n: Int)->
+  proc(c: [: [: ?A ^ n :], [: !A ^ n :] :])
+    split c as [: a, b   :].
+    split a as [: ai ^ n :].
+    split b as [: bi ^ n :].
+    sequence ^ n (
+      let x: A <- ai.
+      bi <- x
+    )
 wrong_order_split_nested_seq :
   (A B C D : Session)->
   < [: A, B, C, D :] -o [: [: A, B :], [: C, D :] :] > =
@@ -2315,6 +2447,11 @@ wrong_repeat_par = proc(c : {!Int})
     split c as {d}.
     d <- 1
   )
+wrong_replication = \ (n : Int)->
+  proc(c : [: ?Bool. !Int ^ n :])
+    split c as [: c_ ^ n :].
+    let x : Bool <- c_.
+    sequence ^ n (c_ <- 42)
 wrong_seq_array_cnt_new = \(ann : Allocation) -> proc()
   new/ann (c :* Int).
   split c [:d,e:].

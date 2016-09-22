@@ -1072,6 +1072,15 @@ let_let =
   let y = x in
   y
 
+letnewchan =
+  proc ()
+  let T = Int.
+  new [c : ?T.!T, d : !T.?T].
+  d <- 42.
+  let x : T <- c.
+  c <- (x + x).
+  let y : T <- d
+
 let_order =
   let x = 1 in
   let y = 2 in
@@ -1766,6 +1775,54 @@ assert
   \ (SL : Session)-> \ (SR : Session)-> oplus' SL SR `right
   : (SL : Session)-> (SR : Session)-> (p : < SR >)-> < Oplus' SL SR >
 
+order_LR =
+  proc ()
+  new [: ab : [: !Int, !Int :], cd :].
+  split ab [: a, b :].
+  split cd [: c, d :].
+  a <- 1.
+  b <- 2.
+  let x : Int <- c.
+  let y : Int <- d
+
+order_RL =
+  proc ()
+  new [: ba : [: !Int, !Int :], dc :].
+  split ba [: b, a :].
+  split dc [: d, c :].
+  b <- 2.
+  a <- 1.
+  let y : Int <- d.
+  let x : Int <- c
+
+order_LR_fuse1 =
+  proc ()
+  new [: a : !Int, c :].
+  new [: b : !Int, d :].
+  a <- 1.
+  b <- 2.
+  let x : Int <- c.
+  let y : Int <- d
+
+order_RL_fuse1 =
+  proc ()
+  new [: b : !Int, d :].
+  new [: a : !Int, c :].
+  b <- 2.
+  a <- 1.
+  let y : Int <- d.
+  let x : Int <- c
+
+order_LR_fuse2 =
+  proc ()
+  let x : Int = 1.
+  let y : Int = 2
+
+order_RL_fuse2 =
+  proc ()
+  let y : Int = 2.
+  let x : Int = 1
+
 par0 =
   proc (c : {})
   split c {}
@@ -2310,6 +2367,13 @@ seq3_seq2 =
   d0 <- 0.
   c2 <- 2.
   d1 <- 1
+
+seq_array_cnt_new =
+  proc ()
+  new (c :* Int).
+  split c [: d, e :].
+  d <- 1.
+  let x : Int <- e
 
 seq_assoc_core =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (i : [: [: ~ A, ~ B :], ~ C :], o : [: A, [: B, C :] :])

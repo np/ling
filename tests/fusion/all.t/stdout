@@ -928,6 +928,12 @@ let_in_proc_for_session =
   let A = Int.
   let x : A <- c
 
+letnewchan =
+  proc ()
+  let T = Int.
+  let x : T = 42.
+  let y : T = (x + x)
+
 let_order =
   let x = 1 in
   let y = 2 in
@@ -1541,6 +1547,36 @@ assert
   =
   (S : Session)-> (m : Int)-> (n : Int)-> < S ^ (n + m)>
   : Type
+
+order_LR =
+  proc ()
+  let x : Int = 1.
+  let y : Int = 2
+
+order_RL =
+  proc ()
+  let y : Int = 2.
+  let x : Int = 1
+
+order_LR_fuse1 =
+  proc ()
+  let x : Int = 1.
+  let y : Int = 2
+
+order_RL_fuse1 =
+  proc ()
+  let y : Int = 2.
+  let x : Int = 1
+
+order_LR_fuse2 =
+  proc ()
+  let x : Int = 1.
+  let y : Int = 2
+
+order_RL_fuse2 =
+  proc ()
+  let y : Int = 2.
+  let x : Int = 1
 
 par0 =
   proc (c : {})

@@ -1,0 +1,1 @@
+../../../fixtures/all/wrong_replication.ll

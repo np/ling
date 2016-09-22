@@ -1,0 +1,7 @@
+While checking `bad_Log_1`
+  Types are not equivalent.
+  Expected:
+    Session
+  Inferred:
+    Int
+

@@ -1,0 +1,8 @@
+While checking `wrong_new_seq_par_par`
+  While checking `ef`
+    Sessions are not dual.
+    Given session (expanded):
+      {!Int, !Bool}
+    Inferred dual session:
+      {?(i : Int),?(b : Bool)}
+

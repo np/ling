@@ -543,6 +543,14 @@ let_let =
   let x = 1 in
   let y = x in
   y
+letnewchan =
+  let T = Int in
+  proc()
+    new [c:?T.!T,d:!T.?T].
+    ( let x : T <- c.
+      c <- (x + x)
+    | d <- 42.
+      let y : T <- d)
 let_order =
   let x = 1 in
   let y = 2 in
@@ -1330,6 +1338,11 @@ seq3_seq2 = proc(c : [: !Int, !Int, !Int :], d : [: !Int, !Int :])
   send c2 2
   send d1 1
 
+seq_array_cnt_new = proc()
+  new (c :* Int).
+  split c as [:d,e:].
+  d <- 1.
+  let x : Int <- e
 seq_assoc_core =
  \(A B C : Session)->
  proc(i : ~[:[:A,B:],C:], o : [:A,[:B,C:]:])

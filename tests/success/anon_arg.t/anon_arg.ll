@@ -1,0 +1,1 @@
+../../../fixtures/all/anon_arg.ll

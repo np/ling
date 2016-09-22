@@ -671,6 +671,13 @@ void let_example_lin (int * c_lin){
 void let_in_proc_for_session_lin (const int * c_lin){
   const int x_lin = * c_lin ;
   }
+void letnewchan_lin () {
+  int c_lin ;
+  c_lin = 42 ;
+  const int x_lin = c_lin ;
+  c_lin = (x_lin + x_lin);
+  const int y_lin = c_lin ;
+  }
 void let_order_proc_lin (int * c_lin){
   * c_lin = 3 ;
   }
@@ -1174,6 +1181,11 @@ void seq3_seq2_lin (struct {
   d_lin -> f0 = 0 ;
   c_lin -> f2 = 2 ;
   d_lin -> f1 = 1 ;
+  }
+void seq_array_cnt_new_lin () {
+  int c_lin ;
+  c_lin = 1 ;
+  const int x_lin = c_lin ;
   }
 void seq_par_back_lin (struct {
   struct {

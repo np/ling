@@ -7,6 +7,11 @@ assert
   'a'
   : Char
 
+anon_arg_plus : Int -> Int -> Int
+
+anon_arg_suc : (x : Int)-> Int =
+  anon_arg_plus 1
+
 ap =
   \ (S : Session)-> \ (T : Session)-> proc (c : {[S, ~ T],{~ S, T}})
   split c {f, xo}.
@@ -78,6 +83,11 @@ assert
   proc (r : !Bool)
   r <- `false
   : < !Bool >
+
+at_end =
+  proc ()
+  @ (proc ()
+  ( )) {}
 
 another_not : (x : Bool)-> Bool =
   \ (x : Bool)-> case x of {
@@ -966,6 +976,15 @@ let_let =
   let y = x in
   y
 
+letnewchan =
+  let T = Int in
+  proc ()
+  new [c : ?T.!T, d : !T.?T].
+  ( let x : T <- c.
+    c <- (x + x)
+  | d <- 42.
+    let y : T <- d )
+
 let_order =
   let x = 1 in
   let y = 2 in
@@ -1456,6 +1475,54 @@ assert
   \ (SL : Session)-> \ (SR : Session)-> oplus' SL SR `right
   : (SL : Session)-> (SR : Session)-> (p : < SR >)-> < Oplus' SL SR >
 
+order_LR =
+  proc ()
+  new [: ab : [: !Int, !Int :], cd :].
+  split ab [: a, b :].
+  split cd [: c, d :].
+  a <- 1.
+  b <- 2.
+  let x : Int <- c.
+  let y : Int <- d
+
+order_RL =
+  proc ()
+  new [: ba : [: !Int, !Int :], dc :].
+  split ba [: b, a :].
+  split dc [: d, c :].
+  b <- 2.
+  a <- 1.
+  let y : Int <- d.
+  let x : Int <- c
+
+order_LR_fuse1 =
+  proc ()
+  new [: a : !Int, c :].
+  new [: b : !Int, d :].
+  a <- 1.
+  b <- 2.
+  let x : Int <- c.
+  let y : Int <- d
+
+order_RL_fuse1 =
+  proc ()
+  new [: b : !Int, d :].
+  new [: a : !Int, c :].
+  b <- 2.
+  a <- 1.
+  let y : Int <- d.
+  let x : Int <- c
+
+order_LR_fuse2 =
+  proc ()
+  let x : Int = 1.
+  let y : Int = 2
+
+order_RL_fuse2 =
+  proc ()
+  let y : Int = 2.
+  let x : Int = 1
+
 par0 =
   proc (c : {})
   split c {}
@@ -1741,6 +1808,32 @@ test_receiver =
   let x : A <- c.
   @ (p x)(c)
 
+recv_proc_SInt =
+  proc (c : ?< !Int >, d : !Int, e : !Int)
+  let p : < !Int > <- c.
+  @ p (d).
+  @ p (e)
+
+recv_proc_useless =
+  proc (c : ?< !Int >, d : !Int, e : !Int)
+  e <- 64.
+  d <- 42.
+  let p : < !Int > <- c
+
+recv_proc_abs_cnt =
+  \ (S : Session)-> proc (c : ?< S >, d : S, e : S)
+  let p : < S > <- c.
+  @ p (d).
+  @ p (e)
+
+recv_proc_loli =
+  \ (S : Session)-> proc (a : {?< S >, [S, S]})
+  split a {c, de}.
+  split de [d, e].
+  let p : < S > <- c.
+  ( @ p (d)
+  | @ p (e))
+
 assert
   16 % 33
   =
@@ -1953,6 +2046,16 @@ rotate_seq =
     oL <- x#iH)).
   oH <- xL
 
+saxpy =
+  \ (n : Int)-> \ (a : Double)-> proc (xs : {?Double ^ n},ys : {?Double ^ n},rs : [!Double ^ n])
+  split xs {x ^ n}.
+  split ys {y ^ n}.
+  split rs [r ^ n].
+  parallel ^ n
+    (let vx : Double <- x.
+    let vy : Double <- y.
+    r <- ((a *D vx)+D vy))
+
 test_sender =
   \ (A : Type)-> \ (S : A -> Session)-> \ (t : A)-> \ (p : < S t >)-> proc (c)
   c : !(x : A).S x <- t.
@@ -1982,6 +2085,13 @@ seq3_seq2 =
   d0 <- 0.
   c2 <- 2.
   d1 <- 1
+
+seq_array_cnt_new =
+  proc ()
+  new (c :* Int).
+  split c [: d, e :].
+  d <- 1.
+  let x : Int <- e
 
 seq_assoc_core =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (i : [: [: ~ A, ~ B :], ~ C :], o : [: A, [: B, C :] :])
