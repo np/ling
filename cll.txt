@@ -1,0 +1,98 @@
+See the definitions for Empty, LR, With and Oplus in Ling.hs.
+
+⟦x <-> y⟧ =
+  fwd S (x, y)
+
+-- simple case, n = 1
+⟦cut {x : A -> P; y : A^⊥ -> Q}⟧ =
+  new [x : ⟦A⟧, y : ~⟦A⟧]. (⟦P⟧ | ⟦Q⟧)
+
+-- general case
+⟦cut {x : A^n -> P; y : A^⊥ -> Q}⟧ =
+  new [xs : {⟦A⟧ ^ n}, ys : [⟦A⟧ ^ n]]. (split xs as {x ^ n}. ⟦P⟧ | split ys as {y ^ n}. parallel ^ n ⟦Q⟧)
+
+⟦mix{P;Q}⟧ =
+  (⟦P⟧ | ⟦Q⟧)
+
+⟦⊥⟧ = []
+
+⟦yield to x⟧ =
+  split x as []
+
+⟦1⟧ = {}
+
+⟦let <> = x; P⟧ =
+  split x as {}. ⟦P⟧
+
+⟦halt⟧ = ()
+
+⟦0⟧ = ?Empty
+⟦⊤⟧ = !Empty
+
+⟦dump Γ in x⟧ =
+  let z : Empty <- x. case z of {}
+
+⟦A ⊗ B⟧ = {⟦A⟧, ⟦B⟧}
+
+⟦let x,y = z; P⟧ =
+  split z as {x, y}. ⟦P⟧
+
+⟦A ⅋ B⟧ = [⟦A⟧, ⟦B⟧]
+
+⟦connect z to {x -> P; y -> Q}⟧ =
+  split z as [x, y]. (⟦P⟧ | ⟦Q⟧)
+
+⟦A ⊕ B⟧ = With ⟦A⟧ ⟦B⟧
+
+⟦case z of {inl x -> P; inr y -> Q}⟧ =
+  let lr : LR <- z.
+  @(case lr of { `left -> proc (z) ⟦P⟧ ; `right -> proc (z) ⟦Q⟧ })(z)
+
+⟦A & B⟧ = Oplus ⟦A⟧ ⟦B⟧
+
+⟦let inl x = z; P⟧ =
+  z : Oplus SL SR <- `left. ⟦P⟧
+
+⟦let inr x = z; P⟧ =
+  z : Oplus SL SR <- `right. ⟦P⟧
+
+⟦⊗m A⟧ = { ⟦A⟧ ^ m }
+
+⟦let x = slice z; let y,z = split n z; P⟧ =
+  split z as {y ^ n, z ^ m}. ⟦P⟧
+
+⟦let x = slice z; P⟧ =
+  split z as {x ^ n}. ⟦P⟧
+
+⟦⅋m A⟧ = [ ⟦A⟧ ^ m ]
+
+⟦coslice z {x ->n P; y ->m Q}⟧ =
+  split z as [x ^ n, y ^ m]. (parallel ^ n ⟦P⟧ | parallel ^ m ⟦Q⟧)
+
+⟦§m A⟧ = [: ⟦A⟧ ^ m :]
+
+⟦traverse{y1 as yL, x1 as xL ->n P; y1 as yH, x2 as xH ->m Q}⟧ =
+  split y1 as [: yL ^ n, yH ^ m :].
+  split x1 as [: xL ^ n :].
+  split x2 as [: xH ^ m :].
+  sequence ^ n ⟦P⟧.
+  sequence ^ m ⟦Q⟧
+
+-- simple case, n = 1
+⟦sync{x : D^⊥ -> P, y : D -> Q}⟧ =
+  new/alloc [: x : ~⟦D⟧, y : ⟦D⟧ :]. ⟦P⟧. ⟦Q⟧
+
+-- general case
+⟦sync{x : D^⊥n -> P, y : D^n -> Q}⟧ =
+  new/alloc [: xs : { ~⟦D⟧ ^ n }, ys : { ⟦D⟧ ^ n } :].
+  split xs as { x ^ n }. split ys as { y ^ n }. ⟦P⟧. ⟦Q⟧
+
+-- Simpler loops without the optional write of the state (& 1).
+-- Ling does not support the general case yet.
+-- Moreover the splicing of ⟦Q⟧ is not yet supported as is.
+⟦loop{x : D^⊥ -> P; y : §m(D ⊗ D^⊥) -> Q}⟧ =
+  new/alloc [: x : ~⟦D⟧, y : { ⟦D⟧, ~⟦D⟧ } ^ m :].
+  ⟦P⟧. ⟦Q⟧[: y ^ m :]
+
+⟦loop{x : D^⊥ -> P; y : §m(D ⊗ (D^⊥ & 1)) -> Q}⟧ =
+  TODO
