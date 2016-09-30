@@ -352,7 +352,7 @@ inferDef :: DefKind -> Name -> [Term] -> TC Typ
 inferDef _ f es = do
   mtyp <- view $ evars . at f
   case mtyp of
-    Just typ -> errorScope f $ tcScope typ >>= \styp -> checkApp f 0 styp es
+    Just typ -> tcScope typ >>= \styp -> checkApp f 0 styp es
     Nothing  -> tcError $ "unknown definition " ++ pretty f ++
                           if f == anonName then
                             "\n\nHint: While `_` is allowed as a name for a definition, one cannot reference it."
@@ -385,7 +385,8 @@ checkApp f n ty0 (e:es) =
         -}
         ]
       ty <- requireAnnotation "argument" x mty
-      checkTerm (mkLetS (ty0 *> ty1 $> ty)) e
+      errorScope' (concat ["While applying argument number ", show (n + 1), " of `", pretty f, "`"]) $
+        checkTerm (mkLetS (ty0 *> ty1 $> ty)) e
       checkApp f (n + 1) (ty0 *> ty1 *> subst1 (x, Ann (Just ty) e) s) es
     _ -> tcError ("Too many arguments given to " ++ pretty f ++ ", " ++
                      show n ++ " arguments expected and " ++

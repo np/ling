@@ -1,5 +1,5 @@
 While checking `wrong_fun1_to_proc_par2`
-  While checking `f`
+  While applying argument number 1 of `f`
     Types are not equivalent.
     Expected:
       I

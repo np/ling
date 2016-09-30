@@ -1,5 +1,5 @@
 While checking `wrong_case_con`
-  While checking `_+_`
+  While applying argument number 2 of `_+_`
     Types are not equivalent.
     Expected:
       Int

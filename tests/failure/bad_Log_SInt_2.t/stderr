@@ -1,4 +1,3 @@
 While checking `bad_Log_SInt_2`
-  While checking `Log`
-    Too many arguments given to Log, 1 arguments expected and 2 were given.
+  Too many arguments given to Log, 1 arguments expected and 2 were given.
 

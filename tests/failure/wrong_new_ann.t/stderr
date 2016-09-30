@@ -1,5 +1,5 @@
 While checking `wrong_new_ann`
-  While checking `fuse`
+  While applying argument number 1 of `fuse`
     Types are not equivalent.
     Expected:
       Int
