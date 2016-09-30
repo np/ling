@@ -74,7 +74,7 @@ tVoidPtr :: ATyp
 tVoidPtr = (C.TPtr C.TVoid, [])
 
 tArr :: ATyp -> C.Exp -> ATyp
-tArr (ty, arrs) e = (ty, arrs ++ [C.AArr e])
+tArr (ty, arrs) e = (ty, C.AArr e : arrs)
 
 tInt :: ATyp
 tInt = (C.TInt, [])
