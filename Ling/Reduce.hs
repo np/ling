@@ -111,6 +111,18 @@ reducePrim "_==I_"      [LInteger x, LInteger y] = Just . mkBool $ x == y
 reducePrim "_==D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x == y
 reducePrim "_==C_"      [LChar    x, LChar    y] = Just . mkBool $ x == y
 reducePrim "_==S_"      [LString  x, LString  y] = Just . mkBool $ x == y
+reducePrim "_<=I_"      [LInteger x, LInteger y] = Just . mkBool $ x <= y
+reducePrim "_<=D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x <= y
+reducePrim "_<=C_"      [LChar    x, LChar    y] = Just . mkBool $ x <= y
+reducePrim "_>=I_"      [LInteger x, LInteger y] = Just . mkBool $ x >= y
+reducePrim "_>=D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x >= y
+reducePrim "_>=C_"      [LChar    x, LChar    y] = Just . mkBool $ x >= y
+reducePrim "_>I_"       [LInteger x, LInteger y] = Just . mkBool $ x >  y
+reducePrim "_>D_"       [LDouble  x, LDouble  y] = Just . mkBool $ x >  y
+reducePrim "_>C_"       [LChar    x, LChar    y] = Just . mkBool $ x >  y
+reducePrim "_<I_"       [LInteger x, LInteger y] = Just . mkBool $ x <  y
+reducePrim "_<D_"       [LDouble  x, LDouble  y] = Just . mkBool $ x <  y
+reducePrim "_<C_"       [LChar    x, LChar    y] = Just . mkBool $ x <  y
 reducePrim _            _                        = Nothing
 
 reduceDef :: Scoped (DefKind, Name, [Term]) -> Reduced Term

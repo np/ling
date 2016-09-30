@@ -6,6 +6,10 @@
 [WARNING] Skipping compilation of unsupported definition _==B_
 [WARNING] Skipping compilation of unsupported definition _/=B_
 [WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
 [WARNING] Unsupported type A
 [WARNING] Unsupported type A
 [WARNING] Unsupported type A
@@ -50,6 +54,14 @@
 [WARNING] Skipping compilation of unsupported definition fuse1
 [WARNING] Skipping compilation of unsupported definition fuse2
 [WARNING] Skipping compilation of unsupported definition fuse3
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool

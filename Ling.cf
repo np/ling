@@ -6,12 +6,16 @@ comment "{-" "-}" ;
 
 Prg. Program ::= [Dec] ;
 
-token Name ( ["_"] (letter | ["-+*/%:=&|"] | digit)*
-                   (letter | ["-+*/%:=&|"])
-                   (letter | ["-+*/%:=&|'"] | digit)*
+token Name ( ["_"] (letter | ["-+*/%:=<>&|."] | digit)*
+                   (letter | ["-+*/%:=<>&|."])
+                   (letter | ["-+*/%:=<>&|.'"] | digit)*
              ["_"]
            | ["_"]
            | letter
+             (letter | ["_-'"] | digit)*
+           | digit
+             (letter | ["_-'"] | digit)*
+             letter
              (letter | ["_-'"] | digit)*
            );
 
@@ -19,10 +23,11 @@ token OpName
   ( (letter | ["-+*/%"] | digit)*
     ["-+*/%"]
     (letter | ["-+*/%_'"] | digit)*
-  | (letter | ["-+*/%:=&|"] | digit)*
-    ["-+*/%:=&|"]
-    ["-+*/%:=&|"]
-    (letter | ["-+*/%_:=&|'"] | digit)*
+  | (letter | ["-+*/%=<>&|"] | digit)*
+    ["-+*/%=<>&|"]+
+    (letter | ["-+*/%_=<>&|'"] | digit)*
+  | ["-+*/%=<>&|."]* ["."] ["-+*/%=<>&|."]+
+  | ["-+*/%=<>&|."]+ ["."]
   );
 
 DDef. Dec ::= Name OptSig "=" Term ;

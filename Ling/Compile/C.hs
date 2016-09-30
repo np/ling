@@ -246,17 +246,32 @@ transIxName env x
 
 transOp :: EVar -> Maybe (Op2 C.Exp)
 transOp (Name v) = (\f x y -> C.EParen (f x y)) <$> case v of
-  "_+_"  -> Just C.Add
-  "_+D_" -> Just C.Add
-  "_*_"  -> Just C.Mul
-  "_*D_" -> Just C.Mul
-  "_/_"  -> Just C.Div
-  "_/D_" -> Just C.Div
-  "_%_"  -> Just C.Mod
-  "_%D_" -> Just C.Mod
-  "_-_"  -> Just C.Sub
-  "_-D_" -> Just C.Sub
-  _      -> Nothing
+  "_+_"   -> Just C.Add
+  "_+D_"  -> Just C.Add
+  "_*_"   -> Just C.Mul
+  "_*D_"  -> Just C.Mul
+  "_/_"   -> Just C.Div
+  "_/D_"  -> Just C.Div
+  "_%_"   -> Just C.Mod
+  "_%D_"  -> Just C.Mod
+  "_-_"   -> Just C.Sub
+  "_-D_"  -> Just C.Sub
+  "_==D_" -> Just C.Eq
+  "_==I_" -> Just C.Eq
+  "_==C_" -> Just C.Eq
+  "_<=D_" -> Just C.Eq
+  "_<=I_" -> Just C.Eq
+  "_<=C_" -> Just C.Eq
+  "_>=D_" -> Just C.Eq
+  "_>=I_" -> Just C.Eq
+  "_>=C_" -> Just C.Eq
+  "_<D_"  -> Just C.Eq
+  "_<I_"  -> Just C.Eq
+  "_<C_"  -> Just C.Eq
+  "_>D_"  -> Just C.Eq
+  "_>I_"  -> Just C.Eq
+  "_>C_"  -> Just C.Eq
+  _       -> Nothing
 
 transEVar :: Env -> EVar -> C.Ident
 transEVar env y = env ^. evars . at y ?| transName y
