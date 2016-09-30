@@ -2,7 +2,7 @@
 {- Sequential Fused program -}
 
 new_ten2 =
-  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < {~ A, ~ B}>)-> \ (ann : Allocation)-> proc ()
+  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < ~ A, ~ B >)-> \ (ann : Allocation)-> proc ()
   new/ann [ab : [A, B],nab : {~ A, ~ B}].
   ( split ab [a, b].
     ( @ pA (a)
@@ -30,7 +30,7 @@ new_fuse0_ten2_Int_dbl =
   c#pA <- 42).
   let pB#31ffa47257b7d93b8afeefbe1e750446b0cd9e04fc0e3b5e229556101a4b490b : < B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (d#pB)
   let b#pB : Int <- d#pB).
-  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < {~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c}> = (proc (nab#pC)
+  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < ~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (nab#pC)
   split nab#pC {na#pC, nb#pC}.
   let x#pC : Int <- na#pC.
   nb#pC <- (x#pC + x#pC)).
@@ -52,7 +52,7 @@ new_fuse1_ten2_Int_dbl =
   c#pA <- 42).
   let pB#31ffa47257b7d93b8afeefbe1e750446b0cd9e04fc0e3b5e229556101a4b490b : < B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (d#pB)
   let b#pB : Int <- d#pB).
-  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < {~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c}> = (proc (nab#pC)
+  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < ~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (nab#pC)
   split nab#pC {na#pC, nb#pC}.
   let x#pC : Int <- na#pC.
   nb#pC <- (x#pC + x#pC)).
@@ -73,7 +73,7 @@ new_fuse2_ten2_Int_dbl =
   c#pA <- 42).
   let pB#31ffa47257b7d93b8afeefbe1e750446b0cd9e04fc0e3b5e229556101a4b490b : < B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (d#pB)
   let b#pB : Int <- d#pB).
-  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < {~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c}> = (proc (nab#pC)
+  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < ~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (nab#pC)
   split nab#pC {na#pC, nb#pC}.
   let x#pC : Int <- na#pC.
   nb#pC <- (x#pC + x#pC)).
@@ -92,7 +92,7 @@ new_fuse3_ten2_Int_dbl =
   c#pA <- 42).
   let pB#31ffa47257b7d93b8afeefbe1e750446b0cd9e04fc0e3b5e229556101a4b490b : < B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (d#pB)
   let b#pB : Int <- d#pB).
-  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < {~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c}> = (proc (nab#pC)
+  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < ~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (nab#pC)
   split nab#pC {na#pC, nb#pC}.
   let x#pC : Int <- na#pC.
   nb#pC <- (x#pC + x#pC)).
@@ -108,7 +108,7 @@ new_fused_ten2_Int_dbl =
   c#pA <- 42).
   let pB#31ffa47257b7d93b8afeefbe1e750446b0cd9e04fc0e3b5e229556101a4b490b : < B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (d#pB)
   let b#pB : Int <- d#pB).
-  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < {~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c}> = (proc (nab#pC)
+  let pC#daaef59665fe2322d8ec3edfb3c8f635899cde8e3cd61a5e68051a6dd7e07443 : < ~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (nab#pC)
   split nab#pC {na#pC, nb#pC}.
   let x#pC : Int <- na#pC.
   nb#pC <- (x#pC + x#pC)).
@@ -124,7 +124,7 @@ new_ten2_Int_fwd =
   c#pA <- 42).
   let pB#31ffa47257b7d93b8afeefbe1e750446b0cd9e04fc0e3b5e229556101a4b490b : < B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (d#pB)
   let b#pB : Int <- d#pB).
-  let pC#d2b96815c21fe9cb6c54126a7ce0cca26cf91a880eca58337b7d596308f1adf2 : < {~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c}> = (proc (nab#pC)
+  let pC#d2b96815c21fe9cb6c54126a7ce0cca26cf91a880eca58337b7d596308f1adf2 : < ~ A#58c563cde134cc361a5d925c1e3848fb7ba1be21e1117171a7cb77110e8d4c2a, ~ B#ff463788bd40c59893d740b5312b9ed8028f951edec7df32aaf2d3c4b1371c9c > = (proc (nab#pC)
   split nab#pC {nab#0#pC : ?Int, nab#1#pC : !Int}.
   let x#nab#0#pC : Int <- nab#0#pC.
   nab#1#pC <- x#nab#0#pC).

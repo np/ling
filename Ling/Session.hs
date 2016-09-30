@@ -12,15 +12,6 @@ import           Ling.Prelude hiding (subst1)
 import           Ling.Scoped
 import           Prelude      hiding (log)
 
-unRepl :: RSession -> Session
-unRepl (s `Repl` r)
-  | litR1 `is` r = s
-  | otherwise    = error "unRepl: unexpected replicated session"
-
-wrapSessions :: Sessions -> Session
-wrapSessions (Sessions [s `Repl` (is litR1 -> True)]) = s
-wrapSessions ss                                       = Array ParK ss
-
 sessionStep :: Term -> Endom Session
 sessionStep tm (IO _ (Arg x mty) s) = mkLet__ $ subst1 (x, Ann mty tm) s
 sessionStep _  s                    = error $ "sessionStep: no steps " ++ show s

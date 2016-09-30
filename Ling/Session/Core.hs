@@ -1,9 +1,14 @@
 {-# LANGUAGE LambdaCase   #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Ling.Session.Core
-  ( array
+  ( wrapSessions
+  , tProto
+  , array
   , loli
   , oneS
+  , _OneS
+  , unsafeUnRepl
   , fwds
   , fwd
   , endS
@@ -22,11 +27,28 @@ import           Ling.Prelude
 import qualified Ling.Raw     as Raw
 import           Prelude      hiding (log)
 
-array :: TraverseKind -> [RSession] -> Session
-array k = Array k . Sessions
-
+-- oneS s = _OneS # s
 oneS :: Session -> RSession
 oneS s = Repl s ø
+
+_OneS :: Prism' RSession Session
+_OneS = prism oneS $ \case
+  sr@(Repl s r)
+    | r == ø    -> Right s
+    | otherwise -> Left sr
+
+unsafeUnRepl :: RSession -> Session
+unsafeUnRepl sr = sr ^? _OneS ?| error "unsafeUnRepl: unexpected replicated session"
+
+wrapSessions :: Sessions -> Session
+wrapSessions (Sessions [sr]) | Just s <- sr ^? _OneS = s
+wrapSessions ss                                      = Array ParK ss
+
+tProto :: [RSession] -> Typ
+tProto = TProto . Sessions . pure . oneS . wrapSessions . Sessions
+
+array :: TraverseKind -> [RSession] -> Session
+array k = Array k . Sessions
 
 loli :: Op2 Session
 loli s t = Array ParK . Sessions $ oneS <$> [dual s, t]
@@ -52,7 +74,7 @@ endS :: Prism' Session ()
 endS = only (Array SeqK ø)
 
 endRS :: Prism' RSession ()
-endRS = nearly (oneS (endS # ())) $ \(s `Repl` r) -> endS `is` s && litR1 `is` r
+endRS = nearly (oneS (endS # ())) $ \(s `Repl` r) -> (s & is endS) && (r & is litR1)
 
 endedS :: Iso' (Maybe Session) Session
 endedS = non' endS

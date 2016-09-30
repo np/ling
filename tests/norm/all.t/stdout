@@ -528,7 +528,7 @@ fake_div_mod_server_ten2 =
   | let n : Int <- rn )
 
 feed_fwd_send_then_recv =
-  \ (I : Type)-> \ (O : Type)-> \ (i : I)-> \ (f : (x : I)-> O)-> \ (p : < {!I.?O, ?I.!O}>)-> proc ()
+  \ (I : Type)-> \ (O : Type)-> \ (i : I)-> \ (f : (x : I)-> O)-> \ (p : < !I.?O, ?I.!O >)-> proc ()
   new [a : {!I.?O, ?I.!O},b : [?I.!O, !I.?O]].
   ( @ p (a)
   | split b [c, d].
@@ -558,7 +558,7 @@ feed_send =
   | let x : Int <- d )
 
 feed_send_par_recv =
-  \ (p : < {!Int, ?Int}>)-> \ (n : Int)-> proc ()
+  \ (p : < !Int, ?Int >)-> \ (n : Int)-> proc ()
   new [c : {!Int, ?Int},d : [?Int, !Int]].
   ( @ p (c)
   | split d [i, o].
@@ -899,7 +899,7 @@ split_nested_seq_core =
   fwd C (c, nc).
   fwd D (d, nd)
 
-group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]}> =
+group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < [: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :] > =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]})
   split c {i, o}.
   @ (split_nested_seq_core (~ A)(~ B)(~ C)(~ D)) {o, i}
@@ -1053,7 +1053,7 @@ mkfwd =
   \ (A : Session)-> proc (a : A, na : ~ A)
   fwd A (a, na)
 
-loli_id : (A : Session)-> < {~ A, A}> =
+loli_id : (A : Session)-> < ~ A, A > =
   \ (A : Session)-> proc (naa : {~ A, A})
   split naa {na, a}.
   @ (mkfwd (~ A)) {na, a}
@@ -1350,7 +1350,7 @@ new_seq_par_par =
   let i : Int <- e
 
 new_ten2 =
-  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < {~ A, ~ B}>)-> \ (ann : Allocation)-> proc ()
+  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < ~ A, ~ B >)-> \ (ann : Allocation)-> proc ()
   new/ann [ab : [A, B],nab : {~ A, ~ B}].
   ( split ab [a, b].
     ( @ pA (a)
@@ -1769,7 +1769,7 @@ plug_compose =
   | @ q {b', c})
 
 flat_par' =
-  \ (A : Session)-> \ (B : Session)-> \ (p : < {A, B}>)-> proc (a : A, b : B)
+  \ (A : Session)-> \ (B : Session)-> \ (p : < A, B >)-> proc (a : A, b : B)
   new [ab : {A, B},nanb].
   ( @ p (ab)
   | split nanb [na, nb].
@@ -1787,8 +1787,8 @@ plug_compose' =
   ( @ p {a, b}
   | @ q {b', c})
 
-plug_compose_par_par : (A : Session)-> (B : Session)-> (C : Session)-> (p : < {A, B}>)-> (q : < {~ B, C}>)-> < {A, C}> =
-  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < {A, B}>)-> \ (q : < {~ B, C}>)-> bump_par' A C (plug_compose' A B C (flat_par' A B p)(flat_par' (~ B)C q))
+plug_compose_par_par : (A : Session)-> (B : Session)-> (C : Session)-> (p : < A, B >)-> (q : < ~ B, C >)-> < A, C > =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < A, B >)-> \ (q : < ~ B, C >)-> bump_par' A C (plug_compose' A B C (flat_par' A B p)(flat_par' (~ B)C q))
 
 plug_send_recv =
   \ (p : < !Int, ?Int >)-> proc (c : !Int, d : ?Int)
@@ -2173,7 +2173,7 @@ split_fwd1_rcv =
   split c {d}.
   let x#d : Int <- d
 
-split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :]}> =
+split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < [: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :] > =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :]})
   split c {i, o}.
   split i [: na, nb, nc, nd :].
@@ -2237,7 +2237,7 @@ sum_int =
   let x#accn : Int <- accn.
   r <- x#accn
 
-switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {[A, B],C}} > =
+switch : (A : Session)-> (B : Session)-> (C : Session)-> < {~ A, [~ B, ~ C]}, {[A, B],C}> =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (c : {{~ A, [~ B, ~ C]}, {[A, B],C}})
   split c {i, o}.
   split i {na, nbc}.

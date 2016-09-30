@@ -299,6 +299,11 @@ reifyArray N.ParK = Par
 reifyArray N.SeqK = Seq
 reifyArray N.TenK = Ten
 
+unTProto :: N.Sessions -> N.Sessions
+unTProto = \case
+  N.Sessions [sr] | Just (N.Array N.ParK ss) <- sr ^? _OneS -> ss
+  ss                                                        -> ss
+
 instance Norm ATerm where
   type Normalized ATerm = N.Term
   reify = \case
@@ -306,16 +311,17 @@ instance Norm ATerm where
     N.Lit l                   -> Lit l
     N.Con n                   -> Con (reify n)
     N.TTyp                    -> TTyp
-    N.TProto ss               -> TProto (reify $ ss ^. N._Sessions)
+    N.TProto ss               -> TProto (reify $ (unTProto ss) ^. N._Sessions)
     N.TSession (N.Array k ss) -> reifyArray k (reify (ss ^. N._Sessions))
     e                         -> paren (reify e)
+
   norm = \case
     Var x      -> N.mkVar (norm x)
     Op x       -> error $ "Unexpected operator-part: " ++ show x
     Lit l      -> N.Lit l
     Con n      -> N.Con (norm n)
     TTyp       -> N.TTyp
-    TProto ss  -> N.TProto (N.Sessions (norm ss))
+    TProto ss  -> tProto (norm ss)
     End        -> (endS # ()) ^. N.tSession
     Par s      -> (N.Array N.ParK . N.Sessions $ norm s) ^. N.tSession
     Ten s      -> (N.Array N.TenK . N.Sessions $ norm s) ^. N.tSession
@@ -375,7 +381,7 @@ instance Norm Term where
     N.Lit l      -> RawApp (Lit l) []
     N.Con n      -> RawApp (Con (reify n)) []
     N.TTyp       -> RawApp TTyp []
-    N.TProto ss  -> RawApp (TProto (reify (ss ^. N._Sessions))) []
+    N.TProto ss  -> RawApp (TProto (reify (unTProto ss ^. N._Sessions))) []
     N.Proc cs p  -> TProc (reify cs) (reify p)
     N.Lam  arg s -> Lam  (reifyVarDec arg) (reify s)
     N.TFun arg s -> TFun (reifyVarDec arg) (reify s)

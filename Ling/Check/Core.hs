@@ -285,9 +285,8 @@ checkCPatt s = \case
 
 checkCPattR :: Scoped RSession -> CPatt -> TC Proto
 checkCPattR ss pat
-  | s `Repl` r <- ss ^. scoped
-  , litR1 `is` r = checkCPatt (ss $> s) pat
-  | otherwise    = tcError "Unexpected pattern for replicated session"
+  | Just s <- ss ^? scoped . _OneS = checkCPatt (ss $> s) pat
+  | otherwise = tcError "Unexpected pattern for replicated session"
 
 inferBranch :: (name, Term) -> TC (name, Typ)
 inferBranch (n,t) = (,) n <$> inferTerm t
@@ -316,7 +315,7 @@ inferProcTyp cds proc = do
   assert (proto' ^. isEmptyProto) $
     "These channels have not been introduced:" :
     prettyChanDecs proto'
-  return $ TProto (Sessions rs)
+  return $ tProto rs
 
 checkTyp :: Typ -> TC ()
 checkTyp = checkTerm TTyp

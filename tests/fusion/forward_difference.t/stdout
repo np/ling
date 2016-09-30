@@ -19,7 +19,7 @@ fwd_diff1 =
     bi <- (x - y).
     acci <- x)
 
-fwd_diff1_10 : < {[: ?Int ^ 11 :], [: !Int ^ 10 :]}> =
+fwd_diff1_10 : < [: ?Int ^ 11 :], [: !Int ^ 10 :] > =
   proc (c : {[: ?Int ^ 11 :], [: !Int ^ 10 :]})
   split c {a, b}.
   split a [: a0, ai ^ 10 :].
@@ -34,7 +34,7 @@ fwd_diff1_10 : < {[: ?Int ^ 11 :], [: !Int ^ 10 :]}> =
     bi <- (x - y).
     acci <- x)
 
-fwd_diff0 : (n : Int)-> < {[: ?Int ^ (0 + n):], [: !Int ^ n :]}> =
+fwd_diff0 : (n : Int)-> < [: ?Int ^ (0 + n):], [: !Int ^ n :] > =
   \ (n : Int)-> proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
   split c {c#0 : [: ?Int ^ n :], c#1 : [: !Int ^ n :]}.
   split c#0 [: c#0#0 ^ n : ?Int ^ n :].
@@ -44,7 +44,7 @@ fwd_diff0 : (n : Int)-> < {[: ?Int ^ (0 + n):], [: !Int ^ n :]}> =
     c#1#0 <- x#c#0#0)
 
 fwd_diff_succ =
-  \ (ann : Allocation)-> \ (n : Int)-> \ (m1 : Int)-> \ (p : < {[: ?Int ^ (m1 + n):], [: !Int ^ n :]}>)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
+  \ (ann : Allocation)-> \ (n : Int)-> \ (m1 : Int)-> \ (p : < [: ?Int ^ (m1 + n):], [: !Int ^ n :] >)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
   split ad {a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :]}.
   new/ann [: b : [: !Int ^ (m1 + n):], c :].
   split a [: a0, ai ^ (m1 + n):].
@@ -60,7 +60,7 @@ fwd_diff_succ =
     acci <- x)).
   @ p {c, d}
 
-fwd_diff2 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (2 + n):], [: !Int ^ n :]}> =
+fwd_diff2 : (ann : Allocation)-> (n : Int)-> < [: ?Int ^ (2 + n):], [: !Int ^ n :] > =
   \ (ann : Allocation)-> \ (n : Int)-> proc (ad : {[: ?Int ^ (2 + n):], [: !Int ^ n :]})
   split ad {a : [: ?Int ^ (1 + 1 + n):], d : [: !Int ^ n :]}.
   new/ann [: b : [: !Int ^ (1 + n):], c :].
@@ -87,7 +87,7 @@ fwd_diff2 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (2 + n):], [: !Int ^ n
     bi#p <- (x#p - y#p).
     acci#p <- x#p)
 
-fwd_diff2_10_alloc : < {[: ?Int ^ 12 :], [: !Int ^ 10 :]}> =
+fwd_diff2_10_alloc : < [: ?Int ^ 12 :], [: !Int ^ 10 :] > =
   proc (ad : {[: ?Int ^ 12 :], [: !Int ^ 10 :]})
   split ad {a : [: ?Int ^ 12 :], d : [: !Int ^ 10 :]}.
   new/alloc [: b : [: !Int ^ 11 :], c :].
@@ -114,7 +114,7 @@ fwd_diff2_10_alloc : < {[: ?Int ^ 12 :], [: !Int ^ 10 :]}> =
     bi <- (x - y).
     acci <- x)
 
-fwd_diff3 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (3 + n):], [: !Int ^ n :]}> =
+fwd_diff3 : (ann : Allocation)-> (n : Int)-> < [: ?Int ^ (3 + n):], [: !Int ^ n :] > =
   \ (ann : Allocation)-> \ (n : Int)-> proc (ad : {[: ?Int ^ (3 + n):], [: !Int ^ n :]})
   split ad {a : [: ?Int ^ (1 + 2 + n):], d : [: !Int ^ n :]}.
   new/ann [: b : [: !Int ^ (2 + n):], c :].
@@ -155,14 +155,14 @@ fwd_diff3 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (3 + n):], [: !Int ^ n
 
 recInt : (A : (n : Int)-> Type)-> (e : String)-> (z : A 0)-> (s : (n1 : Int)-> (a : A n1)-> A (1 + n1)) -> (n : Int)-> A n
 
-fwd_diff : (ann : Allocation)-> (m : Int)-> (n : Int)-> < {[: ?Int ^ (m + n):], [: !Int ^ n :]}> =
-  \ (ann : Allocation)-> \ (m0 : Int)-> \ (n : Int)-> recInt (\ (m : Int)-> < {[: ?Int ^ (m + n):], [: !Int ^ n :]}>)"m < 0" (proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
+fwd_diff : (ann : Allocation)-> (m : Int)-> (n : Int)-> < [: ?Int ^ (m + n):], [: !Int ^ n :] > =
+  \ (ann : Allocation)-> \ (m0 : Int)-> \ (n : Int)-> recInt (\ (m : Int)-> < [: ?Int ^ (m + n):], [: !Int ^ n :] >)"m < 0" (proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
   split c {c#0 : [: ?Int ^ n :], c#1 : [: !Int ^ n :]}.
   split c#0 [: c#0#0 ^ n : ?Int ^ n :].
   split c#1 [: c#1#0 ^ n : !Int ^ n :].
   sequence ^ n
     (let x#c#0#0 : Int <- c#0#0.
-    c#1#0 <- x#c#0#0)) (\ (m1 : Int)-> \ (p : < {[: ?Int ^ (m1 + n):], [: !Int ^ n :]}>)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
+    c#1#0 <- x#c#0#0)) (\ (m1 : Int)-> \ (p : < [: ?Int ^ (m1 + n):], [: !Int ^ n :] >)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
   split ad {a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :]}.
   new/ann [: b : [: !Int ^ (m1 + n):], c :].
   split a [: a0, ai ^ (m1 + n):].

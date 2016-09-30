@@ -568,7 +568,7 @@ fake_div_mod_server_ten2 =
   | let n : Int <- rn )
 
 feed_fwd_send_then_recv =
-  \ (I : Type)-> \ (O : Type)-> \ (i : I)-> \ (f : (x : I)-> O)-> \ (p : < {!I.?O, ?I.!O}>)-> proc ()
+  \ (I : Type)-> \ (O : Type)-> \ (i : I)-> \ (f : (x : I)-> O)-> \ (p : < !I.?O, ?I.!O >)-> proc ()
   new [a : {!I.?O, ?I.!O},b : [?I.!O, !I.?O]].
   ( @ p (a)
   | split b [c, d].
@@ -604,7 +604,7 @@ feed_send =
   | let x : Int <- d )
 
 feed_send_par_recv =
-  \ (p : < {!Int, ?Int}>)-> \ (n : Int)-> proc ()
+  \ (p : < !Int, ?Int >)-> \ (n : Int)-> proc ()
   new [c : {!Int, ?Int},d : [?Int, !Int]].
   ( @ p (c)
   | split d [i, o].
@@ -647,7 +647,7 @@ fwd_diff1 =
     bi <- (x - y).
     acci <- x)
 
-fwd_diff1_10 : < {[: ?Int ^ 11 :], [: !Int ^ 10 :]}> =
+fwd_diff1_10 : < [: ?Int ^ 11 :], [: !Int ^ 10 :] > =
   proc (c : {[: ?Int ^ 11 :], [: !Int ^ 10 :]})
   split c {a, b}.
   split a [: a0, ai ^ 10 :].
@@ -662,7 +662,7 @@ fwd_diff1_10 : < {[: ?Int ^ 11 :], [: !Int ^ 10 :]}> =
     bi <- (x - y).
     acci <- x)
 
-fwd_diff0 : (n : Int)-> < {[: ?Int ^ (0 + n):], [: !Int ^ n :]}> =
+fwd_diff0 : (n : Int)-> < [: ?Int ^ (0 + n):], [: !Int ^ n :] > =
   \ (n : Int)-> proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
   split c {c#0 : [: ?Int ^ n :], c#1 : [: !Int ^ n :]}.
   split c#0 [: c#0#0 ^ n : ?Int ^ n :].
@@ -672,7 +672,7 @@ fwd_diff0 : (n : Int)-> < {[: ?Int ^ (0 + n):], [: !Int ^ n :]}> =
     c#1#0 <- x#c#0#0)
 
 fwd_diff_succ =
-  \ (ann : Allocation)-> \ (n : Int)-> \ (m1 : Int)-> \ (p : < {[: ?Int ^ (m1 + n):], [: !Int ^ n :]}>)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
+  \ (ann : Allocation)-> \ (n : Int)-> \ (m1 : Int)-> \ (p : < [: ?Int ^ (m1 + n):], [: !Int ^ n :] >)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
   split ad {a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :]}.
   new/ann [: b : [: !Int ^ (m1 + n):], c :].
   split a [: a0, ai ^ (m1 + n):].
@@ -688,7 +688,7 @@ fwd_diff_succ =
     acci <- x)).
   @ p {c, d}
 
-fwd_diff2 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (2 + n):], [: !Int ^ n :]}> =
+fwd_diff2 : (ann : Allocation)-> (n : Int)-> < [: ?Int ^ (2 + n):], [: !Int ^ n :] > =
   \ (ann : Allocation)-> \ (n : Int)-> proc (ad : {[: ?Int ^ (2 + n):], [: !Int ^ n :]})
   split ad {a : [: ?Int ^ (1 + 1 + n):], d : [: !Int ^ n :]}.
   new/ann [: b : [: !Int ^ (1 + n):], c :].
@@ -715,7 +715,7 @@ fwd_diff2 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (2 + n):], [: !Int ^ n
     bi#p <- (x#p - y#p).
     acci#p <- x#p)
 
-fwd_diff2_10_alloc : < {[: ?Int ^ 12 :], [: !Int ^ 10 :]}> =
+fwd_diff2_10_alloc : < [: ?Int ^ 12 :], [: !Int ^ 10 :] > =
   proc (ad : {[: ?Int ^ 12 :], [: !Int ^ 10 :]})
   split ad {a : [: ?Int ^ 12 :], d : [: !Int ^ 10 :]}.
   new/alloc [: b : [: !Int ^ 11 :], c :].
@@ -742,7 +742,7 @@ fwd_diff2_10_alloc : < {[: ?Int ^ 12 :], [: !Int ^ 10 :]}> =
     bi#p <- (x#p - y#p).
     acci#p <- x#p)
 
-fwd_diff3 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (3 + n):], [: !Int ^ n :]}> =
+fwd_diff3 : (ann : Allocation)-> (n : Int)-> < [: ?Int ^ (3 + n):], [: !Int ^ n :] > =
   \ (ann : Allocation)-> \ (n : Int)-> proc (ad : {[: ?Int ^ (3 + n):], [: !Int ^ n :]})
   split ad {a : [: ?Int ^ (1 + 2 + n):], d : [: !Int ^ n :]}.
   new/ann [: b : [: !Int ^ (2 + n):], c :].
@@ -783,14 +783,14 @@ fwd_diff3 : (ann : Allocation)-> (n : Int)-> < {[: ?Int ^ (3 + n):], [: !Int ^ n
 
 recInt : (A : (n : Int)-> Type)-> (e : String)-> (z : A 0)-> (s : (n1 : Int)-> (a : A n1)-> A (1 + n1)) -> (n : Int)-> A n
 
-fwd_diff : (ann : Allocation)-> (m : Int)-> (n : Int)-> < {[: ?Int ^ (m + n):], [: !Int ^ n :]}> =
-  \ (ann : Allocation)-> \ (m0 : Int)-> \ (n : Int)-> recInt (\ (m : Int)-> < {[: ?Int ^ (m + n):], [: !Int ^ n :]}>)"m < 0" (proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
+fwd_diff : (ann : Allocation)-> (m : Int)-> (n : Int)-> < [: ?Int ^ (m + n):], [: !Int ^ n :] > =
+  \ (ann : Allocation)-> \ (m0 : Int)-> \ (n : Int)-> recInt (\ (m : Int)-> < [: ?Int ^ (m + n):], [: !Int ^ n :] >)"m < 0" (proc (c : {[: ?Int ^ (0 + n):], [: !Int ^ n :]})
   split c {c#0 : [: ?Int ^ n :], c#1 : [: !Int ^ n :]}.
   split c#0 [: c#0#0 ^ n : ?Int ^ n :].
   split c#1 [: c#1#0 ^ n : !Int ^ n :].
   sequence ^ n
     (let x#c#0#0 : Int <- c#0#0.
-    c#1#0 <- x#c#0#0)) (\ (m1 : Int)-> \ (p : < {[: ?Int ^ (m1 + n):], [: !Int ^ n :]}>)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
+    c#1#0 <- x#c#0#0)) (\ (m1 : Int)-> \ (p : < [: ?Int ^ (m1 + n):], [: !Int ^ n :] >)-> proc (ad : {[: ?Int ^ ((1 + m1)+ n):], [: !Int ^ n :]})
   split ad {a : [: ?Int ^ (1 + m1 + n):], d : [: !Int ^ n :]}.
   new/ann [: b : [: !Int ^ (m1 + n):], c :].
   split a [: a0, ai ^ (m1 + n):].
@@ -1112,7 +1112,7 @@ split_nested_seq_core =
   fwd C (c, nc).
   fwd D (d, nd)
 
-group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]}> =
+group_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < [: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :] > =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: [: ~ A, ~ B :], [: ~ C, ~ D :] :], [: A, B, C, D :]})
   split c {i, o}.
   split o [: na, nb, nc, nd :].
@@ -1775,7 +1775,7 @@ mkfwd =
   \ (A : Session)-> proc (a : A, na : ~ A)
   fwd A (a, na)
 
-loli_id : (A : Session)-> < {~ A, A}> =
+loli_id : (A : Session)-> < ~ A, A > =
   \ (A : Session)-> proc (naa : {~ A, A})
   split naa {na, a}.
   fwd (~ A)(na, a)
@@ -2195,7 +2195,7 @@ new_seq_par_par =
   let i : Int <- e
 
 new_ten2 =
-  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < {~ A, ~ B}>)-> \ (ann : Allocation)-> proc ()
+  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < ~ A, ~ B >)-> \ (ann : Allocation)-> proc ()
   new/ann [ab : [A, B],nab : {~ A, ~ B}].
   ( split ab [a, b].
     ( @ pA (a)
@@ -2691,7 +2691,7 @@ plug_compose =
   | @ q {b', c})
 
 flat_par' =
-  \ (A : Session)-> \ (B : Session)-> \ (p : < {A, B}>)-> proc (a : A, b : B)
+  \ (A : Session)-> \ (B : Session)-> \ (p : < A, B >)-> proc (a : A, b : B)
   new [ab : {A, B},nanb].
   ( @ p (ab)
   | split nanb [na, nb].
@@ -2709,8 +2709,8 @@ plug_compose' =
   ( @ p {a, b}
   | @ q {b', c})
 
-plug_compose_par_par : (A : Session)-> (B : Session)-> (C : Session)-> (p : < {A, B}>)-> (q : < {~ B, C}>)-> < {A, C}> =
-  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < {A, B}>)-> \ (q : < {~ B, C}>)-> proc (ab : {A, C})
+plug_compose_par_par : (A : Session)-> (B : Session)-> (C : Session)-> (p : < A, B >)-> (q : < ~ B, C >)-> < A, C > =
+  \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (p : < A, B >)-> \ (q : < ~ B, C >)-> proc (ab : {A, C})
   split ab {a, b}.
   new [b#p : B, b'#p : ~ B].
   ( new [ab#p#p : {A, B},nanb#p#p].
@@ -3111,7 +3111,7 @@ split_fwd1_rcv =
   split c {d}.
   let x#d : Int <- d
 
-split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < {[: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :]}> =
+split_nested_seq : (A : Session)-> (B : Session)-> (C : Session)-> (D : Session)-> < [: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :] > =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> \ (D : Session)-> proc (c : {[: ~ A, ~ B, ~ C, ~ D :], [: [: A, B :], [: C, D :] :]})
   split c {i, o}.
   split i [: na, nb, nc, nd :].
@@ -3181,7 +3181,7 @@ sum_int =
   let x#accn : Int <- accn.
   r <- x#accn
 
-switch : (A : Session)-> (B : Session)-> (C : Session)-> < {{~ A, [~ B, ~ C]}, {[A, B],C}} > =
+switch : (A : Session)-> (B : Session)-> (C : Session)-> < {~ A, [~ B, ~ C]}, {[A, B],C}> =
   \ (A : Session)-> \ (B : Session)-> \ (C : Session)-> proc (c : {{~ A, [~ B, ~ C]}, {[A, B],C}})
   split c {i, o}.
   split i {na, nbc}.

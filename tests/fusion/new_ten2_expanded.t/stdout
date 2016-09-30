@@ -2,7 +2,7 @@
 {- Sequential Fused Expanded program -}
 
 new_ten2 =
-  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < {~ A, ~ B}>)-> \ (ann : Allocation)-> proc ()
+  \ (A : Session)-> \ (B : Session)-> \ (pA : < A >)-> \ (pB : < B >)-> \ (pC : < ~ A, ~ B >)-> \ (ann : Allocation)-> proc ()
   new/ann [ab : [A, B],nab : {~ A, ~ B}].
   ( split ab [a, b].
     ( @ pA (a)

@@ -146,9 +146,9 @@ sessionStatus dflt l ss =
                       [(l, Empty)]
 
 rsessionStatus :: (RW -> Status) -> Location -> Scoped RSession -> [(Location,Status)]
-rsessionStatus dflt l ssr@(Scoped _ _ sr@(s `Repl` r))
-  | litR1 `is` r = sessionStatus  dflt l (ssr $> s)
-  | otherwise    = sessionsStatus dflt l (ssr $> Sessions [sr])
+rsessionStatus dflt l ssr@(Scoped _ _ sr)
+  | Just s <- sr ^? _OneS = sessionStatus  dflt l (ssr $> s)
+  | otherwise             = sessionsStatus dflt l (ssr $> Sessions [sr])
 
 isReadyFor :: Channel -> RW -> Env -> Bool
 isReadyFor c rw env
@@ -230,7 +230,7 @@ transNew spat =
     NewChans _ cds0 ->
       addChanDecs Normal . (spat $>)
             $ [ Arg c cOS | ChanDec c _ cOS <- cds0 ]
-            & each . argBody . _Just %~ unRepl
+            & each . argBody . _Just %~ unsafeUnRepl
             & unsafePartsOf (each . argBody) %~ extractDuals
     NewChan c ty ->
       addChanDecs Unique $ spat $> [Arg c (sendS ty (endS # ()))]
