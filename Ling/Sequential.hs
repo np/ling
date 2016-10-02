@@ -267,6 +267,7 @@ transProcs env0 p0s waiting k0
           transProcsProgress env proc0 procs =
             transProcs env (ps ++ reverse waiting ++ procs) [] $ \env2 procs' ->
               k1 env2 (proc0 `dotP` procs')
+          transDelay = transProcs env1 ps (p0 : waiting) k1
       in
       case p0 of
         Replicate _ t x p ->
@@ -296,17 +297,19 @@ transProcs env0 p0s waiting k0
               transPref env1 pref $ \env2 proc' ->
                 transProcsProgress env2 proc' [p1]
 
-            _ ->
-              transProcs env1 ps (p0 : waiting) k1
+            _ -> transDelay
 
         LetP defs0 proc0 ->
-          transProc (env1 & edefs <>~ defs0) proc0 $ \env2 proc0' ->
-            k1 env2 (defs0 `dotP` proc0')
+          transProcsProgress (env1 & edefs <>~ defs0) defs0 [proc0]
 
-        proc0 `Dot` proc1 ->
-          transProc env1 proc0 $ \env2 proc0' ->
-            transProc env2 proc1 $ \env3 proc1' ->
-              k1 env3 (proc0' `dotP` proc1')
+        proc0 `Dot` proc1
+          | null ps ->
+              (if proc0 & is _Replicate then id else
+                trace ("[WARNING] Sequencing process `" ++ pretty proc0 ++ "`")) $
+              transProc env1 proc0 $ \env2 proc0' ->
+                transProcsProgress env2 proc0' [proc1]
+          | otherwise ->
+              transDelay
 
         _ -> error "IMPOSSIBLE: transProcs"
 
