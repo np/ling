@@ -120,47 +120,47 @@ fldI n = C.Ident ("f" ++ show n)
 uniI :: Int -> C.Ident
 uniI n = C.Ident ("u" ++ show n)
 
+-- Note that we could define `Unique` as `fix Skip`.
+data LocKind
+  = Normal
+  | Unique
+  | Skip LocKind
+  deriving (Show)
+
 data Loc = Loc
-  { _locLVal  :: C.LVal
-  , _locSplit :: TraverseKind -> [ChanDec] -> [(Channel, Loc)]
-  , _locArr   :: C.Exp -> Loc
-  , _locPtr   :: Loc
+  { _locKind :: LocKind
+  , _locLVal :: C.LVal
   }
+  deriving (Show)
 
 $(makeLenses ''Loc)
 
-instance Show Loc where
-  show = show . _locLVal
+locOp :: Endom C.LVal -> Endom Loc
+locOp f loc@(Loc k0 lval0) =
+  case k0 of
+    Normal  -> Loc Normal $ f lval0
+    Unique  -> loc
+    Skip k1 -> Loc k1 lval0
 
-{- Special case:
-   {S}/[S] has the same implementation as S.
-   See tupQ and transSplit  -}
-protoLoc :: C.LVal -> Loc -> Loc
-protoLoc lval0 self = Loc
-  { _locLVal  = lval0
-  , _locSplit = \_ cds ->
+locSplit :: Loc -> TraverseKind -> [ChanDec] -> [(Channel, Loc)]
+locSplit loc@(Loc k0 lval0) _ cds =
+  case k0 of
+    Normal ->
       case _cdChan <$> cds of
-        [d] -> [ (d, self) ]
-        ds  -> [ (d, mkLoc (lFld (self ^. locLVal) (fldI n)))
+        [d] -> [ (d, loc) ]
+        ds  -> [ (d, Loc Normal (lFld lval0 (fldI n)))
                | (d,n) <- zip ds [0..]
                ]
-  , _locArr = mkLoc . C.LArr (self ^. locLVal)
-  , _locPtr = mkLoc $ C.LPtr (self ^. locLVal)
-  }
+    Unique ->
+      [ (cd ^. cdChan, loc) | cd <- cds ]
+    Skip k1 ->
+      [ (cd ^. cdChan, Loc k1 lval0) | cd <- cds ]
 
-mkLoc :: C.LVal -> Loc
-mkLoc = fix . protoLoc
+locArr :: Loc -> C.Exp -> Loc
+locArr loc = flip locOp loc . flip C.LArr
 
-protoUniqLoc :: C.LVal -> Loc -> Loc
-protoUniqLoc lval0 self = Loc
-  { _locLVal  = lval0
-  , _locSplit = \_ cds -> [ (cd ^. cdChan, self) | cd <- cds ]
-  , _locArr   = \_ -> self
-  , _locPtr   = error "IMPOSSIBLE: protoUniqLoc"
-  }
-
-mkUniqLoc :: C.LVal -> Loc
-mkUniqLoc = fix . protoUniqLoc
+locPtr :: Loc -> Loc
+locPtr = locOp C.LPtr
 
 type EVar = Name
 
@@ -360,7 +360,7 @@ transProc env0 proc0 =
         transProc env3 proc2]
       where
         (env2, i) = transIxName env1 xi
-        slice l = l ^. locArr $ C.EVar i
+        slice l = locArr l $ C.EVar i
         env3 = env2 & locs . mapped %~ slice
                     & addEVar xi i
 
@@ -384,8 +384,6 @@ transNewPatt :: Env -> NewPatt -> (Env, [C.Stm])
 transNewPatt env = \case
   NewChans _ cds -> (env', sDec typ cid C.NoInit)
     where
-      -- Here we could use a variation of mkUniqLoc which would ignore the
-      -- first level(s) of arrays.
       -- Instead of extractSession we should either have a more general
       -- mechanism to extract the underlying (session then) type.
       -- Ideally type inference/checking should fill the holes.
@@ -394,14 +392,16 @@ transNewPatt env = \case
       s    = log $ extractSession cOSs -- this can be wrong with allocations of
                                        -- the form [:S,[:~S,S:]^n,~S:]
       cid  = transName (cs ^?! _head)
-      l    = mkLoc $ C.LVar cid
+      i    = C.LVar cid
       typ  = transRSession env s
-      env' = addChans [(c,l) | c <- cs] env
+      env' = addChans [(cd ^. cdChan, Loc (k cd) i) | cd <- cds] env
+      k cd | cd ^. cdRepl == ø = Normal
+           | otherwise         = Skip (Skip Normal)
 
   NewChan c ty -> (env', sDec typ cid C.NoInit)
     where
       cid  = transName c
-      l    = mkUniqLoc $ C.LVar cid
+      l    = Loc Unique $ C.LVar cid
       typ  = transCTyp env C.NoQual ty
       env' = addChans [(c,l)] env
 
@@ -455,7 +455,7 @@ stdFor i t =
 
 {- See protoLoc.locSplit about the special case -}
 transSplit :: Name -> TraverseKind -> [ChanDec] -> Endom Env
-transSplit c k cds env = rmChan c $ addChans (((env ! c) ^. locSplit) k cds) env
+transSplit c k cds env = rmChan c $ addChans (locSplit (env ! c) k cds) env
 
 unionT :: [ATyp] -> ATyp
 unionT ts
@@ -561,11 +561,11 @@ isPtrQTyp _                = True
 mkPtrTyp :: AQTyp -> (AQTyp, Endom Loc)
 mkPtrTyp ctyp
   | isPtrQTyp ctyp = (ctyp, id)
-  | otherwise      = (ctyp & aqATyp %~ tPtr, _locPtr)
+  | otherwise      = (ctyp & aqATyp %~ tPtr, locPtr)
 
 transChanDec :: Env -> ChanDec -> (C.Dec , (Channel, Loc))
 transChanDec env (ChanDec c _ (Just session)) =
-    (dDec ctyp d, (c, trloc (mkLoc (C.LVar d))))
+    (dDec ctyp d, (c, trloc (Loc Normal (C.LVar d))))
   where
     d             = transName c
     (ctyp, trloc) = mkPtrTyp (transRSession env session)
