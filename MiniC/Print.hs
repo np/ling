@@ -82,6 +82,10 @@ instance Print Ident where
   prt _ (Ident i) = doc (showString ( i))
 
 
+instance Print TIdent where
+  prt _ (TIdent i) = doc (showString ( i))
+
+
 
 instance Print Prg where
   prt i e = case e of
@@ -102,9 +106,7 @@ instance Print Def where
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print Typ where
   prt i e = case e of
-    TInt -> prPrec i 0 (concatD [doc (showString "int")])
-    TDouble -> prPrec i 0 (concatD [doc (showString "double")])
-    TChar -> prPrec i 0 (concatD [doc (showString "char")])
+    TName tident -> prPrec i 0 (concatD [prt 0 tident])
     TStr flds -> prPrec i 0 (concatD [doc (showString "struct"), doc (showString "{"), prt 0 flds, doc (showString "}")])
     TUni flds -> prPrec i 0 (concatD [doc (showString "union"), doc (showString "{"), prt 0 flds, doc (showString "}")])
     TEnum enms -> prPrec i 0 (concatD [doc (showString "enum"), doc (showString "{"), prt 0 enms, doc (showString "}")])

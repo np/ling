@@ -38,13 +38,17 @@ Character literals //Char// have the form
 
 
 
+TIdent literals are recognized by the regular expression
+`````{"int"} | {"char"} | {"double"}`````
+
+
 ===Reserved words and symbols===
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
 The reserved words used in MiniC are the following:
-  | ``break`` | ``case`` | ``char`` | ``const``
-  | ``double`` | ``enum`` | ``for`` | ``int``
-  | ``struct`` | ``switch`` | ``union`` | ``void``
+  | ``break`` | ``case`` | ``const`` | ``enum``
+  | ``for`` | ``struct`` | ``switch`` | ``union``
+  | ``void`` |  |  | 
 
 The symbols used in MiniC are the following:
   | , | ( | ) | {
@@ -76,9 +80,7 @@ All other symbols are terminals.
   |  |  **|**  | //Dec// ``;`` 
   | //[Def]// | -> | **eps**
   |  |  **|**  | //Def// //[Def]// 
-  | //Typ// | -> | ``int`` 
-  |  |  **|**  | ``double`` 
-  |  |  **|**  | ``char`` 
+  | //Typ// | -> | //TIdent// 
   |  |  **|**  | ``struct`` ``{`` //[Fld]// ``}`` 
   |  |  **|**  | ``union`` ``{`` //[Fld]// ``}`` 
   |  |  **|**  | ``enum`` ``{`` //[Enm]// ``}`` 

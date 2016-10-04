@@ -85,27 +85,25 @@ import Ling.ErrM
   '^' { PT _ (TS _ 28) }
   'break' { PT _ (TS _ 29) }
   'case' { PT _ (TS _ 30) }
-  'char' { PT _ (TS _ 31) }
-  'const' { PT _ (TS _ 32) }
-  'double' { PT _ (TS _ 33) }
-  'enum' { PT _ (TS _ 34) }
-  'for' { PT _ (TS _ 35) }
-  'int' { PT _ (TS _ 36) }
-  'struct' { PT _ (TS _ 37) }
-  'switch' { PT _ (TS _ 38) }
-  'union' { PT _ (TS _ 39) }
-  'void' { PT _ (TS _ 40) }
-  '{' { PT _ (TS _ 41) }
-  '|' { PT _ (TS _ 42) }
-  '||' { PT _ (TS _ 43) }
-  '}' { PT _ (TS _ 44) }
-  '~' { PT _ (TS _ 45) }
+  'const' { PT _ (TS _ 31) }
+  'enum' { PT _ (TS _ 32) }
+  'for' { PT _ (TS _ 33) }
+  'struct' { PT _ (TS _ 34) }
+  'switch' { PT _ (TS _ 35) }
+  'union' { PT _ (TS _ 36) }
+  'void' { PT _ (TS _ 37) }
+  '{' { PT _ (TS _ 38) }
+  '|' { PT _ (TS _ 39) }
+  '||' { PT _ (TS _ 40) }
+  '}' { PT _ (TS _ 41) }
+  '~' { PT _ (TS _ 42) }
 
 L_ident  { PT _ (TV $$) }
 L_integ  { PT _ (TI $$) }
 L_doubl  { PT _ (TD $$) }
 L_quoted { PT _ (TL $$) }
 L_charac { PT _ (TC $$) }
+L_TIdent { PT _ (T_TIdent $$) }
 
 
 %%
@@ -115,6 +113,7 @@ Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
 Double  :: { Double }  : L_doubl  { (read ( $1)) :: Double }
 String  :: { String }  : L_quoted {  $1 }
 Char    :: { Char }    : L_charac { (read ( $1)) :: Char }
+TIdent    :: { TIdent} : L_TIdent { TIdent ($1)}
 
 Prg :: { Prg }
 Prg : ListDef { MiniC.Abs.PPrg (reverse $1) }
@@ -131,9 +130,7 @@ Def : Dec '(' ListDec ')' '{' ListStm '}' { MiniC.Abs.DDef $1 $3 (reverse $6) }
 ListDef :: { [Def] }
 ListDef : {- empty -} { [] } | ListDef Def { flip (:) $1 $2 }
 Typ :: { Typ }
-Typ : 'int' { MiniC.Abs.TInt }
-    | 'double' { MiniC.Abs.TDouble }
-    | 'char' { MiniC.Abs.TChar }
+Typ : TIdent { MiniC.Abs.TName $1 }
     | 'struct' '{' ListFld '}' { MiniC.Abs.TStr (reverse $3) }
     | 'union' '{' ListFld '}' { MiniC.Abs.TUni (reverse $3) }
     | 'enum' '{' ListEnm '}' { MiniC.Abs.TEnum $3 }

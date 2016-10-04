@@ -1,6 +1,8 @@
 comment "//" ;
 comment "/*" "*/" ;
 
+token TIdent {"int"} | {"char"} | {"double"};
+
 PPrg. Prg ::= [Def] ;
 
 Dec. Dec ::= QTyp Ident [Arr] ;
@@ -13,9 +15,7 @@ DDec. Def ::= Dec ";" ;
 
 separator Def "" ;
 
-TInt.    Typ ::= "int" ;
-TDouble. Typ ::= "double" ;
-TChar.   Typ ::= "char" ;
+TName.   Typ ::= TIdent ;
 TStr.    Typ ::= "struct" "{" [Fld] "}" ;
 TUni.    Typ ::= "union"  "{" [Fld] "}" ;
 TEnum.   Typ ::= "enum"   "{" [Enm] "}" ;

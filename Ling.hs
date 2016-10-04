@@ -184,6 +184,7 @@ ccall : (A : Type)-> String -> A
 Int2Double = ccall (Int -> Double) "(double)"
 Int2Char = ccall (Int -> Char) "(char)"
 sqrtD = ccall (Double -> Double) "sqrt"
+ctype : String -> Type
 |]
 
 primsN :: N.Program

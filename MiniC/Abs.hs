@@ -8,6 +8,7 @@ module MiniC.Abs where
 
 
 newtype Ident = Ident String deriving (Eq, Ord, Show, Read)
+newtype TIdent = TIdent String deriving (Eq, Ord, Show, Read)
 data Prg = PPrg [Def]
   deriving (Eq, Ord, Show, Read)
 
@@ -18,9 +19,7 @@ data Def = DDef Dec [Dec] [Stm] | DSig Dec [Dec] | DDec Dec
   deriving (Eq, Ord, Show, Read)
 
 data Typ
-    = TInt
-    | TDouble
-    | TChar
+    = TName TIdent
     | TStr [Fld]
     | TUni [Fld]
     | TEnum [Enm]

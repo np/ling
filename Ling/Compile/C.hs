@@ -76,11 +76,17 @@ tVoidPtr = (C.TPtr C.TVoid, [])
 tArr :: ATyp -> C.Exp -> ATyp
 tArr (ty, arrs) e = (ty, C.AArr e : arrs)
 
+tName :: String -> ATyp
+tName s = (C.TName (C.TIdent s), [])
+
+tChar :: ATyp
+tChar = tName "char"
+
 tInt :: ATyp
-tInt = (C.TInt, [])
+tInt = tName "int"
 
 tDouble :: ATyp
-tDouble = (C.TDouble, [])
+tDouble = tName "double"
 
 -- unused
 eFld :: C.Exp -> C.Ident -> C.Exp
@@ -182,12 +188,12 @@ scope = to $ \env -> Scoped (env ^. edefs) ø ()
 addScope :: Scoped a -> Endom Env
 addScope s = edefs <>~ s ^. ldefs
 
-basicTypes :: Map Name C.Typ
+basicTypes :: Map Name ATyp
 basicTypes = l2m [ (Name n, t) | (n,t) <-
-  [("Int", C.TInt)
-  ,("Double", C.TDouble)
-  ,("String", C.TPtr C.TChar)
-  ,("Char", C.TChar)] ]
+  [("Int", tInt)
+  ,("Double", tDouble)
+  ,("String", tPtr tChar)
+  ,("Char", tChar)] ]
 
 primTypes :: Set Name
 primTypes = l2s (Name "Vec" : keys basicTypes)
@@ -273,8 +279,8 @@ transOp (Name v) = (\f x y -> C.EParen (f x y)) <$> case v of
   "_>C_"  -> Just C.Eq
   _       -> Nothing
 
-transEVar :: Env -> EVar -> C.Ident
-transEVar env y = env ^. evars . at y ?| transName y
+transEVar :: Env -> EVar -> C.Exp
+transEVar env y = C.EVar (env ^. evars . at y ?| transName y)
 
 mkCase :: C.Ident -> [C.Stm] -> C.Branch
 mkCase = C.Case . C.EVar
@@ -307,9 +313,7 @@ transLiteral l = case l of
   LChar    c -> C.LChar    c
 
 eApp :: C.Ident -> [C.Exp] -> C.Exp
-eApp x = \case
-  [] -> C.EVar x
-  es -> C.EApp (C.EVar x) es
+eApp x es = C.EApp (C.EVar x) es
 
 transTerm :: Env -> Term -> C.Exp
 transTerm env0 tm0 =
@@ -324,7 +328,7 @@ transTerm env0 tm0 =
    | env1 ^. types . contains f -> dummyTyp
    | otherwise ->
      case transTerm env1 <$> es0 of
-       []                             -> eApp (transEVar env1 f) []
+       []                             -> transEVar env1 f
        [e0,e1] | Just d <- transOp f  -> d e0 e1
        es                             -> eApp (transName f) es
   Let{}          -> error $ "IMPOSSIBLE: Let after reduce (" ++ ppShow tm1 ++ ")"
@@ -456,7 +460,7 @@ transPref env (Prll acts0) proc1 =
 {- stdFor i t body ~~~> for (int i = 0; i < t; i = i + 1) { body } -}
 stdFor :: C.Ident -> C.Exp -> [C.Stm] -> C.Stm
 stdFor i t =
-  C.SFor (C.SDec (C.Dec (C.QTyp C.NoQual C.TInt) i []) (C.SoInit (C.ELit (C.LInteger 0))))
+  C.SFor (C.SDec (C.Dec (C.QTyp C.NoQual (C.TName (C.TIdent "int"))) i []) (C.SoInit (C.ELit (C.LInteger 0))))
          (C.Lt (C.EVar i) t)
          (C.SPut (C.LVar i) (C.Add (C.EVar i) (C.ELit (C.LInteger 1))))
 
@@ -503,9 +507,12 @@ transTyp env0 ty0 =
     ty1  = sty1 ^. scoped
   in case ty1 of
   Def _ x es
-    | null es, Just t <- Map.lookup x basicTypes -> (t, [])
+    | null es, Just t <- Map.lookup x basicTypes -> t
     | otherwise ->
     case (unName # x, es) of
+      ("ctype", [e])
+        | Lit (LString s) <- reduce (env1 ^. scope $> e) ^. reduced . scoped ->
+            tName s
       ("Vec", [a,e])
         | env1 ^. farr, Just i <- reduce (env1 ^. scope $> e) ^? reduced . scoped . _Lit . _LInteger ->
            -- Here we could use transTerm if we could still fallback on a
