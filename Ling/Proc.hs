@@ -16,6 +16,7 @@ module Ling.Proc
   , fetchActProc
   , procActs
   , procActsChans
+  , composeProc
 
   , fetchActPref -- Unused
 
@@ -306,6 +307,31 @@ fetchActProc' pred f = \case
   proc0 `Dot` proc1
     | pred (fcProcSetCheck proc0) -> (`dotP` proc1) <$> fetchActProc' pred f proc0
     | otherwise                   -> (proc0 `dotP`) <$> fetchActProc' pred f proc1
+
+composeProc :: [Term] -> TraverseKind -> [Bool] -> [Bool] -> Term -> Term -> Term
+composeProc anns k pat0 pat1 proc0 proc1 =
+  Proc (cd0_old ++ cd1_old) $
+    new (zip cd0_new cd1_new) $
+    comb (toProc . At proc0 $ atPat cd0)
+         (toProc . At proc1 $ atPat cd1)
+  where
+    comb =
+      case k of
+        SeqK -> dotP
+        _    -> (<>)
+    new = \case
+      [] -> id
+      xs -> dotP $ Order [ Nu anns (ArrayP k (_Chans # [x,y])) | (x,y) <- xs ]
+    atPat = \case
+      [x] -> ChanP x
+      xs  -> ArrayP ParK (_Chans # xs)
+    cds b n = [ ChanDec  (Name (b ++ show i)) (litR1 # ()) Nothing
+              | i <- [0 .. n - 1] ]
+    cd0 = cds "c" (length pat0)
+    cd1 = cds "d" (length pat1)
+    split cd pat = bimap (map fst) (map fst) . partition snd $ zip cd pat
+    (cd0_old, cd0_new) = split cd0 pat0
+    (cd1_old, cd1_new) = split cd1 pat1
 
 {-
 replProcs :: (Show i, Integral i) => i -> Name -> Endom Procs

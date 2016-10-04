@@ -270,6 +270,14 @@ normRawApp (e0:Op d:es)
                           ,"<=C",">=C","<C",">C"
                           ] =
       N.Def N.Defined (norm (infixed # d)) [norm e0, normRawApp es]
+  | n <- unOpName # d
+  , n /= "." -- sadly this is too ambiguous.
+  , all (`elem` "=/|.") n
+  , (pref,c:suff) <- span (`notElem` ".|") n
+  , all (`elem` "=/") (pref ++ suff)
+  = composeProc [] (if c == '|' then N.TenK else N.SeqK)
+                (map (== '=') pref) (map (== '=') suff)
+                (norm e0) (normRawApp es)
 normRawApp (Var (Name "Fwd"):es)
   | [e0, e1] <- es
   , Just n <- e0 ^? normalized . N.litTerm . integral =

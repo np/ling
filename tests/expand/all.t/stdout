@@ -356,6 +356,109 @@ com_new_mk_ten2_SInt_fuse2 =
   ( c <- 42
   | let x#q : Int <- d )
 
+compose_ops1 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S, T >)-> \ (q : < ~ T, U >)-> proc (c0, d1)
+  new [c1, d0].
+  ( @ p {c0, c1}
+  | @ q {d0, d1})
+
+compose_ops2 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S, T >)-> \ (q : < U, ~ T >)-> proc (c0, d0)
+  new [c1, d1].
+  ( @ p {c0, c1}
+  | @ q {d0, d1})
+
+compose_ops3 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S, T >)-> \ (q : < ~ S, U >)-> proc (c1, d1)
+  new [c0, d0].
+  ( @ p {c0, c1}
+  | @ q {d0, d1})
+
+compose_ops4 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S, T >)-> \ (q : < U >)-> proc (c0, c1, d0)
+  ( @ p {c0, c1}
+  | @ q (d0))
+
+compose_ops5 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S >)-> \ (q : < T, U >)-> proc (c0, d0, d1)
+  ( @ p (c0)
+  | @ q {d0, d1})
+
+compose_ops6 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S >)-> \ (q : < T >)-> proc (c0, d0)
+  ( @ p (c0)
+  | @ q (d0))
+
+compose_ops7 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S >)-> \ (q : < >)-> proc (c0)
+  ( @ p (c0)
+  | @ q {} )
+
+compose_ops8 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < >)-> \ (q : < T >)-> proc (d0)
+  ( @ p {}
+  | @ q (d0))
+
+compose_ops9 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < >)-> \ (q : < T, U >)-> proc (d0, d1)
+  ( @ p {}
+  | @ q {d0, d1})
+
+compose_ops11 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S, Send T >)-> \ (q : < ~ Send T, U >)-> proc (c0, d1)
+  new [: c1, d0 :].
+  @ p {c0, c1}.
+  @ q {d0, d1}
+
+compose_ops12 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S, Send T >)-> \ (q : < U, ~ Send T >)-> proc (c0, d0)
+  new [: c1, d1 :].
+  @ p {c0, c1}.
+  @ q {d0, d1}
+
+compose_ops13 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < Send S, T >)-> \ (q : < ~ Send S, U >)-> proc (c1, d1)
+  new [: c0, d0 :].
+  @ p {c0, c1}.
+  @ q {d0, d1}
+
+compose_ops14 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S, T >)-> \ (q : < U >)-> proc (c0, c1, d0)
+  @ p {c0, c1}.
+  @ q (d0)
+
+compose_ops15 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S >)-> \ (q : < T, U >)-> proc (c0, d0, d1)
+  @ p (c0).
+  @ q {d0, d1}
+
+compose_ops16 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S >)-> \ (q : < T >)-> proc (c0, d0)
+  @ p (c0).
+  @ q (d0)
+
+compose_ops17 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < S >)-> \ (q : < >)-> proc (c0)
+  @ p (c0).
+  @ q {}
+
+compose_ops18 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < >)-> \ (q : < T >)-> proc (d0)
+  @ p {}.
+  @ q (d0)
+
+compose_ops19 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (p : < >)-> \ (q : < T, U >)-> proc (d0, d1)
+  @ p {}.
+  @ q {d0, d1}
+
+compose_ops20 =
+  \ (S : Session)-> \ (T : Session)-> \ (U : Session)-> \ (V : Session)-> \ (p : < S, Send T, Send U >)-> \ (q : < ~ Send T, V, ~ Send U >)-> proc (c0, d1)
+  new [: c1, d0 :].
+  new [: c2, d2 :].
+  @ p {c0, c1, c2}.
+  @ q {d0, d1, d2}
+
 com_with_log =
   \ (S : Session)-> \ (p : < S >)-> \ (q : < ~ S >)-> \ (s : < ~ Log S >)-> proc ()
   new [c : S, c' : ~ S].
