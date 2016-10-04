@@ -1,6 +1,12 @@
 
 {- Sequential Fused program -}
 
+assert
+  'a'
+  =
+  'a'
+  : Char
+
 ap =
   \ (S : Session)-> \ (T : Session)-> proc (c : {[S, ~ T],{~ S, T}})
   split c {f, xo}.

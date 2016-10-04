@@ -68,15 +68,25 @@ cmdrpretty(){
 cmdrnorm(){
   cmdr --pretty --no-check -- norm "$@"
 }
-alias cmdrseqall='cmdrecord tests/sequence/all.t --env empty -- ling --pretty --no-check --seq < fixtures/sequence/*.ll'
-alias cmdrfuseall='cmdrecord tests/fusion/all.t --env empty -- ling --pretty --no-check --seq --fuse < fixtures/fusion/*.ll'
-alias cmdrcompileall='cmdrecord tests/compile/all.t  --env empty -- ling --no-check --seq --compile-prims --compile < fixtures/compile/*.ll'
-alias cmdrfmtall='cmdrecord tests/fmt/all.t  --env empty -- ling-fmt < fixtures/all/*.ll'
-alias cmdrprettyall='cmdrecord tests/pretty/all.t  --env empty -- ling --pretty --no-check --no-norm < fixtures/all/*.ll'
-alias cmdrnormall='cmdrecord tests/norm/all.t  --env empty -- ling --pretty --no-check < fixtures/success/*.ll'
-alias cmdrstrictparsuccessall='cmdrecord tests/success/strict-par.t  --env empty -- ling --strict-par --check  < fixtures/strict-par-success/*.ll'
-alias cmdrexpandall='cmdrecord tests/expand/all.t  --env empty -- ling --pretty --no-check --expand < fixtures/success/*.ll'
-alias cmdrreduceall='cmdrecord tests/reduce/all.t  --env empty -- ling --pretty --no-check --reduce < fixtures/success/*.ll'
+cmdrallbase(){
+  local tst="$1"
+  local fix="$2"
+  shift 2
+  rm -r tests/"$tst"
+  find fixtures/"$fix" -name '*.ll' -print0 |
+    sort -z |
+    xargs -0 -n 1 cat |
+    cmdrecord tests/"$tst" --batch --env empty -- "$@"
+}
+alias cmdrseqall='cmdrallbase sequence/all.t sequence ling --pretty --no-check --seq'
+alias cmdrfuseall='cmdrallbase fusion/all.t fusion ling --pretty --no-check --seq --fuse'
+alias cmdrcompileall='cmdrallbase compile/all.t compile ling --no-check --seq --compile-prims --compile'
+alias cmdrfmtall='cmdrallbase fmt/all.t all ling-fmt'
+alias cmdrprettyall='cmdrallbase pretty/all.t all ling --pretty --no-check --no-norm'
+alias cmdrnormall='cmdrallbase norm/all.t success ling --pretty --no-check'
+alias cmdrstrictparsuccessall='cmdrallbase success/strict-par.t strict-par-success ling --strict-par --check'
+alias cmdrexpandall='cmdrallbase expand/all.t success ling --pretty --no-check --expand'
+alias cmdrreduceall='cmdrallbase reduce/all.t success ling --pretty --no-check --reduce'
 
 cmdrall(){
   cmdrseqall

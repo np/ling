@@ -1,3 +1,4 @@
+assert `false = `false : Bool
 
 assert (\(x:Bool) -> x) = (\(y:Bool) -> y) : ((b:Bool) -> Bool)
 
