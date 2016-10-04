@@ -306,6 +306,11 @@ transLiteral l = case l of
   LString  s -> C.LString  s
   LChar    c -> C.LChar    c
 
+eApp :: C.Ident -> [C.Exp] -> C.Exp
+eApp x = \case
+  [] -> C.EVar x
+  es -> C.EApp (C.EVar x) es
+
 transTerm :: Env -> Term -> C.Exp
 transTerm env0 tm0 =
   let
@@ -313,13 +318,15 @@ transTerm env0 tm0 =
     env1 = env0 & addScope stm1
     tm1  = stm1 ^. scoped
   in case tm1 of
+  Def _ (Name "ccall") (_:Lit (LString c):es) ->
+    eApp (C.Ident c) (transTerm env1 <$> es)
   Def _ f es0
    | env1 ^. types . contains f -> dummyTyp
    | otherwise ->
      case transTerm env1 <$> es0 of
-       []                             -> C.EVar (transEVar env1 f)
+       []                             -> eApp (transEVar env1 f) []
        [e0,e1] | Just d <- transOp f  -> d e0 e1
-       es                             -> C.EApp (C.EVar (transName f)) es
+       es                             -> eApp (transName f) es
   Let{}          -> error $ "IMPOSSIBLE: Let after reduce (" ++ ppShow tm1 ++ ")"
   Lit l          -> C.ELit (transLiteral l)
   Lam{}          -> transErr "transTerm/Lam" tm1

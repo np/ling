@@ -35,9 +35,6 @@ map =
     split ys  as [: y ^ n :].
     sequence ^ n (@p(x,y))
 
-map_bff : (n : Int)-> < [: CP ^ n :] -o [: CT ^ n :] >
-        = map CP CT bff
-
 twist =
   \ (S T : Session)
     (p : < ~T -o ~S >)->
@@ -83,18 +80,26 @@ zip =
       ( fwd(S)(z0,x)
       | fwd(T)(z1,y)))
 
+fft_comp :   (n : Int)-> < [: !C ^(n + n) :] -o [: !C ^(n + n) :] >
+         = \ (n : Int)->
+        (halve (!C) n)
+  =/|/= (zip (!C) (!C) n)
+  =/|/= (map CP CT bff n)
+  =/|/= (zip (?C) (?C) n)
+  /=|=/ (halve (?C) n)
+
 fft =
   \ (n : Int)->
-    let Cn = [: !C ^ n :] in
-    let CnP = {Cn, Cn} in
-    let CnT = [Cn, Cn] in
-    let CPn = [: {!C, !C} ^ n :] in
-    let CTn = [: [!C, !C] ^ n :] in
-    let C2n = [: !C ^(n + n) :] in
-    comp C2n CnP C2n (halve (!C) n) (
-    comp CnP CPn C2n (zip (!C) (!C) n) (
-    comp CPn CTn C2n (map_bff n) (
-    pmoc CTn CnT C2n (zip (?C) (?C) n) (
-    twist CnT C2n    (halve (?C) n)))))
+    let CnS = [: !C ^ n :] in
+    let CnSP = {CnS, CnS} in
+    let CnST = [CnS, CnS] in
+    let CPnS = [: {!C, !C} ^ n :] in
+    let CTnS = [: [!C, !C] ^ n :] in
+    let C2nS = [: !C ^(n + n) :] in
+    comp C2nS CnSP C2nS (halve (!C) n) (
+    comp CnSP CPnS C2nS (zip (!C) (!C) n) (
+    comp CPnS CTnS C2nS (map CP CT bff n) (
+    pmoc CTnS CnST C2nS (zip (?C) (?C) n) (
+    twist CnST C2nS     (halve (?C) n)))))
 
 fft_10 = fft 10

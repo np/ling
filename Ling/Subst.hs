@@ -38,9 +38,8 @@ substDef :: Defs -> DefKind -> Name -> [Term] -> Term
 substDef f k d es
   | Defined <- k
   , Just e <- f ^? at d . _Just . annotated = substApp f e es
-  | Just ls <- es' ^? below _Lit
-  , Just  e <- reducePrim (unName # d) ls = e
-  | otherwise                             = Def k d $ subst f es
+  | Just e <- reducePrim d es' = e
+  | otherwise = Def k d es'
 
   where
     es' = subst f es

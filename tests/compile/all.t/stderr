@@ -65,6 +65,10 @@
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
+[WARNING] Unsupported type A
+[WARNING] Skipping compilation of unsupported definition Int2Double
+[WARNING] Skipping compilation of unsupported definition Int2Char
+[WARNING] Skipping compilation of unsupported definition sqrtD
 [WARNING] Skipping compilation of unsupported definition ap
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool

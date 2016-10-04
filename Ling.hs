@@ -157,7 +157,6 @@ fuse1 : Allocation = fuse 1
 fuse2 : Allocation = fuse 2
 fuse3 : Allocation = fuse 3
 Double : Type
-Int2Double : (n : Int) -> Double
 _+D_ : (m : Double)(n : Double) -> Double
 _-D_ : (m : Double)(n : Double) -> Double
 _*D_ : (m : Double)(n : Double) -> Double
@@ -181,6 +180,10 @@ showDouble : (n : Double) -> String
 showChar : (c : Char) -> String
 showString : (s : String) -> String
 _++S_ : (s0 : String)(s1 : String) -> String
+ccall : (A : Type)-> String -> A
+Int2Double = ccall (Int -> Double) "(double)"
+Int2Char = ccall (Int -> Char) "(char)"
+sqrtD = ccall (Double -> Double) "sqrt"
 |]
 
 primsN :: N.Program

@@ -3305,7 +3305,7 @@ tabulate_seq_Double_40 =
   proc (a : [: !Double ^ 41 :])
   split a [: a_i ^ 41 :].
   sequence ^ 41 with i
-    a_i <- (1.0 -D 5.0e-2 *D Int2Double i)
+    a_i <- (1.0 -D 5.0e-2 *D ccall (Int -> Double)"(double)" i)
 
 ten_loli_par =
   \ (A : Session)-> \ (B : Session)-> proc (c : {{~ A, ~ B},{A, B}})

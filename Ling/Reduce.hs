@@ -6,6 +6,7 @@
 {-# LANGUAGE TemplateHaskell              #-}
 module Ling.Reduce where
 
+import           Data.Char
 import           Ling.Fwd
 import           Ling.Norm
 import           Ling.Prelude hiding (subst1)
@@ -88,42 +89,55 @@ mkBool :: Bool -> Term
 mkBool False = Con (Name "false")
 mkBool True  = Con (Name "true")
 
--- The resulting Term should be in normal form.
-reducePrim :: String -> [Literal] -> Maybe Term
-reducePrim "_+_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x + y
-reducePrim "_-_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x - y
-reducePrim "_*_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x * y
-reducePrim "_/_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x `div` y
-reducePrim "_%_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x `mod` y
-reducePrim "pow"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x ^ y
-reducePrim "_+D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x + y
-reducePrim "_-D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x - y
-reducePrim "_*D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x * y
-reducePrim "_/D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x / y
-reducePrim "powD"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x ** y
-reducePrim "_++S_"      [LString  x, LString  y] = Just . Lit . LString  $ x ++ y
-reducePrim "Int2Double" [LInteger x]             = Just . Lit . LDouble  $ fromInteger x
-reducePrim "showInt"    [LInteger x]             = Just . Lit . LString  $ show x
-reducePrim "showDouble" [LDouble  x]             = Just . Lit . LString  $ show x
-reducePrim "showChar"   [LChar    x]             = Just . Lit . LString  $ show x
-reducePrim "showString" [LString  x]             = Just . Lit . LString  $ show x
-reducePrim "_==I_"      [LInteger x, LInteger y] = Just . mkBool $ x == y
-reducePrim "_==D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x == y
-reducePrim "_==C_"      [LChar    x, LChar    y] = Just . mkBool $ x == y
-reducePrim "_==S_"      [LString  x, LString  y] = Just . mkBool $ x == y
-reducePrim "_<=I_"      [LInteger x, LInteger y] = Just . mkBool $ x <= y
-reducePrim "_<=D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x <= y
-reducePrim "_<=C_"      [LChar    x, LChar    y] = Just . mkBool $ x <= y
-reducePrim "_>=I_"      [LInteger x, LInteger y] = Just . mkBool $ x >= y
-reducePrim "_>=D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x >= y
-reducePrim "_>=C_"      [LChar    x, LChar    y] = Just . mkBool $ x >= y
-reducePrim "_>I_"       [LInteger x, LInteger y] = Just . mkBool $ x >  y
-reducePrim "_>D_"       [LDouble  x, LDouble  y] = Just . mkBool $ x >  y
-reducePrim "_>C_"       [LChar    x, LChar    y] = Just . mkBool $ x >  y
-reducePrim "_<I_"       [LInteger x, LInteger y] = Just . mkBool $ x <  y
-reducePrim "_<D_"       [LDouble  x, LDouble  y] = Just . mkBool $ x <  y
-reducePrim "_<C_"       [LChar    x, LChar    y] = Just . mkBool $ x <  y
-reducePrim _            _                        = Nothing
+reducePrim :: Name -> [Term] -> Maybe Term
+reducePrim (Name sd) es
+  | sd == "ccall"
+  , (_:Lit (LString s):rs) <- es
+  , Just ls <- rs ^? below _Lit = reduceRawC s ls
+  | Just ls <- es ^? below _Lit = redLit sd ls
+  | otherwise = Nothing
+
+  where
+    -- The resulting Term should be in normal form.
+    redLit :: String -> [Literal] -> Maybe Term
+    redLit "_+_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x + y
+    redLit "_-_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x - y
+    redLit "_*_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x * y
+    redLit "_/_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x `div` y
+    redLit "_%_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x `mod` y
+    redLit "pow"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x ^ y
+    redLit "_+D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x + y
+    redLit "_-D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x - y
+    redLit "_*D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x * y
+    redLit "_/D_"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x / y
+    redLit "powD"       [LDouble  x, LDouble  y] = Just . Lit . LDouble  $ x ** y
+    redLit "_++S_"      [LString  x, LString  y] = Just . Lit . LString  $ x ++ y
+    redLit "showInt"    [LInteger x]             = Just . Lit . LString  $ show x
+    redLit "showDouble" [LDouble  x]             = Just . Lit . LString  $ show x
+    redLit "showChar"   [LChar    x]             = Just . Lit . LString  $ show x
+    redLit "showString" [LString  x]             = Just . Lit . LString  $ show x
+    redLit "_==I_"      [LInteger x, LInteger y] = Just . mkBool $ x == y
+    redLit "_==D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x == y
+    redLit "_==C_"      [LChar    x, LChar    y] = Just . mkBool $ x == y
+    redLit "_==S_"      [LString  x, LString  y] = Just . mkBool $ x == y
+    redLit "_<=I_"      [LInteger x, LInteger y] = Just . mkBool $ x <= y
+    redLit "_<=D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x <= y
+    redLit "_<=C_"      [LChar    x, LChar    y] = Just . mkBool $ x <= y
+    redLit "_>=I_"      [LInteger x, LInteger y] = Just . mkBool $ x >= y
+    redLit "_>=D_"      [LDouble  x, LDouble  y] = Just . mkBool $ x >= y
+    redLit "_>=C_"      [LChar    x, LChar    y] = Just . mkBool $ x >= y
+    redLit "_>I_"       [LInteger x, LInteger y] = Just . mkBool $ x >  y
+    redLit "_>D_"       [LDouble  x, LDouble  y] = Just . mkBool $ x >  y
+    redLit "_>C_"       [LChar    x, LChar    y] = Just . mkBool $ x >  y
+    redLit "_<I_"       [LInteger x, LInteger y] = Just . mkBool $ x <  y
+    redLit "_<D_"       [LDouble  x, LDouble  y] = Just . mkBool $ x <  y
+    redLit "_<C_"       [LChar    x, LChar    y] = Just . mkBool $ x <  y
+    redLit _            _                        = Nothing
+
+reduceRawC :: String -> [Literal] -> Maybe Term
+reduceRawC "(double)" [LInteger x] = Just . Lit . LDouble  $ fromInteger x
+reduceRawC "(int)"    [LChar    x] = Just . Lit . LInteger . toInteger $ ord x
+reduceRawC _          _            = Nothing
 
 reduceDef :: Scoped (DefKind, Name, [Term]) -> Reduced Term
 reduceDef sdef =
@@ -134,8 +148,7 @@ reduceDef sdef =
         Defined
           | Just st <- scopedName (sdef $> d) -> reduceApp st es
         Undefined
-          | Just ls <- es' ^? reduced . scoped . below _Lit
-          , Just  e <- reducePrim (unName # d) ls -> pure e
+          | Just e  <- reducePrim d (es' ^. reduced . scoped) -> pure e
         _ -> Def k d <$> es'
       where
         es' = reduce (sdef $> es)
