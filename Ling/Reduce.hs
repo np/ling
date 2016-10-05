@@ -98,6 +98,7 @@ reducePrim (Name sd) es
   | otherwise = Nothing
 
   where
+    -- TODO: No CD rules
     -- The resulting Term should be in normal form.
     redLit :: String -> [Literal] -> Maybe Term
     redLit "_+_"        [LInteger x, LInteger y] = Just . Lit . LInteger $ x + y

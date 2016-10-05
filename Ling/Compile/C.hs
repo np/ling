@@ -254,29 +254,39 @@ transOp :: EVar -> Maybe (Op2 C.Exp)
 transOp (Name v) = (\f x y -> C.EParen (f x y)) <$> case v of
   "_+_"   -> Just C.Add
   "_+D_"  -> Just C.Add
+  "_+CD_" -> Just C.Add
   "_*_"   -> Just C.Mul
   "_*D_"  -> Just C.Mul
+  "_*CD_" -> Just C.Mul
   "_/_"   -> Just C.Div
   "_/D_"  -> Just C.Div
+  "_/CD_" -> Just C.Div
   "_%_"   -> Just C.Mod
   "_%D_"  -> Just C.Mod
+  "_%CD_" -> Just C.Mod
   "_-_"   -> Just C.Sub
   "_-D_"  -> Just C.Sub
+  "_-CD_" -> Just C.Sub
   "_==D_" -> Just C.Eq
   "_==I_" -> Just C.Eq
   "_==C_" -> Just C.Eq
+  "_==CD_"-> Just C.Eq
   "_<=D_" -> Just C.Le
   "_<=I_" -> Just C.Le
   "_<=C_" -> Just C.Le
+  "_<=CD_"-> Just C.Le
   "_>=D_" -> Just C.Ge
   "_>=I_" -> Just C.Ge
   "_>=C_" -> Just C.Ge
+  "_>=CD_"-> Just C.Ge
   "_<D_"  -> Just C.Lt
   "_<I_"  -> Just C.Lt
   "_<C_"  -> Just C.Lt
+  "_<CD_" -> Just C.Lt
   "_>D_"  -> Just C.Gt
   "_>I_"  -> Just C.Gt
   "_>C_"  -> Just C.Gt
+  "_>CD_" -> Just C.Gt
   _       -> Nothing
 
 transEVar :: Env -> EVar -> C.Exp
@@ -322,6 +332,8 @@ transTerm env0 tm0 =
     env1 = env0 & addScope stm1
     tm1  = stm1 ^. scoped
   in case tm1 of
+  Def _ (Name "cconst") [_,Lit (LString c)] ->
+    C.EVar (C.Ident c)
   Def _ (Name "ccall") (_:Lit (LString c):es) ->
     eApp (C.Ident c) (transTerm env1 <$> es)
   Def _ f es0

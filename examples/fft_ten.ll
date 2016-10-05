@@ -9,38 +9,39 @@ compHH :
    (S T U : Session)-> < S -o U >
 -}
 
-C : Type
-addC : C -> C -> C
-subC : C -> C -> C
-mulC : C -> C -> C
-wkn : C
+C = ComplexDouble
+I = ComplexI
 
 CT = [!C,!C]
 CP = {!C,!C}
 
-bff = proc(xy : CT -o CP)
+bff = \(tw : C)(i : Int)-> proc(xy : CT -o CP)
   split xy as {x,y}.
   split x  as {cx0, cx1}.
   split y  as {y0, y1}.
   ( let x0 : C <- cx0
   | let x1 : C <- cx1).
-  ( y0 <- (addC x0 (mulC x1 wkn))
-  | y1 <- (subC x0 (mulC x1 wkn)))
+  let wkn = (x1 *CD cexp (tw *CD Int2ComplexDouble i)).
+  ( y0 <- (x0 +CD wkn)
+  | y1 <- (x0 -CD wkn))
 {- Alternatively
   let x0 : C <- cx0.
   let x1 : C <- cx1.
-  y0 <- (addC x0 (mulC x1 wkn)).
-  y1 <- (subC x0 (mulC x1 wkn))
+  y0 <- (x0 +CD (x1 *CD tw)).
+  y1 <- (x0 -CD (x1 *CD tw))
 -}
 
-map : (S T : Session)(p : < S -o T >)(n : Int)-> < [ S ^ n ] -o [ T ^ n ] >
-  = \ (S T : Session)(p : < S -o T >)(n : Int)->
+mapi : (S T : Session)(p : (i : Int)-> < S -o T >)(n : Int)-> < [ S ^ n ] -o [ T ^ n ] >
+   = \ (S T : Session)(p : (i : Int)-> < S -o T >)(n : Int)->
   proc(xys : [ S ^ n ] -o [ T ^ n ])
     split xys as {xs, ys}.
     split xs  as {x ^ n}.
     split ys  as [y ^ n].
 --proc{ [ x ^ n ], [ y ^ n ] }
-    parallel ^ n (@p(x,y))
+    parallel ^ n with i (@(p i)(x,y))
+
+map : (S T : Session)(p : < S -o T >)(n : Int)-> < [ S ^ n ] -o [ T ^ n ] >
+  = \ (S T : Session)(p : < S -o T >)-> mapi S T (\(i : Int)-> p)
 
 schedule =
   \ (S : Session)(n : Int)->
@@ -133,7 +134,7 @@ test_map_map_fuse2 =
 -- to the introduction of a par on the right and their elimination
 -- of a par on the left corresponds to the introduction of a tensor
 -- on the right.
-{-
+
 halve : (S : Session)(n : Int)-> < [ S ^(n + n) ] -o [ [ S ^ n ], [ S ^ n ] ] >
     = \ (S : Session)(n : Int)->
   proc(xys : [ S ^(n + n) ] -o [ [ S ^ n ], [ S ^ n ] ])
@@ -160,17 +161,20 @@ zip : (S T : Session)(n : Int)-> < [ [ S ^ n ], [ T ^ n ] ] -o [ [ S, T ] ^ n ] 
       ( fwd(S)(z0,x)
       | fwd(T)(z1,y)))
 
-fft_comp : (n : Int)-> < [!C ^(n + n)] -o {!C ^(n + n)} >
-  = \(n : Int)->
+fft_comp
+  :   (n : Int)-> < [!C ^(n + n)] -o {!C ^(n + n)} >
+  = \ (n : Int)->
+  let tw = (I *CD Double2Complex (2.0 *D (PI /D Int2Double n))) in
         (halve (!C) n)
   =/|/= (zip (!C) (!C) n)
-  =/|/= (map CT CP bff n)
+  =/|/= (mapi CT CP (bff tw) n)
   =/|/= (schedule CP n)
   =/|/= (zip (?C) (?C) n)
   /=|=/ (halve (?C) n)
 
 fft :   (n : Int)-> < [!C ^(n + n)] -o {!C ^(n + n)} >
     = \ (n : Int)->
+  let tw = (I *CD Double2Complex (2.0 *D (PI /D Int2Double n))) in
   let Cn = [ !C ^ n ] in
   let CnPP = {{!C ^ n}, {!C ^ n}} in
   let CnT = [Cn, Cn] in
@@ -181,7 +185,7 @@ fft :   (n : Int)-> < [!C ^(n + n)] -o {!C ^(n + n)} >
   let C2nP = { !C ^(n + n) } in
   comp C2nT CnT  C2nP (halve (!C) n) (
   comp CnT  CTnT C2nP (zip (!C) (!C) n) (
-  comp CTnT CPnT C2nP (map CT CP bff n) (
+  comp CTnT CPnT C2nP (mapi CT CP (bff tw) n) (
   comp CPnT CPnP C2nP (schedule {!C, !C} n) (
   pmoc CPnP CnPP C2nP (zip (?C) (?C) n) (
   twist     CnPP C2nP (halve (?C) n))

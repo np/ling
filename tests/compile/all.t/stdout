@@ -53,6 +53,17 @@ char * showString_lin (const char * s_lin);
 char * __plus__plus_S__lin (const char * s0_lin, const char * s1_lin);
 void * ccall_lin (const int A_lin, const char * ___e7fd2d8892aaa5bc71692947d59346227cfb20c62167e26156d861b2ea12994d_lin);
 int ctype_lin (const char * ___0ac06aef55a2d4569d8372ba9e77eb91c7cfa8b19a82563b462a0bfceca49133_lin);
+void * cconst_lin (const int A_lin, const char * ___3fcc210467d775ce6524d4c3fe504e500f2cbfdb4547a1bd814927216bf5972c_lin);
+complex double __plus_CD__lin (const complex double m_lin, const complex double n_lin);
+complex double __sub_CD__lin (const complex double m_lin, const complex double n_lin);
+complex double __times_CD__lin (const complex double m_lin, const complex double n_lin);
+complex double __div_CD__lin (const complex double m_lin, const complex double n_lin);
+complex double powCD_lin (const complex double m_lin, const complex double n_lin);
+void * _==CD__lin (const complex double m_lin, const complex double n_lin);
+void * _<=CD__lin (const complex double m_lin, const complex double n_lin);
+void * _>=CD__lin (const complex double m_lin, const complex double n_lin);
+void * _<CD__lin (const complex double m_lin, const complex double n_lin);
+void * _>CD__lin (const complex double m_lin, const complex double n_lin);
 void ap_SInt_SBool_lin (struct {
   struct {
     int f0 ;

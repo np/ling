@@ -185,6 +185,47 @@ Int2Double = ccall (Int -> Double) "(double)"
 Int2Char = ccall (Int -> Char) "(char)"
 sqrtD = ccall (Double -> Double) "sqrt"
 ctype : String -> Type
+cconst : (A : Type)-> String -> A
+-- math.h
+PI = cconst Double "M_PI"
+
+-- complex.h
+ComplexDouble : Type = ctype "complex double"
+ComplexI = cconst ComplexDouble "_Complex_I"
+Int2ComplexDouble = ccall (Int -> ComplexDouble) "(double complex)"
+Double2Complex = ccall (Double -> ComplexDouble) "(double complex)"
+_+CD_ : (m : ComplexDouble)(n : ComplexDouble) -> ComplexDouble
+_-CD_ : (m : ComplexDouble)(n : ComplexDouble) -> ComplexDouble
+_*CD_ : (m : ComplexDouble)(n : ComplexDouble) -> ComplexDouble
+_/CD_ : (m : ComplexDouble)(n : ComplexDouble) -> ComplexDouble
+powCD : (m : ComplexDouble)(n : ComplexDouble) -> ComplexDouble
+_==CD_ : (m : ComplexDouble)(n : ComplexDouble) -> Bool
+_<=CD_ : (m : ComplexDouble)(n : ComplexDouble) -> Bool
+_>=CD_ : (m : ComplexDouble)(n : ComplexDouble) -> Bool
+_<CD_ : (m : ComplexDouble)(n : ComplexDouble) -> Bool
+_>CD_ : (m : ComplexDouble)(n : ComplexDouble) -> Bool
+cabs = ccall (ComplexDouble -> Double) "cabs"
+cacos = ccall (ComplexDouble -> ComplexDouble) "cacos"
+cacosh = ccall (ComplexDouble -> ComplexDouble) "cacosh"
+carg = ccall (ComplexDouble -> ComplexDouble) "carg"
+casin = ccall (ComplexDouble -> ComplexDouble) "casin"
+casinh = ccall (ComplexDouble -> ComplexDouble) "casinh"
+catan = ccall (ComplexDouble -> ComplexDouble) "catan"
+catanh = ccall (ComplexDouble -> ComplexDouble) "catanh"
+ccos = ccall (ComplexDouble -> ComplexDouble) "ccos"
+ccosh = ccall (ComplexDouble -> ComplexDouble) "ccosh"
+cexp = ccall (ComplexDouble -> ComplexDouble) "cexp"
+cimag = ccall (ComplexDouble -> Double) "cimag"
+clog = ccall (ComplexDouble -> ComplexDouble) "clog"
+conj = ccall (ComplexDouble -> ComplexDouble) "conj"
+cpow = ccall (ComplexDouble -> ComplexDouble) "cpow"
+cproj = ccall (ComplexDouble -> ComplexDouble) "cproj"
+creal = ccall (ComplexDouble -> Double) "creal"
+csin = ccall (ComplexDouble -> ComplexDouble) "csin"
+csinh = ccall (ComplexDouble -> ComplexDouble) "csinh"
+csqrt = ccall (ComplexDouble -> ComplexDouble) "csqrt"
+ctan = ccall (ComplexDouble -> ComplexDouble) "ctan"
+ctanh = ccall (ComplexDouble -> ComplexDouble) "ctanh"
 |]
 
 primsN :: N.Program

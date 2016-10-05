@@ -69,6 +69,39 @@
 [WARNING] Skipping compilation of unsupported definition Int2Double
 [WARNING] Skipping compilation of unsupported definition Int2Char
 [WARNING] Skipping compilation of unsupported definition sqrtD
+[WARNING] Unsupported type A
+[WARNING] Skipping compilation of unsupported definition PI
+[WARNING] Skipping compilation of unsupported definition ComplexDouble
+[WARNING] Skipping compilation of unsupported definition ComplexI
+[WARNING] Skipping compilation of unsupported definition Int2ComplexDouble
+[WARNING] Skipping compilation of unsupported definition Double2Complex
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Unsupported type Bool
+[WARNING] Skipping compilation of unsupported definition cabs
+[WARNING] Skipping compilation of unsupported definition cacos
+[WARNING] Skipping compilation of unsupported definition cacosh
+[WARNING] Skipping compilation of unsupported definition carg
+[WARNING] Skipping compilation of unsupported definition casin
+[WARNING] Skipping compilation of unsupported definition casinh
+[WARNING] Skipping compilation of unsupported definition catan
+[WARNING] Skipping compilation of unsupported definition catanh
+[WARNING] Skipping compilation of unsupported definition ccos
+[WARNING] Skipping compilation of unsupported definition ccosh
+[WARNING] Skipping compilation of unsupported definition cexp
+[WARNING] Skipping compilation of unsupported definition cimag
+[WARNING] Skipping compilation of unsupported definition clog
+[WARNING] Skipping compilation of unsupported definition conj
+[WARNING] Skipping compilation of unsupported definition cpow
+[WARNING] Skipping compilation of unsupported definition cproj
+[WARNING] Skipping compilation of unsupported definition creal
+[WARNING] Skipping compilation of unsupported definition csin
+[WARNING] Skipping compilation of unsupported definition csinh
+[WARNING] Skipping compilation of unsupported definition csqrt
+[WARNING] Skipping compilation of unsupported definition ctan
+[WARNING] Skipping compilation of unsupported definition ctanh
 [WARNING] Skipping compilation of unsupported definition ap
 [WARNING] Unsupported type Bool
 [WARNING] Unsupported type Bool
