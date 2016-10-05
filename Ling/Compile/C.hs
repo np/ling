@@ -265,18 +265,18 @@ transOp (Name v) = (\f x y -> C.EParen (f x y)) <$> case v of
   "_==D_" -> Just C.Eq
   "_==I_" -> Just C.Eq
   "_==C_" -> Just C.Eq
-  "_<=D_" -> Just C.Eq
-  "_<=I_" -> Just C.Eq
-  "_<=C_" -> Just C.Eq
-  "_>=D_" -> Just C.Eq
-  "_>=I_" -> Just C.Eq
-  "_>=C_" -> Just C.Eq
-  "_<D_"  -> Just C.Eq
-  "_<I_"  -> Just C.Eq
-  "_<C_"  -> Just C.Eq
-  "_>D_"  -> Just C.Eq
-  "_>I_"  -> Just C.Eq
-  "_>C_"  -> Just C.Eq
+  "_<=D_" -> Just C.Le
+  "_<=I_" -> Just C.Le
+  "_<=C_" -> Just C.Le
+  "_>=D_" -> Just C.Ge
+  "_>=I_" -> Just C.Ge
+  "_>=C_" -> Just C.Ge
+  "_<D_"  -> Just C.Lt
+  "_<I_"  -> Just C.Lt
+  "_<C_"  -> Just C.Lt
+  "_>D_"  -> Just C.Gt
+  "_>I_"  -> Just C.Gt
+  "_>C_"  -> Just C.Gt
   _       -> Nothing
 
 transEVar :: Env -> EVar -> C.Exp
