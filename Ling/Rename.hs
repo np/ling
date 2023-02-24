@@ -11,6 +11,18 @@ import           Ling.Prelude
 data K = V | C | D
   deriving (Eq)
 
+newtype FV = FV Name -- Free Var
+newtype BV = BV Name -- Bound Var
+newtype FC = FC Name -- Free Chan
+newtype BC = BC Name -- Bound Chan
+newtype DC = DC Name -- Data Constructor
+
+makePrisms ''FV
+makePrisms ''BV
+makePrisms ''FC
+makePrisms ''BC
+makePrisms ''DC
+
 data Ren f = Ren { _renName  :: Ren f -> K -> EndoM f Name
                  , _bndVars  :: Set Name
                  , _bndChans :: Set Channel
@@ -110,18 +122,6 @@ hDec = runIdentity . \case
 
 class Rename a where
   rename :: Applicative f => Ren f -> EndoM f a
-
-newtype FV = FV Name -- Free Var
-newtype BV = BV Name -- Bound Var
-newtype FC = FC Name -- Free Chan
-newtype BC = BC Name -- Bound Chan
-newtype DC = DC Name -- Data Constructor
-
-makePrisms ''FV
-makePrisms ''BV
-makePrisms ''FC
-makePrisms ''BC
-makePrisms ''DC
 
 instance Rename DC where rename f = _DC %%~ view renName f f D
 instance Rename FV where rename f = _FV %%~ view renName f f V
