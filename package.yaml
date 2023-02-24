@@ -11,7 +11,7 @@ github:              np/ling
 category:            Language
 
 dependencies:
-- base >=4.7 && <4.9
+- base
 - array
 - bifunctors
 - containers
@@ -35,9 +35,9 @@ library:
     - MiniC.Lex
     - MiniC.Par
 
-#build-tools:
-#- alex
-#- happy
+build-tools:
+- alex
+- happy
 
 executables:
   ling:
