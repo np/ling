@@ -30,6 +30,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#############
+# CHANGELOG #
+#############
+
+# 2023-01-30: Use \0 delimited lines when calling `env`.
+
 bin=$(dirname "$0")
 if [ -e "$bin"/cmdcheck ]; then
   . "$bin"/cmdcheck
@@ -122,7 +128,7 @@ record_action(){
   stdin=1
   local eed_opts=( )
   local all_env_vars=( )
-  for var in $(env | cut -d= -f1); do
+  for var in $(env -0 | cut -z -d= -f1 | xargs -0); do
     all_env_vars=("${all_env_vars[@]}" $(check_valid_var "$var"))
   done
   env_vars=( )
