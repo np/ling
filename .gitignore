@@ -2,7 +2,8 @@ site/
 *.bak
 tests/*/*.my
 issues/*/*.my
-dist
+dist/
+dist-newstyle/
 cabal-dev
 *.o
 *.hi
