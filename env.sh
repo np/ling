@@ -1,7 +1,8 @@
-# MODE=nix
+MODE=nix
+# MODE=stack-nix
 # MODE=stack
 # MODE=cabal
-MODE=docker
+# MODE=docker
 LING_GHC_RTS=()
 BUILD_OPTS=(--fast --pedantic)
 #LING_GHC_RTS=(+RTS -p)
@@ -15,7 +16,7 @@ envexec(){
 ling() {
   envexec ling "$@" "${LING_GHC_RTS[@]}"
 }
-'ling-fmt'() {
+ling-fmt() {
   envexec ling-fmt "$@" "${LING_GHC_RTS[@]}"
 }
 checkling() {
@@ -167,7 +168,7 @@ case "$MODE" in
     }
     rm -rf "$DIST"/shims
     STACK_FLAGS=(--docker);;
-  (nix)
+  (stack-nix)
     STACK_FLAGS=(--nix)
     # nixpkgs commit ef17efa99b0e644bbd2a28c0c3cfe5a2e57b21ea
     current_nixpkgs=$HOME/hub/NixOS/nixpkgs-stack
