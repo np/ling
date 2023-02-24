@@ -125,7 +125,7 @@ class Dual a where
   recv_ :: Endom a
   recv_ = sessionOp sendOp
 
-  sessionOp :: Dual a => SessionOp -> Endom a
+  sessionOp :: SessionOp -> Endom a
 
   -- Being master only concerns the top part of the session. The rule being
   -- that only one when composing several sessions only one can be master.
