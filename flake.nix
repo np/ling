@@ -14,9 +14,18 @@
           # packages.ling.root = ./.;  # This value is detected based on .cabal files
           # overrides = self: super: { };
           devShell = {
-          #  enable = true;  # Enabled by default
-            #tools = hp: { fourmolu = hp.fourmolu; ghcid = null; };
-            tools = hp: { BNFC = hp.BNFC; };
+            tools = hp: {
+              BNFC = hp.BNFC;
+              stylish-haskell = hp.stylish-haskell;
+              hlint = hp.hlint;
+              ghc-make = hp.ghc-make;
+              hindent = hp.hindent;
+              pointfree = hp.pointfree;
+              hpack = hp.hpack;
+            # ghc-mod = hp.ghc-mod; => broken
+            # hfmt = hp.hfmt; => broken
+            # pointful = hp.pointful; => broken
+            };
           #  hlsCheck.enable = true;
           };
         };
