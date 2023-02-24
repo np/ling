@@ -376,7 +376,7 @@ quasiQuoter :: String -> QuasiQuoter
 quasiQuoter qqName =
   QuasiQuoter (err "expressions") (err "patterns") (err "types") (err "declarations")
   where
-    err :: Monad m => String -> a -> m b
+    err :: MonadFail m => String -> a -> m b
     err kind _ = fail $ qqName ++ ": not available in " ++ kind
 
 list :: Traversal [a] [b] a b
