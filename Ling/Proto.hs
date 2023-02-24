@@ -64,13 +64,14 @@ chanDecs = chans . to m2l . each . to (uncurry Arg)
 prettyChanDecs :: Proto -> [String]
 prettyChanDecs = toListOf (chanDecs . prettied)
 
-instance Monoid Proto where
-  mempty = MkProto ø ø
-
+instance Semigroup Proto where
   -- Use (<>) to combine protocols from processes which are composed in
   -- **parallel** (namely tensor).
   -- If the processes are in sequence use dotProto instead.
-  mappend = combineProto TenK
+  (<>) = combineProto TenK
+
+instance Monoid Proto where
+  mempty = MkProto ø ø
 
 instance SubTerms Proto where
   subTerms = chans . each . subTerms

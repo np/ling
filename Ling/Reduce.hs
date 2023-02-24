@@ -23,7 +23,7 @@ strong :: Bool
 strong = False
 
 newtype Reduced a = Reduced { _reduced :: Scoped a }
-  deriving (Eq, Show, Monoid, Functor, Applicative)
+  deriving (Eq, Show, Semigroup, Monoid, Functor, Applicative)
 
 makePrisms ''Reduced
 makeLenses ''Reduced

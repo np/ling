@@ -66,9 +66,11 @@ makeLenses ''Prll
 ø :: Monoid a => a
 ø = mempty
 
+instance Semigroup (Prll a) where
+  Prll ps <> Prll qs = Prll (ps <> qs)
+
 instance Monoid (Prll a) where
-  mempty                    = Prll ø
-  Prll ps `mappend` Prll qs = Prll (ps <> qs)
+  mempty = Prll ø
 
 instance Each (Prll a) (Prll b) a b where
   each = _Prll . each
@@ -79,9 +81,11 @@ newtype Order a = Order { _unOrder :: [a] }
 makePrisms ''Order
 makeLenses ''Order
 
+instance Semigroup (Order a) where
+  Order x <> Order y = Order (x <> y)
+
 instance Monoid (Order a) where
   mempty = Order []
-  mappend (Order x) (Order y) = Order (x <> y)
 
 instance Each (Order a) (Order b) a b where
   each = _Order . each
@@ -410,9 +414,11 @@ mkFinEndom f = FinEndom (l2m (filter ((/=d).snd) g)) d
 evalFinEndom :: Ord a => FinEndom a -> Endom a
 evalFinEndom (FinEndom m d) a = m ^. at a ?| d
 
+instance (Enum a, Ord a) => Semigroup (FinEndom a) where
+  f <> g = mkFinEndom (evalFinEndom f . evalFinEndom g)
+
 instance (Enum a, Ord a) => Monoid (FinEndom a) where
   mempty = mkFinEndom id
-  mappend f g = mkFinEndom (evalFinEndom f . evalFinEndom g)
 
 constEndom :: Ord a => a -> FinEndom a
 constEndom = FinEndom ø

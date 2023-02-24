@@ -140,10 +140,13 @@ data RW = Read | Write
 data SessionOp = SessionOp { _rwOp :: !(FinEndom RW), _arrayOp :: !(FinEndom TraverseKind) }
   deriving (Eq,Ord,Show,Read)
 
+-- Operations on sessions are endomorphic and thus forms a semigroup
+instance Semigroup SessionOp where
+  SessionOp rwf kf <> SessionOp rwg kg = SessionOp (rwf <> rwg) (kf <> kg)
+
 -- Operations on sessions are endomorphic and thus forms a monoid
 instance Monoid SessionOp where
   mempty = SessionOp ø ø
-  mappend (SessionOp rwf kf) (SessionOp rwg kg) = SessionOp (rwf <> rwg) (kf <> kg)
 
 data Session
   = TermS { _sSessionOp :: !SessionOp, _sTerm :: !Term }
@@ -166,7 +169,7 @@ data RSession
   deriving (Eq,Ord,Show,Read)
 
 newtype Sessions = Sessions [RSession]
-  deriving (Eq,Ord,Show,Read,Monoid)
+  deriving (Eq,Ord,Show,Read,Semigroup,Monoid)
 
 type NSession = Maybe Session
 
@@ -206,12 +209,14 @@ aDef x mty tm
   | x == anonName = error $ "aDef: unexpected anon name `_` at type (" ++ ppShow mty ++ ") and definition (" ++ ppShow tm ++ ")"
   | otherwise     = _Wrapped . _Wrapped # [(x, Ann mty tm)]
 
-instance Monoid Defs where
-  mempty = Defs ø
-  mappend (Defs x) (Defs y) = Defs $ unionWithKey mergeDef x y
+instance Semigroup Defs where
+  Defs x <> Defs y = Defs $ unionWithKey mergeDef x y
     where
       mergeDef k v w | v == w    = v
                      | otherwise = error $ "Scoped.mergeDefs: " ++ show k
+
+instance Monoid Defs where
+  mempty = Defs ø
 
 type instance Index   Defs = Name
 type instance IxValue Defs = AnnTerm
@@ -231,17 +236,21 @@ instance Each Defs Defs (Arg AnnTerm) (Arg AnnTerm) where
   -- TODO,LENS: I would prefer to avoid the conversion to a list
   each = defsMap . _Wrapped . each . _Unwrapped
 
-instance Monoid Program where
-  mempty        = Program []
-  mappend p0 p1 = Program $ p0^.prgDecs ++ p1^.prgDecs
+instance Semigroup Program where
+  p0 <> p1 = Program $ p0^.prgDecs <> p1^.prgDecs
 
--- Parallel composition forms a monoid
-instance Monoid Proc where
-  mempty        = Procs ø
-  mappend p0 p1 = mconcat ((p0,p1)^. both . to asProcs)
+instance Monoid Program where
+  mempty = Program []
+
+instance Semigroup Proc where
+  p0 <> p1 = mconcat ((p0,p1)^. both . to asProcs)
     where
       asProcs (Procs (Prll procs)) = procs
       asProcs p                    = [p]
+
+-- Parallel composition forms a monoid
+instance Monoid Proc where
+  mempty      = Procs ø
   mconcat [p] = p
   mconcat ps  = Procs (Prll ps)
 
@@ -431,9 +440,11 @@ addR = rterm . addTerm . (from rterm `bimapping` from rterm)
 multR :: Prism' RFactor (RFactor, RFactor)
 multR = rterm . multTerm . (from rterm `bimapping` from rterm)
 
+instance Semigroup RFactor where
+  x <> y = multR # (x, y)
+
 instance Monoid RFactor where
-  mempty      = litR # 1
-  mappend x y = multR # (x, y)
+  mempty = litR # 1
 
 addDec :: Dec -> Endom Defs
 addDec (Sig d mty tm) = at d ?~ Ann mty tm

@@ -39,11 +39,13 @@ autoFusion = defaultFusion
 
 makePrisms ''AllocAnn
 
+instance Semigroup AllocAnn where
+  FusedAnn <> x = x
+--x <> FusedAnn = x
+  x <> _        = x
+
 instance Monoid AllocAnn where
   mempty = defaultFusion
-  FusedAnn `mappend` x = x
---x `mappend` FusedAnn = x
-  x `mappend` _        = x
 
 _AllocAnn :: Prism' Allocation AllocAnn
 _AllocAnn = prism' con pat where

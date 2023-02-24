@@ -24,10 +24,12 @@ data Scoped a = Scoped { _gdefs, _ldefs :: Defs, _scoped :: a }
 
 makeLenses ''Scoped
 
+instance Semigroup a => Semigroup (Scoped a) where
+  Scoped gx lx x <> Scoped gy ly y =
+    Scoped (gx <> gy) (lx <> ly) (x <> y)
+
 instance Monoid a => Monoid (Scoped a) where
   mempty = Scoped ø ø ø
-  Scoped gx lx x `mappend` Scoped gy ly y =
-    Scoped (gx <> gy) (lx <> ly) (x <> y)
 
 instance Functor Scoped where
   fmap f (Scoped g l x) = Scoped g l (f x)

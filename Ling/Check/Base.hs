@@ -161,10 +161,13 @@ altT = iso fw bw where
     [t] -> t
     ts  -> AltT ts
 
+-- Sequential semigroup
+instance Semigroup Trace where
+  t0 <> t1 = seqT # (t0 ^. seqT ++ t1 ^. seqT)
+
 -- Sequential monoid
 instance Monoid Trace where
-  mempty          = SeqT []
-  t0 `mappend` t1 = seqT # (t0 ^. seqT ++ t1 ^. seqT)
+  mempty = SeqT []
 
 (<|>) :: Trace -> Trace -> Trace
 t0 <|> t1 = altT # (t0 ^. altT ++ t1 ^. altT)
@@ -513,9 +516,11 @@ checkSeqNew anns = \case
 newtype TC a = MkTC { unTC :: ReaderT TCEnv (Except TCErr) a }
   deriving (Functor, Applicative, Alternative, Monad, MonadReader TCEnv, MonadError TCErr)
 
+instance Semigroup a => Semigroup (TC a) where
+  (<>) = liftM2 (<>)
+
 instance Monoid a => Monoid (TC a) where
   mempty = pure mempty
-  mappend = liftM2 mappend
 
 runTCEnv :: TCEnv -> TC a -> Err a
 runTCEnv env tc = either Bad Ok

@@ -98,9 +98,11 @@ combineS = \case
   TenK -> mappend
   SeqK -> dotS
 
+instance Eq a => Semigroup (Skel a) where
+  (<>) = mkOp (Prll True)
+
 instance Eq a => Monoid (Skel a) where
   mempty = Zero
-  mappend = mkOp (Prll True)
   mconcat [] = Zero
   mconcat xs = foldr1 mappend xs
 
