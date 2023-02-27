@@ -10,7 +10,8 @@ git ls-files -z '*.hs' '*.y' | \
   sed -i -e 's/ \+$//' \
          -e '$ { /^$/ d}' \
          -e 's/^\Z//' \
-         -e 's/^layoutSep   = ";"$/layoutSep   = ","/' \
+         -e 's/TokSymbol ";" 1[12]/TokSymbol "," 5/' \
+         -e 's/^layoutSep   = \(.*\)";"\(.*\)$/layoutSep   = \1","\2/' \
          -e 's/^import\(  *\)\(Ling\..*\|MiniC\)\.ErrM$/import\1Ling.ErrM/' \
          -e 's/^\(module .*\.ErrM where\)/{-\# OPTIONS_GHC -fno-warn-unused-imports \#-}\n\1/' \
          -e 's/^\(module .*\.Print where\)/{-\# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-name-shadowing \#-}\n\1/' \

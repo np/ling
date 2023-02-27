@@ -180,7 +180,6 @@ All other symbols are terminals.
   |  |  **|**  | **eps**
   | //AllocTerm// | -> | //Name//
   |  |  **|**  | //Literal//
-  |  |  **|**  | ``(`` //Term// //OptSig// ``)``
   | //[AllocTerm]// | -> | **eps**
   |  |  **|**  | //AllocTerm// //[AllocTerm]//
   | //NewSig// | -> | **eps**

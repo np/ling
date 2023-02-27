@@ -88,7 +88,7 @@ fuseDot defs = \case
         let cd = reduce $ Scoped defs ø cd0 in
         fuseProc defs . fuse1Chan (Nu anns2 . ArrayP SeqK . (_Chans #)) cd
       _ -> error . unlines $ [ "Unsupported fusion for " ++ pretty pat
-                             , "Hint: fusion can be disabled using `new/ alloc` instead of `new`" ]
+                             , "Hint: fusion can be disabled using `new/alloc` instead of `new`" ]
   proc0@Replicate{} -> (fuseProc defs proc0 `dotP`) . fuseProc defs
   proc0 -> (proc0 `dotP`) . fuseProc defs
 

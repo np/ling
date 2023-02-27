@@ -21,7 +21,7 @@ new_ten2_Int_dbl =
 
 new_fuse_ten2_Int_dbl =
   \ (depth : Int)-> proc ()
-  new/fuse depth [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  new/( fuse depth)[ab : [!Int, ?Int],nab : {?Int, !Int}].
   ( split ab [a, b].
     ( a <- 42
     | let b#pB : Int <- b )

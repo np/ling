@@ -44,8 +44,6 @@ module Ling.Par
   , pListRSession
   , pOptRepl
   , pCSession
-  , pAllocTerm
-  , pListAllocTerm
   , pNewSig
   , pNewPatt
   , pNewAlloc
@@ -94,8 +92,6 @@ import Ling.Lex
 %name pListRSession ListRSession
 %name pOptRepl OptRepl
 %name pCSession CSession
-%name pAllocTerm AllocTerm
-%name pListAllocTerm ListAllocTerm
 %name pNewSig NewSig
 %name pNewPatt NewPatt
 %name pNewAlloc NewAlloc
@@ -103,60 +99,61 @@ import Ling.Lex
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
 %token
-  '!'        { PT _ (TS _ 1)      }
-  '('        { PT _ (TS _ 2)      }
-  ')'        { PT _ (TS _ 3)      }
-  '**'       { PT _ (TS _ 4)      }
-  ','        { PT _ (TS _ 5)      }
-  '->'       { PT _ (TS _ 6)      }
-  '-o'       { PT _ (TS _ 7)      }
-  '.'        { PT _ (TS _ 8)      }
-  ':'        { PT _ (TS _ 9)      }
-  ':*'       { PT _ (TS _ 10)     }
-  ':]'       { PT _ (TS _ 11)     }
-  ';'        { PT _ (TS _ 12)     }
-  '<'        { PT _ (TS _ 13)     }
-  '<-'       { PT _ (TS _ 14)     }
-  '<='       { PT _ (TS _ 15)     }
-  '='        { PT _ (TS _ 16)     }
-  '>'        { PT _ (TS _ 17)     }
-  '?'        { PT _ (TS _ 18)     }
-  '@'        { PT _ (TS _ 19)     }
-  'Type'     { PT _ (TS _ 20)     }
-  '['        { PT _ (TS _ 21)     }
-  '[:'       { PT _ (TS _ 22)     }
-  '\\'       { PT _ (TS _ 23)     }
-  ']'        { PT _ (TS _ 24)     }
-  '^'        { PT _ (TS _ 25)     }
-  '`'        { PT _ (TS _ 26)     }
-  'as'       { PT _ (TS _ 27)     }
-  'assert'   { PT _ (TS _ 28)     }
-  'case'     { PT _ (TS _ 29)     }
-  'data'     { PT _ (TS _ 30)     }
-  'end'      { PT _ (TS _ 31)     }
-  'fwd'      { PT _ (TS _ 32)     }
-  'in'       { PT _ (TS _ 33)     }
-  'let'      { PT _ (TS _ 34)     }
-  'new'      { PT _ (TS _ 35)     }
-  'new/'     { PT _ (TS _ 36)     }
-  'of'       { PT _ (TS _ 37)     }
-  'parallel' { PT _ (TS _ 38)     }
-  'proc'     { PT _ (TS _ 39)     }
-  'recv'     { PT _ (TS _ 40)     }
-  'send'     { PT _ (TS _ 41)     }
-  'sequence' { PT _ (TS _ 42)     }
-  'split'    { PT _ (TS _ 43)     }
-  'with'     { PT _ (TS _ 44)     }
-  '{'        { PT _ (TS _ 45)     }
-  '|'        { PT _ (TS _ 46)     }
-  '}'        { PT _ (TS _ 47)     }
-  '~'        { PT _ (TS _ 48)     }
-  L_charac   { PT _ (TC $$)       }
-  L_doubl    { PT _ (TD $$)       }
-  L_integ    { PT _ (TI $$)       }
-  L_quoted   { PT _ (TL $$)       }
-  L_Name     { PT _ (T_Name $$)   }
-  L_OpName   { PT _ (T_OpName $$) }
+  '!'        { PT _ (TS _ 1)       }
+  '('        { PT _ (TS _ 2)       }
+  ')'        { PT _ (TS _ 3)       }
+  '**'       { PT _ (TS _ 4)       }
+  ','        { PT _ (TS _ 5)       }
+  '->'       { PT _ (TS _ 6)       }
+  '-o'       { PT _ (TS _ 7)       }
+  '.'        { PT _ (TS _ 8)       }
+  ':'        { PT _ (TS _ 9)       }
+  ':*'       { PT _ (TS _ 10)      }
+  ':]'       { PT _ (TS _ 11)      }
+  ';'        { PT _ (TS _ 12)      }
+  '<'        { PT _ (TS _ 13)      }
+  '<-'       { PT _ (TS _ 14)      }
+  '<='       { PT _ (TS _ 15)      }
+  '='        { PT _ (TS _ 16)      }
+  '>'        { PT _ (TS _ 17)      }
+  '?'        { PT _ (TS _ 18)      }
+  '@'        { PT _ (TS _ 19)      }
+  'Type'     { PT _ (TS _ 20)      }
+  '['        { PT _ (TS _ 21)      }
+  '[:'       { PT _ (TS _ 22)      }
+  '\\'       { PT _ (TS _ 23)      }
+  ']'        { PT _ (TS _ 24)      }
+  '^'        { PT _ (TS _ 25)      }
+  '`'        { PT _ (TS _ 26)      }
+  'as'       { PT _ (TS _ 27)      }
+  'assert'   { PT _ (TS _ 28)      }
+  'case'     { PT _ (TS _ 29)      }
+  'data'     { PT _ (TS _ 30)      }
+  'end'      { PT _ (TS _ 31)      }
+  'fwd'      { PT _ (TS _ 32)      }
+  'in'       { PT _ (TS _ 33)      }
+  'let'      { PT _ (TS _ 34)      }
+  'new'      { PT _ (TS _ 35)      }
+  'new/'     { PT _ (TS _ 36)      }
+  'of'       { PT _ (TS _ 37)      }
+  'parallel' { PT _ (TS _ 38)      }
+  'proc'     { PT _ (TS _ 39)      }
+  'recv'     { PT _ (TS _ 40)      }
+  'send'     { PT _ (TS _ 41)      }
+  'sequence' { PT _ (TS _ 42)      }
+  'split'    { PT _ (TS _ 43)      }
+  'with'     { PT _ (TS _ 44)      }
+  '{'        { PT _ (TS _ 45)      }
+  '|'        { PT _ (TS _ 46)      }
+  '}'        { PT _ (TS _ 47)      }
+  '~'        { PT _ (TS _ 48)      }
+  L_charac   { PT _ (TC $$)        }
+  L_doubl    { PT _ (TD $$)        }
+  L_integ    { PT _ (TI $$)        }
+  L_quoted   { PT _ (TL $$)        }
+  L_Name     { PT _ (T_Name $$)    }
+  L_NewName  { PT _ (T_NewName $$) }
+  L_OpName   { PT _ (T_OpName $$)  }
 
 %%
 
@@ -174,6 +171,9 @@ String   : L_quoted { $1 }
 
 Name :: { Ling.Abs.Name }
 Name  : L_Name { Ling.Abs.Name $1 }
+
+NewName :: { Ling.Abs.NewName }
+NewName  : L_NewName { Ling.Abs.NewName $1 }
 
 OpName :: { Ling.Abs.OpName }
 OpName  : L_OpName { Ling.Abs.OpName $1 }
@@ -378,16 +378,6 @@ CSession :: { Ling.Abs.CSession }
 CSession
   : '.' Term1 { Ling.Abs.Cont $2 } | {- empty -} { Ling.Abs.Done }
 
-AllocTerm :: { Ling.Abs.AllocTerm }
-AllocTerm
-  : Name { Ling.Abs.AVar $1 }
-  | Literal { Ling.Abs.ALit $1 }
-  | '(' Term OptSig ')' { Ling.Abs.AParen $2 $3 }
-
-ListAllocTerm :: { [Ling.Abs.AllocTerm] }
-ListAllocTerm
-  : {- empty -} { [] } | AllocTerm ListAllocTerm { (:) $1 $2 }
-
 NewSig :: { Ling.Abs.NewSig }
 NewSig
   : {- empty -} { Ling.Abs.NoNewSig }
@@ -404,7 +394,7 @@ NewAlloc :: { Ling.Abs.NewAlloc }
 NewAlloc
   : 'new' NewPatt { Ling.Abs.New $2 }
   | 'new/' '(' Term OptSig ')' NewPatt { Ling.Abs.NewSAnn $3 $4 $6 }
-  | OpName ListAllocTerm NewPatt { Ling.Abs.NewNAnn $1 $2 $3 }
+  | NewName NewPatt { Ling.Abs.NewNAnn $1 $2 }
 
 {
 

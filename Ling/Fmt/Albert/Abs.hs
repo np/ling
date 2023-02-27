@@ -132,7 +132,7 @@ data OptRepl = One | Some ATerm
 data CSession = Cont Term | Done
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data AllocTerm = AVar Name | ALit Literal | AParen Term OptSig
+data AllocTerm = AVar Name | ALit Literal
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data NewPatt = TenNewPatt [ChanDec] | SeqNewPatt [ChanDec]

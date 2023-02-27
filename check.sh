@@ -28,7 +28,7 @@ all(){
   done
 }
 
-if ling --no-check </dev/null >/dev/null; then
+if ling --no-check --no-prims </dev/null >/dev/null; then
   :
 else
   echo "The ling command is not in \$PATH"

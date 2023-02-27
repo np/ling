@@ -2,7 +2,7 @@
 
 testname=test4_inferred.t
 command=ling
-args=(  --pretty --no-check --seq --expand test4_inferred.ll )
+args=( --pretty --no-check --seq --expand test4_inferred.ll )
 exit_code=1
 stdin_file=/dev/null
 stdout_file=/dev/null

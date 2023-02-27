@@ -32,8 +32,12 @@ except ``"`` unless preceded by ``\``.
 
 
 
+
 Name literals are recognized by the regular expression
 `````'_' (["%&*+-./:<=>|"] | digit | letter)* (["%&*+-./:<=>|"] | letter) (["%&'*+-./:<=>|"] | digit | letter)* '_' | '_' | letter (["'-_"] | digit | letter)* | digit (["'-_"] | digit | letter)* letter (["'-_"] | digit | letter)*`````
+
+NewName literals are recognized by the regular expression
+`````{"new/"} ('_' (["%&*+-./:<=>|"] | digit | letter)* (["%&*+-./:<=>|"] | letter) (["%&'*+-./:<=>|"] | digit | letter)* '_' | '_' | letter (["'-_"] | digit | letter)* | digit (["'-_"] | digit | letter)* letter (["'-_"] | digit | letter)*)`````
 
 OpName literals are recognized by the regular expression
 `````(["%*+-/"] | digit | letter)* ["%*+-/"] (["%'*+-/_"] | digit | letter)* | (["%&*+-/<=>|"] | digit | letter)* ["%&*+-/<=>|"]+ (["%&'*+-/<=>_|"] | digit | letter)* | ["%&*+-./<=>|"]* '.' ["%&*+-./<=>|"]+ | ["%&*+-./<=>|"]+ '.'`````
@@ -177,11 +181,6 @@ All other symbols are terminals.
   |  |  **|**  | ``^`` //ATerm//
   | //CSession// | -> | ``.`` //Term1//
   |  |  **|**  | **eps**
-  | //AllocTerm// | -> | //Name//
-  |  |  **|**  | //Literal//
-  |  |  **|**  | ``(`` //Term// //OptSig// ``)``
-  | //[AllocTerm]// | -> | **eps**
-  |  |  **|**  | //AllocTerm// //[AllocTerm]//
   | //NewSig// | -> | **eps**
   |  |  **|**  | ``:*`` //Term//
   |  |  **|**  | ``:`` //Term//
@@ -190,7 +189,7 @@ All other symbols are terminals.
   |  |  **|**  | ``(`` //Name// //NewSig// ``)``
   | //NewAlloc// | -> | ``new`` //NewPatt//
   |  |  **|**  | ``new/`` ``(`` //Term// //OptSig// ``)`` //NewPatt//
-  |  |  **|**  | //OpName// //[AllocTerm]// //NewPatt//
+  |  |  **|**  | //NewName// //NewPatt//
 
 
 

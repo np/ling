@@ -282,7 +282,7 @@ com_new_SInt_alloc =
 
 com_new_SInt_fuse1 =
   proc ()
-  new/fuse 1 [c : !Int, d : ?Int].
+  new/fuse1 [c : !Int, d : ?Int].
   ( c <- 42
   | let x#q : Int <- d )
 
@@ -304,7 +304,7 @@ com_new_SInt_RBool_alloc =
 
 com_new_SInt_RBool_fuse1 =
   proc ()
-  new/fuse 1 [c : !Int.?Bool, d : ?Int.!Bool].
+  new/fuse1 [c : !Int.?Bool, d : ?Int.!Bool].
   ( c <- 42.
     let b#p : Bool <- c
   | let x#q : Int <- d.
@@ -312,7 +312,7 @@ com_new_SInt_RBool_fuse1 =
 
 com_new_SInt_RBool_fuse2 =
   proc ()
-  new/fuse 2 [c : !Int.?Bool, d : ?Int.!Bool].
+  new/fuse2 [c : !Int.?Bool, d : ?Int.!Bool].
   ( c <- 42.
     let b#p : Bool <- c
   | let x#q : Int <- d.
@@ -320,7 +320,7 @@ com_new_SInt_RBool_fuse2 =
 
 com_new_SInt_RBool_fuse3 =
   proc ()
-  new/fuse 3 [c : !Int.?Bool, d : ?Int.!Bool].
+  new/fuse3 [c : !Int.?Bool, d : ?Int.!Bool].
   ( c <- 42.
     let b#p : Bool <- c
   | let x#q : Int <- d.
@@ -346,13 +346,13 @@ com_new_mk_ten2_SInt_alloc =
 
 com_new_mk_ten2_SInt_fuse1 =
   proc ()
-  new/fuse 1 [c : !Int, d : ?Int].
+  new/fuse1 [c : !Int, d : ?Int].
   ( c <- 42
   | let x#q : Int <- d )
 
 com_new_mk_ten2_SInt_fuse2 =
   proc ()
-  new/fuse 2 [c : !Int, d : ?Int].
+  new/fuse2 [c : !Int, d : ?Int].
   ( c <- 42
   | let x#q : Int <- d )
 
@@ -2281,7 +2281,7 @@ new_alloc =
 
 new_fuse1_recv_send_send_recv =
   proc ()
-  new/fuse 1 [d : ?Int.!Int, c : !Int.?Int].
+  new/fuse1 [d : ?Int.!Int, c : !Int.?Int].
   ( c <- 1.
     let x : Int <- c
   | let y : Int <- d.
@@ -2317,7 +2317,7 @@ new_ten2_Int_dbl =
 
 new_fuse_ten2_Int_dbl =
   \ (depth : Int)-> proc ()
-  new/fuse depth [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  new/( fuse depth)[ab : [!Int, ?Int],nab : {?Int, !Int}].
   ( split ab [a, b].
     ( a <- 42
     | let b#pB : Int <- b )
@@ -2337,7 +2337,7 @@ new_fuse0_ten2_Int_dbl =
 
 new_fuse1_ten2_Int_dbl =
   proc ()
-  new/fuse 1 [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  new/fuse1 [ab : [!Int, ?Int],nab : {?Int, !Int}].
   ( split ab [a, b].
     ( a <- 42
     | let b#pB : Int <- b )
@@ -2347,7 +2347,7 @@ new_fuse1_ten2_Int_dbl =
 
 new_fuse2_ten2_Int_dbl =
   proc ()
-  new/fuse 2 [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  new/fuse2 [ab : [!Int, ?Int],nab : {?Int, !Int}].
   ( split ab [a, b].
     ( a <- 42
     | let b#pB : Int <- b )
@@ -2357,7 +2357,7 @@ new_fuse2_ten2_Int_dbl =
 
 new_fuse3_ten2_Int_dbl =
   proc ()
-  new/fuse 3 [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  new/fuse3 [ab : [!Int, ?Int],nab : {?Int, !Int}].
   ( split ab [a, b].
     ( a <- 42
     | let b#pB : Int <- b )
@@ -2377,7 +2377,7 @@ new_fused_ten2_Int_dbl =
 
 new_ten2_Int_fwd =
   proc ()
-  new/fuse 2 [ab : [!Int, ?Int],nab : {?Int, !Int}].
+  new/fuse2 [ab : [!Int, ?Int],nab : {?Int, !Int}].
   ( split ab [a, b].
     ( a <- 42
     | let b#pB : Int <- b )

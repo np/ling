@@ -1,10 +1,12 @@
 
 /* C program */
 
-void send_42_lin (int * c_lin){
-  * c_lin = 42 ;
-  }
-void embed_send_42_lin (int * c_lin){
-  * c_lin = 42 ;
-  }
+void send_42_lin (int * c_lin)
+{
+  * c_lin = 42;
+}
+void embed_send_42_lin (int * c_lin)
+{
+  * c_lin = 42;
+}
 

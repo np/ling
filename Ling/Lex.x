@@ -49,6 +49,10 @@ $white+ ;
 \_ ([\% \& \* \+ \- \. \/ \: \< \= \> \|]| ($d | $l)) * ([\% \& \* \+ \- \. \/ \: \< \= \> \|]| $l)([\% \& \' \* \+ \- \. \/ \: \< \= \> \|]| ($d | $l)) * \_ | \_ | $l ([\' \- \_]| ($d | $l)) * | $d ([\' \- \_]| ($d | $l)) * $l ([\' \- \_]| ($d | $l)) *
     { tok (eitherResIdent T_Name) }
 
+-- token NewName
+n e w \/ (\_ ([\% \& \* \+ \- \. \/ \: \< \= \> \|]| ($d | $l)) * ([\% \& \* \+ \- \. \/ \: \< \= \> \|]| $l)([\% \& \' \* \+ \- \. \/ \: \< \= \> \|]| ($d | $l)) * \_ | \_ | $l ([\' \- \_]| ($d | $l)) * | $d ([\' \- \_]| ($d | $l)) * $l ([\' \- \_]| ($d | $l)) *)
+    { tok (eitherResIdent T_NewName) }
+
 -- token OpName
 ([\% \* \+ \- \/]| ($d | $l)) * [\% \* \+ \- \/]([\% \' \* \+ \- \/ \_]| ($d | $l)) * | ([\% \& \* \+ \- \/ \< \= \> \|]| ($d | $l)) * [\% \& \* \+ \- \/ \< \= \> \|]+ ([\% \& \' \* \+ \- \/ \< \= \> \_ \|]| ($d | $l)) * | [\% \& \* \+ \- \. \/ \< \= \> \|]* \. [\% \& \* \+ \- \. \/ \< \= \> \|]+ | [\% \& \* \+ \- \. \/ \< \= \> \|]+ \.
     { tok (eitherResIdent T_OpName) }
@@ -87,6 +91,7 @@ data Tok
   | TD !String                    -- ^ Float literal.
   | TC !String                    -- ^ Character literal.
   | T_Name !String
+  | T_NewName !String
   | T_OpName !String
   deriving (Eq, Show, Ord)
 
@@ -151,6 +156,7 @@ tokenText t = case t of
   PT _ (TC s)   -> s
   Err _         -> "#error"
   PT _ (T_Name s) -> s
+  PT _ (T_NewName s) -> s
   PT _ (T_OpName s) -> s
 
 -- | Convert a token to a string.

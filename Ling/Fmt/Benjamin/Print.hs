@@ -341,7 +341,6 @@ instance Print Ling.Fmt.Benjamin.Abs.AllocTerm where
   prt i = \case
     Ling.Fmt.Benjamin.Abs.AVar name -> prPrec i 0 (concatD [prt 0 name])
     Ling.Fmt.Benjamin.Abs.ALit literal -> prPrec i 0 (concatD [prt 0 literal])
-    Ling.Fmt.Benjamin.Abs.AParen term optsig -> prPrec i 0 (concatD [doc (showString "("), prt 0 term, prt 0 optsig, doc (showString ")")])
 
 instance Print [Ling.Fmt.Benjamin.Abs.AllocTerm] where
   prt _ [] = concatD []

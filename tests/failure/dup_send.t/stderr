@@ -1,3 +1,5 @@
 ling: These channels are re-used:
  c 
 
+CallStack (from HasCallStack):
+  error, called at ./Ling/Proto.hs:88:5 in ling-0.1.0.0-inplace:Ling.Proto

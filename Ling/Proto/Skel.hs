@@ -124,8 +124,6 @@ instance (Print a, Eq a) => Print (Skel a) where
               , prt 0 proc2
               , txt "\n)"]
 
-  prtList _ = prt 0 . mconcat
-
 infixr 4 `actS`
 
 actS :: Eq a => a -> Endom (Skel a)

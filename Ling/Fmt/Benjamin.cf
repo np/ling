@@ -174,7 +174,6 @@ Done. CSession ::= ;
 
 AVar.     AllocTerm ::= Name ;
 ALit.     AllocTerm ::= Literal ;
-AParen.   AllocTerm ::= "(" Term OptSig ")" ;
 separator AllocTerm "" ;
 
 NoNewSig.   NewSig  ::= ;

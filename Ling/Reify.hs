@@ -428,15 +428,6 @@ instance Norm ConName where
 reifyTerm :: N.Term -> Term
 reifyTerm = reify
 
-instance Norm AllocTerm where
-  type Normalized AllocTerm = N.Term
-  reify (N.Lit lit)    = ALit lit
-  reify (N.Def _ d []) = AVar (reify d)
-  reify t              = AParen (reify t) NoSig
-  norm (ALit lit)    = N.Lit lit
-  norm (AVar d)      = N.mkVar (norm d)
-  norm (AParen t os) = N.optSig (norm t) (norm os)
-
 instance Norm NewPatt where
   type Normalized NewPatt = N.NewPatt
   reify = \case
@@ -460,15 +451,19 @@ instance Norm NewAlloc where
   reify (anns, kcds) =
     case anns of
       [] -> New (reify kcds)
-      [N.Def _ (Name "fuse") [N.Lit (N.LInteger 0)]] -> NewNAnn (OpName "new/alloc") [] (reify kcds)
-      -- ^ special case to normalize "fuse 0" into "alloc".
-      [N.Def _ (Name d) ts] -> NewNAnn (OpName ("new/" ++ d)) (reify ts) (reify kcds)
+      [N.Def _ (Name "fuse") [N.Lit (N.LInteger n)]]
+      -- ^ special case to normalize "fuse [0-3]".
+         | n == 0 -> NewNAnn (NewName "new/alloc") (reify kcds)
+         | n == 1 -> NewNAnn (NewName "new/fuse1") (reify kcds)
+         | n == 2 -> NewNAnn (NewName "new/fuse2") (reify kcds)
+         | n == 3 -> NewNAnn (NewName "new/fuse3") (reify kcds)
+      [N.Def _ (Name n) []] -> NewNAnn (NewName ("new/"<>n)) (reify kcds)
       [t] -> NewSAnn (reify t) NoSig (reify kcds)
       _ -> error "reify/NewAlloc: IMPOSSIBLE"
   norm (New newpatt) = ([], norm newpatt)
   norm (NewSAnn t os newpatt) = ([N.optSig (norm t) (norm os)], norm newpatt)
-  norm (NewNAnn (OpName newd) ts newpatt)
-    | Just d <- newd ^? prefixed "new/" = ([N.Def N.Defined (Name d) (norm ts)], norm newpatt)
+  norm (NewNAnn (NewName newd) {-ts-} newpatt)
+    | Just d <- newd ^? prefixed "new/" = ([N.Def N.Defined (Name d) []{-(norm ts)-}], norm newpatt)
     | otherwise                         = error "norm/NewAlloc: IMPOSSIBLE"
 
 instance Norm ChanDec where

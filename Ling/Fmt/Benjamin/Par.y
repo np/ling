@@ -392,7 +392,6 @@ AllocTerm :: { Ling.Fmt.Benjamin.Abs.AllocTerm }
 AllocTerm
   : Name { Ling.Fmt.Benjamin.Abs.AVar $1 }
   | Literal { Ling.Fmt.Benjamin.Abs.ALit $1 }
-  | '(' Term OptSig ')' { Ling.Fmt.Benjamin.Abs.AParen $2 $3 }
 
 ListAllocTerm :: { [Ling.Fmt.Benjamin.Abs.AllocTerm] }
 ListAllocTerm

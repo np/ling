@@ -130,10 +130,9 @@ transOptSplit :: ([L.CPatt] -> L.CPatt) -> OptSplit -> [ChanDec] -> L.Act
 transOptSplit k optsplit cs = L.Split
   (L.PatSplit (transName $ optSplitName optsplit) L.SoAs (k (L.ChaPatt . transChanDec <$> cs)))
 
-transAllocTerm :: AllocTerm -> L.AllocTerm
-transAllocTerm (AVar d) = L.AVar (transName d)
-transAllocTerm (ALit lit) = L.ALit (transLiteral lit)
-transAllocTerm (AParen t os) = L.AParen (transTerm t) (transOptSig os)
+transAllocTerm :: AllocTerm -> L.ATerm
+transAllocTerm (AVar d) = L.Var (transName d)
+transAllocTerm (ALit lit) = L.Lit (transLiteral lit)
 
 transNewSig :: NewSig -> L.NewSig
 transNewSig = \case
@@ -152,10 +151,18 @@ transNewAlloc = \case
   New newpatt -> L.New (transNewPatt newpatt)
   OldNew chandecs -> L.New (L.TenNewPatt (L.ChaPatt . transChanDec <$> chandecs))
   NewSAnn term optsig newpatt -> L.NewSAnn (transTerm term) (transOptSig optsig) (transNewPatt newpatt)
-  NewNAnn opnname allocterms newpatt -> L.NewNAnn (transOpName opnname) (transAllocTerm <$> allocterms) (transNewPatt newpatt)
+  NewNAnn opnname [] newpatt -> L.NewNAnn (transNewName opnname) (transNewPatt newpatt)
+  NewNAnn opnname allocterms newpatt -> L.NewSAnn (L.RawApp (L.Var (stripNewName opnname)) (transAllocTerm <$> allocterms)) L.NoSig (transNewPatt newpatt)
 
 transOpName :: OpName -> L.OpName
 transOpName (OpName x) = L.OpName x
+
+transNewName :: OpName -> L.NewName
+transNewName (OpName x) = L.NewName x
+
+stripNewName :: OpName -> L.Name
+stripNewName (OpName ('n':'e':'w':'/':name)) = L.Name name
+stripNewName _ = error "stripNewName"
 
 transOptSession :: OptSession -> L.OptSession
 transOptSession = \case

@@ -1,1 +1,3 @@
 ling: fwdIO: Not enough channels for this forwarder (or the session is not a sink)
+CallStack (from HasCallStack):
+  error, called at ./Ling/Fwd.hs:38:50 in ling-0.1.0.0-inplace:Ling.Fwd

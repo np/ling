@@ -1,10 +1,10 @@
 flags: {}
 packages:
 - '.'
-extra-deps:
-  - BNFC-2.8.1
-  - cabal-helper-0.5.3.0
- #- ghci-pretty-0.0.2
- #- ipprint-0.6
- #- sr-extra-1.46.3.1
-resolver: lts-6.3
+extra-deps: []
+# - BNFC-2.9.4.1
+# - cabal-helper-0.5.3.0
+#- ghci-pretty-0.0.2
+#- ipprint-0.6
+#- sr-extra-1.46.3.1
+resolver: lts-20.11

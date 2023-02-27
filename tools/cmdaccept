@@ -1,0 +1,40 @@
+me=$(basename "$0")
+
+logger(){
+  cat >&2
+}
+
+info(){
+  echo "$me: $@" | logger
+}
+
+error(){
+  local code="$1"
+  shift
+  echo "error: $@" | logger
+  exit "$code"
+}
+
+#error 1 'not working yet since we use symlinks to fixtures...'
+
+for f
+do
+  case "$f" in
+  (*.t)
+    git add "$f"
+    rm -r "$f"
+    my="${f%.t}".my
+    mv "$my" "$f"
+    info 'Now please checkout the symlink parts:'
+    git checkout -p "$f"
+    info 'Now please add the good parts:'
+    git add -p "$f"
+    ;;
+  (*.my)
+    error 1 "Use the .t directory instead"
+    ;;
+  (*)
+    error 1 "Unexpect file, use only .t directories"
+    ;;
+  esac
+done

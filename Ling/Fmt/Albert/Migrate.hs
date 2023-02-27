@@ -117,7 +117,6 @@ transAct = \case
 transAllocTerm :: AllocTerm -> L.AllocTerm
 transAllocTerm (AVar d) = L.AVar (transName d)
 transAllocTerm (ALit lit) = L.ALit (transLiteral lit)
-transAllocTerm (AParen t os) = L.AParen (transTerm t) (transOptSig os)
 
 transNewPatt :: NewPatt -> L.NewPatt
 transNewPatt (TenNewPatt chandecs) = L.TenNewPatt (L.ChaPatt . transChanDec <$> chandecs)

@@ -1,7 +1,8 @@
 
 /* C program */
 
-void send_1_lin (int * c_lin){
-  * c_lin = 1 ;
-  }
+void send_1_lin (int * c_lin)
+{
+  * c_lin = 1;
+}
 

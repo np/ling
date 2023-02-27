@@ -139,9 +139,6 @@ data OptRepl = One | Some ATerm
 data CSession = Cont Term | Done
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data AllocTerm = AVar Name | ALit Literal | AParen Term OptSig
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
 data NewSig = NoNewSig | NewTypeSig Term | NewSessSig Term
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
@@ -152,10 +149,13 @@ data NewPatt
 data NewAlloc
     = New NewPatt
     | NewSAnn Term OptSig NewPatt
-    | NewNAnn OpName [AllocTerm] NewPatt
+    | NewNAnn NewName NewPatt
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 newtype Name = Name String
+  deriving (C.Eq, C.Ord, C.Show, C.Read, Data.String.IsString)
+
+newtype NewName = NewName String
   deriving (C.Eq, C.Ord, C.Show, C.Read, Data.String.IsString)
 
 newtype OpName = OpName String

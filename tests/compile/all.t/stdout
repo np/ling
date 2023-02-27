@@ -1,7 +1,7 @@
 
 /* C program */
 
-int Int_lin ;
+int Int_lin;
 int __plus___lin (const int m_lin, const int n_lin);
 int __sub___lin (const int m_lin, const int n_lin);
 int __times___lin (const int m_lin, const int n_lin);
@@ -18,16 +18,16 @@ void * * take_lin (const int A_lin, const int m_lin, const int n_lin, const void
 void * * drop_lin (const int A_lin, const int m_lin, const int n_lin, const void * * v_lin);
 int * merge_lin (const int m_lin, const int n_lin, const int * v0_lin, const int * v1_lin);
 int * sort_lin (const int n_lin, const int * v_lin);
-int Session_lin ;
+int Session_lin;
 void * Log_lin (const void * S_lin);
 void * Seq_lin (const void * S_lin);
 void * Send_lin (const void * S_lin);
 void * Recv_lin (const void * S_lin);
-int Allocation_lin ;
-void * auto_lin ;
-void * fused_lin ;
+int Allocation_lin;
+void * auto_lin;
+void * fused_lin;
 void * fuse_lin (const int depth_lin);
-int Double_lin ;
+int Double_lin;
 double __plus_D__lin (const double m_lin, const double n_lin);
 double __sub_D__lin (const double m_lin, const double n_lin);
 double __times_D__lin (const double m_lin, const double n_lin);
@@ -38,13 +38,13 @@ void * _<=D__lin (const double m_lin, const double n_lin);
 void * _>=D__lin (const double m_lin, const double n_lin);
 void * _<D__lin (const double m_lin, const double n_lin);
 void * _>D__lin (const double m_lin, const double n_lin);
-int Char_lin ;
+int Char_lin;
 void * _==C__lin (const char c0_lin, const char c1_lin);
 void * _>=C__lin (const char c0_lin, const char c1_lin);
 void * _<=C__lin (const char c0_lin, const char c1_lin);
 void * _>C__lin (const char c0_lin, const char c1_lin);
 void * _<C__lin (const char c0_lin, const char c1_lin);
-int String_lin ;
+int String_lin;
 void * _==S__lin (const char * s0_lin, const char * s1_lin);
 char * showInt_lin (const int n_lin);
 char * showDouble_lin (const double n_lin);
@@ -64,1457 +64,1754 @@ void * _<=CD__lin (const complex double m_lin, const complex double n_lin);
 void * _>=CD__lin (const complex double m_lin, const complex double n_lin);
 void * _<CD__lin (const complex double m_lin, const complex double n_lin);
 void * _>CD__lin (const complex double m_lin, const complex double n_lin);
-void ap_SInt_SBool_lin (struct {
-  struct {
-    int f0 ;
-    void * f1 ;
+void ap_SInt_SBool_lin (struct
+{
+  struct
+  {
+    int f0;
+    void * f1;
+  }
+  f0;
+  struct
+  {
+    int f0;
+    void * f1;
+  }
+  f1;
+}
+* c_lin)
+{
+  const int x__x_lin = c_lin -> f1 . f0;
+  c_lin -> f0 . f0 = x__x_lin;
+  const void * x__fo_lin = c_lin -> f0 . f1;
+  c_lin -> f1 . f1 = x__fo_lin;
+}
+void pnot_lin (void * c_lin)
+{
+  const void * x_lin = c_lin;
+  c_lin = x_lin == con_false ? con_true : con_false;
+}
+void com_new_SInt_alloc_lin ()
+{
+  int c_lin;
+  c_lin = 42;
+  const int x__q_lin = c_lin;
+}
+void com_new_SInt_fuse1_lin ()
+{
+  int c_lin;
+  c_lin = 42;
+  const int x__q_lin = c_lin;
+}
+void com_new_SInt_RBool_alloc_lin ()
+{
+  union
+  {
+    int u0;
+    void * u1;
+  }
+  c_lin;
+  c_lin = 42;
+  const int x__q_lin = c_lin;
+  c_lin = con_true;
+  const void * b__p_lin = c_lin;
+}
+void com_new_SInt_RBool_fuse1_lin ()
+{
+  union
+  {
+    int u0;
+    void * u1;
+  }
+  c_lin;
+  c_lin = 42;
+  const int x__q_lin = c_lin;
+  c_lin = con_true;
+  const void * b__p_lin = c_lin;
+}
+void com_new_SInt_RBool_fuse2_lin ()
+{
+  union
+  {
+    int u0;
+    void * u1;
+  }
+  c_lin;
+  c_lin = 42;
+  const int x__q_lin = c_lin;
+  c_lin = con_true;
+  const void * b__p_lin = c_lin;
+}
+void com_new_SInt_RBool_fuse3_lin ()
+{
+  union
+  {
+    int u0;
+    void * u1;
+  }
+  c_lin;
+  c_lin = 42;
+  const int x__q_lin = c_lin;
+  c_lin = con_true;
+  const void * b__p_lin = c_lin;
+}
+void com_new_mk_ten2_SInt_alloc_lin ()
+{
+  int c_lin;
+  c_lin = 42;
+  const int x__q_lin = c_lin;
+}
+void com_new_mk_ten2_SInt_fuse1_lin ()
+{
+  int c_lin;
+  c_lin = 42;
+  const int x__q_lin = c_lin;
+}
+void com_new_mk_ten2_SInt_fuse2_lin ()
+{
+  int c_lin;
+  c_lin = 42;
+  const int x__q_lin = c_lin;
+}
+void curry_SInt_SBool_SDouble_lin (struct
+{
+  struct
+  {
+    struct
+    {
+      int f0;
+      void * f1;
     }
-  f0 ;
-  struct {
-    int f0 ;
-    void * f1 ;
+    f0;
+    double f1;
+  }
+  f0;
+  struct
+  {
+    int f0;
+    struct
+    {
+      void * f0;
+      double f1;
     }
-  f1 ;
+    f1;
   }
-* c_lin){
-  const int x__x_lin = c_lin -> f1 . f0 ;
-  c_lin -> f0 . f0 = x__x_lin ;
-  const void * x__fo_lin = c_lin -> f0 . f1 ;
-  c_lin -> f1 . f1 = x__fo_lin ;
-  }
-void pnot_lin (void * c_lin){
-  const void * x_lin = c_lin ;
-  c_lin = x_lin == con_false ? con_true : con_false ;
-  }
-void com_new_SInt_alloc_lin () {
-  int c_lin ;
-  c_lin = 42 ;
-  const int x__q_lin = c_lin ;
-  }
-void com_new_SInt_fuse1_lin () {
-  int c_lin ;
-  c_lin = 42 ;
-  const int x__q_lin = c_lin ;
-  }
-void com_new_SInt_RBool_alloc_lin () {
-  union {
-    int u0 ;
-    void * u1 ;
-    }
-  c_lin ;
-  c_lin = 42 ;
-  const int x__q_lin = c_lin ;
-  c_lin = con_true ;
-  const void * b__p_lin = c_lin ;
-  }
-void com_new_SInt_RBool_fuse1_lin () {
-  union {
-    int u0 ;
-    void * u1 ;
-    }
-  c_lin ;
-  c_lin = 42 ;
-  const int x__q_lin = c_lin ;
-  c_lin = con_true ;
-  const void * b__p_lin = c_lin ;
-  }
-void com_new_SInt_RBool_fuse2_lin () {
-  union {
-    int u0 ;
-    void * u1 ;
-    }
-  c_lin ;
-  c_lin = 42 ;
-  const int x__q_lin = c_lin ;
-  c_lin = con_true ;
-  const void * b__p_lin = c_lin ;
-  }
-void com_new_SInt_RBool_fuse3_lin () {
-  union {
-    int u0 ;
-    void * u1 ;
-    }
-  c_lin ;
-  c_lin = 42 ;
-  const int x__q_lin = c_lin ;
-  c_lin = con_true ;
-  const void * b__p_lin = c_lin ;
-  }
-void com_new_mk_ten2_SInt_alloc_lin () {
-  int c_lin ;
-  c_lin = 42 ;
-  const int x__q_lin = c_lin ;
-  }
-void com_new_mk_ten2_SInt_fuse1_lin () {
-  int c_lin ;
-  c_lin = 42 ;
-  const int x__q_lin = c_lin ;
-  }
-void com_new_mk_ten2_SInt_fuse2_lin () {
-  int c_lin ;
-  c_lin = 42 ;
-  const int x__q_lin = c_lin ;
-  }
-void curry_SInt_SBool_SDouble_lin (struct {
-  struct {
-    struct {
-      int f0 ;
-      void * f1 ;
-      }
-    f0 ;
-    double f1 ;
-    }
-  f0 ;
-  struct {
-    int f0 ;
-    struct {
-      void * f0 ;
-      double f1 ;
-      }
-    f1 ;
-    }
-  f1 ;
-  }
-* c_lin){
-  const int x__x_lin = c_lin -> f1 . f0 ;
-  c_lin -> f0 . f0 . f0 = x__x_lin ;
-  const void * x__y_lin = c_lin -> f1 . f1 . f0 ;
-  c_lin -> f0 . f0 . f1 = x__y_lin ;
-  const double x__fo_lin = c_lin -> f0 . f1 ;
-  c_lin -> f1 . f1 . f1 = x__fo_lin ;
-  }
-void cutEmptyParTensor_lin () {
-  }
-void cut_par_cut_lin () {
-  int c_lin ;
-  int c___lin ;
-  c_lin = 1 ;
-  const int x_lin = c_lin ;
-  c___lin = 1 ;
-  const int x___lin = c___lin ;
-  }
-void cutSendRecv_lin () {
-  int c_lin ;
-  c_lin = 1 ;
-  const int x_lin = c_lin ;
-  }
-void cut_send_recv_recv_send_with_log_lin (char * logc_lin, char * logd_lin){
-  int c_lin ;
-  logd_lin = "recv d" ;
-  logc_lin = "send c 1" ;
-  c_lin = 1 ;
-  const int y_lin = c_lin ;
-  logc_lin = "recv c" ;
-  logd_lin = "send d 2" ;
-  c_lin = 2 ;
-  const int x_lin = c_lin ;
-  }
-void cut_send_recv_recv_send_with_log_prll_lin (char * logc_lin, char * logd_lin){
-  int c_lin ;
-  logd_lin = "recv d" ;
-  logc_lin = "send c 1" ;
-  c_lin = 1 ;
-  const int y_lin = c_lin ;
-  logc_lin = "recv c" ;
-  logd_lin = "send d 2" ;
-  c_lin = 2 ;
-  const int x_lin = c_lin ;
-  }
-void div_mod_server_cont_lin (int * c_lin){
-  const int m_lin = * c_lin ;
-  const int n_lin = * c_lin ;
+  f1;
+}
+* c_lin)
+{
+  const int x__x_lin = c_lin -> f1 . f0;
+  c_lin -> f0 . f0 . f0 = x__x_lin;
+  const void * x__y_lin = c_lin -> f1 . f1 . f0;
+  c_lin -> f0 . f0 . f1 = x__y_lin;
+  const double x__fo_lin = c_lin -> f0 . f1;
+  c_lin -> f1 . f1 . f1 = x__fo_lin;
+}
+void cutEmptyParTensor_lin ()
+{
+}
+void cut_par_cut_lin ()
+{
+  int c_lin;
+  int c___lin;
+  c_lin = 1;
+  const int x_lin = c_lin;
+  c___lin = 1;
+  const int x___lin = c___lin;
+}
+void cutSendRecv_lin ()
+{
+  int c_lin;
+  c_lin = 1;
+  const int x_lin = c_lin;
+}
+void cut_send_recv_recv_send_with_log_lin (char * logc_lin, char * logd_lin)
+{
+  int c_lin;
+  logd_lin = "recv d";
+  logc_lin = "send c 1";
+  c_lin = 1;
+  const int y_lin = c_lin;
+  logc_lin = "recv c";
+  logd_lin = "send d 2";
+  c_lin = 2;
+  const int x_lin = c_lin;
+}
+void cut_send_recv_recv_send_with_log_prll_lin (char * logc_lin, char * logd_lin)
+{
+  int c_lin;
+  logd_lin = "recv d";
+  logc_lin = "send c 1";
+  c_lin = 1;
+  const int y_lin = c_lin;
+  logc_lin = "recv c";
+  logd_lin = "send d 2";
+  c_lin = 2;
+  const int x_lin = c_lin;
+}
+void div_mod_server_cont_lin (int * c_lin)
+{
+  const int m_lin = * c_lin;
+  const int n_lin = * c_lin;
   * c_lin = (m_lin / n_lin);
   * c_lin = (m_lin % n_lin);
-  }
-void div_mod_server_explicit_prll_lin (const int * rm_lin, const int * rn_lin, int * sdiv_lin, int * smod_lin){
-  const int n_lin = * rn_lin ;
-  const int m_lin = * rm_lin ;
+}
+void div_mod_server_explicit_prll_lin (const int * rm_lin, const int * rn_lin, int * sdiv_lin, int * smod_lin)
+{
+  const int n_lin = * rn_lin;
+  const int m_lin = * rm_lin;
   * sdiv_lin = (m_lin / n_lin);
   * smod_lin = (m_lin % n_lin);
-  }
-void div_mod_server_par2_ten2_ten2_lin (const struct {
-  int f0 ;
-  int f1 ;
-  }
-* r_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* s_lin){
-  const int m_lin = r_lin -> f0 ;
-  const int n_lin = r_lin -> f1 ;
+}
+void div_mod_server_par2_ten2_ten2_lin (const struct
+{
+  int f0;
+  int f1;
+}
+* r_lin, struct
+{
+  int f0;
+  int f1;
+}
+* s_lin)
+{
+  const int m_lin = r_lin -> f0;
+  const int n_lin = r_lin -> f1;
   s_lin -> f0 = (m_lin / n_lin);
   s_lin -> f1 = (m_lin % n_lin);
-  }
-void div_mod_server_par4_lin (struct {
-  int f0 ;
-  int f1 ;
-  int f2 ;
-  int f3 ;
-  }
-* c_lin){
-  const int m_lin = c_lin -> f0 ;
-  const int n_lin = c_lin -> f1 ;
+}
+void div_mod_server_par4_lin (struct
+{
+  int f0;
+  int f1;
+  int f2;
+  int f3;
+}
+* c_lin)
+{
+  const int m_lin = c_lin -> f0;
+  const int n_lin = c_lin -> f1;
   c_lin -> f2 = (m_lin / n_lin);
   c_lin -> f3 = (m_lin % n_lin);
+}
+void div_mod_server_seq2_ten2_ten2_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void div_mod_server_seq2_ten2_ten2_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f1 ;
+  f0;
+  struct
+  {
+    int f0;
+    int f1;
   }
-* c_lin){
-  const int m_lin = c_lin -> f0 . f0 ;
-  const int n_lin = c_lin -> f0 . f1 ;
+  f1;
+}
+* c_lin)
+{
+  const int m_lin = c_lin -> f0 . f0;
+  const int n_lin = c_lin -> f0 . f1;
   c_lin -> f1 . f0 = (m_lin / n_lin);
   c_lin -> f1 . f1 = (m_lin % n_lin);
-  }
-void div_mod_server_seq4_lin (struct {
-  int f0 ;
-  int f1 ;
-  int f2 ;
-  int f3 ;
-  }
-* c_lin){
-  const int m_lin = c_lin -> f0 ;
-  const int n_lin = c_lin -> f1 ;
+}
+void div_mod_server_seq4_lin (struct
+{
+  int f0;
+  int f1;
+  int f2;
+  int f3;
+}
+* c_lin)
+{
+  const int m_lin = c_lin -> f0;
+  const int n_lin = c_lin -> f1;
   c_lin -> f2 = (m_lin / n_lin);
   c_lin -> f3 = (m_lin % n_lin);
-  }
-void div_mod_server_simple_lin (const int * rm_lin, const int * rn_lin, int * sdiv_lin, int * smod_lin){
-  const int m_lin = * rm_lin ;
-  const int n_lin = * rn_lin ;
+}
+void div_mod_server_simple_lin (const int * rm_lin, const int * rn_lin, int * sdiv_lin, int * smod_lin)
+{
+  const int m_lin = * rm_lin;
+  const int n_lin = * rn_lin;
   * sdiv_lin = (m_lin / n_lin);
   * smod_lin = (m_lin % n_lin);
-  }
-void double_lin (const int * a_lin, int * b_lin){
-  const int x_lin = * a_lin ;
+}
+void double_lin (const int * a_lin, int * b_lin)
+{
+  const int x_lin = * a_lin;
   * b_lin = (x_lin + x_lin);
-  }
-void double_21_lin (int * b_lin){
-  int c_lin ;
-  c_lin = 21 ;
-  const int x_lin = c_lin ;
+}
+void double_21_lin (int * b_lin)
+{
+  int c_lin;
+  c_lin = 21;
+  const int x_lin = c_lin;
   * b_lin = (x_lin + x_lin);
-  }
-void double_21_seq_lin (int * b_lin){
-  int c_lin ;
-  c_lin = 21 ;
-  const int x_lin = c_lin ;
+}
+void double_21_seq_lin (int * b_lin)
+{
+  int c_lin;
+  c_lin = 21;
+  const int x_lin = c_lin;
   * b_lin = (x_lin + x_lin);
-  }
-void double_21_fused_lin (int * b_lin){
-  * b_lin = 42 ;
-  }
-void double_21_fused_and_reduced_lin (int * b_lin){
-  * b_lin = 42 ;
-  }
-void send_42_lin (int * c_lin){
-  * c_lin = 42 ;
-  }
-void embed_send_42_lin (int * c_lin){
-  * c_lin = 42 ;
-  }
-void fake_div_mod_server_ten2_lin (const struct {
-  int f0 ;
-  int f1 ;
-  }
-* r_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* s_lin){
-  s_lin -> f0 = 42 ;
-  s_lin -> f1 = 21 ;
-  const int m_lin = r_lin -> f0 ;
-  const int n_lin = r_lin -> f1 ;
-  }
-void feed_fwd_send_then_recv_Int_String_42_showInt_lin () {
-  struct {
-    union {
-      int u0 ;
-      char * u1 ;
-      }
-    f0 ;
-    union {
-      int u0 ;
-      char * u1 ;
-      }
-    f1 ;
+}
+void double_21_fused_lin (int * b_lin)
+{
+  * b_lin = 42;
+}
+void double_21_fused_and_reduced_lin (int * b_lin)
+{
+  * b_lin = 42;
+}
+void send_42_lin (int * c_lin)
+{
+  * c_lin = 42;
+}
+void embed_send_42_lin (int * c_lin)
+{
+  * c_lin = 42;
+}
+void fake_div_mod_server_ten2_lin (const struct
+{
+  int f0;
+  int f1;
+}
+* r_lin, struct
+{
+  int f0;
+  int f1;
+}
+* s_lin)
+{
+  s_lin -> f0 = 42;
+  s_lin -> f1 = 21;
+  const int m_lin = r_lin -> f0;
+  const int n_lin = r_lin -> f1;
+}
+void feed_fwd_send_then_recv_Int_String_42_showInt_lin ()
+{
+  struct
+  {
+    union
+    {
+      int u0;
+      char * u1;
     }
-  a_lin ;
-  a_lin . f1 = 42 ;
-  const int x__c__1__p_lin = a_lin . f1 ;
-  a_lin . f0 = x__c__1__p_lin ;
-  const int x_lin = a_lin . f0 ;
+    f0;
+    union
+    {
+      int u0;
+      char * u1;
+    }
+    f1;
+  }
+  a_lin;
+  a_lin . f1 = 42;
+  const int x__c__1__p_lin = a_lin . f1;
+  a_lin . f0 = x__c__1__p_lin;
+  const int x_lin = a_lin . f0;
   a_lin . f0 = showInt_lin (x_lin);
-  const char * x__c__0__p_lin = a_lin . f0 ;
-  a_lin . f1 = x__c__0__p_lin ;
-  const char * o_lin = a_lin . f1 ;
+  const char * x__c__0__p_lin = a_lin . f0;
+  a_lin . f1 = x__c__0__p_lin;
+  const char * o_lin = a_lin . f1;
+}
+void fwd0_snd0_lin (const struct
+{
+}
+* c_lin)
+{
+}
+void fwd1_par2_rcv_lin (const struct
+{
+  int f0;
+  void * f1;
+}
+* c_lin)
+{
+  const int x__c__0__0_lin = c_lin -> f0;
+  const void * x__c__0__1_lin = c_lin -> f1;
+}
+void fwd1_rcv_lin (const int * c_lin)
+{
+  const int x__c__0_lin = * c_lin;
+}
+void fwd1_seq2_rcv_lin (const struct
+{
+  int f0;
+  void * f1;
+}
+* c_lin)
+{
+  const int x__c__0__0_lin = c_lin -> f0;
+  const void * x__c__0__1_lin = c_lin -> f1;
+}
+void fwd1_ten2_rcv_lin (const struct
+{
+  int f0;
+  void * f1;
+}
+* c_lin)
+{
+  const int x__c__0__0_lin = c_lin -> f0;
+  const void * x__c__0__1_lin = c_lin -> f1;
+}
+void fwd2_par2_ten2_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void fwd0_snd0_lin (const struct {
+  f0;
+  struct
+  {
+    int f0;
+    int f1;
   }
-* c_lin){
+  f1;
+}
+* c_lin)
+{
+  const int x__c__0__0_lin = c_lin -> f0 . f0;
+  const int x__c__1__1_lin = c_lin -> f1 . f1;
+  c_lin -> f1 . f0 = x__c__0__0_lin;
+  c_lin -> f0 . f1 = x__c__1__1_lin;
+  const int x__c__0__1_lin = c_lin -> f0 . f1;
+  c_lin -> f1 . f1 = x__c__0__1_lin;
+}
+void fwd3_par2_ten2_ten2_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void fwd1_par2_rcv_lin (const struct {
-  int f0 ;
-  void * f1 ;
+  f0;
+  struct
+  {
+    int f0;
+    int f1;
   }
-* c_lin){
-  const int x__c__0__0_lin = c_lin -> f0 ;
-  const void * x__c__0__1_lin = c_lin -> f1 ;
+  f1;
+  struct
+  {
+    int f0;
+    int f1;
   }
-void fwd1_rcv_lin (const int * c_lin){
-  const int x__c__0_lin = * c_lin ;
+  f2;
+}
+* c_lin)
+{
+  const int x__c__0__0_lin = c_lin -> f0 . f0;
+  const int x__c__1__1_lin = c_lin -> f1 . f1;
+  c_lin -> f1 . f0 = x__c__0__0_lin;
+  c_lin -> f2 . f0 = x__c__0__0_lin;
+  c_lin -> f0 . f1 = x__c__1__1_lin;
+  c_lin -> f2 . f1 = x__c__1__1_lin;
+  const int x__c__0__1_lin = c_lin -> f0 . f1;
+  c_lin -> f1 . f1 = x__c__0__1_lin;
+  c_lin -> f2 . f1 = x__c__0__1_lin;
+}
+void fwd3_seq2_seq2_seq2_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void fwd1_seq2_rcv_lin (const struct {
-  int f0 ;
-  void * f1 ;
+  f0;
+  struct
+  {
+    int f0;
+    int f1;
   }
-* c_lin){
-  const int x__c__0__0_lin = c_lin -> f0 ;
-  const void * x__c__0__1_lin = c_lin -> f1 ;
+  f1;
+  struct
+  {
+    int f0;
+    int f1;
   }
-void fwd1_ten2_rcv_lin (const struct {
-  int f0 ;
-  void * f1 ;
-  }
-* c_lin){
-  const int x__c__0__0_lin = c_lin -> f0 ;
-  const void * x__c__0__1_lin = c_lin -> f1 ;
-  }
-void fwd2_par2_ten2_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f1 ;
-  }
-* c_lin){
-  const int x__c__0__0_lin = c_lin -> f0 . f0 ;
-  const int x__c__1__1_lin = c_lin -> f1 . f1 ;
-  c_lin -> f1 . f0 = x__c__0__0_lin ;
-  c_lin -> f0 . f1 = x__c__1__1_lin ;
-  const int x__c__0__1_lin = c_lin -> f0 . f1 ;
-  c_lin -> f1 . f1 = x__c__0__1_lin ;
-  }
-void fwd3_par2_ten2_ten2_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f1 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f2 ;
-  }
-* c_lin){
-  const int x__c__0__0_lin = c_lin -> f0 . f0 ;
-  const int x__c__1__1_lin = c_lin -> f1 . f1 ;
-  c_lin -> f1 . f0 = x__c__0__0_lin ;
-  c_lin -> f2 . f0 = x__c__0__0_lin ;
-  c_lin -> f0 . f1 = x__c__1__1_lin ;
-  c_lin -> f2 . f1 = x__c__1__1_lin ;
-  const int x__c__0__1_lin = c_lin -> f0 . f1 ;
-  c_lin -> f1 . f1 = x__c__0__1_lin ;
-  c_lin -> f2 . f1 = x__c__0__1_lin ;
-  }
-void fwd3_seq2_seq2_seq2_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f1 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f2 ;
-  }
-* c_lin){
-  const int x__c__0__0_lin = c_lin -> f0 . f0 ;
-  c_lin -> f1 . f0 = x__c__0__0_lin ;
-  c_lin -> f2 . f0 = x__c__0__0_lin ;
-  const int x__c__1__1_lin = c_lin -> f1 . f1 ;
-  c_lin -> f0 . f1 = x__c__1__1_lin ;
-  c_lin -> f2 . f1 = x__c__1__1_lin ;
-  const int x__c__0__1_lin = c_lin -> f0 . f1 ;
-  c_lin -> f1 . f1 = x__c__0__1_lin ;
-  c_lin -> f2 . f1 = x__c__0__1_lin ;
-  }
-void fwd_par0_ten0_lin (const struct {
-  }
-* i_lin, const struct {
-  }
-* o_lin){
-  }
-void fwd_par2_ten2_expanded_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* i_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* o_lin){
-  const int xi0_lin = i_lin -> f0 ;
-  const int xo1_lin = o_lin -> f1 ;
-  o_lin -> f0 = xi0_lin ;
-  i_lin -> f1 = xo1_lin ;
-  const int xi1_lin = i_lin -> f1 ;
-  o_lin -> f1 = xi1_lin ;
-  }
-void fwd_par2_ten2_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* i_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* o_lin){
-  const int x__i__0_lin = i_lin -> f0 ;
-  const int x__o__1_lin = o_lin -> f1 ;
-  o_lin -> f0 = x__i__0_lin ;
-  i_lin -> f1 = x__o__1_lin ;
-  const int x__i__1_lin = i_lin -> f1 ;
-  o_lin -> f1 = x__i__1_lin ;
-  }
-void fwd_par2_ten2_ten2_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* i_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* o_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* l_lin){
-  const int x__i__0_lin = i_lin -> f0 ;
-  const int x__o__1_lin = o_lin -> f1 ;
-  o_lin -> f0 = x__i__0_lin ;
-  l_lin -> f0 = x__i__0_lin ;
-  i_lin -> f1 = x__o__1_lin ;
-  l_lin -> f1 = x__o__1_lin ;
-  const int x__i__1_lin = i_lin -> f1 ;
-  o_lin -> f1 = x__i__1_lin ;
-  l_lin -> f1 = x__i__1_lin ;
-  }
-void fwd_par2_ten2_ten2_ten2_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* i_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* o_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* l_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* m_lin){
-  const int x__i__0_lin = i_lin -> f0 ;
-  const int x__o__1_lin = o_lin -> f1 ;
-  o_lin -> f0 = x__i__0_lin ;
-  l_lin -> f0 = x__i__0_lin ;
-  m_lin -> f0 = x__i__0_lin ;
-  i_lin -> f1 = x__o__1_lin ;
-  l_lin -> f1 = x__o__1_lin ;
-  m_lin -> f1 = x__o__1_lin ;
-  const int x__i__1_lin = i_lin -> f1 ;
-  o_lin -> f1 = x__i__1_lin ;
-  l_lin -> f1 = x__i__1_lin ;
-  m_lin -> f1 = x__i__1_lin ;
-  }
-void fwd_par10_ten10_lin (const int i_lin [10], int o_lin [10]) {
-  for (int ix0 = 0 ;
-  ix0 < 10 ;
-  ix0 = ix0 + 1){
+  f2;
+}
+* c_lin)
+{
+  const int x__c__0__0_lin = c_lin -> f0 . f0;
+  c_lin -> f1 . f0 = x__c__0__0_lin;
+  c_lin -> f2 . f0 = x__c__0__0_lin;
+  const int x__c__1__1_lin = c_lin -> f1 . f1;
+  c_lin -> f0 . f1 = x__c__1__1_lin;
+  c_lin -> f2 . f1 = x__c__1__1_lin;
+  const int x__c__0__1_lin = c_lin -> f0 . f1;
+  c_lin -> f1 . f1 = x__c__0__1_lin;
+  c_lin -> f2 . f1 = x__c__0__1_lin;
+}
+void fwd_par0_ten0_lin (const struct
+{
+}
+* i_lin, const struct
+{
+}
+* o_lin)
+{
+}
+void fwd_par2_ten2_expanded_lin (struct
+{
+  int f0;
+  int f1;
+}
+* i_lin, struct
+{
+  int f0;
+  int f1;
+}
+* o_lin)
+{
+  const int xi0_lin = i_lin -> f0;
+  const int xo1_lin = o_lin -> f1;
+  o_lin -> f0 = xi0_lin;
+  i_lin -> f1 = xo1_lin;
+  const int xi1_lin = i_lin -> f1;
+  o_lin -> f1 = xi1_lin;
+}
+void fwd_par2_ten2_lin (struct
+{
+  int f0;
+  int f1;
+}
+* i_lin, struct
+{
+  int f0;
+  int f1;
+}
+* o_lin)
+{
+  const int x__i__0_lin = i_lin -> f0;
+  const int x__o__1_lin = o_lin -> f1;
+  o_lin -> f0 = x__i__0_lin;
+  i_lin -> f1 = x__o__1_lin;
+  const int x__i__1_lin = i_lin -> f1;
+  o_lin -> f1 = x__i__1_lin;
+}
+void fwd_par2_ten2_ten2_lin (struct
+{
+  int f0;
+  int f1;
+}
+* i_lin, struct
+{
+  int f0;
+  int f1;
+}
+* o_lin, struct
+{
+  int f0;
+  int f1;
+}
+* l_lin)
+{
+  const int x__i__0_lin = i_lin -> f0;
+  const int x__o__1_lin = o_lin -> f1;
+  o_lin -> f0 = x__i__0_lin;
+  l_lin -> f0 = x__i__0_lin;
+  i_lin -> f1 = x__o__1_lin;
+  l_lin -> f1 = x__o__1_lin;
+  const int x__i__1_lin = i_lin -> f1;
+  o_lin -> f1 = x__i__1_lin;
+  l_lin -> f1 = x__i__1_lin;
+}
+void fwd_par2_ten2_ten2_ten2_lin (struct
+{
+  int f0;
+  int f1;
+}
+* i_lin, struct
+{
+  int f0;
+  int f1;
+}
+* o_lin, struct
+{
+  int f0;
+  int f1;
+}
+* l_lin, struct
+{
+  int f0;
+  int f1;
+}
+* m_lin)
+{
+  const int x__i__0_lin = i_lin -> f0;
+  const int x__o__1_lin = o_lin -> f1;
+  o_lin -> f0 = x__i__0_lin;
+  l_lin -> f0 = x__i__0_lin;
+  m_lin -> f0 = x__i__0_lin;
+  i_lin -> f1 = x__o__1_lin;
+  l_lin -> f1 = x__o__1_lin;
+  m_lin -> f1 = x__o__1_lin;
+  const int x__i__1_lin = i_lin -> f1;
+  o_lin -> f1 = x__i__1_lin;
+  l_lin -> f1 = x__i__1_lin;
+  m_lin -> f1 = x__i__1_lin;
+}
+void fwd_par10_ten10_lin (const int i_lin [10], int o_lin [10])
+{
+  for (int ix0 = 0;
+  ix0 < 10;
+  ix0 = ix0 + 1)
+  {
     const int x__i__0_lin = i_lin [ix0];
-    o_lin [ix0]= x__i__0_lin ;
-    } ;
-  }
-void fwd_send_recv_lin (const int * i_lin, int * o_lin){
-  const int x__i_lin = * i_lin ;
-  * o_lin = x__i_lin ;
-  }
-void fwd_send_recv_recv_auto_lin (int * c_lin, int * d_lin){
-  const int x__d_lin = * d_lin ;
-  * c_lin = x__d_lin ;
-  const int x__c_lin = * c_lin ;
-  * d_lin = x__c_lin ;
-  const int y__c_lin = * c_lin ;
-  * d_lin = y__c_lin ;
-  }
-void fwd_send_recv_recv_manually_lin (int * c_lin, int * d_lin){
-  const int x_lin = * d_lin ;
-  * c_lin = x_lin ;
-  const int y_lin = * c_lin ;
-  * d_lin = y_lin ;
-  const int z_lin = * c_lin ;
-  * d_lin = z_lin ;
-  }
-void fwd_send_recv_recv_send_lin (int * i_lin, int * o_lin){
-  const int x__i_lin = * i_lin ;
-  * o_lin = x__i_lin ;
-  const int x__o_lin = * o_lin ;
-  * i_lin = x__o_lin ;
-  }
-void fwd_send_recv_recv_with_listener_auto_lin (int * c_lin, int * d_lin, int * e_lin){
-  const int x__d_lin = * d_lin ;
-  * c_lin = x__d_lin ;
-  * e_lin = x__d_lin ;
-  const int x__c_lin = * c_lin ;
-  * d_lin = x__c_lin ;
-  * e_lin = x__c_lin ;
-  const int y__c_lin = * c_lin ;
-  * d_lin = y__c_lin ;
-  * e_lin = y__c_lin ;
-  }
-void fwd_send_recv_recv_with_listener_manually_lin (int * c_lin, int * d_lin, int * e_lin){
-  const int x_lin = * d_lin ;
-  * c_lin = x_lin ;
-  * e_lin = x_lin ;
-  const int y_lin = * c_lin ;
-  * d_lin = y_lin ;
-  * e_lin = y_lin ;
-  const int z_lin = * c_lin ;
-  * d_lin = z_lin ;
-  * e_lin = z_lin ;
-  }
-void fwd_seq2_seq2_seq2_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* i_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* o_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* l_lin){
-  const int x__i__0_lin = i_lin -> f0 ;
-  o_lin -> f0 = x__i__0_lin ;
-  l_lin -> f0 = x__i__0_lin ;
-  const int x__o__1_lin = o_lin -> f1 ;
-  i_lin -> f1 = x__o__1_lin ;
-  l_lin -> f1 = x__o__1_lin ;
-  const int x__i__1_lin = i_lin -> f1 ;
-  o_lin -> f1 = x__i__1_lin ;
-  l_lin -> f1 = x__i__1_lin ;
-  }
-void fwd_ten2_par2_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* i_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* o_lin){
-  const int x__i__0_lin = i_lin -> f0 ;
-  const int x__o__1_lin = o_lin -> f1 ;
-  o_lin -> f0 = x__i__0_lin ;
-  i_lin -> f1 = x__o__1_lin ;
-  const int x__i__1_lin = i_lin -> f1 ;
-  o_lin -> f1 = x__i__1_lin ;
-  }
-void group_nested_seq_SInt_SDouble_SBool_SString_lin (struct {
-  struct {
-    struct {
-      int f0 ;
-      double f1 ;
-      }
-    f0 ;
-    struct {
-      void * f0 ;
-      char * f1 ;
-      }
-    f1 ;
+    o_lin [ix0] = x__i__0_lin;
+  };
+}
+void fwd_send_recv_lin (const int * i_lin, int * o_lin)
+{
+  const int x__i_lin = * i_lin;
+  * o_lin = x__i_lin;
+}
+void fwd_send_recv_recv_auto_lin (int * c_lin, int * d_lin)
+{
+  const int x__d_lin = * d_lin;
+  * c_lin = x__d_lin;
+  const int x__c_lin = * c_lin;
+  * d_lin = x__c_lin;
+  const int y__c_lin = * c_lin;
+  * d_lin = y__c_lin;
+}
+void fwd_send_recv_recv_manually_lin (int * c_lin, int * d_lin)
+{
+  const int x_lin = * d_lin;
+  * c_lin = x_lin;
+  const int y_lin = * c_lin;
+  * d_lin = y_lin;
+  const int z_lin = * c_lin;
+  * d_lin = z_lin;
+}
+void fwd_send_recv_recv_send_lin (int * i_lin, int * o_lin)
+{
+  const int x__i_lin = * i_lin;
+  * o_lin = x__i_lin;
+  const int x__o_lin = * o_lin;
+  * i_lin = x__o_lin;
+}
+void fwd_send_recv_recv_with_listener_auto_lin (int * c_lin, int * d_lin, int * e_lin)
+{
+  const int x__d_lin = * d_lin;
+  * c_lin = x__d_lin;
+  * e_lin = x__d_lin;
+  const int x__c_lin = * c_lin;
+  * d_lin = x__c_lin;
+  * e_lin = x__c_lin;
+  const int y__c_lin = * c_lin;
+  * d_lin = y__c_lin;
+  * e_lin = y__c_lin;
+}
+void fwd_send_recv_recv_with_listener_manually_lin (int * c_lin, int * d_lin, int * e_lin)
+{
+  const int x_lin = * d_lin;
+  * c_lin = x_lin;
+  * e_lin = x_lin;
+  const int y_lin = * c_lin;
+  * d_lin = y_lin;
+  * e_lin = y_lin;
+  const int z_lin = * c_lin;
+  * d_lin = z_lin;
+  * e_lin = z_lin;
+}
+void fwd_seq2_seq2_seq2_lin (struct
+{
+  int f0;
+  int f1;
+}
+* i_lin, struct
+{
+  int f0;
+  int f1;
+}
+* o_lin, struct
+{
+  int f0;
+  int f1;
+}
+* l_lin)
+{
+  const int x__i__0_lin = i_lin -> f0;
+  o_lin -> f0 = x__i__0_lin;
+  l_lin -> f0 = x__i__0_lin;
+  const int x__o__1_lin = o_lin -> f1;
+  i_lin -> f1 = x__o__1_lin;
+  l_lin -> f1 = x__o__1_lin;
+  const int x__i__1_lin = i_lin -> f1;
+  o_lin -> f1 = x__i__1_lin;
+  l_lin -> f1 = x__i__1_lin;
+}
+void fwd_ten2_par2_lin (struct
+{
+  int f0;
+  int f1;
+}
+* i_lin, struct
+{
+  int f0;
+  int f1;
+}
+* o_lin)
+{
+  const int x__i__0_lin = i_lin -> f0;
+  const int x__o__1_lin = o_lin -> f1;
+  o_lin -> f0 = x__i__0_lin;
+  i_lin -> f1 = x__o__1_lin;
+  const int x__i__1_lin = i_lin -> f1;
+  o_lin -> f1 = x__i__1_lin;
+}
+void group_nested_seq_SInt_SDouble_SBool_SString_lin (struct
+{
+  struct
+  {
+    struct
+    {
+      int f0;
+      double f1;
     }
-  f0 ;
-  struct {
-    int f0 ;
-    double f1 ;
-    void * f2 ;
-    char * f3 ;
+    f0;
+    struct
+    {
+      void * f0;
+      char * f1;
     }
-  f1 ;
+    f1;
   }
-* c_lin){
-  const int x__a_lin = c_lin -> f0 . f0 . f0 ;
-  c_lin -> f1 . f0 = x__a_lin ;
-  const double x__b_lin = c_lin -> f0 . f0 . f1 ;
-  c_lin -> f1 . f1 = x__b_lin ;
-  const void * x__c_lin = c_lin -> f0 . f1 . f0 ;
-  c_lin -> f1 . f2 = x__c_lin ;
-  const char * x__d_lin = c_lin -> f0 . f1 . f1 ;
-  c_lin -> f1 . f3 = x__d_lin ;
+  f0;
+  struct
+  {
+    int f0;
+    double f1;
+    void * f2;
+    char * f3;
   }
-void idProc_lin (const int * c_lin, int * d_lin){
-  const int y_lin = * c_lin ;
-  * d_lin = y_lin ;
-  }
-void let_example_lin (int * c_lin){
-  const int x_lin = * c_lin ;
+  f1;
+}
+* c_lin)
+{
+  const int x__a_lin = c_lin -> f0 . f0 . f0;
+  c_lin -> f1 . f0 = x__a_lin;
+  const double x__b_lin = c_lin -> f0 . f0 . f1;
+  c_lin -> f1 . f1 = x__b_lin;
+  const void * x__c_lin = c_lin -> f0 . f1 . f0;
+  c_lin -> f1 . f2 = x__c_lin;
+  const char * x__d_lin = c_lin -> f0 . f1 . f1;
+  c_lin -> f1 . f3 = x__d_lin;
+}
+void idProc_lin (const int * c_lin, int * d_lin)
+{
+  const int y_lin = * c_lin;
+  * d_lin = y_lin;
+}
+void let_example_lin (int * c_lin)
+{
+  const int x_lin = * c_lin;
   * c_lin = (x_lin + x_lin);
-  }
-void let_in_proc_for_session_lin (const int * c_lin){
-  const int x_lin = * c_lin ;
-  }
-void letnewchan_lin () {
-  int c_lin ;
-  c_lin = 42 ;
-  const int x_lin = c_lin ;
+}
+void let_in_proc_for_session_lin (const int * c_lin)
+{
+  const int x_lin = * c_lin;
+}
+void letnewchan_lin ()
+{
+  int c_lin;
+  c_lin = 42;
+  const int x_lin = c_lin;
   c_lin = (x_lin + x_lin);
-  const int y_lin = c_lin ;
-  }
-void let_order_proc_lin (int * c_lin){
-  * c_lin = 3 ;
-  }
-void letrecv_ann_lin (int * c_lin){
-  const int x_lin = * c_lin ;
+  const int y_lin = c_lin;
+}
+void let_order_proc_lin (int * c_lin)
+{
+  * c_lin = 3;
+}
+void letrecv_ann_lin (int * c_lin)
+{
+  const int x_lin = * c_lin;
   * c_lin = (x_lin + x_lin);
-  }
-void letrecv_lin (int * c_lin){
-  const int x_lin = * c_lin ;
+}
+void letrecv_lin (int * c_lin)
+{
+  const int x_lin = * c_lin;
   * c_lin = (x_lin + x_lin);
-  }
-void loli_id_SInt_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* naa_lin){
-  const int x__na_lin = naa_lin -> f0 ;
-  naa_lin -> f1 = x__na_lin ;
-  }
-void dotproduct_4_alloc_lin (const double as___lin [4], const double bs_lin [4], double * o_lin){
+}
+void loli_id_SInt_lin (struct
+{
+  int f0;
+  int f1;
+}
+* naa_lin)
+{
+  const int x__na_lin = naa_lin -> f0;
+  naa_lin -> f1 = x__na_lin;
+}
+void dotproduct_4_alloc_lin (const double as___lin [4], const double bs_lin [4], double * o_lin)
+{
   double cs_lin [4];
-  for (int ix0 = 0 ;
-  ix0 < 4 ;
-  ix0 = ix0 + 1){
+  for (int ix0 = 0;
+  ix0 < 4;
+  ix0 = ix0 + 1)
+  {
     const double a_lin = as___lin [ix0];
     const double b_lin = bs_lin [ix0];
-    cs_lin [ix0]= (a_lin * b_lin);
-    } ;
-  double acc_lin ;
-  acc_lin = 0.0 ;
-  for (int ix0 = 0 ;
-  ix0 < 4 ;
-  ix0 = ix0 + 1){
+    cs_lin [ix0] = (a_lin * b_lin);
+  };
+  double acc_lin;
+  acc_lin = 0.0;
+  for (int ix0 = 0;
+  ix0 < 4;
+  ix0 = ix0 + 1)
+  {
     const double a_lin = cs_lin [ix0];
-    const double b_lin = acc_lin ;
+    const double b_lin = acc_lin;
     acc_lin = (b_lin + a_lin);
-    } ;
-  const double x__accn_lin = acc_lin ;
-  * o_lin = x__accn_lin ;
-  }
-void dotproduct_4_fused_lin (const double as___lin [4], const double bs_lin [4], double * o_lin){
+  };
+  const double x__accn_lin = acc_lin;
+  * o_lin = x__accn_lin;
+}
+void dotproduct_4_fused_lin (const double as___lin [4], const double bs_lin [4], double * o_lin)
+{
   double cs_lin [4];
-  for (int ix0 = 0 ;
-  ix0 < 4 ;
-  ix0 = ix0 + 1){
+  for (int ix0 = 0;
+  ix0 < 4;
+  ix0 = ix0 + 1)
+  {
     const double a_lin = as___lin [ix0];
     const double b_lin = bs_lin [ix0];
-    cs_lin [ix0]= (a_lin * b_lin);
-    } ;
-  double acc_lin ;
-  acc_lin = 0.0 ;
-  for (int ix0 = 0 ;
-  ix0 < 4 ;
-  ix0 = ix0 + 1){
+    cs_lin [ix0] = (a_lin * b_lin);
+  };
+  double acc_lin;
+  acc_lin = 0.0;
+  for (int ix0 = 0;
+  ix0 < 4;
+  ix0 = ix0 + 1)
+  {
     const double a_lin = cs_lin [ix0];
-    const double b_lin = acc_lin ;
+    const double b_lin = acc_lin;
     acc_lin = (b_lin + a_lin);
-    } ;
-  const double x__accn_lin = acc_lin ;
-  * o_lin = x__accn_lin ;
-  }
+  };
+  const double x__accn_lin = acc_lin;
+  * o_lin = x__accn_lin;
+}
 void * ix_lin (const int A_lin, const int n_lin, const void * * v_lin, const int i_lin);
-void matmult_4_alloc_lin (const double a_lin [16], const double b_lin [16], double c_lin [16]) {
-  const double * a___lin = a_lin ;
-  const double * b___lin = b_lin ;
-  for (int ij_lin = 0 ;
-  ij_lin < 16 ;
-  ij_lin = ij_lin + 1){
+void matmult_4_alloc_lin (const double a_lin [16], const double b_lin [16], double c_lin [16])
+{
+  const double * a___lin = a_lin;
+  const double * b___lin = b_lin;
+  for (int ij_lin = 0;
+  ij_lin < 16;
+  ij_lin = ij_lin + 1)
+  {
     double u_lin [4];
-    for (int j_lin = 0 ;
-    j_lin < 4 ;
-    j_lin = j_lin + 1){
-      u_lin [j_lin]= ix_lin (0, 16, a___lin, (((ij_lin / 4)* 4)+ j_lin)) ;
-      } ;
+    for (int j_lin = 0;
+    j_lin < 4;
+    j_lin = j_lin + 1)
+    {
+      u_lin [j_lin] = ix_lin (0, 16, a___lin, (((ij_lin / 4) * 4) + j_lin));
+    };
     double v_lin [4];
-    for (int i_lin = 0 ;
-    i_lin < 4 ;
-    i_lin = i_lin + 1){
-      v_lin [i_lin]= ix_lin (0, 16, b___lin, ((i_lin * 4)+ (ij_lin % 4)));
-      } ;
+    for (int i_lin = 0;
+    i_lin < 4;
+    i_lin = i_lin + 1)
+    {
+      v_lin [i_lin] = ix_lin (0, 16, b___lin, ((i_lin * 4) + (ij_lin % 4)));
+    };
     double cs_lin [4];
-    for (int ix0 = 0 ;
-    ix0 < 4 ;
-    ix0 = ix0 + 1){
+    for (int ix0 = 0;
+    ix0 < 4;
+    ix0 = ix0 + 1)
+    {
       const double a_lin = u_lin [ix0];
       const double b_lin = v_lin [ix0];
-      cs_lin [ix0]= (a_lin * b_lin);
-      } ;
-    double acc_lin ;
-    acc_lin = 0.0 ;
-    for (int ix0 = 0 ;
-    ix0 < 4 ;
-    ix0 = ix0 + 1){
+      cs_lin [ix0] = (a_lin * b_lin);
+    };
+    double acc_lin;
+    acc_lin = 0.0;
+    for (int ix0 = 0;
+    ix0 < 4;
+    ix0 = ix0 + 1)
+    {
       const double a_lin = cs_lin [ix0];
-      const double b_lin = acc_lin ;
+      const double b_lin = acc_lin;
       acc_lin = (b_lin + a_lin);
-      } ;
-    const double x__accn_lin = acc_lin ;
-    c_lin [ij_lin]= x__accn_lin ;
-    } ;
+    };
+    const double x__accn_lin = acc_lin;
+    c_lin [ij_lin] = x__accn_lin;
+  };
+}
+void test_my_dual_lin (const int * c_lin)
+{
+  const int x_lin = * c_lin;
+}
+void new_alloc_lin (int * c_lin)
+{
+  int d_lin;
+  d_lin = 1;
+  const int x__e_lin = d_lin;
+  * c_lin = x__e_lin;
+}
+void new_fuse1_recv_send_send_recv_lin ()
+{
+  int d_lin;
+  d_lin = 1;
+  const int y_lin = d_lin;
+  d_lin = 2;
+  const int x_lin = d_lin;
+}
+void new_seq_par_par_lin ()
+{
+  struct
+  {
+    int f0;
+    void * f1;
   }
-void test_my_dual_lin (const int * c_lin){
-  const int x_lin = * c_lin ;
+  cd_lin;
+  cd_lin . f0 = 1;
+  cd_lin . f1 = con_true;
+  const void * b_lin = cd_lin . f1;
+  const int i_lin = cd_lin . f0;
+}
+void no_dead_lock_new_new_lin ()
+{
+  int c_lin;
+  int e_lin;
+  c_lin = 5;
+  const int x_lin = c_lin;
+  e_lin = x_lin;
+  const int y_lin = e_lin;
+}
+void no_dead_lock_new_new_seq_lin ()
+{
+  int d_lin;
+  int f_lin;
+  d_lin = 5;
+  const int x_lin = d_lin;
+  f_lin = x_lin;
+  const int y_lin = f_lin;
+}
+void no_dead_lock_new_new_v2_lin ()
+{
+  int c_lin;
+  int e_lin;
+  c_lin = 5;
+  const int x_lin = c_lin;
+  e_lin = x_lin;
+  const int y_lin = e_lin;
+}
+void par0_lin (const struct
+{
+}
+* c_lin)
+{
+}
+void par1_lin (int * c_lin)
+{
+  * c_lin = 42;
+}
+void par2_lin (struct
+{
+  int f0;
+  int f1;
+}
+* c_lin)
+{
+  const int x_lin = c_lin -> f1;
+  c_lin -> f0 = x_lin;
+}
+void par2mix_lin (struct
+{
+  int f0;
+  int f1;
+}
+* c_lin)
+{
+  const int x_lin = c_lin -> f1;
+  c_lin -> f0 = 42;
+}
+void par4_seq_send3_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void new_alloc_lin (int * c_lin){
-  int d_lin ;
-  d_lin = 1 ;
-  const int x__e_lin = d_lin ;
-  * c_lin = x__e_lin ;
+  f0;
+  int f1;
+  int f2;
+  int f3;
+}
+* a_lin)
+{
+  a_lin -> f1 = 1;
+  a_lin -> f0 . f0 = 2;
+  a_lin -> f2 = 3;
+  a_lin -> f0 . f1 = 4;
+  a_lin -> f3 = 5;
+}
+void parallel_assoc_2tensor2_left_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void new_fuse1_recv_send_send_recv_lin () {
-  int d_lin ;
-  d_lin = 1 ;
-  const int y_lin = d_lin ;
-  d_lin = 2 ;
-  const int x_lin = d_lin ;
+  f0;
+  int f1;
+}
+* cde_lin)
+{
+  cde_lin -> f0 . f0 = 1;
+  cde_lin -> f0 . f1 = 2;
+  cde_lin -> f1 = 3;
+}
+void parallel_assoc_2tensor2_right_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void new_seq_par_par_lin () {
-  struct {
-    int f0 ;
-    void * f1 ;
+  f0;
+  int f1;
+}
+* cde_lin)
+{
+  cde_lin -> f1 = 3;
+  cde_lin -> f0 . f0 = 1;
+  cde_lin -> f0 . f1 = 2;
+}
+void parallel_assoc_flat_lin (int * c_lin, int * d_lin, int * e_lin)
+{
+  * c_lin = 1;
+  * d_lin = 2;
+  * e_lin = 3;
+}
+void parallel_assoc_left_lin (int * c_lin, int * d_lin, int * e_lin)
+{
+  * c_lin = 1;
+  * d_lin = 2;
+  * e_lin = 3;
+}
+void parallel_assoc_right_lin (int * c_lin, int * d_lin, int * e_lin)
+{
+  * c_lin = 1;
+  * d_lin = 2;
+  * e_lin = 3;
+}
+void parallel_assoc_tensor3_flat_lin (struct
+{
+  int f0;
+  int f1;
+  int f2;
+}
+* cde_lin)
+{
+  cde_lin -> f0 = 1;
+  cde_lin -> f1 = 2;
+  cde_lin -> f2 = 3;
+}
+void parallel_assoc_tensor3_left_lin (struct
+{
+  int f0;
+  int f1;
+  int f2;
+}
+* cde_lin)
+{
+  cde_lin -> f0 = 1;
+  cde_lin -> f1 = 2;
+  cde_lin -> f2 = 3;
+}
+void parallel_assoc_tensor3_right_lin (struct
+{
+  int f0;
+  int f1;
+  int f2;
+}
+* cde_lin)
+{
+  cde_lin -> f0 = 1;
+  cde_lin -> f1 = 2;
+  cde_lin -> f2 = 3;
+}
+void parallel_tensor4_flat_lin (struct
+{
+  int f0;
+  int f1;
+}
+* cd_lin, struct
+{
+  int f0;
+  int f1;
+}
+* ef_lin)
+{
+  cd_lin -> f0 = 1;
+  ef_lin -> f0 = 2;
+  cd_lin -> f1 = 3;
+  ef_lin -> f1 = 4;
+}
+void parallel_tensor4_v0_lin (struct
+{
+  int f0;
+  int f1;
+}
+* cd_lin, struct
+{
+  int f0;
+  int f1;
+}
+* ef_lin)
+{
+  cd_lin -> f0 = 1;
+  ef_lin -> f0 = 2;
+  cd_lin -> f1 = 3;
+  ef_lin -> f1 = 4;
+}
+void par_pat_lin (int * d_lin, const int * e_lin)
+{
+  const int x__f__1_lin = * e_lin;
+  * d_lin = x__f__1_lin;
+}
+void par_seq_back_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f0;
+  int f1;
+}
+* a_lin)
+{
+  a_lin -> f0 . f0 = 2;
+  a_lin -> f0 . f1 = 3;
+  a_lin -> f1 = 1;
+}
+void par_seq_front_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f0;
+  int f1;
+}
+* a_lin)
+{
+  a_lin -> f1 = 1;
+  a_lin -> f0 . f0 = 2;
+  a_lin -> f0 . f1 = 3;
+}
+void par_seq_middle_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f0;
+  int f1;
+}
+* a_lin)
+{
+  a_lin -> f0 . f0 = 2;
+  a_lin -> f1 = 1;
+  a_lin -> f0 . f1 = 3;
+}
+void par_seq_send3_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f0;
+  int f1;
+}
+* a_lin)
+{
+  a_lin -> f1 = 1;
+  a_lin -> f0 . f0 = 2;
+  a_lin -> f1 = 3;
+  a_lin -> f0 . f1 = 4;
+  a_lin -> f1 = 5;
+}
+void par_ten1_ten1_lin (struct
+{
+  int f0;
+  int f1;
+}
+* c_lin)
+{
+  const int x_lin = c_lin -> f0;
+  c_lin -> f1 = x_lin;
+}
+void par_ten_ten_v0_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f0;
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f1;
+}
+* c_lin)
+{
+  const int x_lin = c_lin -> f0 . f0;
+  c_lin -> f1 . f0 = 1;
+  const int y_lin = c_lin -> f1 . f1;
+  c_lin -> f0 . f1 = 2;
+}
+void par_ten_ten_v1_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f0;
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f1;
+}
+* c_lin)
+{
+  const int x_lin = c_lin -> f0 . f0;
+  c_lin -> f1 . f0 = 1;
+  const int y_lin = c_lin -> f1 . f1;
+  c_lin -> f0 . f1 = 2;
+}
+void par_ten_ten_v2_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f0;
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f1;
+}
+* c_lin)
+{
+  c_lin -> f1 . f0 = 1;
+  const int x_lin = c_lin -> f0 . f0;
+  const int y_lin = c_lin -> f1 . f1;
+  c_lin -> f0 . f1 = 2;
+}
+void pattern_example_expanded_lin (struct
+{
+  int f0;
+  struct
+  {
+    int f0;
+    int f1;
+  }
+  f1;
+  struct
+  {
+    struct
+    {
+      int f0;
+      int f1;
     }
-  cd_lin ;
-  cd_lin . f0 = 1 ;
-  cd_lin . f1 = con_true ;
-  const void * b_lin = cd_lin . f1 ;
-  const int i_lin = cd_lin . f0 ;
-  }
-void no_dead_lock_new_new_lin () {
-  int c_lin ;
-  int e_lin ;
-  c_lin = 5 ;
-  const int x_lin = c_lin ;
-  e_lin = x_lin ;
-  const int y_lin = e_lin ;
-  }
-void no_dead_lock_new_new_seq_lin () {
-  int d_lin ;
-  int f_lin ;
-  d_lin = 5 ;
-  const int x_lin = d_lin ;
-  f_lin = x_lin ;
-  const int y_lin = f_lin ;
-  }
-void no_dead_lock_new_new_v2_lin () {
-  int c_lin ;
-  int e_lin ;
-  c_lin = 5 ;
-  const int x_lin = c_lin ;
-  e_lin = x_lin ;
-  const int y_lin = e_lin ;
-  }
-void par0_lin (const struct {
-  }
-* c_lin){
-  }
-void par1_lin (int * c_lin){
-  * c_lin = 42 ;
-  }
-void par2_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* c_lin){
-  const int x_lin = c_lin -> f1 ;
-  c_lin -> f0 = x_lin ;
-  }
-void par2mix_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* c_lin){
-  const int x_lin = c_lin -> f1 ;
-  c_lin -> f0 = 42 ;
-  }
-void par4_seq_send3_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
+    f0;
+    struct
+    {
+      int f0;
+      int f1;
     }
-  f0 ;
-  int f1 ;
-  int f2 ;
-  int f3 ;
+    f1;
   }
-* a_lin){
-  a_lin -> f1 = 1 ;
-  a_lin -> f0 . f0 = 2 ;
-  a_lin -> f2 = 3 ;
-  a_lin -> f0 . f1 = 4 ;
-  a_lin -> f3 = 5 ;
-  }
-void parallel_assoc_2tensor2_left_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* cde_lin){
-  cde_lin -> f0 . f0 = 1 ;
-  cde_lin -> f0 . f1 = 2 ;
-  cde_lin -> f1 = 3 ;
-  }
-void parallel_assoc_2tensor2_right_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* cde_lin){
-  cde_lin -> f1 = 3 ;
-  cde_lin -> f0 . f0 = 1 ;
-  cde_lin -> f0 . f1 = 2 ;
-  }
-void parallel_assoc_flat_lin (int * c_lin, int * d_lin, int * e_lin){
-  * c_lin = 1 ;
-  * d_lin = 2 ;
-  * e_lin = 3 ;
-  }
-void parallel_assoc_left_lin (int * c_lin, int * d_lin, int * e_lin){
-  * c_lin = 1 ;
-  * d_lin = 2 ;
-  * e_lin = 3 ;
-  }
-void parallel_assoc_right_lin (int * c_lin, int * d_lin, int * e_lin){
-  * c_lin = 1 ;
-  * d_lin = 2 ;
-  * e_lin = 3 ;
-  }
-void parallel_assoc_tensor3_flat_lin (struct {
-  int f0 ;
-  int f1 ;
-  int f2 ;
-  }
-* cde_lin){
-  cde_lin -> f0 = 1 ;
-  cde_lin -> f1 = 2 ;
-  cde_lin -> f2 = 3 ;
-  }
-void parallel_assoc_tensor3_left_lin (struct {
-  int f0 ;
-  int f1 ;
-  int f2 ;
-  }
-* cde_lin){
-  cde_lin -> f0 = 1 ;
-  cde_lin -> f1 = 2 ;
-  cde_lin -> f2 = 3 ;
-  }
-void parallel_assoc_tensor3_right_lin (struct {
-  int f0 ;
-  int f1 ;
-  int f2 ;
-  }
-* cde_lin){
-  cde_lin -> f0 = 1 ;
-  cde_lin -> f1 = 2 ;
-  cde_lin -> f2 = 3 ;
-  }
-void parallel_tensor4_flat_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* cd_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* ef_lin){
-  cd_lin -> f0 = 1 ;
-  ef_lin -> f0 = 2 ;
-  cd_lin -> f1 = 3 ;
-  ef_lin -> f1 = 4 ;
-  }
-void parallel_tensor4_v0_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* cd_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* ef_lin){
-  cd_lin -> f0 = 1 ;
-  ef_lin -> f0 = 2 ;
-  cd_lin -> f1 = 3 ;
-  ef_lin -> f1 = 4 ;
-  }
-void par_pat_lin (int * d_lin, const int * e_lin){
-  const int x__f__1_lin = * e_lin ;
-  * d_lin = x__f__1_lin ;
-  }
-void par_seq_back_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* a_lin){
-  a_lin -> f0 . f0 = 2 ;
-  a_lin -> f0 . f1 = 3 ;
-  a_lin -> f1 = 1 ;
-  }
-void par_seq_front_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* a_lin){
-  a_lin -> f1 = 1 ;
-  a_lin -> f0 . f0 = 2 ;
-  a_lin -> f0 . f1 = 3 ;
-  }
-void par_seq_middle_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* a_lin){
-  a_lin -> f0 . f0 = 2 ;
-  a_lin -> f1 = 1 ;
-  a_lin -> f0 . f1 = 3 ;
-  }
-void par_seq_send3_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* a_lin){
-  a_lin -> f1 = 1 ;
-  a_lin -> f0 . f0 = 2 ;
-  a_lin -> f1 = 3 ;
-  a_lin -> f0 . f1 = 4 ;
-  a_lin -> f1 = 5 ;
-  }
-void par_ten1_ten1_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* c_lin){
-  const int x_lin = c_lin -> f0 ;
-  c_lin -> f1 = x_lin ;
-  }
-void par_ten_ten_v0_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f1 ;
-  }
-* c_lin){
-  const int x_lin = c_lin -> f0 . f0 ;
-  c_lin -> f1 . f0 = 1 ;
-  const int y_lin = c_lin -> f1 . f1 ;
-  c_lin -> f0 . f1 = 2 ;
-  }
-void par_ten_ten_v1_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f1 ;
-  }
-* c_lin){
-  const int x_lin = c_lin -> f0 . f0 ;
-  c_lin -> f1 . f0 = 1 ;
-  const int y_lin = c_lin -> f1 . f1 ;
-  c_lin -> f0 . f1 = 2 ;
-  }
-void par_ten_ten_v2_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f1 ;
-  }
-* c_lin){
-  c_lin -> f1 . f0 = 1 ;
-  const int x_lin = c_lin -> f0 . f0 ;
-  const int y_lin = c_lin -> f1 . f1 ;
-  c_lin -> f0 . f1 = 2 ;
-  }
-void pattern_example_expanded_lin (struct {
-  int f0 ;
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f1 ;
-  struct {
-    struct {
-      int f0 ;
-      int f1 ;
-      }
-    f0 ;
-    struct {
-      int f0 ;
-      int f1 ;
-      }
-    f1 ;
-    }
-  f2 ;
-  }
-* abcde_lin){
-  abcde_lin -> f0 = 1 ;
-  abcde_lin -> f1 . f0 = 2 ;
-  abcde_lin -> f1 . f1 = 3 ;
-  const int x__e__0_lin = abcde_lin -> f2 . f1 . f0 ;
-  const int x__e__1_lin = abcde_lin -> f2 . f1 . f1 ;
-  abcde_lin -> f2 . f0 . f0 = x__e__0_lin ;
-  abcde_lin -> f2 . f0 . f1 = x__e__1_lin ;
-  }
-void replicate_par_lin (int c_lin [10]) {
-  for (int i_lin = 0 ;
-  i_lin < 10 ;
-  i_lin = i_lin + 1){
-    c_lin [i_lin]= i_lin ;
-    } ;
-  }
-void replicate_proc_Int_10_lin (struct {
-  int f0 ;
+  f2;
+}
+* abcde_lin)
+{
+  abcde_lin -> f0 = 1;
+  abcde_lin -> f1 . f0 = 2;
+  abcde_lin -> f1 . f1 = 3;
+  const int x__e__0_lin = abcde_lin -> f2 . f1 . f0;
+  const int x__e__1_lin = abcde_lin -> f2 . f1 . f1;
+  abcde_lin -> f2 . f0 . f0 = x__e__0_lin;
+  abcde_lin -> f2 . f0 . f1 = x__e__1_lin;
+}
+void replicate_par_lin (int c_lin [10])
+{
+  for (int i_lin = 0;
+  i_lin < 10;
+  i_lin = i_lin + 1)
+  {
+    c_lin [i_lin] = i_lin;
+  };
+}
+void replicate_proc_Int_10_lin (struct
+{
+  int f0;
   int f1 [10];
+}
+* c_lin)
+{
+  const int x_lin = c_lin -> f0;
+  for (int ix0 = 0;
+  ix0 < 10;
+  ix0 = ix0 + 1)
+  {
+    c_lin -> f1 [ix0] = x_lin;
+  };
+}
+void replicate_ten_10_lin (int c_lin [10])
+{
+  for (int i_lin = 0;
+  i_lin < 10;
+  i_lin = i_lin + 1)
+  {
+    c_lin [i_lin] = i_lin;
+  };
+}
+void send_1_lin (int * c_lin)
+{
+  * c_lin = 1;
+}
+void seq0_explicit_lin (const struct
+{
+}
+* c_lin)
+{
+}
+void seq0_lin (const struct
+{
+}
+* c_lin)
+{
+}
+void seq3_lin (struct
+{
+  int f0;
+  int f1;
+  int f2;
+}
+* c_lin)
+{
+  c_lin -> f0 = 0;
+  c_lin -> f1 = 1;
+  c_lin -> f2 = 2;
+}
+void seq3_seq2_lin (struct
+{
+  int f0;
+  int f1;
+  int f2;
+}
+* c_lin, struct
+{
+  int f0;
+  int f1;
+}
+* d_lin)
+{
+  c_lin -> f0 = 0;
+  c_lin -> f1 = 1;
+  d_lin -> f0 = 0;
+  c_lin -> f2 = 2;
+  d_lin -> f1 = 1;
+}
+void seq_array_cnt_new_lin ()
+{
+  int c_lin;
+  c_lin = 1;
+  const int x_lin = c_lin;
+}
+void seq_par_back_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-* c_lin){
-  const int x_lin = c_lin -> f0 ;
-  for (int ix0 = 0 ;
-  ix0 < 10 ;
-  ix0 = ix0 + 1){
-    c_lin -> f1 [ix0]= x_lin ;
-    } ;
+  f0;
+  int f1;
+}
+* a_lin)
+{
+  a_lin -> f0 . f0 = 2;
+  a_lin -> f0 . f1 = 3;
+  a_lin -> f1 = 1;
+}
+void seq_par_back_v2_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void replicate_ten_10_lin (int c_lin [10]) {
-  for (int i_lin = 0 ;
-  i_lin < 10 ;
-  i_lin = i_lin + 1){
-    c_lin [i_lin]= i_lin ;
-    } ;
+  f0;
+  int f1;
+}
+* a_lin)
+{
+  a_lin -> f0 . f1 = 3;
+  a_lin -> f0 . f0 = 2;
+  a_lin -> f1 = 1;
+}
+void seq_pat_lin (struct
+{
+  int f0;
+  int f1;
+}
+* c_lin)
+{
+  const int x__g_lin = c_lin -> f0;
+  c_lin -> f1 = x__g_lin;
+}
+void seq_seq_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void send_1_lin (int * c_lin){
-  * c_lin = 1 ;
+  f0;
+  int f1;
+}
+* a_lin)
+{
+  a_lin -> f0 . f0 = 1;
+  a_lin -> f0 . f1 = 2;
+  a_lin -> f1 = 3;
+}
+void seq_seq_send2_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void seq0_explicit_lin (const struct {
+  f0;
+  int f1;
+}
+* a_lin)
+{
+  a_lin -> f0 . f0 = 1;
+  a_lin -> f0 . f0 = 2;
+  a_lin -> f0 . f1 = 3;
+  a_lin -> f0 . f1 = 4;
+  a_lin -> f1 = 5;
+  a_lin -> f1 = 6;
+}
+void seq_ten_lin (struct
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-* c_lin){
-  }
-void seq0_lin (const struct {
-  }
-* c_lin){
-  }
-void seq3_lin (struct {
-  int f0 ;
-  int f1 ;
-  int f2 ;
-  }
-* c_lin){
-  c_lin -> f0 = 0 ;
-  c_lin -> f1 = 1 ;
-  c_lin -> f2 = 2 ;
-  }
-void seq3_seq2_lin (struct {
-  int f0 ;
-  int f1 ;
-  int f2 ;
-  }
-* c_lin, struct {
-  int f0 ;
-  int f1 ;
-  }
-* d_lin){
-  c_lin -> f0 = 0 ;
-  c_lin -> f1 = 1 ;
-  d_lin -> f0 = 0 ;
-  c_lin -> f2 = 2 ;
-  d_lin -> f1 = 1 ;
-  }
-void seq_array_cnt_new_lin () {
-  int c_lin ;
-  c_lin = 1 ;
-  const int x_lin = c_lin ;
-  }
-void seq_par_back_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* a_lin){
-  a_lin -> f0 . f0 = 2 ;
-  a_lin -> f0 . f1 = 3 ;
-  a_lin -> f1 = 1 ;
-  }
-void seq_par_back_v2_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* a_lin){
-  a_lin -> f0 . f1 = 3 ;
-  a_lin -> f0 . f0 = 2 ;
-  a_lin -> f1 = 1 ;
-  }
-void seq_pat_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* c_lin){
-  const int x__g_lin = c_lin -> f0 ;
-  c_lin -> f1 = x__g_lin ;
-  }
-void seq_seq_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* a_lin){
-  a_lin -> f0 . f0 = 1 ;
-  a_lin -> f0 . f1 = 2 ;
-  a_lin -> f1 = 3 ;
-  }
-void seq_seq_send2_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* a_lin){
-  a_lin -> f0 . f0 = 1 ;
-  a_lin -> f0 . f0 = 2 ;
-  a_lin -> f0 . f1 = 3 ;
-  a_lin -> f0 . f1 = 4 ;
-  a_lin -> f1 = 5 ;
-  a_lin -> f1 = 6 ;
-  }
-void seq_ten_lin (struct {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  f0 ;
-  int f1 ;
-  }
-* a_lin){
-  a_lin -> f0 . f0 = 2 ;
-  a_lin -> f0 . f1 = 3 ;
-  a_lin -> f1 = 1 ;
-  }
-void singleRecv_lin (const int * c_lin){
-  const int x_lin = * c_lin ;
-  }
-void singleSend_lin (int * c_lin){
-  * c_lin = 42 ;
-  }
-void split_fwd1_rcv_lin (const int * c_lin){
-  const int x__d_lin = * c_lin ;
-  }
-void sqr_dbl_lin (const int * i_lin, int * o_lin){
-  const int x_lin = * i_lin ;
-  int c_lin ;
+  f0;
+  int f1;
+}
+* a_lin)
+{
+  a_lin -> f0 . f0 = 2;
+  a_lin -> f0 . f1 = 3;
+  a_lin -> f1 = 1;
+}
+void singleRecv_lin (const int * c_lin)
+{
+  const int x_lin = * c_lin;
+}
+void singleSend_lin (int * c_lin)
+{
+  * c_lin = 42;
+}
+void split_fwd1_rcv_lin (const int * c_lin)
+{
+  const int x__d_lin = * c_lin;
+}
+void sqr_dbl_lin (const int * i_lin, int * o_lin)
+{
+  const int x_lin = * i_lin;
+  int c_lin;
   c_lin = (x_lin * x_lin);
-  const int y_lin = c_lin ;
+  const int y_lin = c_lin;
   * o_lin = (y_lin + y_lin);
-  }
-void sqrs_main_lin (const int * i_lin, int * o_lin){
-  const int x_lin = * i_lin ;
-  int c_lin ;
+}
+void sqrs_main_lin (const int * i_lin, int * o_lin)
+{
+  const int x_lin = * i_lin;
+  int c_lin;
   c_lin = (x_lin * x_lin);
-  const int x2_lin = c_lin ;
+  const int x2_lin = c_lin;
   c_lin = (x2_lin * x2_lin);
-  const int x4_lin = c_lin ;
+  const int x4_lin = c_lin;
   c_lin = (x4_lin * x4_lin);
-  const int x8_lin = c_lin ;
+  const int x8_lin = c_lin;
   * o_lin = (x8_lin * x8_lin);
-  }
-void sqrs_lin (const int * i_lin, int * o_lin){
-  const int x_lin = * i_lin ;
-  int c_lin ;
+}
+void sqrs_lin (const int * i_lin, int * o_lin)
+{
+  const int x_lin = * i_lin;
+  int c_lin;
   c_lin = (x_lin * x_lin);
-  const int x2_lin = c_lin ;
+  const int x2_lin = c_lin;
   c_lin = (x2_lin * x2_lin);
-  const int x4_lin = c_lin ;
+  const int x4_lin = c_lin;
   c_lin = (x4_lin * x4_lin);
-  const int x8_lin = c_lin ;
+  const int x8_lin = c_lin;
   * o_lin = (x8_lin * x8_lin);
-  }
-void sum_int_lin (const int a_lin [10], int * r_lin){
-  int acc_lin ;
-  acc_lin = 0 ;
-  for (int i_lin = 0 ;
-  i_lin < 10 ;
-  i_lin = i_lin + 1){
+}
+void sum_int_lin (const int a_lin [10], int * r_lin)
+{
+  int acc_lin;
+  acc_lin = 0;
+  for (int i_lin = 0;
+  i_lin < 10;
+  i_lin = i_lin + 1)
+  {
     const int x_lin = a_lin [i_lin];
-    const int y_lin = acc_lin ;
+    const int y_lin = acc_lin;
     acc_lin = (x_lin + y_lin);
-    } ;
-  const int x__accn_lin = acc_lin ;
-  * r_lin = x__accn_lin ;
+  };
+  const int x__accn_lin = acc_lin;
+  * r_lin = x__accn_lin;
+}
+void tabulate_seq_Double_40_lin (double a_lin [41])
+{
+  for (int i_lin = 0;
+  i_lin < 41;
+  i_lin = i_lin + 1)
+  {
+    a_lin [i_lin] = (1.0 - (5.0e-2 * (double) (i_lin)));
+  };
+}
+void ten_loli_par_sInt_sDouble_lin (struct
+{
+  struct
+  {
+    int f0;
+    double f1;
   }
-void tabulate_seq_Double_40_lin (double a_lin [41]) {
-  for (int i_lin = 0 ;
-  i_lin < 41 ;
-  i_lin = i_lin + 1){
-    a_lin [i_lin]= (1.0 - (5.0e-2 * (double) (i_lin)));
-    } ;
+  f0;
+  struct
+  {
+    int f0;
+    double f1;
   }
-void ten_loli_par_sInt_sDouble_lin (struct {
-  struct {
-    int f0 ;
-    double f1 ;
-    }
-  f0 ;
-  struct {
-    int f0 ;
-    double f1 ;
-    }
-  f1 ;
+  f1;
+}
+* c_lin)
+{
+  const int x__na_lin = c_lin -> f0 . f0;
+  c_lin -> f1 . f0 = x__na_lin;
+  const double x__nb_lin = c_lin -> f0 . f1;
+  c_lin -> f1 . f1 = x__nb_lin;
+}
+void ten_par_par_split_lin (const struct
+{
+  struct
+  {
   }
-* c_lin){
-  const int x__na_lin = c_lin -> f0 . f0 ;
-  c_lin -> f1 . f0 = x__na_lin ;
-  const double x__nb_lin = c_lin -> f0 . f1 ;
-  c_lin -> f1 . f1 = x__nb_lin ;
+  f0;
+  struct
+  {
   }
-void ten_par_par_split_lin (const struct {
-  struct {
-    }
-  f0 ;
-  struct {
-    }
-  f1 ;
+  f1;
+}
+* c_lin)
+{
+}
+void tensor0_lin (const struct
+{
+}
+* c_lin)
+{
+}
+void tensor1_lin (int * c_lin)
+{
+  * c_lin = 42;
+}
+void tensor2_lin (struct
+{
+  int f0;
+  int f1;
+}
+* c_lin)
+{
+  const int x_lin = c_lin -> f1;
+  c_lin -> f0 = 42;
+}
+void tensor2_tensor0_tensor0_parallel_lin (const struct
+{
+  struct
+  {
   }
-* c_lin){
+  f0;
+  struct
+  {
   }
-void tensor0_lin (const struct {
+  f1;
+}
+* cd_lin)
+{
+}
+void tensor2_tensor0_tensor0_sequence_lin (const struct
+{
+  struct
+  {
   }
-* c_lin){
+  f0;
+  struct
+  {
   }
-void tensor1_lin (int * c_lin){
-  * c_lin = 42 ;
+  f1;
+}
+* cd_lin)
+{
+}
+void tensor2_using_dual_lin (struct
+{
+  int f0;
+  int f1;
+}
+* c_lin)
+{
+  const int x_lin = c_lin -> f1;
+  c_lin -> f0 = 42;
+}
+void test2_lin ()
+{
+  struct
+  {
+    int f0;
+    int f1;
   }
-void tensor2_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* c_lin){
-  const int x_lin = c_lin -> f1 ;
-  c_lin -> f0 = 42 ;
-  }
-void tensor2_tensor0_tensor0_parallel_lin (const struct {
-  struct {
-    }
-  f0 ;
-  struct {
-    }
-  f1 ;
-  }
-* cd_lin){
-  }
-void tensor2_tensor0_tensor0_sequence_lin (const struct {
-  struct {
-    }
-  f0 ;
-  struct {
-    }
-  f1 ;
-  }
-* cd_lin){
-  }
-void tensor2_using_dual_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-* c_lin){
-  const int x_lin = c_lin -> f1 ;
-  c_lin -> f0 = 42 ;
-  }
-void test2_lin () {
-  struct {
-    int f0 ;
-    int f1 ;
-    }
-  c_lin ;
-  c_lin . f0 = 1 ;
-  const int x0_lin = c_lin . f0 ;
+  c_lin;
+  c_lin . f0 = 1;
+  const int x0_lin = c_lin . f0;
   c_lin . f1 = (x0_lin + 1);
-  const int z0_lin = c_lin . f1 ;
+  const int z0_lin = c_lin . f1;
   c_lin . f1 = (z0_lin + 5);
-  const int x1_lin = c_lin . f1 ;
-  c_lin . f0 = (x1_lin + (x0_lin + 2)) ;
-  const int y0_lin = c_lin . f0 ;
+  const int x1_lin = c_lin . f1;
+  c_lin . f0 = (x1_lin + (x0_lin + 2));
+  const int y0_lin = c_lin . f0;
   c_lin . f0 = (y0_lin + 4);
-  const int x2_lin = c_lin . f0 ;
+  const int x2_lin = c_lin . f0;
   c_lin . f1 = (x2_lin + (x1_lin + (x0_lin + 3)));
-  const int z1_lin = c_lin . f1 ;
-  }
-void test3_lin () {
-  union {
-    int u0 ;
-    struct {
-      int f0 ;
-      int f1 ;
-      }
-    u1 ;
+  const int z1_lin = c_lin . f1;
+}
+void test3_lin ()
+{
+  union
+  {
+    int u0;
+    struct
+    {
+      int f0;
+      int f1;
     }
-  c_lin ;
-  c_lin = 1 ;
-  const int x0_lin = c_lin ;
-  c_lin . f0 = x0_lin ;
-  c_lin . f1 = x0_lin ;
-  const int y0_lin = c_lin . f0 ;
-  const int z0_lin = c_lin . f1 ;
+    u1;
   }
-void test4_lin (int * r_lin){
-  int c_lin ;
-  c_lin = 1 ;
-  const int x0_lin = c_lin ;
-  c_lin = 2 ;
-  const int x1_lin = c_lin ;
-  c_lin = 3 ;
-  const int x2_lin = c_lin ;
-  * r_lin = (x0_lin + (x1_lin + x2_lin)) ;
-  }
+  c_lin;
+  c_lin = 1;
+  const int x0_lin = c_lin;
+  c_lin . f0 = x0_lin;
+  c_lin . f1 = x0_lin;
+  const int y0_lin = c_lin . f0;
+  const int z0_lin = c_lin . f1;
+}
+void test4_lin (int * r_lin)
+{
+  int c_lin;
+  c_lin = 1;
+  const int x0_lin = c_lin;
+  c_lin = 2;
+  const int x1_lin = c_lin;
+  c_lin = 3;
+  const int x2_lin = c_lin;
+  * r_lin = (x0_lin + (x1_lin + x2_lin));
+}
 int Id_lin (const int A_lin, const void * x_lin, const void * y_lin);
 void * refl_lin (const int A_lin, const void * x_lin);
 void * J_lin (const int A_lin, const void * x_lin, const void * P_lin, const void * Px_lin, const void * y_lin, const void * p_lin);
 void * J_sub_refl_lin (const int A_lin, const void * x_lin, const void * P_lin, const void * Px_lin);
-void zap_ten_fwd_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-cf_lin [10], const int cn_lin [10], int co_lin [10]) {
-  for (int ix0 = 0 ;
-  ix0 < 10 ;
-  ix0 = ix0 + 1){
+void zap_ten_fwd_lin (struct
+{
+  int f0;
+  int f1;
+}
+cf_lin [10], const int cn_lin [10], int co_lin [10])
+{
+  for (int ix0 = 0;
+  ix0 < 10;
+  ix0 = ix0 + 1)
+  {
     const int x__cni_lin = cn_lin [ix0];
-    const int x__cfio_lin = cf_lin [ix0]. f1 ;
-    cf_lin [ix0]. f0 = x__cni_lin ;
-    co_lin [ix0]= x__cfio_lin ;
-    } ;
-  }
-void zap_ten_par_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-cf_lin [10], const int cn_lin [10], int co_lin [10]) {
-  for (int ix0 = 0 ;
-  ix0 < 10 ;
-  ix0 = ix0 + 1){
+    const int x__cfio_lin = cf_lin [ix0] . f1;
+    cf_lin [ix0] . f0 = x__cni_lin;
+    co_lin [ix0] = x__cfio_lin;
+  };
+}
+void zap_ten_par_lin (struct
+{
+  int f0;
+  int f1;
+}
+cf_lin [10], const int cn_lin [10], int co_lin [10])
+{
+  for (int ix0 = 0;
+  ix0 < 10;
+  ix0 = ix0 + 1)
+  {
     const int x_lin = cn_lin [ix0];
-    const int y_lin = cf_lin [ix0]. f1 ;
-    cf_lin [ix0]. f0 = x_lin ;
-    co_lin [ix0]= y_lin ;
-    } ;
-  }
-void zap_ten_seq_lin (struct {
-  int f0 ;
-  int f1 ;
-  }
-cf_lin [10], const int cn_lin [10], int co_lin [10]) {
-  for (int ix0 = 0 ;
-  ix0 < 10 ;
-  ix0 = ix0 + 1){
+    const int y_lin = cf_lin [ix0] . f1;
+    cf_lin [ix0] . f0 = x_lin;
+    co_lin [ix0] = y_lin;
+  };
+}
+void zap_ten_seq_lin (struct
+{
+  int f0;
+  int f1;
+}
+cf_lin [10], const int cn_lin [10], int co_lin [10])
+{
+  for (int ix0 = 0;
+  ix0 < 10;
+  ix0 = ix0 + 1)
+  {
     const int x_lin = cn_lin [ix0];
-    cf_lin [ix0]. f0 = x_lin ;
-    const int y_lin = cf_lin [ix0]. f1 ;
-    co_lin [ix0]= y_lin ;
-    } ;
-  }
-void zip_add_lin (const int xs_lin [10], const int ys_lin [10], int zs_lin [10]) {
-  for (int ix0 = 0 ;
-  ix0 < 10 ;
-  ix0 = ix0 + 1){
+    cf_lin [ix0] . f0 = x_lin;
+    const int y_lin = cf_lin [ix0] . f1;
+    co_lin [ix0] = y_lin;
+  };
+}
+void zip_add_lin (const int xs_lin [10], const int ys_lin [10], int zs_lin [10])
+{
+  for (int ix0 = 0;
+  ix0 < 10;
+  ix0 = ix0 + 1)
+  {
     const int a_lin = xs_lin [ix0];
     const int b_lin = ys_lin [ix0];
-    zs_lin [ix0]= (a_lin + b_lin);
-    } ;
-  }
+    zs_lin [ix0] = (a_lin + b_lin);
+  };
+}
 

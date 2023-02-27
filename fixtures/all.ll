@@ -1257,7 +1257,7 @@ new_ann_let_fuse_1 =
     new/ann [c:[],d]
     fwd [] (c,d)
 new_fuse1_recv_send_send_recv = proc()
-  new/fuse 1 [d : ?Int.!Int, c : !Int.?Int]
+  new/fuse1 [d : ?Int.!Int, c : !Int.?Int]
   ( send c 1
     recv c (x : Int)
   | recv d (y : Int)
@@ -2364,7 +2364,7 @@ wrong_mk_tensor2_RL =
     @p1(c1).
     @p0(c0)
 wrong_new_ann = proc(c : !Int)
-  new/fuse "42" [d : !Int, e]
+  new/( fuse "42")[d : !Int, e]
   ( send d 1
   | fwd(!Int)(c,e))
 wrong_new_seq_dual = proc() new [: c : !Int, d : !Int :] send c 1. send d 2

@@ -1,4 +1,5 @@
 site/
+result
 *.bak
 tests/*/*.my
 issues/*/*.my

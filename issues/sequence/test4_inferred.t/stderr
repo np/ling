@@ -1,1 +1,3 @@
 ling: Missing type signature in `new` (extractDuals)
+CallStack (from HasCallStack):
+  error, called at ./Ling/Session.hs:27:32 in ling-0.1.0.0-inplace:Ling.Session

@@ -112,7 +112,7 @@ checkDisjointness :: (MonadError TCErr m, Print a, Ord a)
                   => String -> Fold s a -> [s] -> m ()
 checkDisjointness k f s =
   assert (Set.null rs) ["These " ++ k ++ " should not be used in different parallel parts:"
-                       ,pretty (s2l rs)]
+                       ,pretty rs]
   where
     ss = setOf f <$> s
     rs = redundant ss
